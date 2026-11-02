@@ -1,0 +1,675 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Story Trail</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap">
+<style>
+/* Layout: a trail map — home picks a trail marker, play is passage | question side by side, results is a field report. */
+:root{
+  --paper:#F2F6F3; --card:#FFFFFF; --ink:#1B2A25; --muted:#56675F; --line:#D3DDD7;
+  --pine:#1F5C4A; --pine-ink:#FFFFFF; --pine-soft:#E2EEE8;
+  --gold:#E3A21A; --gold-soft:#FCF0D2;
+  --good:#2D7A4C; --good-soft:#E0F1E6; --bad:#B23E2C; --bad-soft:#F8E3DF;
+  --display:"Baloo 2","Trebuchet MS",system-ui,sans-serif;
+  --body:"Atkinson Hyperlegible",Verdana,system-ui,sans-serif;
+  --read:1.12rem;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#111A17; --card:#18241F; --ink:#E5EEE9; --muted:#9BB0A6; --line:#2C3D36;
+  --pine:#6CC2A3; --pine-ink:#0D1A15; --pine-soft:#1E3a30;
+  --gold:#F0B848; --gold-soft:#3A2F14;
+  --good:#6FCF95; --good-soft:#173525; --bad:#F08A78; --bad-soft:#3E1F1A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#111A17; --card:#18241F; --ink:#E5EEE9; --muted:#9BB0A6; --line:#2C3D36;
+  --pine:#6CC2A3; --pine-ink:#0D1A15; --pine-soft:#1E3a30;
+  --gold:#F0B848; --gold-soft:#3A2F14;
+  --good:#6FCF95; --good-soft:#173525; --bad:#F08A78; --bad-soft:#3E1F1A; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.55}
+.wrap{max-width:1120px;margin:0 auto;padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--display);line-height:1.1;text-wrap:balance;margin:0}
+button{font:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.eyebrow{font-size:.78rem;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.btn{border:0;border-radius:999px;padding:.7em 1.3em;font-weight:700;background:var(--pine);color:var(--pine-ink)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--ink);border:2px solid var(--line)}
+.btn.small{padding:.45em .95em;font-size:.9rem}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+
+/* header */
+header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+.brand h1{font-size:clamp(2.2rem,6vw,3.4rem);font-weight:800;color:var(--pine);letter-spacing:-.01em}
+.brand p{margin:.2rem 0 0;color:var(--muted);max-width:52ch}
+.trailmark{display:inline-block;width:.9em;height:.9em;border-radius:3px;background:var(--gold);transform:rotate(45deg);margin-right:.25em;vertical-align:.08em}
+
+/* home */
+.home{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:22px}
+@media (max-width:820px){.home{grid-template-columns:1fr}}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px}
+label{display:block;font-weight:700;margin:0 0 6px}
+input[type=text]{width:100%;font:inherit;font-size:1.1rem;padding:.6em .8em;border-radius:10px;border:2px solid var(--line);background:var(--paper);color:var(--ink)}
+.field{margin-bottom:14px}
+.levels{display:grid;gap:12px}
+.level{display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;align-items:center;text-align:left;width:100%;background:var(--paper);border:2px solid var(--line);border-radius:14px;padding:14px 16px;color:var(--ink)}
+.level:hover{border-color:var(--pine)}
+.level[aria-pressed="true"]{border-color:var(--pine);background:var(--pine-soft)}
+.level .peak{width:54px;height:44px}
+.level h3{font-size:1.35rem}
+.level .meta{color:var(--muted);font-size:.92rem}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.tag{font-size:.75rem;font-weight:700;padding:.15em .6em;border-radius:999px;background:var(--gold-soft);color:var(--ink)}
+.startbar{margin-top:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.hintline{color:var(--muted);font-size:.9rem}
+details.stds{margin-top:22px}
+details.stds summary{font-family:var(--display);font-weight:700;font-size:1.3rem;cursor:pointer;color:var(--pine)}
+.stdgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-top:12px}
+@media (max-width:700px){.stdgrid{grid-template-columns:1fr}}
+.stdgrid h3{font-size:1.1rem;margin-bottom:6px}
+.stdlist{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.stdlist li{display:grid;grid-template-columns:5.6rem minmax(0,1fr);gap:8px;font-size:.93rem}
+.code{font-weight:700;font-variant-numeric:tabular-nums;color:var(--pine)}
+
+/* play */
+.playhead{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.trail{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--line);background:var(--card)}
+.dot.now{border-color:var(--gold);background:var(--gold)}
+.dot.ok{border-color:var(--good);background:var(--good)}
+.dot.no{border-color:var(--bad);background:var(--bad)}
+.dot.gap{width:10px;border:0;background:transparent}
+.play{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:860px){.play{grid-template-columns:1fr}}
+.passage{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 24px}
+.passage h2{font-size:1.7rem;margin:.15rem 0 .2rem}
+.passage .genre{color:var(--muted);font-size:.9rem;margin-bottom:12px}
+.passage .tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.para{display:grid;grid-template-columns:1.8rem minmax(0,1fr);gap:8px;font-size:var(--read);line-height:1.7;max-width:68ch}
+.para + .para{margin-top:.75em}
+.pnum{font-size:.8rem;font-weight:700;color:var(--muted);padding-top:.35em;font-variant-numeric:tabular-nums}
+.para.speaking p{background:var(--gold-soft)}
+.para p{margin:0;border-radius:6px}
+.qcard{background:var(--card);border:2px solid var(--pine);border-radius:16px;padding:20px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}
+@media (max-width:860px){.qcard{position:static}}
+.skillchip{display:inline-flex;gap:6px;align-items:center;font-size:.8rem;font-weight:700;padding:.2em .7em;border-radius:999px;background:var(--pine-soft);color:var(--ink)}
+.qtext{font-size:1.18rem;font-weight:700;margin:12px 0 14px}
+.opts{display:grid;gap:10px}
+.opt{display:grid;grid-template-columns:2rem minmax(0,1fr);gap:10px;align-items:start;text-align:left;width:100%;padding:12px 14px;border-radius:12px;border:2px solid var(--line);background:var(--paper);color:var(--ink);font-size:1.02rem}
+.opt:hover:not(:disabled){border-color:var(--pine)}
+.opt .let{font-family:var(--display);font-weight:800;width:2rem;height:2rem;border-radius:50%;display:grid;place-items:center;background:var(--card);border:2px solid var(--line)}
+.opt.sel{border-color:var(--pine);background:var(--pine-soft)}
+.opt.right{border-color:var(--good);background:var(--good-soft)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.opt:disabled{cursor:default}
+.hintbox{margin-top:12px;padding:10px 12px;border-radius:10px;background:var(--gold-soft);font-size:.95rem}
+.feedback{margin-top:14px;padding:12px 14px;border-radius:10px;font-weight:700}
+.feedback.ok{background:var(--good-soft);color:var(--good)}
+.feedback.no{background:var(--bad-soft);color:var(--bad)}
+.feedback span{display:block;font-weight:400;color:var(--ink);margin-top:4px}
+.qfoot{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:16px}
+
+/* results */
+.report{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:20px}
+@media (max-width:820px){.report{grid-template-columns:1fr}}
+.scorebig{font-family:var(--display);font-weight:800;font-size:clamp(3.4rem,10vw,5rem);line-height:1;color:var(--pine);font-variant-numeric:tabular-nums}
+.badge{display:inline-block;margin-top:8px;padding:.25em .8em;border-radius:999px;font-weight:700;background:var(--gold-soft)}
+.kv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 14px;margin-top:14px;font-size:.95rem}
+.kv dt{color:var(--muted)} .kv dd{margin:0;font-weight:700;overflow-wrap:anywhere}
+.bars{display:grid;gap:10px;margin-top:6px}
+.bar{display:grid;grid-template-columns:9.5rem minmax(0,1fr) 3.2rem;gap:10px;align-items:center;font-size:.93rem}
+.bar .track{height:12px;border-radius:999px;background:var(--pine-soft);overflow:hidden}
+.bar .fill{height:100%;background:var(--pine);border-radius:999px}
+.bar .n{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+@media (max-width:480px){.bar{grid-template-columns:7rem minmax(0,1fr) 2.8rem}}
+.itemlist{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:6px}
+.itemlist li{display:grid;grid-template-columns:1.4rem 5.4rem minmax(0,1fr);gap:8px;font-size:.92rem}
+.mark-ok{color:var(--good);font-weight:800} .mark-no{color:var(--bad);font-weight:800}
+.sendbox{margin-top:16px;padding:14px;border-radius:12px;background:var(--gold-soft)}
+.sendbox .addr{font-weight:700;user-select:all;overflow-wrap:anywhere}
+.status{font-size:.9rem;color:var(--muted);margin-top:8px}
+textarea.copyarea{width:100%;min-height:8rem;font:inherit;font-size:.85rem;margin-top:8px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px}
+
+/* teacher */
+.tablewrap{overflow-x:auto;margin-top:12px;border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;min-width:760px;font-size:.92rem}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--paper)}
+td.num{font-variant-numeric:tabular-nums;text-align:right}
+.pill{display:inline-block;padding:.1em .55em;border-radius:999px;font-weight:700;font-size:.82rem}
+.pill.hi{background:var(--good-soft);color:var(--good)} .pill.mid{background:var(--gold-soft)} .pill.lo{background:var(--bad-soft);color:var(--bad)}
+.empty{padding:22px;color:var(--muted);text-align:center}
+@media (prefers-reduced-motion:no-preference){.opt,.level{transition:border-color .15s,background .15s}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="eyebrow">NC ELA · Grades 4–5 · Reading Comprehension</div>
+      <h1><span class="trailmark" aria-hidden="true"></span>Story Trail</h1>
+      <p>Read a story and an article, then answer questions about theme, main idea, and point of view. Every student gets a different set of questions.</p>
+    </div>
+    <div class="row">
+      <button class="btn ghost small" id="teacherBtn" hidden>Teacher results</button>
+      <button class="btn ghost small" id="homeBtn" hidden>Back to start</button>
+    </div>
+  </header>
+
+  <main id="app"></main>
+</div>
+
+<script>
+/* ---------- Standards (2017 NC Standard Course of Study, ELA) ---------- */
+const STANDARDS = {
+  "RL.4.1":"Refer to details and examples in a text when explaining what it says and when drawing inferences.",
+  "RL.4.2":"Determine a theme from details in the text; summarize the text.",
+  "RL.4.3":"Describe a character, setting, or event in depth, using specific details.",
+  "RL.4.4":"Determine the meaning of words and phrases as they are used in a text.",
+  "RL.4.6":"Compare and contrast point of view, including first- and third-person narration.",
+  "RI.4.1":"Refer to details and examples when explaining what the text says and when drawing inferences.",
+  "RI.4.2":"Determine the main idea and explain how key details support it; summarize the text.",
+  "RI.4.4":"Determine the meaning of general academic and domain-specific words.",
+  "RI.4.8":"Explain how an author uses reasons and evidence to support points (author's point of view).",
+  "RL.5.1":"Quote accurately from a text when explaining what it says and when drawing inferences.",
+  "RL.5.2":"Determine a theme, including how characters respond to challenges; summarize the text.",
+  "RL.5.3":"Compare and contrast two or more characters, settings, or events using specific details.",
+  "RL.5.4":"Determine the meaning of words and phrases, including figurative language such as similes and metaphors.",
+  "RL.5.6":"Describe how a narrator's or speaker's point of view influences how events are described.",
+  "RI.5.1":"Quote accurately from a text when explaining what it says and when drawing inferences.",
+  "RI.5.2":"Determine two or more main ideas and explain how key details support them; summarize the text.",
+  "RI.5.4":"Determine the meaning of general academic and domain-specific words and phrases.",
+  "RI.5.5":"Compare and contrast the overall structure of events, ideas, or information in texts.",
+  "RI.5.8":"Explain how an author uses reasons and evidence to support points, identifying which evidence supports which point."
+};
+const SKILLS = {
+  theme:{name:"Theme",hint:"Ask yourself: what lesson could anyone learn from what happened? A theme is bigger than one event."},
+  main:{name:"Main Idea",hint:"What is the WHOLE text mostly about? Skip answers that only fit one small part."},
+  apov:{name:"Author's Point of View",hint:"Look for opinion words like \"I think,\" \"I believe,\" \"in my view,\" or \"should.\""},
+  npov:{name:"Narrator's Point of View",hint:"Who is telling the story? \"I\" means first person. \"He\" or \"she\" from outside the story means third person."},
+  detail:{name:"Details & Evidence",hint:"Go back to the passage and find the exact sentence that proves your answer."},
+  char:{name:"Character",hint:"Think about what the character says, does, and feels. How do they change?"},
+  lang:{name:"Words & Language",hint:"Reread the sentence around the word. Try each answer in its place and see which makes sense."},
+  sum:{name:"Summary",hint:"A good summary covers the beginning, middle, and end in a few words, without small details."},
+  craft:{name:"Author's Craft",hint:"Ask: why did the author put this part here? What does it help the reader understand?"}
+};
+
+/* ---------- Passages and question banks ----------
+   Each slot = one skill question with 2 versions. Students get a random version of each chosen slot,
+   with shuffled answers and shuffled question order. must:true slots are always included. */
+const LEVELS = [
+ {id:1,name:"Trailhead",grade:"Grade 4 · shorter passages",perPassage:4,
+  blurb:"Shorter passages and simpler questions. Read-aloud and hints available.",
+  passages:[
+  {title:"The Last Seed",genre:"Realistic fiction",paras:[
+   "Maya pressed six sunflower seeds into the dirt by her porch. She watered them every morning before school.",
+   "One day she saw a crow pecking at the soil. When she checked, four seeds were gone. Maya's eyes stung, but she did not quit.",
+   "She asked her dad for an old fruit net. Together they stretched it over the garden and tied it to sticks.",
+   "A week later, a tiny green sprout poked through the dirt. Maya knelt down and smiled. \"One is enough to start,\" she whispered."],
+   slots:[
+   {must:true,v:[
+    {s:"theme",std:"RL.4.2",q:"What is the theme of this story?",c:"Keep trying when things go wrong.",w:["Crows are dangerous birds.","Gardens need a lot of water.","It is better to give up early."]},
+    {s:"theme",std:"RL.4.2",q:"What lesson does Maya's story teach?",c:"If you don't give up, you can still succeed.",w:["Never plant seeds near a porch.","Birds are good friends to have.","Only grown-ups can fix problems."]}]},
+   {v:[
+    {s:"npov",std:"RL.4.6",q:"Who is telling this story?",c:"A narrator outside the story who uses \"she\"",w:["Maya, using \"I\"","The crow, using \"I\"","Maya's dad, using \"I\""]},
+    {s:"npov",std:"RL.4.6",q:"This story is told in third person. Which clue shows this?",c:"The narrator says \"Maya pressed\" and \"she whispered.\"",w:["Maya says \"I planted six seeds.\"","The story has a title.","The story happens near a porch."]}]},
+   {v:[
+    {s:"detail",std:"RL.4.1",q:"What did Maya do after the crow ate the seeds?",c:"She put a net over the garden with her dad.",w:["She planted new seeds in the yard.","She chased the crow with a broom.","She stopped watering the garden."]},
+    {s:"detail",std:"RL.4.1",q:"How many seeds did the crow take?",c:"Four",w:["Six","One","Two"]}]},
+   {v:[
+    {s:"char",std:"RL.4.3",q:"Which word best describes Maya?",c:"determined",w:["lazy","bored","careless"]},
+    {s:"char",std:"RL.4.3",q:"How does Maya feel at the end of the story?",c:"Hopeful, because one seed grew",w:["Angry at the crow","Bored with gardening","Scared of birds"]}]},
+   {v:[
+    {s:"lang",std:"RL.4.4",q:"\"Maya's eyes stung.\" What does this mean?",c:"She felt like crying.",w:["She had dirt in her eyes.","She was very sleepy.","She was looking at the sun."]},
+    {s:"lang",std:"RL.4.4",q:"What does \"sprout\" mean in paragraph 4?",c:"a new plant just starting to grow",w:["a kind of bird","a garden tool","a bag of seeds"]}]}
+  ]},
+  {title:"Bees Need Our Help",genre:"Informational · opinion",paras:[
+   "Bees are small, but they do a big job. When bees fly from flower to flower, they carry pollen. This helps plants make fruits and seeds. This is called pollination.",
+   "Many foods we eat, like apples, blueberries, and cucumbers, need bees. Without bees, there would be fewer of these foods.",
+   "Sadly, the number of bees has been going down. Bees are losing the wild flowers they need.",
+   "I think everyone can help. Plant flowers in your yard or at school. Then bees will have food, and so will we!"],
+   slots:[
+   {must:true,v:[
+    {s:"main",std:"RI.4.2",q:"What is the main idea of this text?",c:"Bees are important, and people can help them.",w:["Bees can sting people.","Apples are a healthy snack.","Bees live in big hives."]},
+    {s:"main",std:"RI.4.2",q:"Which sentence tells what the whole text is mostly about?",c:"Bees do a big job, and they need our help.",w:["Cucumbers grow in gardens.","Bees are very small insects.","Wild flowers grow in fields."]}]},
+   {must:true,v:[
+    {s:"apov",std:"RI.4.8",q:"What does the author think people should do?",c:"Plant flowers to help bees.",w:["Stay far away from bees.","Eat fewer apples.","Buy honey at the store."]},
+    {s:"apov",std:"RI.4.8",q:"Which words show the author's opinion?",c:"\"I think everyone can help.\"",w:["\"Bees are small.\"","\"They carry pollen.\"","\"like apples, blueberries, and cucumbers\""]}]},
+   {v:[
+    {s:"detail",std:"RI.4.1",q:"Which detail shows that bees are important to people?",c:"Many foods we eat need bees.",w:["Bees fly from flower to flower.","Bees are small.","Bees are losing wild flowers."]},
+    {s:"detail",std:"RI.4.1",q:"Why is the number of bees going down?",c:"Bees are losing the wild flowers they need.",w:["People eat too many apples.","Bees fly too far from home.","Bees are too small."]}]},
+   {v:[
+    {s:"lang",std:"RI.4.4",q:"What does \"pollination\" mean?",c:"moving pollen so plants can make fruits and seeds",w:["a kind of flower","the way bees make honey","a place where bees live"]},
+    {s:"lang",std:"RI.4.4",q:"In paragraph 3, \"going down\" means…",c:"getting smaller",w:["flying lower","getting bigger","staying the same"]}]},
+   {v:[
+    {s:"craft",std:"RI.4.8",q:"Why does the author tell about apples and blueberries?",c:"To show that bees help make foods we eat",w:["To give a recipe","To tell which fruits taste best","To explain how to plant a garden"]},
+    {s:"craft",std:"RI.4.8",q:"Why does the author end with \"and so will we!\"?",c:"To show that helping bees also helps people",w:["To say people should eat flowers","To tell a joke about bees","To start a new topic"]}]}
+  ]}
+ ]},
+ {id:2,name:"Ridge",grade:"Grade 4 · on level",perPassage:5,
+  blurb:"Grade-level passages with first-person narration and an opinion article.",
+  passages:[
+  {title:"The Blue Ribbon",genre:"Realistic fiction",paras:[
+   "My partner, Rosa, and I built a model of a wind turbine for the science fair. Well, Rosa built most of it. She wired the tiny motor and figured out why the blades kept wobbling. I painted the base and made the poster.",
+   "On fair day, a judge with a clipboard stopped at our table. \"Who designed the blades?\" she asked, looking right at me.",
+   "My heart thumped. Rosa was across the gym getting water. I could say \"I did,\" and no one would ever know. The judge's pen hovered over her paper.",
+   "\"Rosa did,\" I said. \"She tested four different shapes. I mostly did the poster.\" The judge nodded slowly and wrote something down.",
+   "When Rosa came back, I told her what happened. She grinned. Later, when our names were called for second place, I clapped harder for her than for myself. The ribbon felt lighter than I expected, but my conscience felt lighter too."],
+   slots:[
+   {must:true,v:[
+    {s:"theme",std:"RL.4.2",q:"Which theme does the story best show?",c:"Being honest matters more than getting credit.",w:["Winning first place is all that matters.","Science fairs are too hard.","You should always work alone."]},
+    {s:"theme",std:"RL.4.2",q:"What does Jalen's choice teach the reader?",c:"Telling the truth can feel better than winning.",w:["Judges never find out the truth.","The poster is the most important part of a project.","It is safer to stay quiet."]}]},
+   {v:[
+    {s:"npov",std:"RL.4.6",q:"The story is told in first person. What does that let readers know?",c:"The narrator's private thoughts, like his heart thumping",w:["What Rosa was thinking at the water fountain","Exactly what the judge wrote down","Every character's thoughts equally"]},
+    {s:"npov",std:"RL.4.6",q:"How would the story change if a narrator outside the story told it in third person?",c:"Readers might not know the narrator was tempted to lie.",w:["Rosa would make the poster.","The judge would give first place.","The fair would be at a different school."]}]},
+   {v:[
+    {s:"detail",std:"RL.4.1",q:"Why did the judge's pen \"hover over her paper\"?",c:"She was waiting for the narrator's answer before writing.",w:["Her pen ran out of ink.","She was drawing the turbine.","She wanted to leave the gym."]},
+    {s:"detail",std:"RL.4.1",q:"Why did the narrator's heart thump?",c:"He was nervous about whether to tell the truth.",w:["He had just run across the gym.","He was excited to win first place.","He was afraid of Rosa."]}]},
+   {v:[
+    {s:"char",std:"RL.4.3",q:"How does the narrator change in the story?",c:"He goes from being tempted to take credit to feeling proud of being honest.",w:["He goes from liking science to hating it.","He goes from shy to bossy.","He does not change at all."]},
+    {s:"char",std:"RL.4.3",q:"Which detail shows the narrator respects Rosa?",c:"He clapped harder for her than for himself.",w:["He painted the base.","He made the poster.","The ribbon felt lighter than he expected."]}]},
+   {v:[
+    {s:"lang",std:"RL.4.4",q:"What does \"conscience\" mean in paragraph 5?",c:"a sense of right and wrong inside you",w:["a science project","a kind of ribbon","a loud noise"]},
+    {s:"lang",std:"RL.4.4",q:"\"…my conscience felt lighter too.\" What does \"lighter\" mean here?",c:"less worried or guilty",w:["less heavy to carry","brighter in color","less important"]}]},
+   {v:[
+    {s:"sum",std:"RL.4.2",q:"Which is the best summary of the story?",c:"At the science fair, the narrator is tempted to take credit for Rosa's work but tells the truth and feels good about it.",w:["Rosa and the narrator build a wind turbine.","A judge carries a clipboard around the gym.","Rosa gets water while the narrator paints, and they win first place."]},
+    {s:"sum",std:"RL.4.2",q:"Which event is MOST important to the story?",c:"The narrator tells the judge that Rosa designed the blades.",w:["Rosa goes to get water.","The narrator paints the base.","The judge carries a clipboard."]}]}
+  ]},
+  {title:"Give Us Ten More Minutes",genre:"Informational · opinion article",paras:[
+   "Most elementary schools in the United States give students about 20 to 30 minutes of recess a day. I believe schools should add at least ten more minutes.",
+   "First, recess helps students focus. Many teachers notice that students pay closer attention after they have had time to run and play. When the body moves, the brain gets ready to learn.",
+   "Second, recess builds friendships. On the playground, students make up games, take turns, and settle arguments without an adult telling them what to do. These are skills they will use their whole lives.",
+   "Some people worry that more recess means less time for learning. But ten minutes is a small trade. A class that is calm and focused can get more done in less time.",
+   "Recess is not a break from learning. It is a different kind of learning. Ten more minutes would help every student."],
+   slots:[
+   {must:true,v:[
+    {s:"main",std:"RI.4.2",q:"What is the main idea of the article?",c:"Schools should add more recess because it helps students.",w:["Recess is already too long.","Students should only play after school.","Teachers need longer lunch breaks."]},
+    {s:"main",std:"RI.4.2",q:"Which sentence from the article best states the main idea?",c:"\"I believe schools should add at least ten more minutes.\"",w:["\"On the playground, students make up games.\"","\"These are skills they will use their whole lives.\"","\"Some people worry that more recess means less time for learning.\""]}]},
+   {must:true,v:[
+    {s:"apov",std:"RI.4.8",q:"What is the author's point of view about recess?",c:"It is a valuable part of the school day.",w:["It wastes class time.","It is only for young kids.","It should replace science class."]},
+    {s:"apov",std:"RI.4.8",q:"Which word best describes how the author feels about longer recess?",c:"supportive",w:["worried","unsure","against it"]}]},
+   {v:[
+    {s:"detail",std:"RI.4.8",q:"Which reason does the author give in paragraph 3?",c:"Recess helps students learn to get along and solve problems.",w:["Recess helps students grow taller.","Recess gives teachers time to grade.","Recess is required by law."]},
+    {s:"detail",std:"RI.4.8",q:"Which reason does the author give in paragraph 2?",c:"Moving and playing helps students focus in class.",w:["Students need time to eat snacks.","Playgrounds are new and fun.","Recess makes the school day longer."]}]},
+   {v:[
+    {s:"craft",std:"RI.4.8",q:"How does the author respond to people who worry about losing learning time?",c:"The author says a calm, focused class gets more done.",w:["The author agrees recess should be shorter.","The author ignores the worry.","The author says tests do not matter."]},
+    {s:"craft",std:"RI.4.8",q:"Why does the author include paragraph 4?",c:"To answer an argument against more recess",w:["To tell a story about a playground","To give facts about lunch","To change the topic"]}]},
+   {v:[
+    {s:"lang",std:"RI.4.4",q:"What does the author mean by \"Recess is not a break from learning. It is a different kind of learning\"?",c:"Students learn important skills while they play.",w:["Students do math problems at recess.","Recess should have worksheets.","Students learn nothing at recess."]},
+    {s:"lang",std:"RI.4.4",q:"In paragraph 3, \"settle arguments\" means…",c:"solve disagreements",w:["start fights","sit down quietly","write essays"]}]},
+   {v:[
+    {s:"sum",std:"RI.4.2",q:"Which is the best summary of the article?",c:"The author argues for ten more minutes of recess because it helps students focus and build friendships, and it is worth the time.",w:["Students play games and take turns on the playground.","Some people worry about losing learning time.","Most schools give 20 to 30 minutes of recess."]},
+    {s:"detail",std:"RI.4.1",q:"According to the article, how much recess do many schools give now?",c:"about 20 to 30 minutes",w:["about 10 minutes","about one hour","none at all"]}]}
+  ]}
+ ]},
+ {id:3,name:"Summit",grade:"Grade 5 · challenge",perPassage:6,
+  blurb:"Longer passages with figurative language, comparing characters, and two main ideas.",
+  passages:[
+  {title:"Low Tide on the Pamlico",genre:"Realistic fiction",paras:[
+   "The summer I turned eleven, Mom sent me to stay with Pop in a little town on the Pamlico Sound. I had imagined beach days and ice cream. Instead, Pop handed me a scraper and pointed at an old wooden skiff flipped upside down in his yard. Its paint was peeling like a bad sunburn.",
+   "\"We'll have her floating by August,\" he said.",
+   "I doubted that. Every morning we scraped, sanded, and scraped again. Pop worked as slowly as the tide coming in, stopping to run his thumb along a seam or to tell me which board his own father had replaced in 1962. I sighed loudly enough for him to hear. He just kept working.",
+   "One afternoon a storm rolled across the sound, and we waited it out in the shed. Pop pulled a faded photo from a coffee can: a boy about my age standing in the same skiff, holding up a fish almost as long as his arm. \"That's me,\" Pop said. \"My dad and I fixed her up the summer I was eleven.\"",
+   "I looked at the boat differently after that. It wasn't just old wood. It was a map of everyone who had cared for it.",
+   "On the first of August, we slid the skiff into the water. It floated, a little crooked, but it floated. Pop handed me the oars. \"Your turn to take care of her,\" he said."],
+   slots:[
+   {must:true,v:[
+    {s:"theme",std:"RL.5.2",q:"Which theme is best supported by the story?",c:"Taking time to understand something can show you why others value it.",w:["Storms can be dangerous on the water.","Summer should be spent having fun.","Old things should be replaced with new ones."]},
+    {s:"theme",std:"RL.5.2",q:"How does the narrator's response to her challenge help develop the theme?",c:"She moves from impatience to appreciating the boat's history, showing that patience can reveal meaning.",w:["She refuses to help, showing that kids dislike chores.","She fixes the boat alone, showing that independence matters most.","She stays bored all summer, showing that hard work is pointless."]}]},
+   {v:[
+    {s:"npov",std:"RL.5.6",q:"How does the narrator's point of view affect how the early repair work is described?",c:"Because she is bored and doubtful, the work seems slow and tiresome.",w:["Because she loves boats, the work seems exciting.","Because she is the grandfather, the work seems easy.","Because she is a visitor, the work is not described."]},
+    {s:"npov",std:"RL.5.6",q:"If Pop told this story, how would the scraping and sanding most likely be described?",c:"As meaningful work full of family memories",w:["As a boring chore he wanted to skip","As something he did not care about","As a job his granddaughter did alone"]}]},
+   {v:[
+    {s:"lang",std:"RL.5.4",q:"\"Pop worked as slowly as the tide coming in.\" What does this simile show?",c:"Pop is patient and steady.",w:["Pop is tired and wants to quit.","Pop only works at night.","Pop is afraid of the water."]},
+    {s:"lang",std:"RL.5.4",q:"The boat's paint was \"peeling like a bad sunburn.\" What does this comparison suggest?",c:"The boat is worn from years in the sun.",w:["The boat was painted recently.","The boat is bright red.","The narrator got a sunburn."]}]},
+   {v:[
+    {s:"char",std:"RL.5.3",q:"How are the narrator and Pop different at the start of the story?",c:"She wants fun and quick results; Pop is patient and tied to the boat's history.",w:["She loves boats; Pop does not.","Both of them want to go to the beach.","Pop is in a hurry; she wants to go slowly."]},
+    {s:"char",std:"RL.5.3",q:"How are the narrator and Pop alike by the end?",c:"Both see the skiff as part of their family's story.",w:["Both want to sell the boat.","Both are afraid of storms.","Both think the boat is useless."]}]},
+   {v:[
+    {s:"detail",std:"RL.5.1",q:"Which quotation best shows that the narrator's feelings changed?",c:"\"I looked at the boat differently after that.\"",w:["\"I doubted that.\"","\"Every morning we scraped, sanded, and scraped again.\"","\"I sighed loudly enough for him to hear.\""]},
+    {s:"detail",std:"RL.5.1",q:"Which quotation best supports the idea that the boat connects generations?",c:"\"My dad and I fixed her up the summer I was eleven.\"",w:["\"We'll have her floating by August.\"","\"I had imagined beach days and ice cream.\"","\"It floated, a little crooked, but it floated.\""]}]},
+   {v:[
+    {s:"lang",std:"RL.5.4",q:"\"It was a map of everyone who had cared for it.\" What does the narrator mean?",c:"The repairs show the history of the people who kept the boat going.",w:["The boat has a map painted on it.","The boat can be used to find places.","Nobody remembers who owned the boat."]},
+    {s:"craft",std:"RL.5.2",q:"Why is the old photo important to the story?",c:"It reveals the boat's history and changes how the narrator sees it.",w:["It shows how big the fish were back then.","It explains why the storm happened.","It proves Pop is a good photographer."]}]},
+   {v:[
+    {s:"sum",std:"RL.5.2",q:"Which is the best summary of the story?",c:"Bored at first, the narrator helps Pop repair an old skiff; after learning its family history, she values it and becomes its new caretaker.",w:["The narrator and Pop wait out a storm in a shed.","Pop shows the narrator how to scrape paint and sand boards.","The narrator spends the summer at the beach eating ice cream."]},
+    {s:"char",std:"RL.5.3",q:"What does Pop mean when he says, \"Your turn to take care of her\"?",c:"He is passing the family tradition on to his granddaughter.",w:["He wants her to paint the boat again.","He is tired of rowing.","He is giving the boat to a stranger."]}]}
+  ]},
+  {title:"Wings Over the Outer Banks",genre:"Informational · history",paras:[
+   "On December 17, 1903, Orville and Wilbur Wright made the first powered, controlled airplane flight. The first flight lasted just 12 seconds and covered about 120 feet. It happened not in their hometown of Dayton, Ohio, but on the windy sand dunes near Kitty Hawk, North Carolina.",
+   "The brothers did not pick this spot by accident. Before choosing a test site, Wilbur wrote to the U.S. Weather Bureau asking where to find strong, steady winds. Kitty Hawk was one of the answers. The Outer Banks offered steady breezes to lift their gliders, tall dunes to launch from, and soft sand for crash landings. It was also far from crowds, so the brothers could work in private.",
+   "Location alone did not make them successful, though. From 1900 to 1902, the Wrights returned to North Carolina each year to test gliders. When their early gliders did not lift as well as they expected, they went home and built a small wind tunnel. They tested about 200 wing shapes in it. That careful testing led to a better design.",
+   "In my view, the Wright brothers' greatest invention was not the airplane. It was their way of solving problems: test, learn from failure, and test again. Today, visitors to the Wright Brothers National Memorial in Kill Devil Hills can walk the path of that first flight. It is shorter than many school hallways, but it changed the world."],
+   slots:[
+   {must:true,v:[
+    {s:"main",std:"RI.5.2",q:"Which TWO main ideas does the article develop?",c:"The Outer Banks was a smart place to test, and careful testing led to success.",w:["Ohio is windy, and the brothers liked crowds.","Airplanes are dangerous, and gliders are better.","The first flight was long, and it happened in Dayton."]},
+    {s:"main",std:"RI.5.2",q:"Paragraphs 2 and 3 each develop a different main idea. Which pair matches them?",c:"Paragraph 2: why the location worked well. Paragraph 3: how testing improved their design.",w:["Paragraph 2: the brothers' childhood. Paragraph 3: the memorial today.","Paragraph 2: how the engine worked. Paragraph 3: the weather in Ohio.","Paragraph 2: the length of the flight. Paragraph 3: why sand is soft."]}]},
+   {must:true,v:[
+    {s:"apov",std:"RI.5.8",q:"What is the author's point of view about the Wright brothers?",c:"Their greatest achievement was their method of solving problems.",w:["They were lucky to find a windy place.","They should have tested in Ohio.","Their first flight was too short to matter."]},
+    {s:"apov",std:"RI.5.8",q:"Which sentence shows the author's opinion rather than a fact?",c:"\"In my view, the Wright brothers' greatest invention was not the airplane.\"",w:["\"The first flight lasted just 12 seconds.\"","\"They tested about 200 wing shapes in it.\"","\"Kitty Hawk was one of the answers.\""]}]},
+   {v:[
+    {s:"detail",std:"RI.5.8",q:"Which evidence supports the point that the location was a smart choice?",c:"The area had soft sand for crash landings.",w:["The brothers lived in Dayton, Ohio.","The first flight lasted 12 seconds.","Visitors can walk the flight path today."]},
+    {s:"detail",std:"RI.5.8",q:"Which detail supports the point that careful testing led to success?",c:"They tested about 200 wing shapes in a wind tunnel.",w:["Kitty Hawk was far from crowds.","The dunes were tall.","The flight path is shorter than many hallways."]}]},
+   {v:[
+    {s:"detail",std:"RI.5.1",q:"The author says the brothers \"did not pick this spot by accident.\" What can readers infer?",c:"They chose Kitty Hawk on purpose after doing research.",w:["They got lost on the way home.","They picked a spot at random from a map.","Someone else chose it for them."]},
+    {s:"detail",std:"RI.5.1",q:"Why did the brothers build a wind tunnel?",c:"Their early gliders did not lift as well as they expected.",w:["They wanted to sell it.","Kitty Hawk had no wind.","The Weather Bureau asked them to."]}]},
+   {v:[
+    {s:"lang",std:"RI.5.4",q:"In paragraph 2, \"steady\" winds are winds that…",c:"blow evenly without stopping and starting",w:["blow only at night","are very cold","change direction often"]},
+    {s:"lang",std:"RI.5.4",q:"What does \"powered\" mean in \"powered, controlled airplane flight\"?",c:"moved by an engine",w:["pulled by a horse","made of wood","flown by two people"]}]},
+   {v:[
+    {s:"craft",std:"RI.5.8",q:"Why does the author compare the flight path to a school hallway?",c:"To show how short the first flight was compared with its huge impact",w:["To explain where the memorial is","To suggest schools should build airplanes","To describe the sand dunes"]},
+    {s:"craft",std:"RI.5.5",q:"How is paragraph 3 organized?",c:"It describes a problem and then explains how they solved it.",w:["It compares two cities.","It lists events that are not connected.","It gives only the author's opinions."]}]}
+  ]}
+ ]}
+];
+
+const TEACHER_EMAIL = "darren-echols@dpsnc.net";
+
+/* ---------- Randomizer ---------- */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function newSeed(){try{const b=new Uint32Array(1);crypto.getRandomValues(b);return b[0]}catch(e){return Math.floor(Math.random()*4294967295)}}
+function shuffle(arr,rnd){const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function versionCode(seed,lvl){const al="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";let s="",n=seed;for(let i=0;i<5;i++){s+=al[n%al.length];n=Math.floor(n/al.length)}return "L"+lvl+"-"+s}
+
+function buildQuiz(level,seed){
+  const rnd=mulberry32(seed);
+  const items=[];
+  level.passages.forEach((p,pi)=>{
+    const must=p.slots.filter(s=>s.must), rest=shuffle(p.slots.filter(s=>!s.must),rnd);
+    const chosen=shuffle(must.concat(rest.slice(0,Math.max(0,level.perPassage-must.length))),rnd);
+    chosen.forEach(slot=>{
+      const vi=Math.floor(rnd()*slot.v.length), v=slot.v[vi];
+      const opts=shuffle([v.c].concat(v.w),rnd);
+      items.push({p:pi,s:v.s,std:v.std,q:v.q,opts,ans:opts.indexOf(v.c),pick:null,hint:false,qid:p.title.slice(0,4)+p.slots.indexOf(slot)+"v"+vi});
+    });
+  });
+  return items;
+}
+
+/* ---------- State ---------- */
+const S={view:"home",name:"",cls:"",level:null,seed:0,items:[],i:0,chosen:null,locked:false,started:0,result:null,saveMsg:""};
+const app=document.getElementById("app");
+const el=(tag,attrs={},...kids)=>{const n=document.createElement(tag);for(const[k,v]of Object.entries(attrs)){if(k==="class")n.className=v;else if(k==="text")n.textContent=v;else if(k.startsWith("on"))n.addEventListener(k.slice(2),v);else if(v!==false&&v!=null)n.setAttribute(k,v===true?"":v)}kids.flat().forEach(c=>{if(c!=null)n.append(c.nodeType?c:document.createTextNode(c))});return n};
+try{const s=JSON.parse(localStorage.getItem("st_student")||"{}");S.name=s.name||"";S.cls=s.cls||""}catch(e){}
+
+/* ---------- Platform: saving results + teacher view ---------- */
+let db=null,user=null,isTeacher=false,uid=null;
+(async()=>{
+  try{
+    if(!window.claude||!claude.use)return;
+    [db,user]=await Promise.all([claude.use("db"),claude.use("user")]);
+    if(user){
+      isTeacher=(await user.isOwner().catch(()=>false))||(await user.canEdit().catch(()=>false));
+      uid=await user.id().catch(()=>null);
+    }
+    document.getElementById("teacherBtn").hidden=!(isTeacher&&db);
+  }catch(e){}
+})();
+
+async function saveResult(r){
+  if(!db||!uid){S.saveMsg="This device isn't signed in to save results online. Use \"Copy results\" below and email them to your teacher.";return false}
+  try{
+    const ref=db.doc("results/"+uid);
+    const snap=await ref.get();
+    const prev=(snap.exists&&snap.data()&&Array.isArray(snap.data().attempts))?snap.data().attempts:[];
+    const attempts=prev.concat([r]).slice(-150);
+    await ref.set({attempts,updatedAt:Date.now()});
+    S.saveMsg="Saved to your teacher's results.";
+    return true;
+  }catch(e){S.saveMsg="Couldn't save online ("+(e&&e.code||"error")+"). Use \"Copy results\" and email them to your teacher.";return false}
+}
+
+/* ---------- Views ---------- */
+function peakSVG(n){
+  const fill=["var(--gold)","var(--pine)","var(--ink)"][n-1];
+  const pts=n===1?"4,40 22,24 30,30 50,40":n===2?"4,40 18,20 28,28 38,12 50,40":"4,40 16,26 26,6 36,20 50,40";
+  return `<svg class="peak" viewBox="0 0 54 44" aria-hidden="true"><polygon points="${pts}" fill="${fill}" opacity=".9"/><line x1="0" y1="41" x2="54" y2="41" stroke="var(--line)" stroke-width="2"/></svg>`;
+}
+
+function renderHome(){
+  document.getElementById("homeBtn").hidden=true;
+  app.innerHTML="";
+  const nameIn=el("input",{type:"text",id:"studentName",autocomplete:"off",placeholder:"First and last name",value:S.name});
+  const clsIn=el("input",{type:"text",id:"studentClass",autocomplete:"off",placeholder:"e.g. Room 12 or 2nd period",value:S.cls});
+  const go=el("button",{class:"btn",id:"startBtn"},"Start the trail");
+  const msg=el("span",{class:"hintline"});
+  const upd=()=>{S.name=nameIn.value.trim();S.cls=clsIn.value.trim();go.disabled=!(S.name&&S.level);msg.textContent=!S.name?"Type your name to begin.":!S.level?"Pick a trail.":""};
+  nameIn.addEventListener("input",upd);clsIn.addEventListener("input",upd);
+
+  const lv=el("div",{class:"levels",role:"group","aria-label":"Choose a trail"});
+  LEVELS.forEach(L=>{
+    const qcount=L.perPassage*L.passages.length;
+    const b=el("button",{class:"level",type:"button","aria-pressed":S.level===L.id?"true":"false"});
+    b.innerHTML=peakSVG(L.id);
+    const tags=el("div",{class:"tags"},el("span",{class:"tag",text:qcount+" questions"}),el("span",{class:"tag",text:L.passages.length+" passages"}));
+    b.append(el("div",{},el("div",{class:"eyebrow",text:L.grade}),el("h3",{text:L.name}),el("div",{class:"meta",text:L.blurb}),tags));
+    b.addEventListener("click",()=>{S.level=L.id;lv.querySelectorAll(".level").forEach(x=>x.setAttribute("aria-pressed","false"));b.setAttribute("aria-pressed","true");upd()});
+    lv.append(b);
+  });
+  go.addEventListener("click",startQuiz);
+
+  const left=el("section",{class:"panel"},
+    el("div",{class:"eyebrow",text:"Step 1"}),el("h2",{text:"Who's reading?",style:"font-size:1.6rem;margin:.2rem 0 14px"}),
+    el("div",{class:"field"},el("label",{for:"studentName",text:"Student name"}),nameIn),
+    el("div",{class:"field"},el("label",{for:"studentClass",text:"Class or period (optional)"}),clsIn),
+    el("p",{class:"hintline",text:"Your quiz is made just for you. Questions and answer choices are mixed up, so your neighbor's quiz won't match yours."}));
+  const right=el("section",{class:"panel"},
+    el("div",{class:"eyebrow",text:"Step 2"}),el("h2",{text:"Pick your trail",style:"font-size:1.6rem;margin:.2rem 0 14px"}),
+    lv,el("div",{class:"startbar"},go,msg));
+  app.append(el("div",{class:"home"},left,right),standardsBlock());
+  upd();
+}
+
+function standardsBlock(){
+  const used=new Set();LEVELS.forEach(L=>L.passages.forEach(p=>p.slots.forEach(s=>s.v.forEach(v=>used.add(v.std)))));
+  const mk=g=>el("ul",{class:"stdlist"},Object.keys(STANDARDS).filter(k=>k.split(".")[1]===g&&used.has(k)).map(k=>el("li",{},el("span",{class:"code",text:k}),el("span",{text:STANDARDS[k]}))));
+  return el("details",{class:"stds panel"},el("summary",{text:"NC ELA standards covered"}),
+    el("p",{class:"hintline",text:"North Carolina Standard Course of Study for English Language Arts (adopted 2017). Focus skills: theme, main idea, and author's and narrator's point of view."}),
+    el("div",{class:"stdgrid"},el("div",{},el("h3",{text:"Grade 4"}),mk("4")),el("div",{},el("h3",{text:"Grade 5"}),mk("5"))));
+}
+
+function startQuiz(){
+  try{localStorage.setItem("st_student",JSON.stringify({name:S.name,cls:S.cls}))}catch(e){}
+  const L=LEVELS.find(x=>x.id===S.level);
+  S.seed=newSeed();S.items=buildQuiz(L,S.seed);S.i=0;S.chosen=null;S.locked=false;S.started=Date.now();S.result=null;S.saveMsg="";
+  S.view="play";stopSpeech();render();window.scrollTo(0,0);
+}
+
+let speaking=false;
+function stopSpeech(){try{speechSynthesis.cancel()}catch(e){}speaking=false;document.querySelectorAll(".para.speaking").forEach(p=>p.classList.remove("speaking"))}
+function readAloud(paras,btn){
+  if(speaking){stopSpeech();btn.textContent="Read to me";return}
+  if(!("speechSynthesis" in window)){btn.textContent="Read-aloud not available";btn.disabled=true;return}
+  speaking=true;btn.textContent="Stop reading";
+  const nodes=[...document.querySelectorAll(".para")];
+  let k=0;const next=()=>{
+    nodes.forEach(n=>n.classList.remove("speaking"));
+    if(!speaking||k>=paras.length){speaking=false;btn.textContent="Read to me";return}
+    nodes[k]&&nodes[k].classList.add("speaking");
+    const u=new SpeechSynthesisUtterance(paras[k]);u.rate=.92;u.onend=()=>{k++;next()};u.onerror=()=>{speaking=false;btn.textContent="Read to me"};
+    speechSynthesis.speak(u);
+  };next();
+}
+
+function renderPlay(){
+  document.getElementById("homeBtn").hidden=false;
+  const L=LEVELS.find(x=>x.id===S.level),it=S.items[S.i],P=L.passages[it.p];
+  app.innerHTML="";
+  // trail of dots
+  const trail=el("div",{class:"trail","aria-label":`Question ${S.i+1} of ${S.items.length}`});
+  S.items.forEach((x,k)=>{if(k>0&&S.items[k-1].p!==x.p)trail.append(el("span",{class:"dot gap"}));trail.append(el("span",{class:"dot"+(k===S.i?" now":x.pick==null?"":x.pick===x.ans?" ok":" no")}))});
+  app.append(el("div",{class:"playhead"},
+    el("div",{},el("div",{class:"eyebrow",text:`${L.name} trail · ${S.name}`}),el("div",{style:"font-weight:700",text:`Question ${S.i+1} of ${S.items.length}`})),trail));
+
+  // passage
+  const readBtn=el("button",{class:"btn ghost small",type:"button"},"Read to me");
+  readBtn.addEventListener("click",()=>readAloud(P.paras,readBtn));
+  const sizeDown=el("button",{class:"btn ghost small",type:"button","aria-label":"Smaller text"},"A−");
+  const sizeUp=el("button",{class:"btn ghost small",type:"button","aria-label":"Bigger text"},"A+");
+  const setSize=d=>{const cur=parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--read"))||1.12;document.documentElement.style.setProperty("--read",Math.min(1.6,Math.max(.95,cur+d)).toFixed(2)+"rem")};
+  sizeDown.addEventListener("click",()=>setSize(-.08));sizeUp.addEventListener("click",()=>setSize(.08));
+  const pass=el("article",{class:"passage"},
+    el("div",{class:"eyebrow",text:`Passage ${it.p+1} of ${L.passages.length}`}),el("h2",{text:P.title}),el("div",{class:"genre",text:P.genre}),
+    el("div",{class:"tools"},readBtn,sizeDown,sizeUp),
+    P.paras.map((t,k)=>el("div",{class:"para"},el("span",{class:"pnum",text:String(k+1)}),el("p",{text:t}))));
+
+  // question
+  const sk=SKILLS[it.s];
+  const opts=el("div",{class:"opts",role:"radiogroup","aria-label":"Answer choices"});
+  const letters="ABCD";
+  const fb=el("div",{"aria-live":"polite"});
+  const check=el("button",{class:"btn",type:"button",disabled:true},"Check answer");
+  const nextB=el("button",{class:"btn",type:"button",hidden:true},S.i===S.items.length-1?"See my results":"Next question");
+  const hintB=el("button",{class:"btn ghost small",type:"button"},"Show a hint");
+  const hintBox=el("div",{class:"hintbox",hidden:true,text:sk.hint});
+  hintB.addEventListener("click",()=>{hintBox.hidden=false;hintB.disabled=true;it.hint=true});
+  it.opts.forEach((o,k)=>{
+    const b=el("button",{class:"opt",type:"button",role:"radio","aria-checked":"false"},el("span",{class:"let",text:letters[k]}),el("span",{text:o}));
+    b.addEventListener("click",()=>{if(S.locked)return;S.chosen=k;opts.querySelectorAll(".opt").forEach((x,j)=>{x.classList.toggle("sel",j===k);x.setAttribute("aria-checked",j===k?"true":"false")});check.disabled=false});
+    opts.append(b);
+  });
+  check.addEventListener("click",()=>{
+    if(S.chosen==null)return;
+    S.locked=true;it.pick=S.chosen;
+    const btns=opts.querySelectorAll(".opt");
+    btns.forEach((x,j)=>{x.disabled=true;if(j===it.ans)x.classList.add("right");else if(j===it.pick)x.classList.add("wrong")});
+    const ok=it.pick===it.ans;
+    fb.replaceChildren(el("div",{class:"feedback "+(ok?"ok":"no")},ok?"Correct!":"Not quite.",el("span",{text:ok?"Nice reading.":`The best answer is ${letters[it.ans]}: ${it.opts[it.ans]}`})));
+    check.hidden=true;hintB.hidden=true;nextB.hidden=false;nextB.focus();
+    // update dot
+    const dots=trail.querySelectorAll(".dot:not(.gap)");dots[S.i].className="dot "+(ok?"ok":"no");
+  });
+  nextB.addEventListener("click",()=>{stopSpeech();if(S.i<S.items.length-1){const pChange=S.items[S.i+1].p!==it.p;S.i++;S.chosen=null;S.locked=false;render();if(pChange)window.scrollTo(0,0)}else finish()});
+  const q=el("section",{class:"qcard"},
+    el("div",{class:"row",style:"justify-content:space-between"},el("span",{class:"skillchip",text:sk.name}),el("span",{class:"code",style:"font-size:.85rem",text:it.std})),
+    el("p",{class:"qtext",text:it.q}),opts,hintBox,fb,
+    el("div",{class:"qfoot"},hintB,el("div",{class:"row"},check,nextB)));
+  app.append(el("div",{class:"play"},pass,q));
+}
+
+function finish(){
+  const L=LEVELS.find(x=>x.id===S.level);
+  const skills={};S.items.forEach(x=>{const k=x.s;skills[k]=skills[k]||[0,0];skills[k][1]++;if(x.pick===x.ans)skills[k][0]++});
+  const score=S.items.filter(x=>x.pick===x.ans).length;
+  S.result={name:S.name,cls:S.cls,level:L.id,levelName:L.name,version:versionCode(S.seed,L.id),seed:S.seed,
+    score,total:S.items.length,pct:Math.round(100*score/S.items.length),hints:S.items.filter(x=>x.hint).length,
+    skills,items:S.items.map(x=>({std:x.std,s:x.s,ok:x.pick===x.ans,hint:x.hint,qid:x.qid})),
+    startedAt:S.started,finishedAt:Date.now()};
+  S.view="results";S.saveMsg="Saving…";render();window.scrollTo(0,0);
+  saveResult(S.result).then(()=>{const st=document.getElementById("saveStatus");if(st)st.textContent=S.saveMsg});
+}
+
+function resultText(r){
+  const lines=[`To: ${TEACHER_EMAIL}`,`Subject: Story Trail results – ${r.name}`,"",
+    `Student: ${r.name}`+(r.cls?`  (${r.cls})`:""),`Trail: ${r.levelName} (Level ${r.level})   Version: ${r.version}`,
+    `Score: ${r.score}/${r.total} (${r.pct}%)   Hints used: ${r.hints}`,`Finished: ${new Date(r.finishedAt).toLocaleString()}`,"","By skill:"];
+  Object.entries(r.skills).forEach(([k,[c,t]])=>lines.push(`  ${SKILLS[k].name}: ${c}/${t}`));
+  lines.push("","By question:");r.items.forEach((x,i)=>lines.push(`  ${i+1}. ${x.ok?"✓":"✗"} ${x.std} ${SKILLS[x.s].name}${x.hint?" (hint)":""}`));
+  return lines.join("\n");
+}
+async function copyText(text,btn,fallbackHost){
+  try{await navigator.clipboard.writeText(text);const o=btn.textContent;btn.textContent="Copied!";setTimeout(()=>btn.textContent=o,1600)}
+  catch(e){let ta=fallbackHost.querySelector("textarea");if(!ta){ta=el("textarea",{class:"copyarea",readonly:true,"aria-label":"Results text"});fallbackHost.append(ta)}ta.value=text;ta.focus();ta.select();btn.textContent="Select all and copy"}
+}
+
+function renderResults(){
+  const r=S.result;app.innerHTML="";
+  const label=r.pct>=90?"Summit reached!":r.pct>=70?"Strong climb":r.pct>=50?"Keep climbing":"Let's practice this trail again";
+  const left=el("section",{class:"panel"},
+    el("div",{class:"eyebrow",text:"Field report"}),el("h2",{text:r.name,style:"font-size:1.8rem;margin:.2rem 0 10px"}),
+    el("div",{class:"scorebig",text:`${r.score}/${r.total}`}),el("div",{class:"badge",text:`${r.pct}% · ${label}`}),
+    el("dl",{class:"kv"},el("dt",{text:"Trail"}),el("dd",{text:`${r.levelName} (Level ${r.level})`}),
+      el("dt",{text:"Class"}),el("dd",{text:r.cls||"—"}),el("dt",{text:"Version"}),el("dd",{text:r.version}),
+      el("dt",{text:"Hints used"}),el("dd",{text:String(r.hints)}),el("dt",{text:"Time"}),el("dd",{text:Math.max(1,Math.round((r.finishedAt-r.startedAt)/60000))+" min"})));
+  const host=el("div");
+  const copyB=el("button",{class:"btn small",type:"button"},"Copy results");
+  copyB.addEventListener("click",()=>copyText(resultText(r),copyB,host));
+  const addrB=el("button",{class:"btn ghost small",type:"button"},"Copy email address");
+  addrB.addEventListener("click",()=>copyText(TEACHER_EMAIL,addrB,host));
+  left.append(el("div",{class:"sendbox"},el("div",{style:"font-weight:700"},"Send to your teacher"),
+    el("div",{},"Email: ",el("span",{class:"addr",text:TEACHER_EMAIL})),
+    el("div",{class:"row",style:"margin-top:8px"},copyB,addrB),host,
+    el("div",{class:"status",id:"saveStatus",text:S.saveMsg})));
+  const again=el("button",{class:"btn",type:"button"},"Try a new quiz");
+  again.addEventListener("click",()=>{S.view="home";render()});
+  left.append(el("div",{class:"row",style:"margin-top:14px"},again));
+
+  const bars=el("div",{class:"bars"});
+  Object.entries(r.skills).sort((a,b)=>Object.keys(SKILLS).indexOf(a[0])-Object.keys(SKILLS).indexOf(b[0])).forEach(([k,[c,t]])=>{
+    bars.append(el("div",{class:"bar"},el("span",{text:SKILLS[k].name}),el("div",{class:"track"},el("div",{class:"fill",style:`width:${Math.round(100*c/t)}%`})),el("span",{class:"n",text:`${c}/${t}`})));
+  });
+  const list=el("ol",{class:"itemlist"},r.items.map((x,i)=>el("li",{},el("span",{class:x.ok?"mark-ok":"mark-no",text:x.ok?"✓":"✗","aria-label":x.ok?"correct":"incorrect"}),el("span",{class:"code",text:x.std}),el("span",{text:`Q${i+1} · ${SKILLS[x.s].name}${x.hint?" · hint used":""}`}))));
+  const right=el("section",{class:"panel"},el("div",{class:"eyebrow",text:"Skills"}),el("h2",{text:"How you did by skill",style:"font-size:1.4rem;margin:.2rem 0 12px"}),bars,
+    el("h3",{text:"Every question",style:"font-size:1.15rem;margin-top:20px"}),list);
+  app.append(el("div",{class:"report"},left,right));
+}
+
+/* ---------- Teacher view ---------- */
+let unsub=null,teacherRows=[];
+function csv(rows){
+  const sk=Object.keys(SKILLS);
+  const head=["Finished","Student","Class","Trail","Version","Score","Total","Percent","Hints",...sk.map(k=>SKILLS[k].name),"Standards missed"];
+  const esc=v=>{v=String(v??"");return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
+  return [head,...rows.map(r=>[new Date(r.finishedAt).toLocaleString(),r.name,r.cls,r.levelName,r.version,r.score,r.total,r.pct,r.hints,
+    ...sk.map(k=>r.skills&&r.skills[k]?`${r.skills[k][0]}/${r.skills[k][1]}`:""),
+    (r.items||[]).filter(x=>!x.ok).map(x=>x.std).join(" ")])].map(row=>row.map(esc).join(",")).join("\n");
+}
+function renderTeacher(){
+  document.getElementById("homeBtn").hidden=false;
+  app.innerHTML="";
+  const body=el("div",{class:"tablewrap"},el("div",{class:"empty",text:"Loading results…"}));
+  const host=el("div");
+  const copyB=el("button",{class:"btn small",type:"button"},"Copy as spreadsheet (CSV)");
+  copyB.addEventListener("click",()=>copyText(csv(teacherRows),copyB,host));
+  const dlB=el("button",{class:"btn ghost small",type:"button",hidden:true},"Download CSV");
+  (async()=>{try{const dl=await claude.use("downloads");if(dl){dlB.hidden=false;dlB.addEventListener("click",()=>dl.save({filename:"story-trail-results.csv",data:csv(teacherRows)}).catch(()=>{}))}}catch(e){}})();
+  app.append(el("section",{class:"panel"},el("div",{class:"eyebrow",text:"Teacher view"}),
+    el("h2",{text:"Class results",style:"font-size:1.7rem;margin:.2rem 0 6px"}),
+    el("p",{class:"hintline",text:"Every finished quiz saved from a signed-in device appears here live. Students can't see this page."}),
+    el("div",{class:"row"},copyB,dlB),host,body));
+  const paint=()=>{
+    if(!teacherRows.length){body.replaceChildren(el("div",{class:"empty",text:"No results yet. When a student finishes a trail on a signed-in device, it shows up here."}));return}
+    const tb=el("tbody");
+    teacherRows.forEach(r=>{
+      const cls=r.pct>=80?"hi":r.pct>=60?"mid":"lo";
+      const weak=Object.entries(r.skills||{}).filter(([k,[c,t]])=>c<t).map(([k])=>SKILLS[k]?.name).filter(Boolean).join(", ");
+      tb.append(el("tr",{},el("td",{text:new Date(r.finishedAt).toLocaleString([], {month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}),
+        el("td",{text:r.name}),el("td",{text:r.cls||"—"}),el("td",{text:r.levelName}),
+        el("td",{class:"num"},el("span",{class:"pill "+cls,text:`${r.score}/${r.total} · ${r.pct}%`})),
+        el("td",{class:"num",text:String(r.hints)}),el("td",{text:weak||"—"}),el("td",{class:"code",text:r.version})));
+    });
+    body.replaceChildren(el("table",{},el("thead",{},el("tr",{},["When","Student","Class","Trail","Score","Hints","Skills to review","Version"].map(h=>el("th",{text:h})))),tb));
+  };
+  if(!db){body.replaceChildren(el("div",{class:"empty",text:"Results storage isn't available in this view."}));return}
+  const timer=setTimeout(()=>{if(!teacherRows.length)paint()},10000);
+  if(unsub)unsub();
+  unsub=db.collection("results").onSnapshot(snap=>{
+    clearTimeout(timer);
+    teacherRows=[];snap.docs.forEach(d=>{const a=(d.data()||{}).attempts;if(Array.isArray(a))teacherRows.push(...a)});
+    teacherRows.sort((a,b)=>b.finishedAt-a.finishedAt);paint();
+  },e=>{clearTimeout(timer);body.replaceChildren(el("div",{class:"empty",text:"Couldn't load results ("+(e&&e.code||"error")+")."}))});
+}
+
+function render(){
+  if(S.view!=="teacher"&&unsub){unsub();unsub=null}
+  if(S.view==="home")renderHome();else if(S.view==="play")renderPlay();else if(S.view==="results")renderResults();else renderTeacher();
+}
+document.getElementById("homeBtn").addEventListener("click",()=>{
+  if(S.view==="play"&&S.items.some(x=>x.pick!=null)){
+    const b=document.getElementById("homeBtn");
+    if(b.dataset.confirm!=="1"){b.dataset.confirm="1";b.textContent="Leave quiz? Tap again";setTimeout(()=>{b.dataset.confirm="";b.textContent="Back to start"},3000);return}
+    b.dataset.confirm="";b.textContent="Back to start";
+  }
+  stopSpeech();S.view="home";render();
+});
+document.getElementById("teacherBtn").addEventListener("click",()=>{stopSpeech();S.view="teacher";render()});
+render();
+</script>
+
+</body>
+</html>
