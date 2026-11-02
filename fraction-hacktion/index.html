@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fraction Hacktion</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: arcade "mainframe" — a top console bar, then one working panel per view; mission cards in an auto-fill grid. Single committed dark look. */
+:root{
+  --bg:#16133a; --panel:#221e54; --panel2:#2d2869; --line:#433c8c;
+  --ink:#f5f2ff; --mute:#bdb6ea;
+  --sun:#ffd23f; --pink:#ff6fa3; --sky:#62d6f2;
+  --good:#5be39d; --bad:#ff8170;
+  --display:"Bungee","Arial Black",Impact,sans-serif;
+  --body:"Atkinson Hyperlegible","Segoe UI",Verdana,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.5;
+  background-image:radial-gradient(var(--line) 1px,transparent 1.4px);background-size:24px 24px}
+.wrap{max-width:1100px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,.card:focus-visible{outline:3px solid var(--sky);outline-offset:3px}
+
+/* top console */
+.top{background:var(--panel);border-bottom:3px solid var(--sun)}
+.top .wrap{display:flex;flex-wrap:wrap;align-items:center;gap:12px 24px;padding-block:14px}
+.logo{font-family:var(--display);font-size:clamp(26px,5vw,40px);line-height:.95;letter-spacing:.01em;color:var(--sun);text-shadow:3px 3px 0 var(--pink)}
+.logo small{display:block;font-family:var(--mono);font-size:12px;letter-spacing:.14em;color:var(--sky);text-shadow:none;margin-top:6px;text-transform:uppercase}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin-left:auto}
+.stat{background:var(--bg);border:2px solid var(--line);border-radius:10px;padding:6px 12px;font-family:var(--mono);font-size:13px;color:var(--mute)}
+.stat b{display:block;font-size:18px;color:var(--ink);font-variant-numeric:tabular-nums}
+.stat.rank b{color:var(--sun)}
+nav.tabs{background:var(--bg);border-bottom:2px solid var(--line)}
+nav.tabs .wrap{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding-block:10px}
+.tab{background:none;border:2px solid transparent;border-radius:999px;padding:7px 16px;font-weight:700;color:var(--mute)}
+.tab[aria-selected="true"]{background:var(--sun);color:#1a1640;border-color:var(--sun)}
+.tab:hover{border-color:var(--line)}
+.grade{margin-left:auto;display:flex;gap:4px;background:var(--panel);border-radius:999px;padding:4px}
+.grade button{border:0;background:none;border-radius:999px;padding:5px 12px;font-family:var(--mono);font-size:13px;color:var(--mute)}
+.grade button[aria-pressed="true"]{background:var(--sky);color:#102033}
+
+main .wrap{padding-block:26px 60px}
+h1,h2,h3{margin:0;text-wrap:balance}
+h2.sec{font-family:var(--display);font-size:clamp(22px,3.4vw,30px);color:var(--ink);font-weight:400}
+.lead{color:var(--mute);max-width:62ch;margin:6px 0 22px}
+.mono{font-family:var(--mono)}
+.label{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--sky)}
+
+/* fractions */
+.fr{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1.08;margin:0 .12em;font-variant-numeric:tabular-nums;font-weight:700}
+.fr .n{border-bottom:.09em solid currentColor;padding:0 .22em}
+.fr .d{padding:0 .22em}
+.mx{display:inline-flex;align-items:center;gap:.08em;vertical-align:middle}
+.mx .w{font-weight:700}
+
+/* mission grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
+.card{background:var(--panel);border:2px solid var(--line);border-radius:16px;padding:16px;text-align:left;display:flex;flex-direction:column;gap:8px;transition:transform .15s,border-color .15s}
+.card:hover{transform:translateY(-3px);border-color:var(--sun)}
+.card .row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.code{font-family:var(--mono);font-size:12px;font-weight:700;background:var(--bg);border-radius:6px;padding:3px 8px;color:var(--sky)}
+.g4 .code{color:var(--sky)} .g5 .code{color:var(--pink)}
+.glyph{font-family:var(--mono);font-weight:700;font-size:15px;color:#1a1640;background:var(--sun);border-radius:8px;padding:4px 9px;white-space:nowrap}
+.g5 .glyph{background:var(--pink)}
+.card h3{font-family:var(--display);font-weight:400;font-size:20px;line-height:1.1;color:var(--ink)}
+.card .topic{color:var(--mute);font-size:15px}
+.stars{font-size:18px;letter-spacing:2px;color:var(--sun)}
+.stars .off{color:var(--line)}
+
+/* hack card */
+.hack{background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:20px;display:grid;gap:14px}
+.hack-head{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px}
+.hack-head h3{font-family:var(--display);font-weight:400;font-size:clamp(22px,3.5vw,30px);color:var(--sun);line-height:1.05}
+.g5 .hack-head h3{color:var(--pink)}
+.tagline{font-size:19px;font-weight:700;margin:0}
+.steps{margin:0;padding-left:1.4em;display:grid;gap:6px}
+.steps li::marker{font-family:var(--mono);color:var(--sky);font-weight:700}
+.example{background:var(--bg);border-radius:12px;padding:14px 16px;display:grid;gap:10px;font-size:20px;overflow-x:auto}
+.example .lbl{font-size:12px}
+.trap{border-left:4px solid var(--bad);padding:6px 12px;background:rgba(255,129,112,.08);border-radius:0 8px 8px 0;font-size:16px}
+.trap b{color:var(--bad)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-family:var(--mono);font-size:12px;border:1px solid var(--line);border-radius:999px;padding:3px 10px;color:var(--mute)}
+.book{display:grid;gap:18px}
+
+/* bar + area models */
+.models{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center}
+.model{display:flex;align-items:center;gap:10px;font-size:18px}
+.bar{display:grid;grid-template-columns:repeat(var(--d),1fr);width:min(240px,60vw);height:26px;border:2px solid var(--ink);border-radius:4px;overflow:hidden}
+.bar i{border-right:1.5px solid var(--ink)}
+.bar i:last-child{border-right:0}
+.bar i.on{background:var(--sky)}
+.g5 .bar i.on{background:var(--pink)}
+.area{display:grid;grid-template-columns:repeat(var(--c),26px);border:2px solid var(--ink)}
+.area i{height:26px;border:1px solid rgba(245,242,255,.35)}
+.area i.r{background:rgba(98,214,242,.45)}
+.area i.c{background:rgba(255,111,163,.4)}
+.area i.rc{background:var(--sun)}
+
+/* play */
+.playtop{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;margin-bottom:18px}
+.back{background:none;border:2px solid var(--line);border-radius:999px;padding:6px 14px;color:var(--mute);font-weight:700}
+.back:hover{border-color:var(--sun);color:var(--ink)}
+.firewall{display:flex;gap:6px;margin-left:auto}
+.firewall i{width:38px;height:14px;border-radius:4px;background:var(--panel2);border:1px solid var(--line)}
+.firewall i.ok{background:var(--good);border-color:var(--good)}
+.firewall i.no{background:var(--bad);border-color:var(--bad)}
+.firewall i.now{border-color:var(--sun);box-shadow:0 0 0 2px var(--sun)}
+.qbox{background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:22px;display:grid;gap:18px}
+.qtext{font-size:clamp(20px,3.2vw,26px);font-weight:700;line-height:1.45}
+.qtext .fr{font-size:1.15em}
+.choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.choice{background:var(--panel2);border:2px solid var(--line);border-radius:14px;padding:14px 12px;font-size:24px;min-height:84px;display:flex;align-items:center;justify-content:center;gap:10px;transition:border-color .12s,transform .12s}
+.choice:hover:not([disabled]){border-color:var(--sun);transform:translateY(-2px)}
+.choice .key{font-family:var(--mono);font-size:12px;color:var(--mute);align-self:flex-start}
+.choice.right{border-color:var(--good);background:rgba(91,227,157,.16)}
+.choice.wrong{border-color:var(--bad);background:rgba(255,129,112,.14)}
+.choice[disabled]{cursor:default}
+.choice .tx{font-size:20px;font-weight:700}
+.btnrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.btn{background:var(--sun);color:#1a1640;border:0;border-radius:12px;padding:12px 22px;font-weight:700;font-size:17px;box-shadow:0 4px 0 #b8901a}
+.btn:active{transform:translateY(2px);box-shadow:0 2px 0 #b8901a}
+.btn.ghost{background:none;color:var(--ink);border:2px solid var(--line);box-shadow:none}
+.btn.ghost:hover{border-color:var(--sky)}
+.fb{border-radius:14px;padding:16px 18px;display:grid;gap:8px}
+.fb.ok{background:rgba(91,227,157,.12);border:2px solid var(--good)}
+.fb.bad{background:rgba(255,129,112,.1);border:2px solid var(--bad)}
+.fb h4{margin:0;font-family:var(--display);font-weight:400;font-size:20px}
+.fb.ok h4{color:var(--good)} .fb.bad h4{color:var(--bad)}
+.fb ol{margin:0;padding-left:1.4em;display:grid;gap:4px;font-size:18px}
+.hintbox{background:var(--bg);border:1px dashed var(--sky);border-radius:12px;padding:12px 14px;font-size:16px}
+.results{background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:28px;display:grid;gap:14px;justify-items:start}
+.results .big{font-family:var(--display);font-size:clamp(30px,6vw,48px);line-height:1;color:var(--sun)}
+.results .stars{font-size:34px}
+
+/* vocab */
+.vgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.vcard{background:var(--panel);border:2px solid var(--line);border-radius:14px;padding:14px;text-align:left;min-height:130px;display:flex;flex-direction:column;gap:6px}
+.vcard:hover{border-color:var(--sky)}
+.vcard .term{font-family:var(--display);font-size:19px;line-height:1.1}
+.vcard .def{font-size:15px;color:var(--ink)}
+.vcard .ex{font-size:18px;color:var(--sun)}
+.vcard .tap{font-family:var(--mono);font-size:11px;color:var(--mute);margin-top:auto}
+.vcard.open{border-color:var(--sky);background:var(--panel2)}
+.vq{background:var(--panel);border:2px solid var(--pink);border-radius:18px;padding:20px;display:grid;gap:14px;margin-bottom:24px}
+.vq .def{font-size:20px;font-weight:700}
+
+/* standards */
+.std{display:grid;gap:10px}
+.srow{background:var(--panel);border:2px solid var(--line);border-radius:14px;padding:14px 16px;display:grid;grid-template-columns:auto 1fr auto;gap:12px 16px;align-items:start}
+.srow p{margin:0;min-width:0}
+.srow .ican{color:var(--sun);font-weight:700;display:block;margin-top:4px}
+@media (max-width:560px){.srow{grid-template-columns:1fr}.grade{margin-left:0}.firewall{margin-left:0}}
+.foot{color:var(--mute);font-size:13px;margin-top:22px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@keyframes pop{0%{transform:scale(.96);opacity:.6}100%{transform:scale(1);opacity:1}}
+.fb{animation:pop .2s ease-out}
+</style>
+</head>
+<body>
+
+<header class="top"><div class="wrap">
+  <div class="logo">FRACTION<br>HACKTION<small>Fraction shortcuts · NC Grades 4–5</small></div>
+  <div class="stats">
+    <div class="stat rank">Rank<b id="s-rank">Script Kid</b></div>
+    <div class="stat">Hack XP<b id="s-xp">0</b></div>
+    <div class="stat">Streak<b id="s-streak">0</b></div>
+  </div>
+</div></header>
+<nav class="tabs"><div class="wrap" role="tablist">
+  <button class="tab" data-act="view" data-v="missions" role="tab">Missions</button>
+  <button class="tab" data-act="view" data-v="book" role="tab">Hack Book</button>
+  <button class="tab" data-act="view" data-v="vocab" role="tab">Vocab Vault</button>
+  <button class="tab" data-act="view" data-v="standards" role="tab">Standards</button>
+  <div class="grade" aria-label="Grade filter">
+    <button data-act="grade" data-g="all">All</button>
+    <button data-act="grade" data-g="4">Grade 4</button>
+    <button data-act="grade" data-g="5">Grade 5</button>
+  </div>
+</div></nav>
+<main><div class="wrap" id="app"></div></main>
+
+<script>
+/* ---------- helpers ---------- */
+const R=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const P=a=>a[Math.floor(Math.random()*a.length)];
+const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const gcd=(a,b)=>b?gcd(b,a%b):Math.abs(a);
+const F=(n,d)=>`<span class="fr"><span class="n">${n}</span><span class="d">${d}</span></span>`;
+const M=(w,n,d)=>n?`<span class="mx">${w?`<span class="w">${w}</span>`:''}${F(n,d)}</span>`:`${w}`;
+const fv=(n,d)=>({html:F(n,d),v:n/d});
+const mv=(w,n,d)=>({html:M(w,n,d),v:w+(n/d)});
+const nv=x=>({html:`${x}`,v:x});
+const tv=t=>({html:`<span class="tx">${t}</span>`});
+const simp=(n,d)=>{const g=gcd(n,d);return [n/g,d/g]};
+const toMixed=(n,d)=>{const w=Math.floor(n/d),r=n%d;return M(w,r,d)};
+const bar=(n,d)=>`<span class="bar" style="--d:${d}">${Array.from({length:d},(_,i)=>`<i class="${i<n?'on':''}"></i>`).join('')}</span>`;
+const area=(a,b,c,d)=>{let s='';for(let r=0;r<b;r++)for(let k=0;k<d;k++){const R1=r<a,C1=k<c;s+=`<i class="${R1&&C1?'rc':R1?'r':C1?'c':''}"></i>`}return `<span class="area" style="--c:${d}">${s}</span>`};
+
+function mc(q,correct,wrongs,sol){
+  const seen=new Set([correct.html]),out=[];
+  for(const w of shuf(wrongs)){
+    if(!w||seen.has(w.html))continue;
+    if(w.v!=null&&(!(w.v>0)||!isFinite(w.v)))continue;
+    if(w.v!=null&&correct.v!=null&&Math.abs(w.v-correct.v)<1e-9)continue;
+    seen.add(w.html);out.push(w);if(out.length===3)break;
+  }
+  return {q,choices:shuf([{...correct,ok:true},...out]),sol};
+}
+function fixed(q,labels,okIndex,sol){return {q,choices:labels.map((l,i)=>({html:`<span class="tx">${l}</span>`,ok:i===okIndex})),sol}}
+const CMP=['&gt;','&lt;','='];
+const DEN4=[2,3,4,5,6,8,10,12];
+
+/* ---------- missions: one per standard ---------- */
+const MISSIONS=[
+{id:'4nf1',grade:4,code:'NC.4.NF.1',topic:'Equivalent fractions',hack:'Magic One Hack',glyph:'×2⁄2',
+ tagline:'Multiply the top and bottom by the same number. Same amount, new name.',
+ steps:['Pick any number (2, 3, 4…).','Multiply the numerator AND the denominator by it.',`You just multiplied by a fraction equal to 1 (like ${F(2,2)}), so the amount stays the same. The pieces get smaller, and you get more of them.`],
+ example:()=>`<div>${F(2,3)} × ${F(2,2)} = ${F(4,6)}</div><div class="models"><span class="model">${bar(2,3)} ${F(2,3)}</span><span class="model">${bar(4,6)} ${F(4,6)}</span></div><div class="label lbl">Same length shaded = equivalent</div>`,
+ trap:`Adding the same number to top and bottom does NOT work. ${F(2,3)} → ${F(3,4)} is a different amount.`,
+ vocab:['Equivalent fractions','Numerator','Denominator','Area model','Length model'],
+ gen(){
+  const d=P([2,3,4,5,6]),n=R(1,d-1),k=R(2,5),N=n*k,D=d*k;
+  const sol=[`The bottom changed from ${d} to ${D}. That's × ${k}.`,`Do the same to the top: ${n} × ${k} = ${N}.`,`${F(n,d)} × ${F(k,k)} = ${F(N,D)}. Multiplying by ${F(k,k)} is multiplying by 1.`];
+  if(Math.random()<.5) return mc(`Crack the missing number: ${F(n,d)} = ${F('?',D)}`,nv(N),[nv(n+D-d),nv(n+k),nv(N+k),nv(N-1),nv(D-n)],sol);
+  return mc(`Which fraction is equivalent to ${F(n,d)}?`,fv(N,D),[fv(n+k,d+k),fv(N,d),fv(n,D),fv(n+1,d+1)],
+   [`Use the Magic One: multiply top and bottom by ${k}.`,`${n} × ${k} = ${N} and ${d} × ${k} = ${D}.`,`So ${F(n,d)} = ${F(N,D)}.`]);
+ }},
+{id:'4nf2',grade:4,code:'NC.4.NF.2',topic:'Compare fractions',hack:'Butterfly Hack',glyph:'&gt; ? &lt;',
+ tagline:'Cross-multiply up the wings. The bigger wing wins.',
+ steps:['Multiply the LEFT top × the RIGHT bottom. Write it over the left fraction.','Multiply the RIGHT top × the LEFT bottom. Write it over the right fraction.','Compare the two wings. The bigger number sits over the bigger fraction.',`Bonus hacks: double the top. If it's more than the bottom, the fraction is more than ${F(1,2)}. Same tops? The smaller bottom wins (bigger pieces).`],
+ example:()=>`<div><span class="mono" style="color:var(--sun)">24</span> &nbsp;&nbsp;&nbsp;&nbsp; <span class="mono" style="color:var(--sun)">20</span></div><div>${F(3,4)} &nbsp;?&nbsp; ${F(5,8)}</div><div>3 × 8 = 24 and 5 × 4 = 20 → 24 &gt; 20, so ${F(3,4)} &gt; ${F(5,8)}</div><div class="models"><span class="model">${bar(3,4)} ${F(3,4)}</span><span class="model">${bar(5,8)} ${F(5,8)}</span></div>`,
+ trap:`A bigger denominator does NOT mean a bigger fraction. ${F(1,8)} is smaller than ${F(1,4)}.`,
+ vocab:['Benchmark fraction','Compare symbols','Numerator','Denominator'],
+ gen(){
+  let a,b,c,d;
+  if(Math.random()<.3){do{b=P(DEN4);d=P(DEN4);a=R(1,Math.min(b,d)-1);c=a}while(b===d)}
+  else{do{b=P(DEN4);d=P(DEN4);a=R(1,b-1);c=R(1,d-1)}while(b===d||a*d===c*b)}
+  const L=a*d,Rt=c*b,ok=L>Rt?0:L<Rt?1:2,sym=CMP[ok];
+  const sol=[`Left wing: ${a} × ${d} = ${L}. Right wing: ${c} × ${b} = ${Rt}.`,`${L} ${sym} ${Rt}, so ${F(a,b)} ${sym} ${F(c,d)}.`];
+  if(a===c) sol.push(`Shortcut: same tops! ${b<d?F(a,b):F(c,d)} has fewer, bigger pieces, so it's bigger.`);
+  else if((2*a>b)!==(2*c>d)&&2*a!==b&&2*c!==d) sol.push(`Benchmark check: one fraction is more than ${F(1,2)} and one is less.`);
+  return fixed(`Which symbol makes it true? &nbsp; ${F(a,b)} &nbsp;☐&nbsp; ${F(c,d)}`,CMP,ok,sol);
+ }},
+{id:'4nf3',grade:4,code:'NC.4.NF.3',topic:'Add, subtract & decompose (like denominators)',hack:'Bottom Stays Put',glyph:'+ tops',
+ tagline:'The denominator is the NAME of the pieces. Add or subtract the tops only.',
+ steps:['Check that the denominators match.','Add (or subtract) the numerators.','Keep the denominator the same. 3 eighths + 4 eighths = 7 eighths.','Mixed numbers: wholes with wholes, parts with parts.','Decompose: split the top into parts that add up, and keep the bottom.'],
+ example:()=>`<div>${F(3,8)} + ${F(4,8)} = ${F(7,8)}</div><div class="models"><span class="model">${bar(7,8)}</span></div><div>${M(2,1,5)} + ${M(1,3,5)} = ${M(3,4,5)}</div><div>Decompose: ${F(5,8)} = ${F(2,8)} + ${F(3,8)} = ${F(1,8)} + ${F(1,8)} + ${F(3,8)}</div>`,
+ trap:`Never add the denominators. ${F(3,8)} + ${F(4,8)} is not ${F(7,16)}.`,
+ vocab:['Like denominators','Decompose','Mixed number','Fraction greater than 1','Unit fraction'],
+ gen(){
+  const t=R(0,3),d=P([3,4,5,6,8,10,12]);
+  if(t===0){const a=R(1,d-1),c=R(1,d-1),s=a+c;
+   const sol=[`Bottom Stays Put: these are all ${d}ths.`,`Add the tops: ${a} + ${c} = ${s}.`,`${F(s,d)}`+(s>d?` = ${toMixed(s,d)}`:s===d?' = 1 whole':'')];
+   return mc(`${F(a,d)} + ${F(c,d)} = ?`,fv(s,d),[fv(s,2*d),fv(a*c,d),fv(s+1,d),fv(Math.abs(a-c),d),fv(s,d+1)],sol)}
+  if(t===1){let a=R(2,d-1),c=R(1,a-1),s=a-c;
+   return mc(`${F(a,d)} − ${F(c,d)} = ?`,fv(s,d),[fv(a+c,d),fv(s+1,d),fv(s,d+1),fv(s,2*d)],[`Bottom Stays Put: ${d} stays.`,`Subtract the tops: ${a} − ${c} = ${s}.`,`Answer: ${F(s,d)}`])}
+  if(t===2){const D=P([4,5,6,8,10,12]),w1=R(1,4),w2=R(1,3),a=R(1,D-2),c=R(1,D-1-a);
+   return mc(`${M(w1,a,D)} + ${M(w2,c,D)} = ?`,mv(w1+w2,a+c,D),[mv(w1+w2,a+c,2*D),mv(w1+w2+1,a+c,D),mv(w1*w2,a+c,D),mv(w1+w2,Math.abs(a-c)||1,D)],
+    [`Wholes with wholes: ${w1} + ${w2} = ${w1+w2}.`,`Parts with parts: ${F(a,D)} + ${F(c,D)} = ${F(a+c,D)}.`,`Put them together: ${M(w1+w2,a+c,D)}`])}
+  const D=P([5,6,8,10,12]),n=R(3,D-1),x=R(1,n-1),y=n-x;
+  const opt=(p,q,r)=>({html:`${F(p,D)} + ${F(q,r||D)}`,v:p/D+q/(r||D)});
+  return mc(`Which sum decomposes ${F(n,D)} correctly?`,opt(x,y),[opt(x,y+1),y>1?opt(x,y-1):null,opt(x,n),opt(x,y,D+1),opt(n,y)],
+   [`The tops have to add up to ${n}. The bottom stays ${D}.`,`${x} + ${y} = ${n}, so ${F(x,D)} + ${F(y,D)} = ${F(n,D)}.`]);
+ }},
+{id:'4nf4',grade:4,code:'NC.4.NF.4',topic:'Whole number × fraction',hack:'Hop the Top',glyph:'3 × ⁿ⁄d',
+ tagline:'A whole number only hops onto the numerator. The denominator stays home.',
+ steps:['Multiply the whole number × the numerator.','Keep the denominator the same.','If the top is bigger than the bottom, change it to a mixed number.',`Why it works: ${F(2,5)} is 2 copies of ${F(1,5)}. Three groups of it = 6 copies of ${F(1,5)}.`],
+ example:()=>`<div>3 × ${F(2,5)} = ${F('3 × 2',5)} = ${F(6,5)} = ${M(1,1,5)}</div><div class="models"><span class="model">${bar(2,5)}</span><span class="model">${bar(2,5)}</span><span class="model">${bar(2,5)}</span></div>`,
+ trap:`Don't multiply the bottom too. 3 × ${F(2,5)} is not ${F(6,15)}. That's just ${F(2,5)} again.`,
+ vocab:['Product','Unit fraction','Fraction greater than 1','Mixed number'],
+ gen(){
+  const w=R(2,6),b=P([2,3,4,5,6,8,10,12]),a=R(1,b-1),N=w*a;
+  const ctx=P([`Jada walks ${F(a,b)} mile to school. She makes the trip ${w} times. How far does she walk in all?`,`${w} × ${F(a,b)} = ?`,`Each smoothie uses ${F(a,b)} cup of yogurt. How much yogurt for ${w} smoothies?`]);
+  const sol=[`Hop the Top: ${w} × ${a} = ${N}.`,`The bottom stays ${b}: ${F(N,b)}.`];
+  if(N>b&&N%b) sol.push(`That's more than 1 whole: ${F(N,b)} = ${toMixed(N,b)}.`); else if(N%b===0) sol.push(`${F(N,b)} = ${N/b} whole${N/b>1?'s':''}.`);
+  return mc(ctx,fv(N,b),[fv(N,w*b),fv(a,w*b),fv(w+a,b),fv(N,b+w)],sol);
+ }},
+{id:'4nf5',grade:4,code:'NC.4.NF.5',topic:'Tenths + hundredths',hack:'Zero Hero',glyph:'+0',
+ tagline:'Turn tenths into hundredths by tagging a zero on the top and the bottom.',
+ steps:[`Tenths to hundredths: put a 0 on the numerator and the denominator (that's × ${F(10,10)}).`,`${F(3,10)} becomes ${F(30,100)}.`,'Now both fractions are hundredths. Bottom Stays Put: add the tops.'],
+ example:()=>`<div>${F(3,10)} + ${F(45,100)}</div><div>= ${F(30,100)} + ${F(45,100)} = ${F(75,100)}</div>`,
+ trap:`Adding straight across is wrong: ${F(3,10)} + ${F(45,100)} is not ${F(48,110)}.`,
+ vocab:['Tenths','Hundredths','Equivalent fractions','Common denominator'],
+ gen(){
+  const a=R(1,9),b=R(1,100-10*a);
+  if(Math.random()<.35) return mc(`Crack the missing number: ${F(a,10)} = ${F('?',100)}`,nv(10*a),[nv(a),nv(a+90),nv(100*a),nv(a+10)],[`Zero Hero: tag a 0 onto the top. ${a} → ${10*a}.`,`${F(a,10)} = ${F(10*a,100)}`]);
+  const s=10*a+b;
+  return mc(`${F(a,10)} + ${F(b,100)} = ?`,fv(s,100),[fv(a+b,100),fv(a+b,110),fv(a+b,10),fv(s,110)],[`Zero Hero: ${F(a,10)} = ${F(10*a,100)}.`,`Now add hundredths: ${10*a} + ${b} = ${s}.`,`Answer: ${F(s,100)}`]);
+ }},
+{id:'4nf6',grade:4,code:'NC.4.NF.6',topic:'Fractions as decimals',hack:'Place Value Slide',glyph:'.0',
+ tagline:'Count the zeros in the denominator. That\'s how many digits go after the decimal point.',
+ steps:['Denominator 10 has one zero → 1 digit after the point (tenths).','Denominator 100 has two zeros → 2 digits after the point (hundredths).','If you\'re short a digit, fill the empty spot with a 0.','Going backward: count the digits after the point to get the denominator.'],
+ example:()=>`<div>${F(7,10)} = 0.7 &nbsp;&nbsp; ${F(63,100)} = 0.63 &nbsp;&nbsp; ${F(7,100)} = 0.07</div><div class="label lbl">7 hundredths needs a 0 in the tenths spot</div>`,
+ trap:`${F(7,100)} is not 0.7. 0.7 means 7 tenths, which is 70 hundredths.`,
+ vocab:['Decimal','Decimal point','Tenths','Hundredths'],
+ gen(){
+  const t=R(0,2);
+  if(t===0){let n;do{n=R(1,99)}while(n%10===0);
+   const right=n<10?`0.0${n}`:`0.${n}`,w=n<10?[`0.${n}`,`${n}.0`,`0.00${n}`]:[`${(n/10).toFixed(1)}`,`0.0${n}`,`${n}.0`];
+   return mc(`Write ${F(n,100)} as a decimal.`,{html:`${right}`},w.map(x=>({html:x})),[`Denominator 100 has two zeros → 2 digits after the point.`,`${n} hundredths = ${right}`+(n<10?' (fill the tenths spot with a 0).':'.')])}
+  if(t===1){const n=R(1,9);
+   return mc(`Write ${F(n,10)} as a decimal.`,{html:`0.${n}`},[{html:`0.0${n}`},{html:`${n}.0`},{html:`0.00${n}`},{html:`1.${n}`}],[`Denominator 10 has one zero → 1 digit after the point.`,`${n} tenths = 0.${n}`])}
+  if(Math.random()<.5){const n=R(1,9);
+   return mc(`Which fraction equals 0.${n}?`,fv(n,10),[fv(n,100),fv(1,n),fv(n,1000),fv(10,n)],[`1 digit after the point → tenths.`,`0.${n} = ${F(n,10)}`])}
+  let n;do{n=R(11,99)}while(n%10===0);
+  return mc(`Which fraction equals 0.${n}?`,fv(n,100),[fv(n,10),fv(n,1000),fv(1,n)],[`2 digits after the point → hundredths.`,`0.${n} = ${F(n,100)}`]);
+ }},
+{id:'4nf7',grade:4,code:'NC.4.NF.7',topic:'Compare decimals',hack:'Fill the Empty Seat',glyph:'0.50',
+ tagline:'Give both decimals the same number of digits by adding zeros. Then compare like whole numbers.',
+ steps:['Line up the decimal points. Compare the whole numbers first.','If one decimal is shorter, fill its empty seat with a 0. (0.5 = 0.50)','Now compare them as hundredths: 50 vs 45.'],
+ example:()=>`<div>0.5 ☐ 0.45</div><div>0.<b>50</b> vs 0.<b>45</b> → 50 &gt; 45</div><div>So 0.5 &gt; 0.45</div>`,
+ trap:'More digits does NOT mean bigger. 0.45 has more digits but is smaller than 0.5.',
+ vocab:['Decimal','Tenths','Hundredths','Compare symbols'],
+ gen(){
+  const w=Math.random()<.3?R(1,3):0;let A,B;
+  do{A=w*100+R(1,9)*10;B=w*100+R(1,99)}while(B%10===0||A===B);
+  const fmt=(h,p)=>(h/100).toFixed(p);
+  let x=fmt(A,1),y=fmt(B,2),X=A,Y=B;
+  if(Math.random()<.5){[x,y]=[y,x];[X,Y]=[Y,X]}
+  const ok=X>Y?0:1,sym=CMP[ok];
+  const xx=(X/100).toFixed(2),yy=(Y/100).toFixed(2);
+  return fixed(`Which symbol makes it true? &nbsp; ${x} &nbsp;☐&nbsp; ${y}`,CMP,ok,[`Fill the empty seat: ${fmt(A,1)} = ${fmt(A,2)}.`,`Compare hundredths: ${xx} vs ${yy}.`,`${xx} ${sym} ${yy}, so ${x} ${sym} ${y}.`]);
+ }},
+{id:'5nf1',grade:5,code:'NC.5.NF.1',topic:'Add & subtract unlike denominators',hack:'Big Boss Denominator',glyph:'BOSS',
+ tagline:'The biggest denominator is the boss. Make the other fraction match the boss.',
+ steps:['Find the biggest denominator. Does the smaller one fit into it evenly? Then it\'s the Boss.','Ask: "What times the little bottom makes the Boss?"','Multiply that fraction\'s top and bottom by that number (Magic One).','Now the bottoms match. Bottom Stays Put: add or subtract the tops.','Mixed numbers: wholes with wholes, parts with parts. Regroup if the top gets as big as the bottom.'],
+ example:()=>`<div>${F(1,4)} + ${F(3,8)} → Boss is 8 (4 × 2 = 8)</div><div>${F(2,8)} + ${F(3,8)} = ${F(5,8)}</div><div class="models"><span class="model">${bar(2,8)} ${F(1,4)}</span><span class="model">${bar(5,8)} ${F(5,8)}</span></div><div class="label lbl">Families: halves·fourths·eighths | thirds·sixths·twelfths | fifths·tenths·hundredths</div>`,
+ trap:`Never add straight across. ${F(1,4)} + ${F(3,8)} is not ${F(4,12)}.`,
+ vocab:['Unlike denominators','Related fractions','Common denominator','Equivalent fractions','Regroup','Mixed number'],
+ gen(){
+  const [d1,d2]=P([[2,4],[2,8],[4,8],[3,6],[3,12],[6,12],[5,10],[10,100],[2,6],[4,12]]),k=d2/d1,t=R(0,2);
+  if(t===0){const a=R(1,d1-1),c=R(1,d2-1),N=a*k+c;
+   const sol=[`Boss is ${d2}. ${d1} × ${k} = ${d2}.`,`${F(a,d1)} × ${F(k,k)} = ${F(a*k,d2)}.`,`${F(a*k,d2)} + ${F(c,d2)} = ${F(N,d2)}`+(N>d2?` = ${toMixed(N,d2)}`:'')];
+   const [sn,sd]=simp(N,d2);if(sd!==d2&&N<d2)sol.push(`Simplest form: ${F(sn,sd)}`);
+   return mc(`${F(a,d1)} + ${F(c,d2)} = ?`,fv(N,d2),[fv(a+c,d1+d2),fv(a+c,d2),fv(N,d1*d2),fv(a+c,d1*d2)],sol)}
+  if(t===1){const a=R(1,d1-1),c=R(1,a*k-1),N=a*k-c;
+   return mc(`${F(a,d1)} − ${F(c,d2)} = ?`,fv(N,d2),[fv(Math.abs(a-c)||1,d2-d1),fv(a*k+c,d2),fv(Math.abs(a-c)||1,d2),fv(N,d1)],[`Boss is ${d2}: ${F(a,d1)} = ${F(a*k,d2)}.`,`${F(a*k,d2)} − ${F(c,d2)} = ${F(N,d2)}`])}
+  const w1=R(1,3),w2=R(1,3),a=R(1,d1-1),c=R(1,d2-1);let W=w1+w2,N=a*k+c;const reg=N>=d2;if(reg){W++;N-=d2}
+  const sol=[`Boss is ${d2}: ${F(a,d1)} = ${F(a*k,d2)}.`,`Wholes: ${w1} + ${w2} = ${w1+w2}. Parts: ${F(a*k,d2)} + ${F(c,d2)} = ${F(a*k+c,d2)}.`];
+  if(reg)sol.push(`Regroup: ${F(a*k+c,d2)} = ${toMixed(a*k+c,d2)}, so the total is ${M(W,N,d2)}.`);else sol.push(`Total: ${M(W,N,d2)}`);
+  return mc(`${M(w1,a,d1)} + ${M(w2,c,d2)} = ?`,mv(W,N,d2),[mv(w1+w2,a+c,d1+d2),mv(W+1,N||1,d2),mv(w1+w2,a+c,d2),mv(W,N+1,d2)],sol);
+ }},
+{id:'5nf3',grade:5,code:'NC.5.NF.3',topic:'Fractions as division',hack:'The Bar Means Divide',glyph:'÷ = —',
+ tagline:'The fraction bar IS a division sign. Stuff ÷ sharers = stuff over sharers.',
+ steps:['Top = the stuff being shared. Bottom = how many share it.',`3 ÷ 4 = ${F(3,4)}. Just stack it!`,'If the top is bigger, it\'s more than 1 each. Change to a mixed number.','Check: sharers × each share should equal the stuff.'],
+ example:()=>`<div>3 pizzas shared by 4 friends</div><div>3 ÷ 4 = ${F(3,4)} pizza each</div><div class="models"><span class="model">${bar(3,4)}</span></div><div>Check: 4 × ${F(3,4)} = ${F(12,4)} = 3 ✔</div>`,
+ trap:`Watch the order. 3 ÷ 4 is ${F(3,4)}, not ${F(4,3)}.`,
+ vocab:['Quotient','Dividend','Divisor','Fraction greater than 1','Mixed number'],
+ gen(){
+  let n,d;do{n=R(1,9);d=R(2,8)}while(n===d||n%d===0);
+  if(Math.random()<.65){const thing=P([['pizzas','pizza'],['granola bars','bar'],['yards of ribbon','yard'],['pounds of trail mix','pound']]);
+   const sol=[`The Bar Means Divide: ${n} ÷ ${d} = ${F(n,d)}.`,`Each person gets ${F(n,d)} ${thing[1]}`+(n>d?` = ${toMixed(n,d)}.`:'.'),`Check: ${d} × ${F(n,d)} = ${n} ✔`];
+   return mc(`${n} ${thing[0]} are shared equally by ${d} friends. How much does each friend get?`,fv(n,d),[fv(d,n),fv(1,d),fv(n,n+d),fv(1,n)],sol)}
+  return mc(`Which division equals ${F(n,d)}?`,tv(`${n} ÷ ${d}`),[tv(`${d} ÷ ${n}`),tv(`${n} × ${d}`),tv(`${n} + ${d}`),tv(`${n} − ${d}`)],[`Top ÷ bottom. ${F(n,d)} = ${n} ÷ ${d}.`]);
+ }},
+{id:'5nf4',grade:5,code:'NC.5.NF.4',topic:'Multiply fractions & scaling',hack:'Straight Across + Shrink/Grow',glyph:'× → ×',
+ tagline:'Top × top, bottom × bottom. Then check: did it shrink or grow?',
+ steps:['Multiply the numerators. Multiply the denominators. Straight across!','"Of" means times: 3/4 of 20 → 20 ÷ 4 × 3 = 15.','Scaling hack: × a fraction LESS than 1 → the answer shrinks.','× a fraction MORE than 1 → the answer grows. × exactly 1 → it stays the same.'],
+ example:()=>`<div>${F(2,3)} × ${F(3,4)} = ${F('2 × 3','3 × 4')} = ${F(6,12)} = ${F(1,2)}</div><div class="models"><span class="model">${area(2,3,3,4)}</span><span class="model" style="font-size:15px">Yellow overlap = 6 of 12 boxes</span></div>`,
+ trap:`Don't flip or add. ${F(2,3)} × ${F(3,4)} is not ${F(5,7)}.`,
+ vocab:['Product','Scaling','Factor','Area model','Simplest form'],
+ gen(){
+  const t=R(0,2);
+  if(t===0){const b=P([2,3,4,5,6]),d=P([2,3,4,5,6]),a=R(1,b-1),c=R(1,d-1),N=a*c,D=b*d,[sn,sd]=simp(N,D);
+   const sol=[`Tops: ${a} × ${c} = ${N}. Bottoms: ${b} × ${d} = ${D}.`,`${F(N,D)}`+(sd!==D?` = ${F(sn,sd)} in simplest form`:'')];
+   return mc(`${F(a,b)} × ${F(c,d)} = ?`,fv(N,D),[fv(a*d,b*c),fv(a+c,b+d),fv(N,b+d),fv(a+c,D)],sol)}
+  if(t===1){const b=P([2,3,4,5,6,8]),a=R(1,b-1),w=R(2,6),T=w*b;
+   return mc(`${F(a,b)} of the ${T} students ride the bus. How many students ride the bus?`,nv(a*w),[nv(T),nv(a*T),nv(w),nv(T-a)],[`"Of" means times: ${F(a,b)} × ${T}.`,`Divide by the bottom: ${T} ÷ ${b} = ${w}.`,`Multiply by the top: ${w} × ${a} = ${a*w} students.`])}
+  const N=R(6,40),kind=R(0,2);let f,ok;
+  if(kind===0){const b=P([3,4,5,6,8]);f=F(R(1,b-1),b);ok=1}
+  else if(kind===1){const b=P([2,3,4,5]);f=Math.random()<.5?F(b+R(1,b-1),b):M(1,1,b);ok=0}
+  else{const b=P([3,4,5,8]);f=F(b,b);ok=2}
+  const why=['That factor is more than 1, so the answer GROWS.','That factor is less than 1, so the answer SHRINKS.','That factor equals 1, so the answer STAYS the same.'][ok];
+  return fixed(`No calculating! ${N} × ${f} is ______ ${N}.`,[`greater than`,`less than`,`equal to`],ok,[`Scaling hack: compare the factor ${f} to 1.`,why]);
+ }},
+{id:'5nf7',grade:5,code:'NC.5.NF.7',topic:'Divide with unit fractions',hack:'Count the Pieces',glyph:'÷ ¹⁄d',
+ tagline:'Whole first → answer gets BIG. Unit fraction first → answer gets tiny.',
+ steps:[`Whole ÷ unit fraction: "How many ${F(1,4)}s fit in 3?" Each whole holds 4 of them. Multiply: whole × bottom.`,`Unit fraction ÷ whole: you are sharing one small piece, so it gets smaller. Multiply the bottom by the whole.`,'Check with multiplication: answer × divisor should give back the dividend.'],
+ example:()=>`<div>3 ÷ ${F(1,4)} = 3 × 4 = 12 &nbsp; (12 fourths in 3 wholes)</div><div class="models"><span class="model">${bar(4,4)}</span><span class="model">${bar(4,4)}</span><span class="model">${bar(4,4)}</span></div><div>${F(1,4)} ÷ 3 = ${F(1,'4 × 3')} = ${F(1,12)}</div>`,
+ trap:`3 ÷ ${F(1,4)} is not ${F(3,4)}. Dividing by a piece smaller than 1 makes MORE.`,
+ vocab:['Unit fraction','Quotient','Dividend','Divisor'],
+ gen(){
+  const w=R(2,9),d=R(2,8);
+  if(Math.random()<.5){const q=P([`${w} ÷ ${F(1,d)} = ?`,`You have ${w} cups of flour. Each batch of muffins uses ${F(1,d)} cup. How many batches can you make?`,`A ${w}-foot board is cut into pieces that are each ${F(1,d)} foot long. How many pieces?`]);
+   return mc(q,nv(w*d),[fv(w,d),fv(1,w*d),nv(w+d),nv(d)],[`Count the pieces: each whole holds ${d} pieces of size ${F(1,d)}.`,`${w} wholes × ${d} = ${w*d}.`,`Check: ${w*d} × ${F(1,d)} = ${F(w*d,d)} = ${w} ✔`])}
+  const q=P([`${F(1,d)} ÷ ${w} = ?`,`${w} friends share ${F(1,d)} of a pan of brownies equally. What fraction of the whole pan does each friend get?`,`${F(1,d)} gallon of juice is poured equally into ${w} cups. How much juice is in each cup?`]);
+  return mc(q,fv(1,d*w),[nv(d*w),fv(w,d),fv(1,d+w),fv(d,w)],[`Sharing a piece makes it smaller: multiply the bottom by ${w}.`,`${F(1,d)} ÷ ${w} = ${F(1,`${d} × ${w}`)} = ${F(1,d*w)}.`,`Check: ${w} × ${F(1,d*w)} = ${F(w,d*w)} = ${F(1,d)} ✔`]);
+ }}
+];
+
+/* ---------- vocabulary ---------- */
+const VOCAB=[
+['Numerator',4,'The top number. It counts how many pieces you have.',`In ${F(3,8)}, the numerator is 3`],
+['Denominator',4,'The bottom number. It tells how many equal pieces make one whole.',`In ${F(3,8)}, the denominator is 8`],
+['Unit fraction',4,'A fraction with a numerator of 1. It names exactly one piece.',`${F(1,5)}`],
+['Equivalent fractions',4,'Different fractions that name the same amount.',`${F(1,2)} = ${F(2,4)} = ${F(4,8)}`],
+['Benchmark fraction',4,'A friendly number used to compare or estimate, like 0, one half, or 1.',`${F(5,8)} is more than ${F(1,2)}`],
+['Compare symbols',4,'Symbols that show which amount is bigger: &gt; greater than, &lt; less than, = equal to.',`${F(3,4)} &gt; ${F(1,4)}`],
+['Decompose',4,'To break a fraction apart into a sum of smaller fractions.',`${F(5,8)} = ${F(2,8)} + ${F(3,8)}`],
+['Mixed number',4,'A whole number and a fraction together.',`${M(2,1,3)}`],
+['Fraction greater than 1',4,'A fraction whose numerator is bigger than its denominator (sometimes called improper).',`${F(7,4)} = ${M(1,3,4)}`],
+['Like denominators',4,'Fractions that have the same denominator.',`${F(2,6)} and ${F(5,6)}`],
+['Decimal',4,'A number that uses a decimal point and place value to show parts of a whole.','0.6 &nbsp; 1.25'],
+['Decimal point',4,'The dot that separates the whole number from the parts of a whole.','3<b>.</b>45'],
+['Tenths',4,'One of 10 equal parts. The first place to the right of the decimal point.',`0.3 = ${F(3,10)}`],
+['Hundredths',4,'One of 100 equal parts. The second place to the right of the decimal point.',`0.07 = ${F(7,100)}`],
+['Area model',4,'A rectangle split into equal parts to show a fraction.',bar(3,4)],
+['Length model',4,'A bar or number line split into equal lengths to show a fraction.','A number line from 0 to 1 in fourths'],
+['Unlike denominators',5,'Fractions with different denominators.',`${F(1,3)} and ${F(1,6)}`],
+['Related fractions',5,'Fractions whose denominators are in the same family, so one fits into the other evenly.','halves · fourths · eighths'],
+['Common denominator',5,'A denominator two fractions share, so you can add or subtract them.',`${F(1,4)} + ${F(3,8)} → ${F(2,8)} + ${F(3,8)}`],
+['Regroup',5,'Trade a group of fraction pieces for one whole.',`${M(1,5,4)} = ${M(2,1,4)}`],
+['Product',5,'The answer to a multiplication problem.',`${F(1,2)} × ${F(1,3)} = ${F(1,6)}`],
+['Factor',5,'A number being multiplied.',`In ${F(2,3)} × 6, both are factors`],
+['Scaling',5,'Resizing a number by multiplying. × less than 1 shrinks it, × more than 1 grows it.',`12 × ${F(1,2)} = 6 (shrinks)`],
+['Quotient',5,'The answer to a division problem.',`3 ÷ 4 = ${F(3,4)}`],
+['Dividend',5,'The number being divided.','In 12 ÷ 3, the dividend is 12'],
+['Divisor',5,'The number you divide by.','In 12 ÷ 3, the divisor is 3'],
+['Simplest form',5,'A fraction whose numerator and denominator share no factor except 1.',`${F(6,12)} → ${F(1,2)}`]
+];
+
+/* ---------- state ---------- */
+const S={view:'missions',grade:'all',xp:0,best:{},streak:0,play:null,vq:null,open:new Set()};
+try{const s=JSON.parse(localStorage.getItem('fraction-hacktion')||'{}');S.xp=s.xp||0;S.best=s.best||{};S.grade=s.grade||'all'}catch(e){}
+const save=()=>{try{localStorage.setItem('fraction-hacktion',JSON.stringify({xp:S.xp,best:S.best,grade:S.grade}))}catch(e){}};
+const RANKS=[[0,'Script Kid'],[100,'Code Cracker'],[250,'Firewall Breaker'],[500,'Fraction Hacker'],[900,'Master Hacker'],[1500,'Legend.exe']];
+const rank=()=>RANKS.filter(r=>S.xp>=r[0]).pop()[1];
+const inGrade=g=>S.grade==='all'||String(g)===S.grade;
+const stars=n=>`<span class="stars" aria-label="${n} of 3 stars">${'★'.repeat(n)}<span class="off">${'★'.repeat(3-n)}</span></span>`;
+const $=id=>document.getElementById(id);
+
+function hackCard(m,withPlay){
+  return `<article class="hack g${m.grade}">
+    <div class="hack-head"><span class="glyph">${m.glyph}</span><h3>${m.hack}</h3><span class="code">${m.code}</span><span class="label">${m.topic}</span></div>
+    <p class="tagline">${m.tagline}</p>
+    <div><div class="label">How to run the hack</div><ol class="steps">${m.steps.map(s=>`<li>${s}</li>`).join('')}</ol></div>
+    <div class="example"><div class="label lbl">Worked example</div>${m.example()}</div>
+    <div class="trap"><b>Trap alert:</b> ${m.trap}</div>
+    <div class="chips"><span class="label" style="align-self:center">Vocab:</span>${m.vocab.map(v=>`<span class="chip">${v}</span>`).join('')}</div>
+    ${withPlay?`<div class="btnrow"><button class="btn" data-act="open" data-id="${m.id}">Play this mission</button></div>`:''}
+  </article>`;
+}
+
+/* ---------- views ---------- */
+function vMissions(){
+  const ms=MISSIONS.filter(m=>inGrade(m.grade));
+  const total=MISSIONS.reduce((a,m)=>a+(S.best[m.id]||0),0);
+  return `<h2 class="sec">Pick a mission</h2>
+  <p class="lead">Every fraction problem has a shortcut. Learn the hack, then crack 5 codes to break the firewall. Get all 5 for 3 stars. Stars earned: <b class="mono">${total}/${MISSIONS.length*3}</b></p>
+  <div class="grid">${ms.map(m=>`<button class="card g${m.grade}" data-act="open" data-id="${m.id}">
+    <div class="row"><span class="code">${m.code}</span><span class="glyph">${m.glyph}</span></div>
+    <h3>${m.hack}</h3><div class="topic">${m.topic}</div>
+    <div class="row">${stars(S.best[m.id]||0)}<span class="label">Grade ${m.grade}</span></div>
+  </button>`).join('')}</div>`;
+}
+function vBook(){
+  return `<h2 class="sec">Hack Book</h2><p class="lead">Every shortcut in one place. Project it, print the screen, or study before a mission.</p>
+  <div class="book">${MISSIONS.filter(m=>inGrade(m.grade)).map(m=>hackCard(m,true)).join('')}</div>`;
+}
+function vVocab(){
+  const words=VOCAB.filter(v=>inGrade(v[1]));
+  let quiz;
+  const q=S.vq;
+  if(!q) quiz=`<div class="vq"><div class="label">Vocab Code Crack</div><div class="def">Read the clue, pick the word. 8 clues, 5 XP each.</div><div class="btnrow"><button class="btn" data-act="vstart">Start Code Crack</button></div></div>`;
+  else if(q.i>=q.items.length) quiz=`<div class="vq"><div class="label">Code Crack complete</div><div class="def">${q.score} of ${q.items.length} words cracked. +${q.score*5} XP</div><div class="btnrow"><button class="btn" data-act="vstart">Play again</button><button class="btn ghost" data-act="vclose">Close</button></div></div>`;
+  else{const it=q.items[q.i];
+    quiz=`<div class="vq"><div class="row" style="display:flex;justify-content:space-between;gap:8px"><span class="label">Clue ${q.i+1} of ${q.items.length}</span><span class="label">Cracked: ${q.score}</span></div>
+    <div class="def">${it.def}</div>
+    <div class="choices">${it.opts.map((o,k)=>{let c='';if(q.picked!=null){if(o===it.term)c='right';else if(k===q.picked)c='wrong'}
+      return `<button class="choice ${c}" data-act="vans" data-k="${k}" ${q.picked!=null?'disabled':''}><span class="tx">${o}</span></button>`}).join('')}</div>
+    ${q.picked!=null?`<div class="btnrow"><span>${it.opts[q.picked]===it.term?'Cracked it!':`It's <b>${it.term}</b>. Example: ${it.ex}`}</span><button class="btn" data-act="vnext">Next clue</button></div>`:''}
+    </div>`}
+  return `<h2 class="sec">Vocab Vault</h2><p class="lead">Hackers speak the language. Tap a card to unlock its meaning and an example.</p>${quiz}
+  <div class="vgrid">${words.map(v=>{const o=S.open.has(v[0]);return `<button class="vcard ${o?'open':''}" data-act="flip" data-t="${v[0]}" aria-expanded="${o}">
+    <span class="label">Grade ${v[1]}</span><span class="term">${v[0]}</span>
+    ${o?`<span class="def">${v[2]}</span><span class="ex">${v[3]}</span>`:`<span class="tap">TAP TO UNLOCK</span>`}</button>`}).join('')}</div>`;
+}
+const STD={
+'4nf1':['Explain why a fraction is equivalent to another fraction by using area and length fraction models.','I can make equivalent fractions and show why they are the same amount.'],
+'4nf2':['Compare two fractions with different numerators and different denominators (denominators 2, 3, 4, 5, 6, 8, 10, 12, 100) using models, benchmark fractions, common numerators, or common denominators; record with &gt;, =, &lt;.','I can compare two fractions and use &gt;, &lt;, or =.'],
+'4nf3':['Understand and justify decompositions of fractions: join and separate parts of the same whole, decompose a fraction into a sum of fractions with the same denominator, add and subtract fractions and mixed numbers with like denominators, and solve word problems.','I can add, subtract, and break apart fractions with the same denominator.'],
+'4nf4':['Apply and extend previous understandings of multiplication to multiply a fraction by a whole number.','I can multiply a whole number by a fraction.'],
+'4nf5':['Express a fraction with denominator 10 as an equivalent fraction with denominator 100, and add two fractions with denominators 10 and 100.','I can change tenths to hundredths and add them.'],
+'4nf6':['Use decimal notation to represent fractions with denominators of 10 and 100.','I can write tenths and hundredths as decimals.'],
+'4nf7':['Compare two decimals to hundredths by reasoning about their size, using models, and record with &gt;, =, &lt;.','I can compare decimals to hundredths.'],
+'5nf1':['Add and subtract fractions, including mixed numbers, with unlike denominators using related fractions: halves, fourths and eighths; thirds, sixths, and twelfths; fifths, tenths, and hundredths.','I can add and subtract fractions with different denominators.'],
+'5nf3':['Use fractions to model and solve division problems: interpret a fraction as division of the numerator by the denominator, and solve one-step word problems where dividing whole numbers gives a fraction or mixed number.','I can show that a fraction means division.'],
+'5nf4':['Apply and extend previous understandings of multiplication to multiply a fraction or whole number by a fraction, including mixed numbers, using area and length models and explaining scaling.','I can multiply fractions and predict if the answer grows or shrinks.'],
+'5nf7':['Solve one-step word problems involving division of unit fractions by whole numbers and division of whole numbers by unit fractions.','I can divide with unit fractions and whole numbers.']
+};
+function vStandards(){
+  const grp=g=>MISSIONS.filter(m=>m.grade===g&&inGrade(g)).map(m=>`<div class="srow g${m.grade}"><span class="code">${m.code}</span><p>${STD[m.id][0]}<span class="ican">${STD[m.id][1]}</span></p><button class="btn ghost" data-act="open" data-id="${m.id}">Play</button></div>`).join('');
+  return `<h2 class="sec">Standards covered</h2><p class="lead">Number &amp; Operations – Fractions, North Carolina Standard Course of Study for Mathematics. Wording is summarized; see NCDPI unpacking documents for full detail.</p>
+  ${inGrade(4)?`<h3 class="label" style="margin:10px 0">Grade 4</h3><div class="std">${grp(4)}</div>`:''}
+  ${inGrade(5)?`<h3 class="label" style="margin:22px 0 10px">Grade 5</h3><div class="std">${grp(5)}</div>`:''}`;
+}
+function vPlay(){
+  const p=S.play,m=p.m;
+  const top=`<div class="playtop"><button class="back" data-act="view" data-v="missions">← Missions</button><span class="code">${m.code}</span><b>${m.hack}</b>
+    ${p.phase!=='brief'?`<div class="firewall" aria-label="Progress">${p.qs.map((_,k)=>`<i class="${p.res[k]===true?'ok':p.res[k]===false?'no':k===p.i&&p.phase==='q'?'now':''}"></i>`).join('')}</div>`:''}</div>`;
+  if(p.phase==='brief') return top+hackCard(m,false)+`<div class="btnrow" style="margin-top:18px"><button class="btn" data-act="start">Start hacking (5 codes)</button></div>`;
+  if(p.phase==='done'){
+    const c=p.res.filter(x=>x).length,st=c===5?3:c===4?2:c>=3?1:0;
+    const nextM=MISSIONS.filter(x=>inGrade(x.grade)),ni=nextM.indexOf(m),nx=nextM[ni+1];
+    return top+`<div class="results"><span class="label">${c===5?'Firewall down!':c>=3?'Access granted':'Firewall held'}</span>
+      <div class="big">${c} / 5 cracked</div>${stars(st)}<div>+${p.xp} Hack XP this mission. Rank: <b>${rank()}</b></div>
+      ${c<5?`<div class="hintbox">Review the <b>${m.hack}</b> in the Hack Book, then run it again for 3 stars.</div>`:''}
+      <div class="btnrow"><button class="btn" data-act="open" data-id="${m.id}">Run it again</button>${nx?`<button class="btn ghost" data-act="open" data-id="${nx.id}">Next: ${nx.hack}</button>`:''}<button class="btn ghost" data-act="view" data-v="missions">All missions</button></div></div>`;
+  }
+  const q=p.qs[p.i],ans=p.pick!=null;
+  const fb=ans?(q.choices[p.pick].ok
+    ?`<div class="fb ok"><h4>Hack successful! +${p.gain} XP</h4><ol>${q.sol.map(s=>`<li>${s}</li>`).join('')}</ol></div>`
+    :`<div class="fb bad"><h4>Blocked. Here's the hack:</h4><ol>${q.sol.map(s=>`<li>${s}</li>`).join('')}</ol></div>`):'';
+  return top+`<div class="qbox g${m.grade}"><span class="label">Code ${p.i+1} of 5</span><div class="qtext">${q.q}</div>
+    <div class="choices">${q.choices.map((c,k)=>{let cl='';if(ans){if(c.ok)cl='right';else if(k===p.pick)cl='wrong'}
+      return `<button class="choice ${cl}" data-act="ans" data-k="${k}" ${ans?'disabled':''}><span class="key">${'ABCD'[k]}</span>${c.html}</button>`}).join('')}</div>
+    ${!ans&&!p.hint?`<div class="btnrow"><button class="btn ghost" data-act="hint">Show the hack (half XP)</button></div>`:''}
+    ${!ans&&p.hint?`<div class="hintbox"><b>${m.hack}:</b> ${m.tagline}</div>`:''}
+    ${fb}${ans?`<div class="btnrow"><button class="btn" data-act="next">${p.i<4?'Next code →':'See results'}</button></div>`:''}</div>`;
+}
+
+function render(){
+  document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',String(t.dataset.v===S.view||(S.view==='play'&&t.dataset.v==='missions'))));
+  document.querySelectorAll('.grade button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.g===S.grade)));
+  $('s-xp').textContent=S.xp;$('s-rank').textContent=rank();$('s-streak').textContent=S.streak;
+  $('app').innerHTML={missions:vMissions,book:vBook,vocab:vVocab,standards:vStandards,play:vPlay}[S.view]()+
+   `<p class="foot">Fraction Hacktion · NC.4.NF.1–7 and NC.5.NF.1, 3, 4, 7 · Progress saves in this browser.</p>`;
+}
+function newSet(m){const qs=[],seen=new Set();let tries=0;while(qs.length<5&&tries<60){tries++;const q=m.gen();if(seen.has(q.q))continue;seen.add(q.q);qs.push(q)}return qs}
+
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]');if(!b)return;const a=b.dataset.act;
+  if(a==='view'){S.view=b.dataset.v;S.play=null}
+  else if(a==='grade'){S.grade=b.dataset.g;save();if(S.view==='play'){S.view='missions';S.play=null}S.vq=null}
+  else if(a==='open'){const m=MISSIONS.find(x=>x.id===b.dataset.id);S.play={m,phase:'brief',i:0,qs:[],res:[],pick:null,hint:false,xp:0};S.view='play'}
+  else if(a==='start'){S.play.qs=newSet(S.play.m);S.play.phase='q'}
+  else if(a==='hint'){S.play.hint=true}
+  else if(a==='ans'){const p=S.play;if(p.pick!=null)return;p.pick=+b.dataset.k;const ok=p.qs[p.i].choices[p.pick].ok;p.res[p.i]=ok;
+    if(ok){S.streak++;p.gain=(p.hint?5:10)+(S.streak>=3?5:0);p.xp+=p.gain;S.xp+=p.gain}else{S.streak=0;p.gain=0}save()}
+  else if(a==='next'){const p=S.play;if(p.i<4){p.i++;p.pick=null;p.hint=false}else{p.phase='done';const c=p.res.filter(x=>x).length,st=c===5?3:c===4?2:c>=3?1:0;S.best[p.m.id]=Math.max(S.best[p.m.id]||0,st);save()}}
+  else if(a==='flip'){const t=b.dataset.t;S.open.has(t)?S.open.delete(t):S.open.add(t)}
+  else if(a==='vstart'){const pool=VOCAB.filter(v=>inGrade(v[1]));const items=shuf(pool).slice(0,8).map(v=>({term:v[0],def:v[2],ex:v[3],opts:shuf([v[0],...shuf(pool.filter(x=>x[0]!==v[0])).slice(0,3).map(x=>x[0])])}));S.vq={items,i:0,score:0,picked:null}}
+  else if(a==='vans'){const q=S.vq;if(q.picked!=null)return;q.picked=+b.dataset.k;if(q.items[q.i].opts[q.picked]===q.items[q.i].term){q.score++;S.xp+=5;save()}}
+  else if(a==='vnext'){S.vq.i++;S.vq.picked=null}
+  else if(a==='vclose'){S.vq=null}
+  else return;
+  render();
+  if(['view','open','start','next','grade'].includes(a)) window.scrollTo({top:0,behavior:'smooth'});
+});
+document.addEventListener('keydown',e=>{
+  if(S.view!=='play'||!S.play||S.play.phase!=='q')return;
+  const k='abcd'.indexOf(e.key.toLowerCase());const n=['1','2','3','4'].indexOf(e.key);const i=k>=0?k:n;
+  if(i>=0&&S.play.pick==null){const btn=document.querySelector(`[data-act="ans"][data-k="${i}"]`);if(btn)btn.click()}
+  else if(e.key==='Enter'&&S.play.pick!=null){const nb=document.querySelector('[data-act="next"]');if(nb){e.preventDefault();nb.click()}}
+});
+render();
+</script>
+</body>
+</html>
