@@ -1,0 +1,506 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Honeycomb Hustle</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;700;800&display=swap">
+<style>
+/* Layout: board on the left as the hero, a "problem card" panel on the right; stacks on phones */
+:root{
+  --bg:#f2f4ea; --surface:#ffffff; --ink:#2a2010; --muted:#6b6250;
+  --wax:#f5e3ad; --wax-hi:#fbedc6; --comb:#c99a3b;
+  --honey:#e59a12; --honey-ink:#7a4a00; --honey-soft:#fde9c2;
+  --clover:#8d5cc4; --clover-ink:#4b2a73; --clover-soft:#ece0f8;
+  --good:#2f8a4a; --bad:#c0442f; --line:#e2dccb;
+  --display:"Baloo 2","Trebuchet MS",system-ui,sans-serif;
+  --body:"Nunito","Segoe UI",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#15130d; --surface:#211d14; --ink:#f4ebd6; --muted:#b4a88c;
+  --wax:#3a3020; --wax-hi:#4a3d27; --comb:#7d6230;
+  --honey:#f0a92a; --honey-ink:#ffd27a; --honey-soft:#3d2d10;
+  --clover:#a77ce0; --clover-ink:#dcc6fb; --clover-soft:#2e2340;
+  --good:#5cc27a; --bad:#ec7a63; --line:#3a3324; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#15130d; --surface:#211d14; --ink:#f4ebd6; --muted:#b4a88c;
+  --wax:#3a3020; --wax-hi:#4a3d27; --comb:#7d6230;
+  --honey:#f0a92a; --honey-ink:#ffd27a; --honey-soft:#3d2d10;
+  --clover:#a77ce0; --clover-ink:#dcc6fb; --clover-soft:#2e2340;
+  --good:#5cc27a; --bad:#ec7a63; --line:#3a3324; color-scheme:dark}
+
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+.wrap{max-width:1080px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(2rem,5vw,2.9rem);line-height:1;margin:0;letter-spacing:-.01em;text-wrap:balance}
+h1 span{color:var(--honey)}
+.sub{margin:4px 0 0;color:var(--muted);max-width:60ch}
+.top{display:flex;flex-wrap:wrap;gap:14px 24px;align-items:end;justify-content:space-between}
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.seg{display:inline-flex;background:var(--surface);border:1.5px solid var(--line);border-radius:999px;padding:3px}
+.seg button{border:0;background:none;color:var(--muted);font:700 .85rem var(--body);padding:6px 12px;border-radius:999px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.btn{border:0;cursor:pointer;font:800 .95rem var(--body);border-radius:999px;padding:9px 18px;background:var(--honey);color:#2a1a00}
+.btn:hover{filter:brightness(1.06)}
+button:focus-visible,.cell:focus-visible{outline:3px solid var(--clover);outline-offset:2px}
+
+.game{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:22px;align-items:start}
+@media (max-width:820px){.game{grid-template-columns:1fr}}
+.boardbox{min-width:0;position:relative}
+svg{display:block;width:100%;height:auto;max-height:78vh}
+.cell polygon{fill:var(--wax);stroke:var(--comb);stroke-width:2;transition:fill .15s}
+.cell{cursor:pointer;outline:none}
+.cell.open:hover polygon,.cell.open:focus-visible polygon{fill:var(--wax-hi)}
+.cell.open:focus-visible polygon{stroke:var(--ink);stroke-width:3}
+.cell.sel polygon{fill:var(--wax-hi);stroke:var(--ink);stroke-width:4}
+.cell.h polygon{fill:var(--honey);stroke:var(--honey-ink)}
+.cell.c polygon{fill:var(--clover);stroke:var(--clover-ink)}
+.cell.h,.cell.c{cursor:default}
+.cell.pop{animation:pop .35s ease-out;transform-box:fill-box;transform-origin:center}
+.cell.win polygon{stroke:var(--ink);stroke-width:4}
+.cell.win{animation:glow 1.2s ease-in-out infinite alternate}
+.cell text{font:800 15px var(--display);fill:var(--ink);pointer-events:none;opacity:.35}
+@keyframes pop{0%{transform:scale(.6)}70%{transform:scale(1.08)}100%{transform:scale(1)}}
+@keyframes glow{to{opacity:.7}}
+.edge{fill:none;stroke-width:9;stroke-linecap:round;stroke-linejoin:round}
+.edge.h{stroke:var(--honey)} .edge.c{stroke:var(--clover)}
+
+.panel{display:flex;flex-direction:column;gap:14px;min-width:0}
+.card{background:var(--surface);border:1.5px solid var(--line);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.turn{display:flex;align-items:center;gap:10px;font:800 1.25rem var(--display)}
+.dot{width:22px;height:25px;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);flex:none}
+.dot.h{background:var(--honey)} .dot.c{background:var(--clover)}
+.topic{font:800 .72rem var(--body);text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
+.q{font:700 clamp(1.3rem,3.2vw,1.65rem)/1.35 var(--display);text-wrap:balance}
+.q.word{font:700 1.15rem/1.45 var(--body)}
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.choice{display:flex;align-items:center;justify-content:center;gap:8px;min-height:60px;border:2px solid var(--line);background:var(--bg);color:var(--ink);
+  border-radius:14px;font:800 1.2rem var(--display);cursor:pointer;padding:6px 10px;font-variant-numeric:tabular-nums}
+.choice:hover{border-color:var(--comb)}
+.choice .k{font:700 .7rem var(--body);color:var(--muted);align-self:flex-start}
+.choice.right{border-color:var(--good);background:color-mix(in srgb,var(--good) 16%,var(--surface))}
+.choice.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 14%,var(--surface))}
+.choice:disabled{cursor:default}
+.fb{font-weight:800;padding:10px 12px;border-radius:12px}
+.fb.ok{color:var(--good);background:color-mix(in srgb,var(--good) 12%,transparent)}
+.fb.no{color:var(--bad);background:color-mix(in srgb,var(--bad) 11%,transparent)}
+.fb.info{color:var(--muted);background:var(--bg)}
+.hint{color:var(--muted);margin:0}
+.fr{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1.05;font-size:.85em;margin:0 .1em}
+.fr span:first-child{border-bottom:2px solid currentColor;padding:0 .15em}
+.score{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.team{border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:2px}
+.team.h{background:var(--honey-soft);color:var(--honey-ink)} .team.c{background:var(--clover-soft);color:var(--clover-ink)}
+.team b{font:800 1.05rem var(--display)}
+.team .big{font:800 1.8rem/1 var(--display);font-variant-numeric:tabular-nums}
+.team small{font-weight:700;opacity:.85}
+.goal{font-size:.82rem;font-weight:700}
+details{background:var(--surface);border:1.5px solid var(--line);border-radius:14px;padding:12px 16px}
+summary{cursor:pointer;font:800 1rem var(--display)}
+details ul{margin:8px 0 0;padding-left:20px;max-width:65ch}
+details li{margin:4px 0}
+.over{font:800 1.6rem/1.15 var(--display)}
+.choices.long{grid-template-columns:1fr}
+.choices.long .choice{font:800 1.02rem/1.3 var(--body);justify-content:flex-start;text-align:left;min-height:50px;padding:8px 12px}
+.choices.long .choice .k{align-self:center;margin-right:4px}
+.sym{font-size:1.7em;line-height:1}
+.blank{display:inline-block;min-width:1.6em;border:2px dashed var(--muted);border-radius:8px;color:var(--muted);text-align:center;margin:0 .25em;line-height:1.3}
+.fig{display:flex;justify-content:center;margin-top:10px}
+.fig svg{width:auto;max-width:100%;height:auto;max-height:180px}
+.fig .f-ln{fill:none;stroke:var(--ink);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.fig .f-thin{fill:none;stroke:var(--ink);stroke-width:1.6}
+.fig .f-arc{fill:none;stroke:var(--honey);stroke-width:3.5}
+.fig .f-pt{fill:var(--ink)}
+.fig .f-dot{fill:var(--honey);stroke:var(--honey-ink);stroke-width:2}
+.fig .f-sh{fill:var(--honey-soft);stroke:var(--honey-ink);stroke-width:2.5;stroke-linejoin:round}
+.fig .f-on{fill:var(--honey);stroke:var(--ink);stroke-width:2}
+.fig .f-off{fill:var(--surface);stroke:var(--ink);stroke-width:2}
+.fig .f-grid{stroke:var(--line);stroke-width:1.2}
+.fig .f-axis{stroke:var(--muted);stroke-width:2.2}
+.fig .f-lab{font:800 16px var(--display);fill:var(--ink)}
+.fig .f-num{font:700 11px var(--body);fill:var(--muted)}
+@media (prefers-reduced-motion:reduce){.cell.pop,.cell.win{animation:none}}
+</style>
+
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>Honeycomb <span>Hustle</span></h1>
+      <p class="sub">Claim a cell by solving its math problem. First team to build an unbroken path across the hive wins.</p>
+    </div>
+    <div class="controls">
+      <div class="seg" role="group" aria-label="Grade level" id="gradeSeg">
+        <button data-v="4" aria-pressed="true">Grade 4</button><button data-v="5" aria-pressed="false">Grade 5</button><button data-v="mix" aria-pressed="false">Mix</button>
+      </div>
+      <div class="seg" role="group" aria-label="Topic" id="topicSeg">
+        <button data-v="all" aria-pressed="true">All topics</button><button data-v="frac" aria-pressed="false">Fractions</button><button data-v="geo" aria-pressed="false">Geometry</button>
+      </div>
+      <div class="seg" role="group" aria-label="Board size" id="sizeSeg">
+        <button data-v="5" aria-pressed="false">5×5</button><button data-v="7" aria-pressed="true">7×7</button>
+      </div>
+      <div class="seg" role="group" aria-label="Players" id="modeSeg">
+        <button data-v="teams" aria-pressed="true">2 teams</button><button data-v="cpu" aria-pressed="false">vs. computer</button>
+      </div>
+      <button class="btn" id="newGame">New game</button>
+    </div>
+  </div>
+
+  <div class="game">
+    <div class="boardbox"><svg id="board" role="grid" aria-label="Honeycomb board"></svg></div>
+    <div class="panel">
+      <div class="card" id="card" aria-live="polite"></div>
+      <div class="score" id="score"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>How to play</summary>
+    <ul>
+      <li><b>Honey</b> connects the <b>top and bottom</b> edges. <b>Clover</b> connects the <b>left and right</b> edges. The colored borders show each team's edges.</li>
+      <li>On your turn, tap any open hexagon. A problem appears. Pick the right answer to fill that cell with your color.</li>
+      <li>Miss it and the cell stays open, so anyone can try it later. Then the turn passes.</li>
+      <li>Block the other team while you build. Paths can bend and zigzag as long as the cells touch.</li>
+      <li>Use <b>Topic</b> to focus on fractions or geometry, or keep <b>All topics</b> for a mix of number sense, fractions and geometry. Grade and topic changes apply to the next problem, so you can switch mid-game.</li>
+      <li>Keyboard: Tab to a cell and press Enter, then press 1–4 to answer.</li>
+    </ul>
+  </details>
+</div>
+
+<script>
+(()=>{
+const $=s=>document.querySelector(s);
+const ri=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const gcd=(a,b)=>b?gcd(b,a%b):Math.abs(a);
+const fmtN=n=>{n=Math.round(n*10000)/10000;return n.toLocaleString('en-US',{maximumFractionDigits:4})};
+const fr=(n,d)=>`<span class="fr"><span>${n}</span><span>${d}</span></span>`;
+function fracHTML(n,d){const g=gcd(n,d);n/=g;d/=g;if(d===1)return String(n);const w=Math.floor(n/d),r=n%d;return (w?w+' ':'')+fr(r,d)}
+function fracKey(n,d){const g=gcd(n,d);return (n/g)+'/'+(d/g)}
+
+// Build a numeric multiple-choice problem with plausible wrong answers
+function numProb(topic,q,ans,cands,unit='',word=false){
+  const key=fmtN(ans),seen=new Set([key]),wrong=[];
+  for(const c of shuffle(cands.slice())){const k=fmtN(c);if(c>0&&!seen.has(k)){seen.add(k);wrong.push(c)}if(wrong.length===3)break}
+  let step=ans<20?1:ans<200?10:100;
+  while(wrong.length<3){const c=ans+ri(-3,3)*step;const k=fmtN(c);if(c>0&&!seen.has(k)){seen.add(k);wrong.push(c)}}
+  const u=unit?(unit==='°'?'°':` <small>${unit}</small>`):'';
+  const choices=shuffle([ans,...wrong]).map(v=>({html:fmtN(v)+u,ok:fmtN(v)===key}));
+  return {topic,q,word,choices,answer:key+u};
+}
+// raw=true shows fractions as written (e.g. 4/8) instead of simplified/mixed
+function fracProb(topic,q,pairs,word=false,raw=false){ // pairs[0] is correct [n,d]
+  const show=(n,d)=>raw?fr(n,d):fracHTML(n,d);
+  const seen=new Set(),list=[];
+  pairs.forEach((p,i)=>{if(p[0]<=0||p[1]<=0)return;const k=fracKey(...p);if(!seen.has(k)){seen.add(k);list.push({html:show(...p),ok:i===0})}});
+  const [cn,cd]=pairs[0];let t=1;
+  while(list.length<4){const p=[cn*2+t,cd*2];t++;const k=fracKey(...p);if(p[0]>0&&!seen.has(k)){seen.add(k);list.push({html:show(...p),ok:false})}}
+  const ch=list.slice(0,4);if(!ch.some(c=>c.ok))ch[3]=list[0];
+  return {topic,q,word,choices:shuffle(ch),answer:show(cn,cd)};
+}
+// word-answer problem (shape names, symbols, coordinates)
+function txtProb(topic,q,ans,wrongs,word=true){
+  const seen=new Set([ans]),w=[];
+  for(const x of shuffle(wrongs.slice()))if(!seen.has(x)&&w.length<3){seen.add(x);w.push(x)}
+  return {topic,q,word,choices:shuffle([{html:ans,ok:true},...w.map(x=>({html:x,ok:false}))]),answer:ans};
+}
+
+// ---------- figures ----------
+const rad=d=>d*Math.PI/180, f1=v=>(+v).toFixed(1);
+const fig=(w,h,body,label)=>`<div class="fig"><svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="${label}">${body}</svg></div>`;
+const flipX=w=>Math.random()<.5?` transform="translate(${w} 0) scale(-1 1)"`:'';
+const ray=(cx,cy,deg,L)=>[cx+L*Math.cos(rad(deg)),cy-L*Math.sin(rad(deg))];
+function arc(cx,cy,r,a0,a1){const[x0,y0]=ray(cx,cy,a0,r),[x1,y1]=ray(cx,cy,a1,r);return `<path class="f-arc" d="M${f1(x0)} ${f1(y0)}A${r} ${r} 0 0 0 ${f1(x1)} ${f1(y1)}"/>`}
+function angleFig(deg){
+  const cx=deg>100?130:55,cy=112,L=100,[ex,ey]=ray(cx,cy,deg,L);
+  const mark=deg===90?`<path class="f-thin" d="M${cx+18} ${cy}V${cy-18}H${cx}"/>`:arc(cx,cy,24,0,deg);
+  return fig(260,128,`<g${flipX(260)}><path class="f-ln" d="M${cx+L} ${cy}L${cx} ${cy}L${f1(ex)} ${f1(ey)}"/>${mark}<circle class="f-pt" cx="${cx}" cy="${cy}" r="4"/></g>`,`An angle that measures ${deg} degrees`);
+}
+function splitAngleFig(T,a){
+  const cx=T===90?60:130,cy=125,L=105,[ix,iy]=ray(cx,cy,a,L),[ex,ey]=ray(cx,cy,T,L);
+  const lab=(t,ang)=>{const[x,y]=ray(cx,cy,ang,52);return `<text class="f-lab" x="${f1(x)}" y="${f1(y+5)}" text-anchor="middle">${t}</text>`};
+  return fig(260,140,`<path class="f-ln" d="M${cx+L} ${cy}L${cx} ${cy}L${f1(ex)} ${f1(ey)}"/><path class="f-ln" d="M${cx} ${cy}L${f1(ix)} ${f1(iy)}"/>${arc(cx,cy,26,0,a)}<circle class="f-pt" cx="${cx}" cy="${cy}" r="4"/>${lab(a+'°',a/2)}${lab('?',a+(T-a)/2)}`,
+    `A ${T===90?'right':'straight'} angle split into two parts. One part is ${a} degrees; the other is unknown.`);
+}
+function linesFig(kind){
+  const rot=ri(-35,35);let b='';
+  if(kind==='par')b=`<path class="f-ln" d="M40 48H220M40 92H220"/>`;
+  else if(kind==='perp')b=`<path class="f-ln" d="M40 70H220M130 10V130"/><path class="f-thin" d="M144 70V56H130"/>`;
+  else{const s=ri(35,60),[x1,y1]=ray(130,70,s,85),[x2,y2]=ray(130,70,s+180,85);b=`<path class="f-ln" d="M40 70H220M${f1(x1)} ${f1(y1)}L${f1(x2)} ${f1(y2)}"/>`}
+  return fig(260,140,`<g transform="rotate(${rot} 130 70)">${b}</g>`,'Two lines');
+}
+const ngon=(n,r,cx=130,cy=72)=>Array.from({length:n},(_,k)=>ray(cx,cy,90+360*k/n,r).map(f1).join(',')).join(' ');
+const SYM=[
+  ['square',4,`<rect class="f-sh" x="72" y="14" width="116" height="116"/>`],
+  ['rectangle',2,`<rect class="f-sh" x="40" y="32" width="180" height="84"/>`],
+  ['equilateral triangle',3,`<polygon class="f-sh" points="${ngon(3,66,130,82)}"/>`],
+  ['regular hexagon',6,`<polygon class="f-sh" points="${ngon(6,62)}"/>`],
+  ['regular pentagon',5,`<polygon class="f-sh" points="${ngon(5,64,130,76)}"/>`],
+  ['isosceles triangle',1,`<polygon class="f-sh" points="130,12 86,132 174,132"/>`],
+];
+function rectFig(l,w,unit){
+  return fig(260,150,`<rect class="f-sh" x="40" y="22" width="170" height="96"/><text class="f-lab" x="125" y="16" text-anchor="middle">${l} ${unit}</text><text class="f-lab" x="216" y="75">${w} ${unit}</text>`,`A rectangle ${l} ${unit} long and ${w} ${unit} wide`);
+}
+function barFig(n,d){
+  const on=new Set(shuffle([...Array(d).keys()]).slice(0,n)),cw=240/d;
+  let b='';for(let k=0;k<d;k++)b+=`<rect class="${on.has(k)?'f-on':'f-off'}" x="${f1(10+k*cw)}" y="8" width="${f1(cw)}" height="44"/>`;
+  return fig(260,60,b,`A bar split into ${d} equal parts with ${n} parts shaded`);
+}
+function gridFig(x,y){
+  const O=[34,174],u=24,X=v=>O[0]+v*u,Y=v=>O[1]-v*u;let b='';
+  for(let i=0;i<=6;i++){b+=`<path class="f-grid" d="M${X(i)} ${Y(0)}V${Y(6)}M${X(0)} ${Y(i)}H${X(6)}"/>`;
+    b+=`<text class="f-num" x="${X(i)}" y="${Y(0)+16}" text-anchor="middle">${i}</text>`;if(i)b+=`<text class="f-num" x="${X(0)-10}" y="${Y(i)+4}" text-anchor="middle">${i}</text>`}
+  b+=`<path class="f-axis" d="M${X(0)} ${Y(0)}H${X(6)+8}M${X(0)} ${Y(0)}V${Y(6)-8}"/><text class="f-num" x="${X(6)+14}" y="${Y(0)+4}">x</text><text class="f-num" x="${X(0)-4}" y="${Y(6)-12}">y</text>`;
+  b+=`<circle class="f-dot" cx="${X(x)}" cy="${Y(y)}" r="6"/><text class="f-lab" x="${X(x)+9}" y="${Y(y)-8}">P</text>`;
+  return fig(220,196,b,'A coordinate grid with point P plotted');
+}
+const FD=[2,3,4,5,6,8,10,12];
+
+// ---------- problem banks ----------
+const BANK={
+ '4':{
+  core:[
+   ()=>{const a=ri(12,99),b=ri(3,9),p=a*b;return numProb('Multiplication',`${a} × ${b}`,p,[p+b,p-b,p+10,p-10,a+b])},
+   ()=>{const a=ri(11,29),b=ri(11,19),p=a*b;return numProb('Multiplication',`${a} × ${b}`,p,[p+10,p-10,a*(b%10)+a*Math.floor(b/10),p+a])},
+   ()=>{const b=ri(3,9),q=ri(14,99);return numProb('Division',`${b*q} ÷ ${b}`,q,[q+1,q-1,q+10,q-10,q+b])},
+   ()=>{const a=ri(1200,8999),b=ri(150,999),add=Math.random()<.5,ans=add?a+b:a-b;return numProb(add?'Addition':'Subtraction',`${fmtN(a)} ${add?'+':'−'} ${b}`,ans,[ans+10,ans-10,ans+100,ans-100])},
+   ()=>{const N=ri(1050,9949),ans=Math.round(N/100)*100;return numProb('Rounding',`Round ${fmtN(N)} to the nearest hundred.`,ans,[ans+100,ans-100,Math.round(N/10)*10,Math.round(N/1000)*1000],'',true)},
+   ()=>{const N=pick([12,18,20,24,28,30,32,36,40,42,45,48,54,56,60,63,72]),f=[],nf=[];
+     for(let i=2;i<N;i++)(N%i?nf:f).push(i);const ans=pick(f),w=shuffle(nf.filter(x=>x<=Math.max(12,ans+6))).slice(0,3);
+     return {topic:'Factors',q:`Which number is a factor of ${N}?`,word:true,choices:shuffle([{html:String(ans),ok:true},...w.map(x=>({html:String(x),ok:false}))]),answer:String(ans)}},
+   ()=>{const h=ri(3,9),j=ri(24,89),p=h*j;return numProb('Word problem',`Each of ${h} hives makes ${j} jars of honey. How many jars is that in all?`,p,[h+j,p+h,p-h,p+10],'',true)},
+  ],
+  frac:[
+   ()=>{const d=pick([2,3,4,5,6,8]),n=ri(1,d-1),k=ri(2,5);return numProb('Equivalent fractions',`${fr(n,d)} = ${fr('?',d*k)}`,n*k,[n+k,n*k+1,n*k-1,d*k-n,n*k+k])},
+   ()=>{let a,b,c,d;
+     if(Math.random()<.2){b=pick([2,3,4,5,6]);a=ri(1,b-1);const k=ri(2,3);c=a*k;d=b*k}
+     else do{b=pick(FD);d=pick(FD);a=ri(1,b-1);c=ri(1,d-1)}while(a*d===c*b);
+     const sym=x=>`<span class="sym">${x}</span>`,s=sym(a*d>c*b?'&gt;':a*d<c*b?'&lt;':'=');
+     return txtProb('Comparing fractions — pick the symbol',`${fr(a,b)}<span class="blank">?</span>${fr(c,d)}`,s,['&gt;','&lt;','='].map(sym),false)},
+   ()=>{const d=pick([4,5,6,8,10,12]),n1=ri(1,d-2),n2=ri(1,d-1-n1),s=n1+n2;
+     return fracProb('Adding fractions',`${fr(n1,d)} + ${fr(n2,d)}`,[[s,d],[s,2*d],[s+1,d],[s-1,d],[n1*n2,d]],false,true)},
+   ()=>{const d=pick([4,5,6,8,10,12]),n1=ri(3,d-1),n2=ri(1,n1-1),s=n1-n2;
+     return fracProb('Subtracting fractions',`${fr(n1,d)} − ${fr(n2,d)}`,[[s,d],[s,0],[s+1,d],[s-1,d],[n1+n2,d],[s,2*d]],false,true)},
+   ()=>{const d=pick([2,3,4,5,6,8]),n=ri(1,d-1),w=ri(1,4),N=w*d+n;
+     return fracProb('Mixed numbers',`Write ${w} ${fr(n,d)} as an improper fraction.`,[[N,d],[w+n,d],[w*n+d,d],[w*d-n,d],[N+1,d]],true,true)},
+   ()=>{const d=pick([3,4,5,6,8,10]),n=ri(1,d-1),k=ri(2,6);
+     return fracProb('Multiplying a fraction',`${k} × ${fr(n,d)}`,[[k*n,d],[k*n,k*d],[k+n,d],[n,k*d],[k*n+1,d]],false,true)},
+   ()=>{if(Math.random()<.5){const n=ri(1,9);return numProb('Fractions as decimals',`${fr(n,10)} = ?`,n/10,[n/100,n,n+.1,(n+1)/10])}
+     const n=ri(11,99);return numProb('Fractions as decimals',`${fr(n,100)} = ?`,n/100,[n/10,n/1000,n,(n+1)/100])},
+   ()=>{const t=ri(1,8),h=ri(11,89),s=t*10+h;
+     return fracProb('Tenths + hundredths',`${fr(t,10)} + ${fr(h,100)}`,[[s,100],[t+h,110],[t+h,100],[s,1000],[s+10,100]],false,true)},
+   ()=>{const d=pick([3,4,5,6,8,10]),n=ri(1,d-1);
+     return fracProb('Fraction models',`What fraction of the bar is shaded?${barFig(n,d)}`,[[n,d],[d-n,d],[n,d-n],[n+1,d],[n,d+2]],true,true)},
+   ()=>{const d=pick([6,8,10,12]),n1=ri(1,d-3),n2=ri(1,d-1-n1),s=n1+n2;
+     return fracProb('Word problem',`A bee visits ${fr(n1,d)} of the flowers in the morning and ${fr(n2,d)} of them in the afternoon. What fraction of the flowers did it visit in all?`,[[s,d],[s,2*d],[s+1,d],[d-s,d],[s-1,d]],true,true)},
+  ],
+  geo:[
+   ()=>{const l=ri(5,14),w=ri(3,9);return numProb('Area',`A flower bed for the bees is ${l} ft long and ${w} ft wide. What is its area?`,l*w,[2*(l+w),l+w,l*w+l,l*w-w],'sq ft',true)},
+   ()=>{const k=pick(['Acute','Right','Obtuse','Straight']),deg={Acute:ri(20,75),Right:90,Obtuse:ri(105,165),Straight:180}[k];
+     return txtProb('Angles',`What kind of angle is this?${angleFig(deg)}`,k,['Acute','Right','Obtuse','Straight'])},
+   ()=>{const T=Math.random()<.5?90:180,a=T===90?ri(15,75):ri(25,155);
+     return numProb('Unknown angle',`This ${T===90?'right angle (90°)':'straight angle (180°)'} is split into two parts. What is the missing angle?${splitAngleFig(T,a)}`,T-a,[a,T-a+10,T-a-10,(T===90?180:90)-a,T+a],'°',true)},
+   ()=>{const k=pick(['par','perp','int']),name={par:'Parallel',perp:'Perpendicular',int:'Intersecting, not perpendicular'};
+     return txtProb('Lines',`How would you describe these two lines?${linesFig(k)}`,name[k],Object.values(name))},
+   ()=>{const[name,n,svg]=pick(SYM);
+     return numProb('Lines of symmetry',`How many lines of symmetry does this ${name} have?${fig(260,145,svg,'A '+name)}`,n,[n+1,n-1,n*2,n+2],'',true)},
+   ()=>{let a,b,c,k=pick(['Right','Acute','Obtuse']);
+     if(k==='Right'){a=ri(20,70);b=90-a;c=90}else if(k==='Acute'){a=ri(50,80);b=ri(50,80);c=180-a-b}else{c=ri(100,140);a=ri(15,180-c-15);b=180-c-a}
+     const ang=shuffle([a,b,c]);
+     return txtProb('Triangles',`A triangle has angles of ${ang[0]}°, ${ang[1]}°, and ${ang[2]}°. What kind of triangle is it?`,k+' triangle',['Right triangle','Acute triangle','Obtuse triangle'])},
+   ()=>{const l=ri(6,15),w=ri(3,l-1),P=2*(l+w);
+     return numProb('Perimeter',`A garden for the hive is this shape. What is its perimeter?${rectFig(l,w,'ft')}`,P,[l*w,l+w,2*l+w,P+2],'ft',true)},
+   ()=>{const l=ri(6,15),w=ri(3,l-1),P=2*(l+w);
+     return numProb('Perimeter',`A rectangular fence around the hives has a perimeter of ${P} ft. One side is ${l} ft long. How long is the side next to it?`,w,[P-l,P/2,P-2*l,w+2,l],'ft',true)},
+   ()=>{const s=ri(3,9);return numProb('Perimeter',`Each side of a honeycomb cell (a regular hexagon) is ${s} mm long. What is its perimeter?`,6*s,[5*s,4*s,s+6,6*s+6],'mm',true)},
+   ()=>{const l=ri(4,12),w=ri(3,9),A=l*w;return numProb('Area',`A rectangular patch of clover has an area of ${A} sq ft. It is ${l} ft long. How wide is it?`,w,[A-l,w+1,w-1,l,2*w],'ft',true)},
+  ],
+ },
+ '5':{
+  core:[
+   ()=>{const a=ri(102,489),b=ri(12,28),p=a*b;return numProb('Multiplication',`${a} × ${b}`,p,[p+10,p-10,p+100,p-100,a*(b%10)+a*Math.floor(b/10)])},
+   ()=>{const b=ri(12,25),q=ri(12,45);return numProb('Division',`${fmtN(b*q)} ÷ ${b}`,q,[q+1,q-1,q+2,q+10])},
+   ()=>{const a=ri(105,899)/100,b=ri(11,99)/10,s=a+b;return numProb('Decimals',`${fmtN(a)} + ${fmtN(b)}`,s,[a+b/10,s+.1,s-.1,s+1])},
+   ()=>{const x=ri(12,999)/100,p=pick([10,100,1000]),mul=Math.random()<.6,ans=mul?x*p:x/p;return numProb('Powers of ten',`${fmtN(x)} ${mul?'×':'÷'} ${fmtN(p)}`,ans,[ans*10,ans/10,mul?x/p:x*p,ans*100])},
+   ()=>{const a=ri(2,9),b=ri(2,9),c=ri(5,12),d=ri(1,c-1),ans=a+b*(c-d);return numProb('Order of operations',`${a} + ${b} × (${c} − ${d})`,ans,[(a+b)*(c-d),a+b*c-d,ans+b,ans-1])},
+   ()=>{const x=ri(2,9),e=ri(2,4),ans=x*10**e;return numProb('Exponents',`${x} × 10<sup>${e}</sup>`,ans,[x*10**(e+1),x*10**(e-1),x*e*10,ans+x])},
+   ()=>{const a=ri(105,495)/100,n=ri(3,8),p=a*n;return numProb('Word problem',`A hive makes ${fmtN(a)} pounds of honey each week. How many pounds in ${n} weeks?`,p,[a+n,p+1,p-1,p+.1],'lb',true)},
+  ],
+  frac:[
+   ()=>{let d1=pick(FD),d2=pick(FD);while(d2===d1)d2=pick(FD);const n1=ri(1,d1-1),n2=ri(1,d2-1),L=d1*d2/gcd(d1,d2),N=n1*L/d1+n2*L/d2;
+     return fracProb('Adding fractions',`${fr(n1,d1)} + ${fr(n2,d2)}`,[[N,L],[n1+n2,d1+d2],[N+1,L],[N-1,L],[n1*n2,d1*d2]])},
+   ()=>{let d1,d2,n1,n2,L,N;do{d1=pick(FD);d2=pick(FD);n1=ri(1,d1-1);n2=ri(1,d2-1);L=d1*d2/gcd(d1,d2);N=n1*L/d1-n2*L/d2}while(d1===d2||N<=0);
+     return fracProb('Subtracting fractions',`${fr(n1,d1)} − ${fr(n2,d2)}`,[[N,L],[Math.abs(n1-n2)||1,Math.abs(d1-d2)],[N+1,L],[N-1,L],[n1*L/d1+n2*L/d2,L]])},
+   ()=>{const d=pick([3,4,5,6,8]),n=ri(1,d-1),k=ri(3,12),W=d*k;return numProb('Fraction of a number',`What is ${fr(n,d)} of ${W}?`,n*k,[k,W-n*k,n*k+n,d*n])},
+   ()=>{const a=ri(1,4),b=ri(a+1,8),c=ri(1,4),d=ri(c+1,9);
+     return fracProb('Multiplying fractions',`${fr(a,b)} × ${fr(c,d)}`,[[a*c,b*d],[a+c,b+d],[a*d,b*c],[a*c,b+d],[a+c,b*d]])},
+   ()=>{const b=ri(2,8),k=ri(2,6);return Math.random()<.5
+     ? fracProb('Dividing fractions',`${fr(1,b)} ÷ ${k}`,[[1,b*k],[k,b],[1,b+k],[b,k]])
+     : numProb('Dividing fractions',`${k} ÷ ${fr(1,b)}`,k*b,[k+b,b,k*b+k,k*b-b])},
+   ()=>{const a=ri(1,3),b=ri(a+1,5),c=ri(1,4),d=ri(c+1,6);
+     return fracProb('Area with fractions',`A honey label is ${fr(a,b)} ft long and ${fr(c,d)} ft wide. What is its area in square feet?`,[[a*c,b*d],[a*d+c*b,b*d],[a+c,b+d],[a*c,b+d],[2*(a*d+c*b),b*d]],true)},
+   ()=>{const D=[2,3,4,5,6,8],d1=pick(D),d2=pick(D),w1=ri(1,4),w2=ri(1,4),n1=ri(1,d1-1),n2=ri(1,d2-1),L=d1*d2/gcd(d1,d2),N=(w1+w2)*L+n1*L/d1+n2*L/d2;
+     return fracProb('Mixed numbers',`${w1} ${fr(n1,d1)} + ${w2} ${fr(n2,d2)}`,[[N,L],[N+L,L],[N-L,L],[(w1+w2)*(d1+d2)+n1+n2,d1+d2],[N+1,L]])},
+   ()=>{const b=pick([2,3,4,5,8]),k=ri(2,9);
+     return numProb('Word problem',`A beekeeper has ${k} pounds of beeswax. Each candle uses ${fr(1,b)} pound. How many candles can she make?`,k*b,[k+b,Math.max(1,Math.floor(k/b)),k*b+b,k*b-k],'',true)},
+  ],
+  geo:[
+   ()=>{const l=ri(2,9),w=ri(2,9),h=ri(2,9),v=l*w*h;return numProb('Volume',`A box of honeycomb is ${l} cm by ${w} cm by ${h} cm. What is its volume?`,v,[l+w+h,l*w+h,2*(l*w+l*h+w*h),v+l*w],'cubic cm',true)},
+   ()=>{const s=ri(2,9);return numProb('Volume',`A cube-shaped block of beeswax has edges ${s} in long. What is its volume?`,s**3,[3*s,s*s,6*s*s,s**3+s],'cubic in',true)},
+   ()=>{const l=ri(3,9),w=ri(2,8),h=ri(2,9),V=l*w*h;return numProb('Volume',`A hive box has a volume of ${V} cubic in. Its base is ${l} in by ${w} in. How tall is it?`,h,[V-l-w,h+1,h*2,l*w],'in',true)},
+   ()=>{const a=[ri(2,6),ri(2,5),ri(2,5)],b=[ri(2,6),ri(2,5),ri(2,5)],V1=a[0]*a[1]*a[2],V2=b[0]*b[1]*b[2];
+     return numProb('Volume',`Two hive boxes are stacked. One is ${a.join(' × ')} ft and the other is ${b.join(' × ')} ft. What is their total volume?`,V1+V2,[V1,V2,V1*V2,V1+V2+10,a[0]*a[1]+b[0]*b[1]],'cubic ft',true)},
+   ()=>{let x=ri(1,6),y=ri(1,6);while(y===x)y=ri(1,6);const P=(a,b)=>`(${a}, ${b})`;
+     return txtProb('Coordinate plane',`What are the coordinates of point P?${gridFig(x,y)}`,P(x,y),[P(y,x),P(x+1,y),P(x,y-1),P(x-1,y+1),P(y,x+1)])},
+   ()=>{const x=ri(0,5),y=ri(0,5),a=ri(1,4),b=ri(1,4),P=(m,n)=>`(${m}, ${n})`;
+     return txtProb('Coordinate plane',`A bee starts at point ${P(x,y)}. It flies ${a} unit${a>1?'s':''} right and ${b} unit${b>1?'s':''} up. Where does it land?`,P(x+a,y+b),[P(x+b,y+a),P(y+a,x+b),P(x+a+b,y),P(x+a,y+b+1),P(x,y+a+b)])},
+   ()=>{const Q=[['It has 4 equal sides and 4 right angles.','Square'],['It has 4 right angles, but its sides are not all equal.','Rectangle'],['It has 4 equal sides, but no right angles.','Rhombus'],['It has 2 pairs of parallel sides, no right angles, and its sides are not all equal.','Parallelogram']],[q,ans]=pick(Q);
+     return txtProb('Quadrilaterals',`${q} What is the most specific name for this shape?`,ans,['Square','Rectangle','Rhombus','Parallelogram'])},
+   ()=>{const S=[['Every square is a rectangle.',['Every rectangle is a square.','Every rhombus is a square.','Every parallelogram is a rectangle.']],
+       ['Every rhombus is a parallelogram.',['Every parallelogram is a rhombus.','Every rectangle is a rhombus.','Every rhombus is a rectangle.']],
+       ['Every rectangle is a parallelogram.',['Every parallelogram is a square.','Every rectangle is a rhombus.','Every rhombus is a square.']],
+       ['Every square is a rhombus.',['Every rhombus is a square.','Every rectangle is a square.','Every parallelogram is a rhombus.']]],[t,f]=pick(S);
+     return txtProb('Quadrilaterals','Which statement is always true?',t,f)},
+   ()=>{const k=pick(['Equilateral','Isosceles','Scalene']);let s;
+     if(k==='Equilateral'){const a=ri(3,12);s=[a,a,a]}
+     else if(k==='Isosceles'){const a=ri(4,10);let b;do b=ri(2,2*a-1);while(b===a);s=shuffle([a,a,b])}
+     else{let a,b,c;do{a=ri(3,9);b=ri(a+1,12);c=ri(b+1,a+b-1)}while(c<=b);s=shuffle([a,b,c])}
+     return txtProb('Triangles',`A triangle has sides of ${s[0]} cm, ${s[1]} cm, and ${s[2]} cm. Classify it by its sides.`,k,['Equilateral','Isosceles','Scalene'])},
+  ],
+ },
+};
+function makeProblem(){
+  const g=st.grade==='mix'?pick(['4','5']):st.grade,b=BANK[g];
+  const set=st.topic==='frac'?b.frac:st.topic==='geo'?b.geo:pick([b.core,b.frac,b.geo]);
+  return pick(set)();
+}
+
+// ---------- state ----------
+const NAMES={1:'Honey',2:'Clover'};
+let st={grade:'4',topic:'all',N:7,mode:'teams'},token=0;
+function newGame(){
+  token++;
+  Object.assign(st,{cells:Array(st.N*st.N).fill(0),turn:1,phase:'pick',sel:-1,prob:null,msg:null,win:null,
+    stats:{1:{ok:0,tries:0},2:{ok:0,tries:0}}});
+  buildBoard();render();
+}
+const nb=i=>{const N=st.N,r=Math.floor(i/N),c=i%N,out=[];
+  for(const[dr,dc]of[[0,-1],[0,1],[-1,0],[-1,1],[1,0],[1,-1]]){const R=r+dr,C=c+dc;if(R>=0&&R<N&&C>=0&&C<N)out.push(R*N+C)}return out};
+// cheapest path for a team: own cells cost 0, open cells 1, enemy cells blocked
+function shortest(team){
+  const N=st.N,V=N*N,dist=Array(V).fill(Infinity),prev=Array(V).fill(-1),done=Array(V).fill(false);
+  const cost=i=>st.cells[i]===team?0:st.cells[i]===0?1:Infinity;
+  const isStart=i=>team===1?Math.floor(i/N)===0:i%N===0, isEnd=i=>team===1?Math.floor(i/N)===N-1:i%N===N-1;
+  for(let i=0;i<V;i++)if(isStart(i))dist[i]=cost(i);
+  for(;;){let u=-1;for(let i=0;i<V;i++)if(!done[i]&&dist[i]<Infinity&&(u<0||dist[i]<dist[u]))u=i;if(u<0)break;done[u]=true;
+    for(const v of nb(u)){const d=dist[u]+cost(v);if(d<dist[v]){dist[v]=d;prev[v]=u}}}
+  let best=-1;for(let i=0;i<V;i++)if(isEnd(i)&&(best<0||dist[i]<dist[best]))best=i;
+  const path=[];if(best>=0&&dist[best]<Infinity)for(let u=best;u>=0;u=prev[u])path.push(u);
+  return {d:best>=0?dist[best]:Infinity,path};
+}
+
+// ---------- board ----------
+const S=30,W=Math.sqrt(3)*S;
+const ctr=(r,c)=>[W*(c+r/2),1.5*S*r];
+const pts=(x,y)=>[0,1,2,3,4,5].map(k=>{const a=Math.PI/180*(60*k-30);return(x+S*Math.cos(a)).toFixed(1)+','+(y+S*Math.sin(a)).toFixed(1)}).join(' ');
+function buildBoard(){
+  const N=st.N,svg=$('#board'),p=14;
+  const minX=-W/2-p,minY=-S-p,wd=W*(N-1+(N-1)/2)+W+2*p,ht=1.5*S*(N-1)+2*S+2*p;
+  svg.setAttribute('viewBox',`${minX} ${minY} ${wd} ${ht}`);
+  const P=(a)=>a.map(q=>q.map(v=>v.toFixed(1)).join(',')).join(' ');
+  const top=[],bot=[],left=[],right=[];
+  for(let c=0;c<N;c++){let[x,y]=ctr(0,c);top.push([x-W/2,y-S/2],[x,y-S],[x+W/2,y-S/2]);[x,y]=ctr(N-1,c);bot.push([x-W/2,y+S/2],[x,y+S],[x+W/2,y+S/2])}
+  for(let r=0;r<N;r++){let[x,y]=ctr(r,0);left.push([x-W/2,y-S/2],[x-W/2,y+S/2]);if(r<N-1)left.push([x,y+S]);[x,y]=ctr(r,N-1);if(r>0)right.push([x,y-S]);right.push([x+W/2,y-S/2],[x+W/2,y+S/2])}
+  let h=`<polyline class="edge h" points="${P(top)}"/><polyline class="edge h" points="${P(bot)}"/><polyline class="edge c" points="${P(left)}"/><polyline class="edge c" points="${P(right)}"/>`;
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){const[x,y]=ctr(r,c),i=r*N+c;
+    h+=`<g class="cell open" data-i="${i}" tabindex="0" role="button" aria-label="Row ${r+1}, column ${c+1}, open"><polygon points="${pts(x,y)}"/><text x="${x}" y="${y+5}" text-anchor="middle"></text></g>`}
+  svg.innerHTML=h;
+}
+function paintBoard(pop=-1){
+  const winSet=new Set(st.win?st.win.path:[]);
+  document.querySelectorAll('.cell').forEach(g=>{const i=+g.dataset.i,o=st.cells[i];
+    g.classList.toggle('open',o===0&&!st.win);g.classList.toggle('h',o===1);g.classList.toggle('c',o===2);
+    g.classList.toggle('sel',i===st.sel);g.classList.toggle('win',winSet.has(i));
+    if(i===pop){g.classList.remove('pop');void g.getBBox();g.classList.add('pop')}
+    const r=Math.floor(i/st.N)+1,c=i%st.N+1;g.setAttribute('aria-label',`Row ${r}, column ${c}, ${o?NAMES[o]:'open'}`);
+  });
+}
+
+// ---------- panel ----------
+const isCpu=t=>st.mode==='cpu'&&t===2;
+function turnHead(t,extra=''){return `<div class="turn"><span class="dot ${t===1?'h':'c'}"></span>${NAMES[t]}${isCpu(t)?' (computer)':''}${extra}</div>`}
+function render(pop=-1){
+  paintBoard(pop);
+  const card=$('#card'),t=st.turn,goal={1:'top ↕ bottom',2:'left ↔ right'};
+  let h='';
+  if(st.phase==='over'){
+    const w=st.win.team;
+    h=`<div class="over"><span class="dot ${w===1?'h':'c'}" style="display:inline-block;vertical-align:-3px;margin-right:8px"></span>${NAMES[w]} wins!</div>
+       <p class="hint">${NAMES[w]} linked ${goal[w]} with a ${st.win.path.length}-cell path. Honey solved ${st.stats[1].ok} of ${st.stats[1].tries}; Clover solved ${st.stats[2].ok} of ${st.stats[2].tries}.</p>
+       <button class="btn" id="again">Play again</button>`;
+  } else if(st.phase==='answer'){
+    const p=st.prob;
+    h=turnHead(t)+`<div class="topic">${p.topic}</div><div class="q${p.word?' word':''}">${p.q}</div>
+      <div class="choices${p.choices.some(c=>c.html.replace(/<[^>]*>/g,'').length>14)?' long':''}">${p.choices.map((c,k)=>`<button class="choice" data-k="${k}"><span class="k">${k+1}</span>${c.html}</button>`).join('')}</div>`;
+  } else if(st.phase==='cpu'){
+    const p=st.prob;
+    h=turnHead(t,' is solving…')+`<div class="topic">${p.topic}</div><div class="q${p.word?' word':''}">${p.q}</div>`;
+  } else {
+    if(st.msg)h+=`<div class="fb ${st.msg.cls}">${st.msg.text}</div>`;
+    h+=turnHead(t,'’s turn')+`<p class="hint">Tap any open hexagon to get a problem. Solve it to claim the cell and build toward ${goal[t]}.</p>`;
+  }
+  card.innerHTML=h;
+  $('#score').innerHTML=[1,2].map(k=>{const s=st.stats[k],n=st.cells.filter(v=>v===k).length;
+    return `<div class="team ${k===1?'h':'c'}"><b>${NAMES[k]}${isCpu(k)?' (computer)':''}</b><span class="big">${n}</span><small>cells · ${s.ok}/${s.tries} solved</small><span class="goal">Connect ${goal[k]}</span></div>`}).join('');
+  if(st.phase==='answer'){const b=card.querySelector('.choice');b&&b.focus({preventScroll:true})}
+}
+
+function claim(i,team){st.cells[i]=team;const s=shortest(team);if(s.d===0){st.win={team,path:s.path};st.phase='over'}}
+function selectCell(i){
+  if(st.phase!=='pick'||st.cells[i]!==0||isCpu(st.turn))return;
+  st.sel=i;st.prob=makeProblem();st.phase='answer';render();
+}
+function answer(k){
+  if(st.phase!=='answer')return;
+  const p=st.prob,c=p.choices[k],t=st.turn,i=st.sel;
+  if(!c)return;
+  st.phase='locked';
+  const btns=document.querySelectorAll('.choice');
+  btns.forEach((b,j)=>{b.disabled=true;if(p.choices[j].ok)b.classList.add('right');else if(j===k)b.classList.add('wrong')});
+  st.stats[t].tries++;
+  const my=++token;
+  setTimeout(()=>{if(my!==token)return;
+    if(c.ok){st.stats[t].ok++;claim(i,t);st.msg={cls:'ok',text:`Sweet! ${NAMES[t]} claimed the cell. The answer was ${p.answer}.`}}
+    else st.msg={cls:'no',text:`Not quite. The answer was ${p.answer}. The cell stays open.`};
+    st.sel=-1;
+    if(st.phase!=='over'){st.turn=3-t;st.phase='pick'}
+    render(c.ok?i:-1);
+    if(st.phase==='pick'&&isCpu(st.turn))cpuTurn();
+  },c.ok?650:1300);
+}
+function cpuTurn(){
+  const my=++token,open=st.cells.map((v,i)=>v?-1:i).filter(i=>i>=0);
+  const mine=shortest(2).path.filter(i=>!st.cells[i]),theirs=new Set(shortest(1).path.filter(i=>!st.cells[i]));
+  const both=mine.filter(i=>theirs.has(i));
+  const i=Math.random()<.15?pick(open):both.length?pick(both):mine.length?pick(mine):pick(open);
+  st.sel=i;st.prob=makeProblem();st.phase='cpu';render();
+  setTimeout(()=>{if(my!==token)return;
+    const ok=Math.random()<.65;st.stats[2].tries++;
+    if(ok){st.stats[2].ok++;claim(i,2);st.msg={cls:'info',text:`Clover solved it (${st.prob.answer}) and claimed a cell.`}}
+    else st.msg={cls:'info',text:`Clover missed that one. The cell stays open.`};
+    st.sel=-1;if(st.phase!=='over'){st.turn=1;st.phase='pick'}render(ok?i:-1);
+  },1500);
+}
+
+// ---------- events ----------
+$('#board').addEventListener('click',e=>{const g=e.target.closest('.cell');if(g)selectCell(+g.dataset.i)});
+$('#board').addEventListener('keydown',e=>{const g=e.target.closest('.cell');if(g&&(e.key==='Enter'||e.key===' ')){e.preventDefault();selectCell(+g.dataset.i)}});
+$('#card').addEventListener('click',e=>{const b=e.target.closest('.choice');if(b)answer(+b.dataset.k);if(e.target.id==='again')newGame()});
+document.addEventListener('keydown',e=>{if(st.phase==='answer'&&/^[1-4]$/.test(e.key))answer(+e.key-1)});
+function seg(id,key,restart){const el=$(id);el.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+  el.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));st[key]=key==='N'?+b.dataset.v:b.dataset.v;if(restart)newGame()})}
+seg('#gradeSeg','grade',false);seg('#topicSeg','topic',false);seg('#sizeSeg','N',true);seg('#modeSeg','mode',true);
+$('#newGame').addEventListener('click',newGame);
+newGame();
+})();
+</script>
+
+</body></html>
