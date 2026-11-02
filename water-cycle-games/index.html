@@ -1,0 +1,771 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Eleven Grades 4-5 water cycle and weather games aligned to the NC 2023 science standards.">
+<title>Water Cycle Game Room</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@400;600;800&display=swap">
+<style>
+:root{ color-scheme:light; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px) }
+*,*::before,*::after{ box-sizing:border-box }
+body{ margin:0; font-size:14px; font-family:system-ui,sans-serif }
+img{ max-width:100% }
+[hidden]{ display:none!important }
+</style>
+<style>
+/* Layout: game picker strip up top, one game stage below; each game is a single focused card */
+:root{
+  --bg:#eef6fa; --surface:#ffffff; --ink:#15303d; --muted:#4f6b78; --line:#cfe1ea;
+  --lake:#1f7a9c; --lake-soft:#d8eef6; --sun:#e89a1c; --sun-soft:#fdf0d6;
+  --good:#1d8a4e; --good-soft:#dcf3e5; --bad:#c2412d; --bad-soft:#fbe3de;
+  --sky:#cfe8f4; --ground:#8fb069; --cloud:#ffffff; --water:#3f9cc4; --leaf:#3f7d3a; --leaf-soft:#e1f0dc; --ice:#6d7fb0; --ice-soft:#e4e8f5; --tree:#3f7d3a; --trunk:#7a5533;
+  --display:"Baloo 2","Trebuchet MS",system-ui,sans-serif; --body:"Nunito","Segoe UI",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0d1d25; --surface:#142a35; --ink:#e3f1f7; --muted:#9db8c4; --line:#244452;
+  --lake:#5cc0e2; --lake-soft:#173d4c; --sun:#f3b347; --sun-soft:#3a2c12;
+  --good:#5fd394; --good-soft:#163b28; --bad:#f08a76; --bad-soft:#41201b;
+  --sky:#1b3a4a; --ground:#4d6a35; --cloud:#d9e6ec; --water:#2f86ad; --leaf:#7cc673; --leaf-soft:#1c3a1a; --ice:#a9b7e6; --ice-soft:#232a45; --tree:#4f9a48; --trunk:#9a7350;
+  color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0d1d25; --surface:#142a35; --ink:#e3f1f7; --muted:#9db8c4; --line:#244452;
+  --lake:#5cc0e2; --lake-soft:#173d4c; --sun:#f3b347; --sun-soft:#3a2c12;
+  --good:#5fd394; --good-soft:#163b28; --bad:#f08a76; --bad-soft:#41201b;
+  --sky:#1b3a4a; --ground:#4d6a35; --cloud:#d9e6ec; --water:#2f86ad; --leaf:#7cc673; --leaf-soft:#1c3a1a; --ice:#a9b7e6; --ice-soft:#232a45; --tree:#4f9a48; --trunk:#9a7350;
+  color-scheme:dark }
+body{ background:var(--bg); color:var(--ink); font-family:var(--body); font-size:17px; line-height:1.5 }
+.wrap{ max-width:820px; margin:0 auto; padding-left:max(16px,env(safe-area-inset-left,0px)); padding-right:max(16px,env(safe-area-inset-right,0px)); padding-block:20px 60px; display:flex; flex-direction:column; gap:18px }
+.eyebrow{ font-size:13px; letter-spacing:.08em; text-transform:uppercase; font-weight:800; color:var(--lake) }
+h1{ font-family:var(--display); font-weight:800; font-size:clamp(30px,6vw,42px); line-height:1.05; margin:0; text-wrap:balance }
+h1 span{ color:var(--sun) }
+h2{ font-family:var(--display); font-weight:800; font-size:26px; margin:0; line-height:1.1 }
+.sub{ margin:0; color:var(--muted); max-width:62ch }
+.picker{ display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:10px }
+.pick{ font:inherit; text-align:left; border:2px solid var(--line); background:var(--surface); color:var(--ink); border-radius:14px; padding:12px 14px; cursor:pointer; display:flex; flex-direction:column; gap:2px }
+.pick strong{ font-family:var(--display); font-size:20px; line-height:1.1 }
+.pick small{ color:var(--muted); font-size:14px }
+.pick[aria-current="true"]{ border-color:var(--lake); background:var(--lake-soft) }
+.stage{ background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px; display:flex; flex-direction:column; gap:14px; min-width:0 }
+.top{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap }
+.top p{ margin:4px 0 0; color:var(--muted); font-size:15px; max-width:52ch }
+.stats{ display:flex; gap:8px; flex-wrap:wrap }
+.stat{ background:var(--lake-soft); border-radius:10px; padding:4px 12px; font-weight:800; font-size:15px; font-variant-numeric:tabular-nums }
+.btn{ font:inherit; font-weight:800; font-size:16px; border-radius:10px; padding:9px 16px; border:2px solid var(--lake); background:transparent; color:var(--lake); cursor:pointer }
+.btn:hover{ background:var(--lake-soft) }
+.btn.solid{ background:var(--lake); color:var(--surface) }
+button:focus-visible{ outline:3px solid var(--sun); outline-offset:2px }
+.qtext{ font-weight:700; font-size:18px; margin:0 }
+.opts{ display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr)); gap:8px }
+.opt{ font:inherit; font-size:16px; text-align:left; padding:10px 12px; border-radius:10px; border:2px solid var(--line); background:var(--bg); color:var(--ink); cursor:pointer }
+.opt:hover:not(:disabled){ border-color:var(--lake) }
+.opt:disabled{ cursor:default }
+.is-right{ border-color:var(--good)!important; background:var(--good-soft)!important }
+.is-wrong{ border-color:var(--bad)!important; background:var(--bad-soft)!important }
+.fb{ font-size:15px; border-radius:10px; padding:8px 12px; margin:0 }
+.fb.ok{ background:var(--good-soft) } .fb.no{ background:var(--bad-soft) }
+.row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center }
+.win{ background:var(--sun-soft); border-radius:12px; padding:14px 16px; display:flex; flex-direction:column; gap:8px }
+.win h3{ font-family:var(--display); font-size:24px; margin:0 }
+.win p{ margin:0 }
+
+/* journey */
+.loop{ overflow-x:auto }
+.loop svg{ display:block; width:100%; min-width:460px; height:auto; border-radius:12px }
+.drop{ transition:transform .5s ease }
+
+/* match */
+.grid{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px }
+@media (max-width:520px){ .grid{ grid-template-columns:repeat(3,minmax(0,1fr)) } }
+.card{ font:inherit; font-size:14px; font-weight:700; min-height:96px; border-radius:12px; border:2px solid var(--lake); background:var(--lake); color:var(--surface); cursor:pointer; padding:8px; display:flex; align-items:center; justify-content:center; text-align:center; line-height:1.25; overflow-wrap:anywhere }
+.card.up{ background:var(--surface); color:var(--ink) }
+.card.up.term{ font-family:var(--display); font-size:17px; color:var(--lake) }
+.card.got{ background:var(--good-soft); border-color:var(--good); color:var(--ink); cursor:default }
+
+/* sort */
+.example{ background:var(--bg); border:2px dashed var(--line); border-radius:14px; padding:18px; font-size:20px; font-weight:700; text-align:center; text-wrap:balance }
+.bins{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:8px }
+.bin{ font:inherit; font-weight:800; font-size:16px; border-radius:12px; padding:12px 10px; cursor:pointer; border:2px solid; display:flex; flex-direction:column; gap:2px; align-items:flex-start; text-align:left }
+.bin small{ font-weight:600; font-size:13px; opacity:.85 }
+.bin span.ct{ font-variant-numeric:tabular-nums; font-size:13px }
+.bin.evap{ border-color:var(--sun); background:var(--sun-soft); color:var(--ink) }
+.bin.tran{ border-color:var(--leaf); background:var(--leaf-soft); color:var(--ink) }
+.bin.cond{ border-color:var(--lake); background:var(--lake-soft); color:var(--ink) }
+.bin.prec{ border-color:var(--ice); background:var(--ice-soft); color:var(--ink) }
+.bin:disabled{ opacity:.6; cursor:default }
+
+/* speed */
+.timer{ height:12px; border-radius:6px; background:var(--lake-soft); overflow:hidden }
+.timer span{ display:block; height:100%; background:var(--sun); width:100% }
+.statement{ font-size:22px; font-weight:800; text-align:center; text-wrap:balance; margin:6px 0; min-height:3em; display:flex; align-items:center; justify-content:center }
+.tf{ display:grid; grid-template-columns:1fr 1fr; gap:10px }
+.tf .btn{ font-size:22px; padding:16px }
+.tf .t{ border-color:var(--good); color:var(--good) }
+.tf .f{ border-color:var(--bad); color:var(--bad) }
+.flash-ok{ color:var(--good) } .flash-no{ color:var(--bad) }
+.pick .tag{ display:flex; gap:6px; flex-wrap:wrap; margin-top:4px }
+.pick .tag em{ font-style:normal; font-size:12px; font-weight:800; letter-spacing:.04em; border-radius:6px; padding:1px 7px; background:var(--sun-soft); color:var(--ink) }
+.pick .tag em.g4{ background:var(--leaf-soft) }
+.filters{ display:flex; gap:8px; flex-wrap:wrap; align-items:center }
+.filters span{ font-size:14px; font-weight:800; color:var(--muted) }
+.fchip{ font:inherit; font-size:15px; font-weight:800; border-radius:999px; padding:5px 14px; border:2px solid var(--line); background:var(--surface); color:var(--ink); cursor:pointer }
+.fchip[aria-pressed="true"]{ border-color:var(--lake); background:var(--lake-soft) }
+.stdline{ font-size:14px; color:var(--muted); margin:0; max-width:70ch }
+.stdline b{ color:var(--ink) }
+.tablewrap{ overflow-x:auto }
+table.wx{ border-collapse:collapse; font-size:15px; font-variant-numeric:tabular-nums; min-width:100% }
+table.wx th, table.wx td{ border:1px solid var(--line); padding:6px 10px; text-align:left; white-space:nowrap }
+table.wx th{ background:var(--lake-soft) }
+.wxcap{ font-weight:800; font-size:14px; color:var(--muted); margin:0 0 4px }
+.meter2{ height:12px; border-radius:6px; background:var(--bad-soft); overflow:hidden }
+.meter2 span{ display:block; height:100%; background:var(--good); transition:width .4s }
+.two{ display:grid; grid-template-columns:1fr 1fr; gap:10px }
+.two .btn{ font-size:19px; padding:14px 10px }
+.letters{ display:flex; flex-wrap:wrap; gap:6px; justify-content:center }
+.ltr{ font:inherit; font-family:var(--display); font-weight:800; font-size:22px; width:44px; height:48px; border-radius:10px; border:2px solid var(--lake); background:var(--surface); color:var(--lake); cursor:pointer }
+.ltr:disabled{ opacity:.25; cursor:default }
+.slots{ display:flex; flex-wrap:wrap; gap:6px; justify-content:center; min-height:52px }
+.slot{ font:inherit; font-family:var(--display); font-weight:800; font-size:22px; width:44px; height:48px; border-radius:10px; border:2px solid var(--sun); background:var(--sun-soft); color:var(--ink); cursor:pointer }
+.slot.empty{ border-style:dashed; background:transparent; cursor:default }
+.clue{ text-align:center; font-weight:700; margin:0 }
+.steps{ display:flex; flex-direction:column; gap:8px }
+.step{ font:inherit; font-size:16px; text-align:left; padding:10px 12px; border-radius:10px; border:2px solid var(--line); background:var(--bg); color:var(--ink); cursor:pointer; display:flex; gap:10px; align-items:center }
+.step:disabled{ opacity:.4; cursor:default }
+.step .n{ font-family:var(--display); font-weight:800; color:var(--lake); min-width:1.6em; font-variant-numeric:tabular-nums }
+.colhead{ font-weight:800; font-size:14px; color:var(--muted); margin:0; text-transform:uppercase; letter-spacing:.06em }
+.ordergrid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr)); gap:14px }
+.ordergrid > div{ display:flex; flex-direction:column; gap:8px; min-width:0 }
+@media (prefers-reduced-motion: reduce){ .meter2 span{ transition:none } }
+
+/* 40-question practice */
+.pr{ display:flex; flex-direction:column; gap:18px }
+.pr .pbar{ position:sticky; top:env(safe-area-inset-top,0px); z-index:4; background:var(--surface); padding-block:8px; border-bottom:1px solid var(--line); display:flex; flex-direction:column; gap:4px }
+.pr .pbar-top{ display:flex; justify-content:space-between; font-size:14px; font-weight:800; font-variant-numeric:tabular-nums }
+.pr .track{ height:10px; border-radius:6px; background:var(--lake-soft); overflow:hidden; display:flex }
+.pr .track .g{ background:var(--good) } .pr .track .b{ background:var(--bad) }
+.pr .part{ display:flex; flex-direction:column; gap:12px }
+.pr .part h3{ font-family:var(--display); font-weight:800; font-size:22px; margin:6px 0 0; line-height:1.1 }
+.pr .part > p{ margin:0; color:var(--muted) }
+.pr .bank{ display:flex; flex-wrap:wrap; gap:8px; font-weight:700 }
+.pr .bank span{ background:var(--sun-soft); border-radius:999px; padding:3px 12px; font-size:15px }
+.pr .model{ background:var(--lake-soft); border-radius:12px; padding:14px 16px; max-width:62ch }
+.pr .q{ background:var(--bg); border:1px solid var(--line); border-radius:14px; padding:14px; display:flex; flex-direction:column; gap:12px }
+.pr .q.right{ border-color:var(--good) } .pr .q.wrong{ border-color:var(--bad) }
+.pr .qrow{ display:flex; gap:10px; font-weight:600 }
+.pr .num{ font-family:var(--display); font-weight:800; color:var(--lake); min-width:2ch; font-variant-numeric:tabular-nums }
+.pr .opts.words{ grid-template-columns:repeat(auto-fit,minmax(130px,1fr)) }
+.pr .opt{ background:var(--surface); display:flex; gap:8px; align-items:flex-start }
+.pr .opt b{ color:var(--muted) }
+.pr .opt.dim{ opacity:.55 }
+.pr .fb strong{ margin-right:4px }
+.pr .scroll{ overflow-x:auto }
+.pr .scene{ position:relative; min-width:540px; aspect-ratio:600/340; border-radius:14px; overflow:hidden; border:1px solid var(--line) }
+.pr .scene svg{ position:absolute; inset:0; width:100%; height:100% }
+.pr .zone{ position:absolute; transform:translate(-50%,-50%); font:inherit; font-size:14px; font-weight:800; min-width:118px; padding:6px 8px; border-radius:10px; border:2px dashed var(--lake); background:var(--surface); color:var(--lake); cursor:pointer; font-variant-numeric:tabular-nums }
+.pr .zone.armed{ border-style:solid; box-shadow:0 0 0 4px var(--sun-soft) }
+.pr .zone.is-right{ color:var(--good) } .pr .zone.is-wrong{ color:var(--bad) }
+.pr .zone:disabled{ cursor:default }
+.pr .sunlabel{ position:absolute; left:12%; top:25%; transform:translate(-50%,0); font-weight:800; font-size:14px }
+.pr .chips{ display:flex; flex-wrap:wrap; gap:8px }
+.pr .chip{ font:inherit; font-weight:800; font-size:15px; padding:8px 14px; border-radius:999px; border:2px solid var(--sun); background:var(--sun-soft); color:var(--ink); cursor:pointer }
+.pr .chip[aria-pressed="true"]{ background:var(--sun); color:var(--surface) }
+.pr .chip:disabled{ opacity:.35; cursor:default }
+.pr .hint{ font-size:15px; color:var(--muted); margin:0 }
+@media (prefers-reduced-motion: reduce){ .drop{ transition:none } }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header style="display:flex;flex-direction:column;gap:6px">
+    <span class="eyebrow">Grades 4–5 Science · NC 2023 Standard Course of Study</span>
+    <h1>Water Cycle <span>Game Room</span></h1>
+    <p class="sub">Eleven games, including the full 40-question challenge, on the water cycle, weather, and how water shapes the land. Each game lists the NC science standard it practices. Pick one to play.</p>
+  </header>
+  <div class="filters" role="group" aria-label="Show games for a grade">
+    <span>Show:</span>
+    <button class="fchip" type="button" data-f="all" aria-pressed="true">All games</button>
+    <button class="fchip" type="button" data-f="4" aria-pressed="false">Grade 4</button>
+    <button class="fchip" type="button" data-f="5" aria-pressed="false">Grade 5</button>
+  </div>
+  <nav class="picker" aria-label="Choose a game">
+    <button class="pick" type="button" data-game="practice" data-g="5"><strong>40-Question Challenge</strong><small>The full worksheet with instant feedback and a diagram to label</small><span class="tag"><em>ESS.5.1.4</em></span></button>
+    <button class="pick" type="button" data-game="journey" data-g="5"><strong>Raindrop Journey</strong><small>Answer questions to carry a drop around the cycle</small><span class="tag"><em>ESS.5.1.4</em></span></button>
+    <button class="pick" type="button" data-game="match" data-g="5"><strong>Memory Match</strong><small>Flip cards to pair words with meanings</small><span class="tag"><em>ESS.5.1.4</em></span></button>
+    <button class="pick" type="button" data-game="sort" data-g="5"><strong>Sort It Out</strong><small>Put real-life examples in the right process</small><span class="tag"><em>ESS.5.1.4</em></span></button>
+    <button class="pick" type="button" data-game="speed" data-g="5"><strong>60-Second Splash</strong><small>True or false, as fast as you can</small><span class="tag"><em>ESS.5.1.4</em></span></button>
+    <button class="pick" type="button" data-game="weather" data-g="5"><strong>Weather Watch</strong><small>Read real-style weather data and spot the pattern</small><span class="tag"><em>ESS.5.1.1</em><em>ESS.5.1.2</em></span></button>
+    <button class="pick" type="button" data-game="coast" data-g="5"><strong>Coast or Mountains?</strong><small>How the ocean shapes North Carolina weather</small><span class="tag"><em>ESS.5.1.3</em></span></button>
+    <button class="pick" type="button" data-game="heat" data-g="4 5"><strong>Heat It or Cool It</strong><small>Decide what energy change makes water change state</small><span class="tag"><em class="g4">PS.4.2.1</em><em>PS.5.1.3</em></span></button>
+    <button class="pick" type="button" data-game="garden" data-g="4"><strong>Rain Garden Rescue</strong><small>Choose actions that stop flooding and erosion</small><span class="tag"><em class="g4">ESS.4.3.2</em><em class="g4">ESS.4.2.3</em></span></button>
+    <button class="pick" type="button" data-game="scramble" data-g="4 5"><strong>Word Scramble</strong><small>Unscramble water and weather vocabulary</small><span class="tag"><em class="g4">ESS.4.2.3</em><em>ESS.5.1</em></span></button>
+    <button class="pick" type="button" data-game="order" data-g="4 5"><strong>What Happens Next?</strong><small>Put the steps of each water story in order</small><span class="tag"><em class="g4">ESS.4.3.2</em><em>ESS.5.1.4</em></span></button>
+  </nav>
+  <p class="stdline" id="stdline"></p>
+  <section class="stage" id="stage" aria-live="polite"></section>
+</main>
+
+<script>
+const $ = (t,c,x)=>{const e=document.createElement(t); if(c) e.className=c; if(x!=null) e.textContent=x; return e;};
+const shuffle = a=>{a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a;};
+const stage = document.getElementById("stage");
+
+/* ---------- shared question bank ---------- */
+const Q = [
+ ["What is the main source of energy that drives the water cycle?",["the moon","the sun","the wind","the ocean"],1,"The sun supplies the heat energy for the whole cycle."],
+ ["A puddle on the playground is gone by the afternoon on a sunny day. Which process caused this?",["condensation","precipitation","evaporation","transpiration"],2,"The sun heats the puddle and the water becomes water vapor."],
+ ["Which process is the release of water vapor from the leaves of plants?",["transpiration","condensation","precipitation","runoff"],0,"Transpiration is water vapor leaving a plant through its leaves."],
+ ["Water droplets form on the outside of a cold glass of lemonade. Which process does this model?",["evaporation","condensation","precipitation","transpiration"],1,"Water vapor cools on the cold glass and becomes liquid."],
+ ["Water vapor rises, cools, and forms clouds. What happens to its energy?",["It gains thermal energy.","It loses thermal energy and becomes tiny droplets.","It turns into ice by gaining energy.","It stays the same."],1,"Cooling means losing thermal energy, so the vapor condenses."],
+ ["Cloud droplets join until they are too heavy to stay up. What happens next?",["evaporation","transpiration","condensation","precipitation"],3,"Heavy drops fall as precipitation."],
+ ["One pan of water sits in the sun and one in the shade. After 3 hours, which is most likely?",["The shade pan has less water.","The sun pan has less water.","Both have the same.","The sun pan has more water."],1,"More of the sun's energy means faster evaporation."],
+ ["Why would the water cycle slow down without the sun?",["Clouds would block the rain.","Plants would release more water.","There would not be enough heat to evaporate water.","Oceans would turn fresh."],2,"Without the sun's heat, little water evaporates."],
+ ["Water vapor is water in which state of matter?",["solid","liquid","gas","It has no state."],2,"Water vapor is water as an invisible gas."],
+ ["On which day would wet laundry dry fastest?",["a hot, sunny day","a cool, cloudy day","a cold, rainy day","a chilly night"],0,"More heat means faster evaporation."],
+ ["What are clouds mostly made of?",["smoke","tiny drops of water or ice","dust only","invisible water vapor"],1,"Clouds are condensed droplets and ice crystals you can see."],
+ ["A bathroom mirror fogs up after a hot shower. Which process is this?",["evaporation","condensation","precipitation","transpiration"],1,"Warm vapor condenses on the cooler mirror."],
+ ["Why does water vapor condense high in the sky?",["The air up high is warmer.","The air up high is colder.","The sun is closer.","Plants push it up."],1,"Colder air up high cools the vapor so it condenses."],
+ ["Which order shows water moving from a lake back to the ground?",["precipitation → evaporation → condensation","condensation → precipitation → evaporation","evaporation → condensation → precipitation","evaporation → precipitation → condensation"],2,"Evaporate, condense into clouds, then fall."],
+ ["Rain, snow, sleet, and hail are all forms of what?",["evaporation","transpiration","condensation","precipitation"],3,"Water falling from clouds is precipitation."],
+ ["Dew forms on grass on a cool morning. Which process made it?",["evaporation","condensation","precipitation","transpiration"],1,"Vapor in the air cools on the grass and condenses."],
+ ["In a bowl model, sunlight shines on warm water. What does the sunlight represent?",["the sun's energy, which starts evaporation","rain","a cloud","a plant"],0,"Sunlight is the energy that makes water evaporate."],
+ ["In the bowl model, drops form under cold plastic wrap. What does this model?",["evaporation","condensation","precipitation","transpiration"],1,"Vapor cools on the cold wrap and condenses."],
+ ["A bag over a plant in the sun gets drops inside. Which process put water into the bag's air?",["precipitation","runoff","transpiration","melting"],2,"The leaves released water vapor."],
+ ["During evaporation, liquid water…",["loses energy and freezes","gains thermal energy and becomes a gas","falls from a cloud","soaks into soil"],1,"Energy from the sun lets water escape as a gas."]
+];
+
+/* ---------- 1. Raindrop Journey ---------- */
+function journey(){
+  const STEPS = 12;
+  let pos=0, asked=0, right=0, deck=shuffle(Q), locked=false;
+  const labels = {0:"Lake", 3:"Evaporation", 6:"Condensation", 9:"Precipitation"};
+  const P = Array.from({length:STEPS},(_,i)=>{ const a = Math.PI*1.25 - i/STEPS*2*Math.PI; return [300+220*Math.cos(a), 160+105*Math.sin(-a)]; });
+  stage.innerHTML="";
+  const top=$("div","top"); const tl=$("div"); tl.appendChild($("h2",null,"Raindrop Journey")); tl.appendChild($("p",null,"Each right answer moves your raindrop one step around the water cycle. Get it all the way back to the lake to win."));
+  const stats=$("div","stats"); const s1=$("span","stat"); const s2=$("span","stat"); stats.append(s1,s2); top.append(tl,stats); stage.appendChild(top);
+  const loop=$("div","loop");
+  let svg=`<svg viewBox="0 0 600 320" role="img" aria-label="Path around the water cycle"><rect width="600" height="320" style="fill:var(--sky)"/>
+   <circle cx="300" cy="160" r="34" style="fill:var(--sun)"/><text x="300" y="166" text-anchor="middle" style="fill:var(--ink);font:800 15px var(--body)">sun</text>
+   <ellipse cx="300" cy="160" rx="220" ry="105" fill="none" style="stroke:var(--line)" stroke-width="10"/>`;
+  P.forEach((p,i)=>{ const big = labels[i]!=null; svg+=`<circle cx="${p[0]}" cy="${p[1]}" r="${big?13:8}" style="fill:${big?'var(--surface)':'var(--lake-soft)'};stroke:var(--lake)" stroke-width="3"/>`;
+    if(big){ const dy = p[1]<160?-22:32; svg+=`<text x="${p[0]}" y="${p[1]+dy}" text-anchor="middle" style="fill:var(--ink);font:800 15px var(--body)">${labels[i]}</text>`; } });
+  svg+=`<g class="drop" id="drop"><path d="M0 -20 C 8 -8 14 0 14 7 A14 14 0 0 1 -14 7 C -14 0 -8 -8 0 -20z" style="fill:var(--water);stroke:var(--surface)" stroke-width="2"/></g></svg>`;
+  loop.innerHTML=svg; stage.appendChild(loop);
+  const area=$("div"); area.style.cssText="display:flex;flex-direction:column;gap:10px"; stage.appendChild(area);
+  const drop=()=>document.getElementById("drop");
+  function place(){ const p=P[pos%STEPS]; drop().setAttribute("transform",`translate(${p[0]} ${p[1]-4})`); s1.textContent=`Step ${pos} / ${STEPS}`; s2.textContent=`${right} of ${asked} right`; }
+  function next(){
+    area.innerHTML=""; locked=false;
+    if(pos>=STEPS){ const w=$("div","win"); w.appendChild($("h3",null,"Your raindrop made it home!")); w.appendChild($("p",null,`You traveled the whole water cycle in ${asked} questions with ${right} right. Can you do it in exactly 12?`));
+      const b=$("button","btn solid","Play again"); b.type="button"; b.onclick=journey; w.appendChild(b); area.appendChild(w); return; }
+    if(!deck.length) deck=shuffle(Q);
+    const [t,o0,a0,why]=deck.pop(); const ord=shuffle(o0.map((_,i)=>i)); const o=ord.map(i=>o0[i]), a=ord.indexOf(a0);
+    area.appendChild($("p","qtext",t));
+    const g=$("div","opts"); const bs=o.map((x,i)=>{const b=$("button","opt",x); b.type="button"; b.onclick=()=>{ if(locked) return; locked=true; asked++;
+      bs.forEach(y=>y.disabled=true); bs[a].classList.add("is-right");
+      const ok=i===a; if(ok){ right++; pos++; } else b.classList.add("is-wrong");
+      place();
+      const f=$("p","fb "+(ok?"ok":"no"),(ok?"Correct! Your drop moves ahead. ":"Not quite. Your drop stays put. ")+why); area.appendChild(f);
+      const n=$("button","btn solid",pos>=STEPS?"Finish":"Next question"); n.type="button"; n.onclick=next; const r=$("div","row"); r.appendChild(n); area.appendChild(r); n.focus(); };
+      g.appendChild(b); return b;}); area.appendChild(g);
+  }
+  place(); next();
+}
+
+/* ---------- 2. Memory Match ---------- */
+const PAIRS = [
+ ["evaporation","Liquid water turns into a gas when heated"],
+ ["transpiration","Plants give off water vapor through their leaves"],
+ ["condensation","Water vapor cools and turns into liquid drops"],
+ ["precipitation","Rain, snow, sleet or hail falling from clouds"],
+ ["water vapor","Water in its invisible gas form"],
+ ["sun","The energy source that drives the water cycle"]
+];
+function match(){
+  let open=[], moves=0, found=0, busy=false;
+  stage.innerHTML="";
+  const top=$("div","top"); const tl=$("div"); tl.appendChild($("h2",null,"Memory Match")); tl.appendChild($("p",null,"Flip two cards at a time. Match each water cycle word to what it means."));
+  const stats=$("div","stats"); const s1=$("span","stat"); const s2=$("span","stat"); stats.append(s1,s2); top.append(tl,stats); stage.appendChild(top);
+  const grid=$("div","grid"); stage.appendChild(grid); const end=$("div"); stage.appendChild(end);
+  const cards = shuffle(PAIRS.flatMap((p,i)=>[{k:i,txt:p[0],term:true},{k:i,txt:p[1],term:false}]));
+  const upd=()=>{ s1.textContent=`${found} / ${PAIRS.length} pairs`; s2.textContent=`${moves} turns`; };
+  cards.forEach((c,idx)=>{ const b=$("button","card","?"); b.type="button"; b.setAttribute("aria-label","Card "+(idx+1)); c.el=b;
+    b.onclick=()=>{ if(busy||c.got||open.includes(c)) return;
+      b.textContent=c.txt; b.classList.add("up"); if(c.term) b.classList.add("term"); b.setAttribute("aria-label",c.txt); open.push(c);
+      if(open.length===2){ moves++; const [a,d]=open;
+        if(a.k===d.k){ a.got=d.got=true; a.el.classList.add("got"); d.el.classList.add("got"); found++; open=[];
+          if(found===PAIRS.length){ const w=$("div","win"); w.appendChild($("h3",null,"All pairs matched!")); w.appendChild($("p",null,`You did it in ${moves} turns. The best possible is 6.`)); const r=$("button","btn solid","Play again"); r.type="button"; r.onclick=match; w.appendChild(r); end.appendChild(w); }
+        } else { busy=true; setTimeout(()=>{ [a,d].forEach(x=>{ x.el.textContent="?"; x.el.className="card"; x.el.setAttribute("aria-label","Hidden card"); }); open=[]; busy=false; },1100); }
+      }
+      upd(); };
+    grid.appendChild(b); });
+  upd();
+}
+
+/* ---------- 3. Sort It Out ---------- */
+const BINS = [
+ {k:"evap",name:"Evaporation",hint:"liquid → gas, heat from the sun"},
+ {k:"tran",name:"Transpiration",hint:"water vapor from plants"},
+ {k:"cond",name:"Condensation",hint:"gas → liquid, cooling"},
+ {k:"prec",name:"Precipitation",hint:"water falling from clouds"}
+];
+const EXAMPLES = [
+ ["A puddle disappears on a sunny afternoon.","evap"],["Wet hair dries outside in the sun.","evap"],["The sun warms the ocean and some water rises into the air as vapor.","evap"],["Wet clothes dry on a clothesline.","evap"],
+ ["A tree's leaves release water it pulled up through its roots.","tran"],["A cornfield adds water vapor to the air on a hot day.","tran"],["Water vapor escapes through tiny holes under a leaf.","tran"],["A rainforest's plants make the air feel damp and humid.","tran"],
+ ["Drops form on the outside of a cold glass of lemonade.","cond"],["A bathroom mirror fogs up after a hot shower.","cond"],["Dew covers the grass on a cool morning.","cond"],["Clouds form as water vapor cools high in the sky.","cond"],
+ ["Snowflakes fall during a winter storm.","prec"],["Hail bounces off the hood of a car.","prec"],["Rain taps against the classroom window.","prec"],["Heavy cloud droplets fall to the ground as sleet.","prec"]
+];
+function sort(){
+  const deck=shuffle(EXAMPLES); let i=0, right=0; const counts={evap:0,tran:0,cond:0,prec:0};
+  stage.innerHTML="";
+  const top=$("div","top"); const tl=$("div"); tl.appendChild($("h2",null,"Sort It Out")); tl.appendChild($("p",null,"Read each real-life example. Tap the water cycle process it shows."));
+  const stats=$("div","stats"); const s1=$("span","stat"); const s2=$("span","stat"); stats.append(s1,s2); top.append(tl,stats); stage.appendChild(top);
+  const ex=$("div","example"); stage.appendChild(ex);
+  const bins=$("div","bins"); stage.appendChild(bins);
+  const fbBox=$("div"); stage.appendChild(fbBox);
+  const btns = BINS.map(b=>{ const x=$("button","bin "+b.k); x.type="button"; x.appendChild($("span",null,b.name)); x.appendChild($("small",null,b.hint)); const ct=$("span","ct"); x.appendChild(ct); b.ct=ct; bins.appendChild(x); x.onclick=()=>choose(b.k,x); return x; });
+  const upd=()=>{ s1.textContent=`Card ${Math.min(i+1,deck.length)} / ${deck.length}`; s2.textContent=`${right} right`; BINS.forEach(b=>b.ct.textContent=`${counts[b.k]} sorted`); };
+  function show(){ fbBox.innerHTML=""; btns.forEach(b=>{b.disabled=false; b.classList.remove("is-right","is-wrong");});
+    if(i>=deck.length){ ex.textContent="All 16 examples sorted!"; btns.forEach(b=>b.disabled=true);
+      const w=$("div","win"); w.appendChild($("h3",null,`You sorted ${right} of 16 correctly`)); w.appendChild($("p",null, right===16?"Perfect sort! You know every process.":"Play again to try for a perfect 16.")); const r=$("button","btn solid","Play again"); r.type="button"; r.onclick=sort; w.appendChild(r); fbBox.appendChild(w); upd(); return; }
+    ex.textContent=deck[i][0]; upd(); }
+  function choose(k,x){ const ans=deck[i][1]; btns.forEach(b=>b.disabled=true); counts[ans]++;
+    const ok=k===ans; if(ok) right++; else x.classList.add("is-wrong"); btns[BINS.findIndex(b=>b.k===ans)].classList.add("is-right");
+    const name=BINS.find(b=>b.k===ans).name;
+    fbBox.appendChild($("p","fb "+(ok?"ok":"no"), ok?`Correct! That's ${name.toLowerCase()}.`:`Not quite. That example shows ${name.toLowerCase()}.`));
+    const r=$("div","row"); r.style.marginTop="10px"; const n=$("button","btn solid","Next card"); n.type="button"; n.onclick=()=>{i++; show();}; r.appendChild(n); fbBox.appendChild(r); upd(); n.focus(); }
+  show();
+}
+
+/* ---------- 4. 60-Second Splash ---------- */
+const TFQ = [
+ ["The water cycle has a beginning and an end.",false],["Water evaporates faster when it is warmer.",true],["Only oceans can evaporate.",false],["Plants release water vapor through their leaves.",true],
+ ["Condensation happens when water vapor gets warmer.",false],["Hail is a form of precipitation.",true],["The sun is the main energy source for the water cycle.",true],["Earth's water gets used up when it rains.",false],
+ ["Water vapor is a gas.",true],["Clouds are made of smoke.",false],["Dew forms by condensation.",true],["Evaporation turns a gas into a liquid.",false],
+ ["Snow is a form of precipitation.",true],["Transpiration happens in rocks.",false],["Water vapor cools as it rises high in the sky.",true],["A puddle in the shade dries faster than one in the sun.",false],
+ ["Losing thermal energy can change water vapor into liquid.",true],["Precipitation happens when cloud drops get too heavy.",true],["Fog on a cold mirror is evaporation.",false],["Without the sun, much less water would evaporate.",true],
+ ["Rain is the only kind of precipitation.",false],["Water vapor can be seen easily.",false],["Warm, sunny days speed up transpiration.",true],["The same water moves through the cycle again and again.",true]
+];
+let speedTimer=null;
+function speed(){
+  clearInterval(speedTimer);
+  let deck=shuffle(TFQ), score=0, tries=0, streak=0, best=0, t=60, cur=null, missed=[];
+  stage.innerHTML="";
+  const top=$("div","top"); const tl=$("div"); tl.appendChild($("h2",null,"60-Second Splash")); tl.appendChild($("p",null,"Decide if each statement is true or false. Get as many right as you can in 60 seconds."));
+  const stats=$("div","stats"); const s1=$("span","stat"); const s2=$("span","stat"); const s3=$("span","stat"); stats.append(s1,s2,s3); top.append(tl,stats); stage.appendChild(top);
+  const bar=$("div","timer"); const fill=$("span"); bar.appendChild(fill); stage.appendChild(bar);
+  const st=$("p","statement","Ready?"); stage.appendChild(st);
+  const flash=$("p","fb"); flash.hidden=true; stage.appendChild(flash);
+  const tf=$("div","tf"); const T=$("button","btn t","True"); const F=$("button","btn f","False"); T.type=F.type="button"; tf.append(T,F); stage.appendChild(tf);
+  const end=$("div"); stage.appendChild(end);
+  const upd=()=>{ s1.textContent=`${t}s left`; s2.textContent=`${score} right`; s3.textContent=`Streak ${streak}`; fill.style.width=(t/60*100)+"%"; };
+  T.disabled=F.disabled=true;
+  const go=$("button","btn solid","Start"); go.type="button"; const gr=$("div","row"); gr.appendChild(go); end.appendChild(gr);
+  go.onclick=()=>{ end.innerHTML=""; T.disabled=F.disabled=false; nextS(); T.focus();
+    speedTimer=setInterval(()=>{ t--; upd(); if(t<=0){ clearInterval(speedTimer); finish(); } },1000); };
+  function nextS(){ if(!deck.length) deck=shuffle(TFQ); cur=deck.pop(); st.textContent=cur[0]; }
+  function pick(v){ if(t<=0) return; tries++; const ok=v===cur[1];
+    if(ok){ score++; streak++; best=Math.max(best,streak); } else { streak=0; missed.push(cur); }
+    flash.hidden=false; flash.className="fb "+(ok?"ok":"no"); flash.textContent= ok?"Correct!":`Oops. "${cur[0]}" is ${cur[1]?"true":"false"}.`;
+    upd(); nextS(); }
+  T.onclick=()=>pick(true); F.onclick=()=>pick(false);
+  function finish(){ T.disabled=F.disabled=true; st.textContent="Time's up!"; flash.hidden=true;
+    const w=$("div","win"); w.appendChild($("h3",null,`${score} right out of ${tries}`)); w.appendChild($("p",null,`Best streak: ${best}.`));
+    if(missed.length){ const u=$("p"); u.textContent="Review: "+missed.slice(0,5).map(m=>`"${m[0]}" is ${m[1]?"true":"false"}.`).join(" "); w.appendChild(u); }
+    const r=$("button","btn solid","Play again"); r.type="button"; r.onclick=speed; w.appendChild(r); end.appendChild(w); }
+  upd();
+}
+
+
+/* ---------- shared engines ---------- */
+function shell(title, desc){
+  stage.innerHTML="";
+  const top=$("div","top"); const tl=$("div"); tl.appendChild($("h2",null,title)); tl.appendChild($("p",null,desc));
+  const stats=$("div","stats"); top.append(tl,stats); stage.appendChild(top);
+  const stat=()=>{ const x=$("span","stat"); stats.appendChild(x); return x; };
+  return {stat};
+}
+function endCard(parent, title, text, again){
+  const w=$("div","win"); w.appendChild($("h3",null,title)); w.appendChild($("p",null,text));
+  const r=$("button","btn solid","Play again"); r.type="button"; r.onclick=again; w.appendChild(r); parent.appendChild(w); r.focus();
+}
+
+/* ---------- 5. Weather Watch (ESS.5.1.1, ESS.5.1.2) ---------- */
+const WX_WEEK = {cap:"Five-day weather log for a town in the North Carolina Piedmont", head:["Day","High (°F)","Sky","Rain (in.)","Wind"], rows:[
+  ["Mon","72","Sunny","0.0","5 mph from S"],["Tue","75","Partly cloudy","0.0","8 mph from SW"],["Wed","68","Thunderstorms","1.2","15 mph from NW"],["Thu","55","Cloudy","0.1","10 mph from N"],["Fri","60","Sunny","0.0","5 mph from E"]]};
+const WX_YEAR = {cap:"Average monthly weather for a town in the North Carolina Piedmont", head:["Month","Avg. high (°F)","Avg. rain (in.)"], rows:[
+  ["January","51","3.5"],["April","72","3.2"],["July","90","4.4"],["October","72","3.3"]]};
+const WX_STORM = {cap:"Weather readings at a North Carolina beach town", head:["Time","Wind","Rain (in.)","Sky"], rows:[
+  ["6 a.m.","20 mph","0.2","Dark clouds over the ocean"],["noon","55 mph","2.5","Heavy rain bands"],["6 p.m.","85 mph","4.8","Storm surge flooding streets"]]};
+const WXQ = [
+ [WX_WEEK,"Which day had the most precipitation?",["Monday","Wednesday","Thursday","Friday"],1,"Wednesday had 1.2 inches of rain, the most of any day."],
+ [WX_WEEK,"How much did the high temperature drop from Wednesday to Thursday?",["7°F","10°F","13°F","20°F"],2,"68°F minus 55°F is 13°F."],
+ [WX_WEEK,"Which day had the strongest wind?",["Monday","Tuesday","Wednesday","Friday"],2,"Wednesday's wind was 15 mph, the fastest in the log."],
+ [WX_WEEK,"On Wednesday, storms came, the wind turned to blow from the northwest, and the next day was much cooler. What most likely happened?",["A cold front passed through.","A hurricane made landfall.","The weather stayed the same.","A heat wave began."],0,"Storms, a wind shift to the northwest, and a drop in temperature are signs of a cold front."],
+ [WX_WEEK,"What is the difference between the warmest and coolest high temperature this week?",["13°F","15°F","20°F","25°F"],2,"The warmest was 75°F and the coolest was 55°F. 75 − 55 = 20."],
+ [WX_YEAR,"Which month has the highest average temperature?",["January","April","July","October"],2,"July has the highest average high, 90°F."],
+ [WX_YEAR,"How much warmer is the average high in July than in January?",["21°F","29°F","39°F","41°F"],2,"90°F minus 51°F is 39°F."],
+ [WX_YEAR,"Which pattern does the table show?",["It is warmest in winter and coolest in summer.","Temperatures rise from winter to summer, then fall again by fall.","Rainfall is the same every month.","April is the wettest month."],1,"Highs climb from January to July, then fall by October. That is a seasonal pattern."],
+ [WX_YEAR,"Which month gets the most rain on average?",["January","April","July","October"],2,"July averages 4.4 inches, the most of these months."],
+ [WX_STORM,"Based on the readings, what kind of severe weather is hitting the beach town?",["a tornado","a hurricane","a blizzard","a drought"],1,"Winds building over hours, heavy rain bands, and storm surge from the ocean point to a hurricane."],
+ [WX_STORM,"What is the best advice for people in this town at noon?",["Go to the beach to watch the waves.","Follow evacuation orders and move away from the coast.","Plan a picnic for 6 p.m.","Open all the windows."],1,"Winds and flooding are getting worse, so people should follow official warnings and move to safety."],
+ [WX_STORM,"How did the wind speed change from 6 a.m. to 6 p.m.?",["It fell by 65 mph.","It stayed the same.","It rose by 65 mph.","It rose by 35 mph."],2,"85 mph minus 20 mph is a 65 mph increase."],
+ [null,"A thunderstorm forms a spinning funnel cloud that touches the ground for a few minutes. What is it?",["a hurricane","a tornado","a sea breeze","fog"],1,"A tornado is a short-lived, spinning column of air that touches the ground."],
+ [null,"Which tool measures how much rain has fallen?",["thermometer","anemometer","rain gauge","wind vane"],2,"A rain gauge collects and measures precipitation."],
+ [null,"Which tool shows the direction the wind is blowing from?",["wind vane","thermometer","rain gauge","barometer"],0,"A wind vane points into the wind to show its direction."]
+];
+function weather(){
+  const deck=shuffle(WXQ).slice(0,10); let i=0, right=0;
+  const sh=shell("Weather Watch","Read each weather table or clue like a meteorologist. Ten questions per round."); const s1=sh.stat(), s2=sh.stat();
+  const area=$("div"); area.style.cssText="display:flex;flex-direction:column;gap:12px"; stage.appendChild(area);
+  const upd=()=>{ s1.textContent=`Question ${Math.min(i+1,10)} / 10`; s2.textContent=`${right} right`; };
+  function show(){
+    area.innerHTML=""; upd();
+    if(i>=deck.length){ endCard(area,`${right} out of 10`, right>=9?"Forecast: sunny skies for your science grade!":"Look closely at the numbers in each column, then try a new round.", weather); return; }
+    const [d,t,o0,a0,why]=deck[i];
+    if(d){ const box=$("div"); box.appendChild($("p","wxcap",d.cap)); const w=$("div","tablewrap"); const tb=$("table","wx");
+      const hr=$("tr"); d.head.forEach(h=>hr.appendChild($("th",null,h))); tb.appendChild(hr);
+      d.rows.forEach(r=>{ const tr=$("tr"); r.forEach(c=>tr.appendChild($("td",null,c))); tb.appendChild(tr); }); w.appendChild(tb); box.appendChild(w); area.appendChild(box); }
+    area.appendChild($("p","qtext",t));
+    const ord=shuffle(o0.map((_,k)=>k)); const g=$("div","opts"); let locked=false;
+    const bs=ord.map(k=>{ const b=$("button","opt",o0[k]); b.type="button"; b.onclick=()=>{ if(locked) return; locked=true;
+      bs.forEach(y=>y.disabled=true); bs[ord.indexOf(a0)].classList.add("is-right"); const ok=k===a0; if(ok) right++; else b.classList.add("is-wrong");
+      area.appendChild($("p","fb "+(ok?"ok":"no"),(ok?"Correct! ":"Not quite. ")+why));
+      const r=$("div","row"); const n=$("button","btn solid",i===deck.length-1?"See score":"Next question"); n.type="button"; n.onclick=()=>{i++; show();}; r.appendChild(n); area.appendChild(r); upd(); n.focus(); };
+      g.appendChild(b); return b; });
+    area.appendChild(g);
+  }
+  show();
+}
+
+/* ---------- two-choice engine ---------- */
+function twoChoice(cfg){
+  const deck=shuffle(cfg.items); let i=0, right=0, wrong=0;
+  const sh=shell(cfg.title,cfg.desc); const s1=sh.stat(), s2=sh.stat();
+  let meterFill=null;
+  if(cfg.meter){ const lab=$("p","colhead",cfg.meter); const m=$("div","meter2"); meterFill=$("span"); meterFill.style.width="50%"; m.appendChild(meterFill); stage.append(lab,m); }
+  const card=$("div","example"); stage.appendChild(card);
+  const two=$("div","two"); const A=$("button","btn",cfg.labels[0]); const B=$("button","btn",cfg.labels[1]); A.type=B.type="button";
+  if(cfg.colors){ A.style.borderColor=A.style.color=cfg.colors[0]; B.style.borderColor=B.style.color=cfg.colors[1]; }
+  two.append(A,B); stage.appendChild(two);
+  const fb=$("div"); stage.appendChild(fb);
+  const upd=()=>{ s1.textContent=`Card ${Math.min(i+1,deck.length)} / ${deck.length}`; s2.textContent=`${right} right`; if(meterFill) meterFill.style.width=(50+ (right - wrong) / deck.length * 50)+"%"; };
+  function show(){ fb.innerHTML=""; [A,B].forEach(b=>{ b.disabled=false; b.classList.remove("is-right","is-wrong"); });
+    if(i>=deck.length){ card.textContent=cfg.doneText; A.disabled=B.disabled=true; upd(); endCard(fb,`${right} out of ${deck.length}`, right===deck.length?cfg.perfect:"Review the cards you missed and play again.", cfg.again); return; }
+    card.textContent=deck[i][0]; upd(); }
+  function pick(v,btn){ const [,ans,why]=deck[i]; A.disabled=B.disabled=true; const ok=v===ans; if(ok) right++; else { wrong++; btn.classList.add("is-wrong"); } [A,B][ans].classList.add("is-right");
+    fb.appendChild($("p","fb "+(ok?"ok":"no"),(ok?"Correct! ":"Not quite. ")+why));
+    const r=$("div","row"); r.style.marginTop="10px"; const n=$("button","btn solid",i===deck.length-1?"See score":"Next card"); n.type="button"; n.onclick=()=>{ i++; show(); }; r.appendChild(n); fb.appendChild(r);
+    upd(); n.focus(); }
+  A.onclick=()=>pick(0,A); B.onclick=()=>pick(1,B);
+  show();
+}
+
+/* ---------- 6. Coast or Mountains? (ESS.5.1.3) ---------- */
+const COAST = [
+ ["Has milder winters because nearby ocean water holds heat for a long time.",0,"The ocean warms and cools slowly, so coastal towns like Wilmington stay milder in winter."],
+ ["Is most likely to be hit first when a hurricane comes in from the Atlantic.",0,"Hurricanes form over warm ocean water and reach the coast first."],
+ ["Gets a cool sea breeze on hot summer afternoons.",0,"Land heats faster than water, so cooler air blows in from the ocean."],
+ ["Gets the most snow in a typical North Carolina winter.",1,"High, cold places like Boone are far from the ocean's warming effect and get more snow."],
+ ["Has the coldest winter nights in the state.",1,"Mountain towns are high up and far from the ocean, so they get colder."],
+ ["Can have storm surge, when ocean water is pushed onto land during a storm.",0,"Storm surge happens along the coast when strong winds push seawater ashore."],
+ ["Gets moist air from the Gulf Stream, a warm ocean current, that can make the air humid.",0,"The warm Gulf Stream flows near North Carolina's coast and adds moisture to the air."],
+ ["Is least affected by the ocean's warming and cooling.",1,"The mountains are farthest from the ocean, so its effect on temperature is smallest there."],
+ ["Is most at risk from nor'easters that bring strong winds off the ocean.",0,"Nor'easters blow wind and waves onto the coast from the Atlantic."],
+ ["Has smaller temperature changes between day and night because the ocean is nearby.",0,"Water heats and cools slowly, which evens out coastal temperatures."]
+];
+function coast(){ twoChoice({title:"Coast or Mountains?", desc:"Read each clue. Does it describe North Carolina's coast (like Wilmington) or its mountains (like Boone)? Think about how the ocean affects weather.",
+  labels:["Coast","Mountains"], colors:["var(--lake)","var(--leaf)"], items:COAST, doneText:"All clues sorted!", perfect:"Perfect! You know how the ocean shapes North Carolina weather.", again:coast }); }
+
+/* ---------- 7. Heat It or Cool It (PS.4.2.1, PS.5.1.3) ---------- */
+const HEAT = [
+ ["An ice cube melts into a puddle on the counter.",0,"Melting needs heat energy added."],
+ ["A puddle evaporates on a sunny afternoon.",0,"The sun adds heat energy, so liquid water becomes a gas."],
+ ["Water in an ice tray turns into ice cubes in the freezer.",1,"Freezing happens when heat energy is taken away."],
+ ["Water vapor turns into drops on a cold soda can.",1,"The cold can takes heat from the vapor, so it condenses."],
+ ["A pot of water boils on the stove.",0,"The stove adds heat until the water boils into vapor."],
+ ["Water vapor high in the sky forms a cloud.",1,"The vapor cools as it rises, losing heat energy and condensing."],
+ ["Snow on a sidewalk melts when the sun comes out.",0,"Sunlight adds heat energy and the snow melts."],
+ ["A wet towel dries on a hot beach chair.",0,"Heat from the sun makes the water evaporate."],
+ ["Rain freezes into sleet as it falls through cold air.",1,"Cold air removes heat from the raindrops and they freeze."],
+ ["Dew forms on grass during a cool night.",1,"The grass cools at night, and vapor that touches it loses heat and condenses."],
+ ["A frozen pond thaws in spring.",0,"Warmer spring air and sunlight add heat, melting the ice."],
+ ["Your breath makes a little cloud on a freezing morning.",1,"The warm water vapor in your breath cools quickly in cold air and condenses."]
+];
+function heat(){ twoChoice({title:"Heat It or Cool It", desc:"Each card shows water changing. Was heat energy added or taken away to make the change happen?",
+  labels:["Heat added","Heat taken away"], colors:["var(--sun)","var(--lake)"], items:HEAT, doneText:"All changes checked!", perfect:"Perfect! You can explain how heating and cooling change water.", again:heat }); }
+
+/* ---------- 8. Rain Garden Rescue (ESS.4.3.2, ESS.4.2.3) ---------- */
+const GARDEN = [
+ ["Build a rain garden with native plants in a low spot of the schoolyard.",0,"Rain gardens soak up rainwater so less runs off and floods."],
+ ["Pave the whole playground with blacktop.",1,"Pavement does not soak up water, so more runoff and flooding happen."],
+ ["Plant trees and shrubs along the creek bank.",0,"Roots hold soil in place and slow down erosion."],
+ ["Collect water from the roof in a rain barrel.",0,"Saving roof water reduces runoff and gives water for plants later."],
+ ["Cut down all the trees on a steep hill.",1,"Without roots to hold it, soil washes down the hill when it rains."],
+ ["Cover bare dirt with mulch or grass.",0,"Mulch and grass protect soil from being washed away by rain."],
+ ["Pour leftover paint down a storm drain.",1,"Storm drains lead to streams, so pollution harms plants and animals."],
+ ["Replace a lawn with native plants that have deep roots.",0,"Deep roots help water soak into the ground and hold soil."],
+ ["Let a stream bank stay bare so it is easy to walk on.",1,"Bare banks wear away quickly when water rushes by."],
+ ["Use permeable pavers that let water soak through on a new path.",0,"Water seeps through the gaps instead of running off."],
+ ["Dump grass clippings into the creek.",1,"Clippings clog the creek and add pollution to the water."],
+ ["Build terraces, like steps, on a sloped garden.",0,"Terraces slow down rainwater so it cannot carry soil away."]
+];
+function garden(){ twoChoice({title:"Rain Garden Rescue", desc:"Heavy rains are flooding the schoolyard and washing soil into the creek. Does each idea help the land or hurt it?",
+  labels:["Helps","Hurts"], colors:["var(--good)","var(--bad)"], meter:"Schoolyard health", items:GARDEN, doneText:"Every idea judged!", perfect:"Perfect! The schoolyard is safe from flooding and erosion.", again:garden }); }
+
+/* ---------- 9. Word Scramble ---------- */
+const WORDS = [
+ ["EVAPORATION","Liquid water turns into a gas"],["CONDENSATION","Water vapor cools into liquid drops"],["PRECIPITATION","Rain, snow, sleet or hail"],["TRANSPIRATION","Plants release water vapor"],
+ ["HURRICANE","A huge storm that forms over warm ocean water"],["TORNADO","A spinning column of air that touches the ground"],["CLIMATE","The usual weather of a place over many years"],["RUNOFF","Rainwater that flows over the ground instead of soaking in"],
+ ["EROSION","Water or wind carrying soil and rock away"],["GAUGE","A rain ____ measures how much rain fell"],["HUMID","Air that holds a lot of water vapor feels this way"],["CLOUD","Tiny water drops or ice crystals floating in the sky"]
+];
+function scramble(){
+  const deck=shuffle(WORDS).slice(0,8); let i=0, right=0;
+  const sh=shell("Word Scramble","Tap the letters in order to spell the word that matches the clue. Tap a letter in your answer to take it back."); const s1=sh.stat(), s2=sh.stat();
+  const area=$("div"); area.style.cssText="display:flex;flex-direction:column;gap:14px"; stage.appendChild(area);
+  const upd=()=>{ s1.textContent=`Word ${Math.min(i+1,8)} / 8`; s2.textContent=`${right} solved`; };
+  function show(){
+    area.innerHTML=""; upd();
+    if(i>=deck.length){ endCard(area,`${right} out of 8 solved`, right===8?"Every word unscrambled. Nice work!":"Play again for a new set of words.", scramble); return; }
+    const [w,clue]=deck[i]; let mix; do{ mix=shuffle(w.split("")); } while(mix.join("")===w);
+    area.appendChild($("p","clue","Clue: "+clue));
+    const slots=$("div","slots"); const letters=$("div","letters"); area.append(slots,letters);
+    const picked=[]; let done=false;
+    const lbs=mix.map((ch,k)=>{ const b=$("button","ltr",ch); b.type="button"; b.onclick=()=>{ if(done) return; picked.push(k); b.disabled=true; render(); }; letters.appendChild(b); return b; });
+    const fb=$("div"); const row=$("div","row");
+    const check=$("button","btn solid","Check"); const clear=$("button","btn","Clear"); const give=$("button","btn","Show answer"); check.type=clear.type=give.type="button"; row.append(check,clear,give); area.append(row,fb);
+    function render(){ slots.innerHTML=""; for(let p=0;p<w.length;p++){ const k=picked[p]; const sb=$("button","slot"+(k==null?" empty":""), k==null?"":mix[k]); sb.type="button"; sb.setAttribute("aria-label", k==null?"Empty space":"Remove "+mix[k]);
+      if(k!=null) sb.onclick=()=>{ if(done) return; picked.splice(p,1); lbs[k].disabled=false; render(); }; slots.appendChild(sb); } }
+    function finish(ok){ done=true; lbs.forEach(b=>b.disabled=true); [check,clear,give].forEach(b=>b.remove());
+      if(ok) right++; fb.appendChild($("p","fb "+(ok?"ok":"no"), ok?`Correct! ${w.toLowerCase()}.`:`The word is ${w.toLowerCase()}.`));
+      const n=$("button","btn solid",i===deck.length-1?"See score":"Next word"); n.type="button"; n.onclick=()=>{ i++; show(); }; const r=$("div","row"); r.style.marginTop="10px"; r.appendChild(n); fb.appendChild(r); upd(); n.focus(); }
+    check.onclick=()=>{ const guess=picked.map(k=>mix[k]).join(""); if(guess.length<w.length){ fb.innerHTML=""; fb.appendChild($("p","fb no","Use all the letters first.")); return; }
+      if(guess===w) finish(true); else { fb.innerHTML=""; fb.appendChild($("p","fb no","Not quite. Tap Clear and try a new order.")); } };
+    clear.onclick=()=>{ picked.length=0; lbs.forEach(b=>b.disabled=false); fb.innerHTML=""; render(); };
+    give.onclick=()=>finish(false);
+    render();
+  }
+  show();
+}
+
+/* ---------- 10. What Happens Next? ---------- */
+const STORIES = [
+ ["A puddle after the rain",["The sun heats a puddle on the playground.","The water evaporates into water vapor.","The water vapor rises and cools.","The vapor condenses into a cloud.","Heavy drops fall as rain."]],
+ ["A tree on a hot day",["Roots take in water from the soil.","Water moves up the trunk to the leaves.","The sun warms the leaves.","Leaves release water vapor through transpiration.","The vapor condenses into clouds high in the sky."]],
+ ["A hurricane heads for North Carolina",["The sun heats ocean water near the equator.","Warm, moist air rises quickly over the ocean.","Water vapor condenses into huge storm clouds.","The storm reaches the coast with strong winds and heavy rain.","Over land, away from warm water, the storm weakens."]],
+ ["An ice cube left out",["An ice cube sits on a sunny windowsill.","It absorbs heat energy from the sunlight.","It melts into liquid water.","The liquid water slowly evaporates.","The water vapor mixes into the air."]],
+ ["Rain at the school rain garden",["Rain falls on the school roof.","Water flows down the gutter and spout.","It runs into the rain garden instead of the street.","The water soaks into the soil.","Native plants take up the water through their roots."]],
+ ["A creek bank after a storm",["A heavy storm dumps rain on a bare hillside.","Runoff rushes down the hill toward the creek.","The fast water carries loose soil away.","Mud piles up where the water slows down in the creek.","Students plant shrubs so roots will hold the soil next time."]]
+];
+function order(){
+  const deck=shuffle(STORIES).slice(0,4); let i=0, right=0;
+  const sh=shell("What Happens Next?","Tap the steps in the order they happen. Tap a step in your list to take it back."); const s1=sh.stat(), s2=sh.stat();
+  const area=$("div"); area.style.cssText="display:flex;flex-direction:column;gap:14px"; stage.appendChild(area);
+  const upd=()=>{ s1.textContent=`Story ${Math.min(i+1,4)} / 4`; s2.textContent=`${right} in perfect order`; };
+  function show(){
+    area.innerHTML=""; upd();
+    if(i>=deck.length){ endCard(area,`${right} out of 4 stories in order`, right===4?"Perfect! You can explain each process step by step.":"Play again to get new stories.", order); return; }
+    const [name,steps]=deck[i]; const mix=shuffle(steps.map((_,k)=>k)); const chosen=[]; let done=false;
+    area.appendChild($("p","qtext",name));
+    const grid=$("div","ordergrid"); const left=$("div"); const right2=$("div"); grid.append(left,right2); area.appendChild(grid);
+    left.appendChild($("p","colhead","Steps"));
+    const pool=$("div","steps"); left.appendChild(pool);
+    right2.appendChild($("p","colhead","Your order"));
+    const list=$("div","steps"); right2.appendChild(list);
+    const fb=$("div"); area.appendChild(fb);
+    const pbs = mix.map(k=>{ const b=$("button","step"); b.type="button"; b.appendChild($("span",null,steps[k])); b.onclick=()=>{ if(done) return; chosen.push(k); b.disabled=true; render(); }; pool.appendChild(b); return {k,b}; });
+    function render(){ list.innerHTML="";
+      chosen.forEach((k,p)=>{ const b=$("button","step"); b.type="button"; b.appendChild($("span","n",(p+1)+".")); b.appendChild($("span",null,steps[k]));
+        if(done){ b.disabled=false; b.style.cursor="default"; b.classList.add(k===p?"is-right":"is-wrong"); }
+        else b.onclick=()=>{ chosen.splice(p,1); pbs.find(x=>x.k===k).b.disabled=false; render(); };
+        list.appendChild(b); });
+      if(!done && chosen.length===steps.length) check(); }
+    function check(){ done=true; const ok=chosen.every((k,p)=>k===p); if(ok) right++; render();
+      fb.appendChild($("p","fb "+(ok?"ok":"no"), ok?"Correct! Every step is in order.":"Some steps are out of place. The right order is: "+steps.map((t,p)=>(p+1)+". "+t).join(" ")));
+      const n=$("button","btn solid",i===deck.length-1?"See score":"Next story"); n.type="button"; n.onclick=()=>{ i++; show(); }; const r=$("div","row"); r.style.marginTop="10px"; r.appendChild(n); fb.appendChild(r); upd(); n.focus(); }
+    render();
+  }
+  show();
+}
+
+const PR_BANK = ["evaporation","transpiration","condensation","precipitation","water vapor","sun"];
+const PR_TF = ["True","False"];
+const PR_PARTS = [
+ { id:"A", title:"Part A: Multiple Choice", note:"Choose the best answer.", items:[
+  ["What is the main source of energy that drives the water cycle?", ["the moon","the sun","the wind","the ocean"],1,"The sun supplies the heat energy for the whole cycle."],
+  ["A puddle on the playground is gone by the afternoon on a sunny day. Which process caused this?",["condensation","precipitation","evaporation","transpiration"],2,"The sun heats the puddle, and the liquid water becomes water vapor."],
+  ["Which process is the release of water vapor from the leaves of plants?",["transpiration","condensation","precipitation","runoff"],0,"Transpiration is water vapor leaving a plant through its leaves."],
+  ["On a hot day, water droplets form on the outside of a cold glass of lemonade. Which part of the water cycle does this model?",["evaporation","condensation","precipitation","transpiration"],1,"Water vapor in the air cools on the cold glass and becomes liquid."],
+  ["Water vapor rises high into the sky, cools, and forms clouds. What happens to the water vapor's energy as it cools?",["It gains thermal energy and turns into a gas.","It loses thermal energy and turns into tiny liquid droplets.","It gains thermal energy and turns into ice.","Its energy stays exactly the same."],1,"Cooling means losing thermal energy, so the vapor condenses into droplets."],
+  ["Water droplets in a cloud join together until they become too heavy to stay in the air. What happens next?",["evaporation","transpiration","condensation","precipitation"],3,"Heavy droplets fall to Earth as precipitation."],
+  ["Two identical pans of water are set outside, one in full sun and one in the shade. After 3 hours, which result is most likely?",["The pan in the shade will have less water.","The pan in the sun will have less water.","Both pans will have the same amount of water.","The pan in the sun will have more water."],1,"More energy from the sun means faster evaporation."],
+  ["Which statement best explains why the water cycle would slow down or stop without the sun?",["Clouds would block all the rain.","Plants would release more water.","There would not be enough heat energy to evaporate water.","The oceans would become fresh water."],2,"Without the sun's heat, very little water would evaporate."],
+  ["Water vapor is water in which state of matter?",["solid","liquid","gas","It has no state."],2,"Water vapor is water as a gas. You cannot see it."],
+  ["On which day would wet laundry on a clothesline dry the fastest?",["a hot, sunny day","a cool, cloudy day","a cold, rainy day","a chilly night"],0,"More heat from the sun means the water in the clothes evaporates faster."],
+  ["What are clouds mostly made of?",["smoke","tiny drops of liquid water or ice","dust only","invisible water vapor"],1,"Clouds form when water vapor condenses into tiny drops or ice crystals you can see."],
+  ["After a hot shower, the bathroom mirror gets foggy. Which process does this model?",["evaporation","condensation","precipitation","transpiration"],1,"Warm water vapor touches the cooler mirror and condenses into droplets."],
+  ["During evaporation, what happens to liquid water?",["It loses energy and freezes.","It gains thermal energy and becomes a gas.","It falls from a cloud.","It soaks into the ground."],1,"Energy from the sun lets water particles escape into the air as a gas."],
+  ["Why does water vapor condense into clouds high in the sky?",["The air up high is warmer.","The air up high is colder.","The sun is closer up there.","Plants push the water up."],1,"Air is colder higher up, so the rising vapor cools and condenses."],
+  ["A student puts a clear plastic bag over a leafy plant in the sun. An hour later, drops cover the inside of the bag. Which process put the water into the air in the bag?",["precipitation","evaporation from a puddle","transpiration","runoff"],2,"The plant's leaves released water vapor, which then condensed on the bag."],
+  ["Which order shows how water moves from a lake back to the ground?",["precipitation → evaporation → condensation","condensation → precipitation → evaporation","evaporation → condensation → precipitation","evaporation → precipitation → condensation"],2,"Water evaporates, condenses into clouds, then falls as precipitation."]
+ ]},
+ { id:"B", title:"Part B: Word Bank", note:"Tap the word that completes each sentence. You may use a word more than once.", bank:true, items:[
+  ["When the sun heats water in a lake and it changes from a liquid into a gas, the process is called ________.",PR_BANK,0,"Liquid to gas because of heat is evaporation."],
+  ["Water in its gas form, which we cannot see, is called ________.",PR_BANK,4,"Water vapor is the invisible gas form of water."],
+  ["Rain, snow, sleet, and hail are all forms of ________.",PR_BANK,3,"Any water falling from clouds is precipitation."],
+  ["A tree's roots pull up water from the soil, and the sun's heat helps the leaves give off water vapor. This process is called ________.",PR_BANK,1,"Water vapor leaving leaves is transpiration."],
+  ["The ________ provides the energy that drives the water cycle.",PR_BANK,5,"The sun's energy powers evaporation and transpiration."],
+  ["When water vapor cools and changes into liquid droplets, the process is called ________.",PR_BANK,2,"Gas to liquid by cooling is condensation."],
+  ["Dew forms on grass on a cool morning because of ________.",PR_BANK,2,"Water vapor in the air cools on the grass and condenses."],
+  ["When the sun warms the ocean, some seawater turns into ________ that rises into the air.",PR_BANK,4,"Evaporated water rises as water vapor."]
+ ]},
+ { id:"C", title:"Part C: True or False", note:"Decide whether each statement is true or false.", tf:true, items:[
+  ["The water cycle has a beginning and an end.",PR_TF,1,"False. The water cycle is a loop that keeps repeating."],
+  ["Water evaporates faster when it is warmer.",PR_TF,0,"True. More thermal energy speeds up evaporation."],
+  ["Only oceans can evaporate. Puddles and lakes cannot.",PR_TF,1,"False. Water evaporates from oceans, lakes, puddles, soil and more."],
+  ["Plants release water vapor through their leaves.",PR_TF,0,"True. That process is transpiration."],
+  ["Condensation happens when water vapor gets warmer.",PR_TF,1,"False. Condensation happens when water vapor cools."],
+  ["Hail is a form of precipitation.",PR_TF,0,"True. Rain, snow, sleet and hail are all precipitation."],
+  ["The sun's energy heats water and air, which helps move water through the cycle.",PR_TF,0,"True. The sun's heat drives evaporation and makes warm, moist air rise."],
+  ["Earth's water gets used up each time it rains.",PR_TF,1,"False. The same water is recycled over and over."]
+ ]},
+ { id:"D", title:"Part D: Use the Model", model:"Ms. Rivera's class poured warm water into a clear bowl, stretched plastic wrap tightly over the top, and placed a bag of ice on the plastic wrap. They set the bowl in a sunny window. After 30 minutes, tiny drops formed on the underside of the plastic wrap, grew bigger, and dripped back into the water.", items:[
+  ["In the model, what does the sunlight shining on the warm water represent, and what process does it start?",["The sun's energy; it starts evaporation.","Rain; it starts precipitation.","A cloud; it starts condensation.","A plant; it starts transpiration."],0,"The sunlight is the sun's energy. It heats the water so it evaporates."],
+  ["Which process is modeled by the drops forming under the cold plastic wrap?",["evaporation","condensation","precipitation","transpiration"],1,"Water vapor cools on the cold wrap and condenses into drops."],
+  ["Which process is modeled by the drops falling back into the bowl?",["evaporation","condensation","precipitation","transpiration"],2,"Drops that grow heavy and fall model precipitation."],
+  ["If the class took the bag of ice off the plastic wrap, what would most likely happen?",["More drops would form because the wrap is warmer.","Fewer drops would form because the wrap would not be cold enough for much condensation.","The water in the bowl would freeze.","Nothing would change at all."],1,"The ice keeps the wrap cold. Without it, less water vapor cools enough to condense."]
+ ]}
+];
+const PR_ZONES = [
+  {key:"evaporation", x:25, y:56},
+  {key:"transpiration", x:52, y:46},
+  {key:"condensation", x:62, y:9},
+  {key:"precipitation", x:86, y:58}
+];
+
+let prState={}, prArmed=null;
+const pel=(t,c,x)=>$(t,c,x);
+function practice(){
+  prState={}; prArmed=null;
+  shell("40-Question Challenge","Tap an answer to check it right away. Your first answer counts. Questions and answers come in a new order every time.");
+  const wrap=pel("div","pr"); stage.appendChild(wrap);
+  const bar=pel("div","pbar"); bar.setAttribute("role","status");
+  const bt=pel("div","pbar-top"); const sc=pel("span",null,"0 correct"); sc.id="prScore"; const an=pel("span",null,"0 / 40 answered"); an.id="prAns"; bt.append(sc,an);
+  const tr=pel("div","track"); const gb=pel("span","g"); gb.id="prG"; gb.style.width="0"; const bb=pel("span","b"); bb.id="prB"; bb.style.width="0"; tr.append(gb,bb);
+  bar.append(bt,tr); wrap.appendChild(bar);
+  let n=0;
+  PR_PARTS.forEach(p=>{
+    const sec=pel("section","part"); sec.appendChild(pel("h3",null,p.title));
+    if(p.note) sec.appendChild(pel("p",null,p.note));
+    if(p.bank){ const b=pel("div","bank"); PR_BANK.forEach(w=>b.appendChild(pel("span",null,w))); sec.appendChild(b); }
+    if(p.model){ const m=pel("p","model"); m.appendChild(pel("strong",null,"Model: ")); m.appendChild(document.createTextNode(p.model)); sec.appendChild(m); }
+    shuffle(p.items).forEach(it=>{
+      n++; const id="pq"+n; const [text,opts0,ans0,why]=it;
+      const ord = p.tf ? opts0.map((_,i)=>i) : shuffle(opts0.map((_,i)=>i));
+      const opts=ord.map(i=>opts0[i]), ans=ord.indexOf(ans0);
+      const card=pel("article","q");
+      const qr=pel("div","qrow"); qr.appendChild(pel("span","num",n+".")); qr.appendChild(pel("span",null,text)); card.appendChild(qr);
+      const grid=pel("div","opts"+((p.bank||p.tf)?" words":""));
+      const fb=pel("div","fb"); fb.hidden=true;
+      const btns=opts.map((o,i)=>{ const b=pel("button","opt"); b.type="button";
+        if(!p.bank && !p.tf) b.appendChild(pel("b",null,"ABCD"[i]+"."));
+        b.appendChild(pel("span",null,o));
+        b.onclick=()=>{ if(prState[id]) return; const ok=i===ans; prState[id]={right:ok};
+          btns.forEach((x,j)=>{ x.disabled=true; if(j===ans) x.classList.add("is-right"); else if(j===i) x.classList.add("is-wrong"); else x.classList.add("dim"); });
+          card.classList.add(ok?"right":"wrong"); fb.hidden=false; fb.className="fb "+(ok?"ok":"no");
+          fb.appendChild(pel("strong",null,ok?"Correct!":"Not quite.")); fb.appendChild(document.createTextNode(why)); prUpdate(); };
+        grid.appendChild(b); return b; });
+      card.append(grid,fb); sec.appendChild(card);
+    });
+    wrap.appendChild(sec);
+  });
+  wrap.appendChild(prDiagram(n));
+  const done=pel("div"); done.id="prDone"; wrap.appendChild(done);
+  prUpdate();
+}
+function prDiagram(start){
+  const sec=pel("section","part");
+  sec.appendChild(pel("h3",null,"Part E: Label the Water Cycle"));
+  sec.appendChild(pel("p",null,"Tap a word, then tap the numbered box where it belongs. The sun is labeled for you."));
+  const chips=pel("div","chips");
+  const chipEls={};
+  const zoneEls=[];
+  shuffle(["precipitation","evaporation","condensation","transpiration"]).forEach(w=>{ const c=pel("button","chip",w); c.type="button"; c.setAttribute("aria-pressed","false"); chipEls[w]=c;
+    c.onclick=()=>{ if(c.disabled) return; prArmed = prArmed===w?null:w; Object.values(chipEls).forEach(x=>x.setAttribute("aria-pressed", x.textContent===prArmed?"true":"false")); zoneEls.forEach(z=>{ if(!z.disabled) z.classList.toggle("armed",!!prArmed); }); };
+    chips.appendChild(c); });
+  sec.appendChild(chips);
+  const scr=pel("div","scroll"); const scene=pel("div","scene");
+  scene.innerHTML = `<svg viewBox="0 0 600 340" role="img" aria-label="Water cycle scene with the sun, a lake, a tree, a cloud and rain">
+    <defs><marker id="prah" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" style="fill:var(--lake)"/></marker></defs>
+    <rect width="600" height="340" style="fill:var(--sky)"/>
+    <circle cx="72" cy="52" r="30" style="fill:var(--sun)"/>
+    <g style="stroke:var(--sun)" stroke-width="4" stroke-linecap="round">
+      <line x1="72" y1="6" x2="72" y2="14"/><line x1="72" y1="90" x2="72" y2="98"/><line x1="26" y1="52" x2="34" y2="52"/><line x1="110" y1="52" x2="118" y2="52"/>
+      <line x1="40" y1="20" x2="45" y2="25"/><line x1="99" y1="79" x2="104" y2="84"/><line x1="104" y1="20" x2="99" y2="25"/><line x1="45" y1="79" x2="40" y2="84"/></g>
+    <path d="M0 270 Q150 250 300 262 T600 250 V340 H0z" style="fill:var(--ground)"/>
+    <ellipse cx="150" cy="300" rx="120" ry="26" style="fill:var(--water)"/>
+    <rect x="322" y="200" width="14" height="60" style="fill:var(--trunk)"/>
+    <circle cx="329" cy="185" r="34" style="fill:var(--tree)"/><circle cx="305" cy="200" r="22" style="fill:var(--tree)"/><circle cx="353" cy="200" r="22" style="fill:var(--tree)"/>
+    <g style="fill:var(--cloud)"><circle cx="440" cy="60" r="30"/><circle cx="480" cy="48" r="36"/><circle cx="520" cy="62" r="28"/><rect x="420" y="60" width="120" height="30" rx="15"/></g>
+    <g style="stroke:var(--water)" stroke-width="4" stroke-linecap="round">
+      <line x1="450" y1="110" x2="444" y2="128"/><line x1="480" y1="118" x2="474" y2="136"/><line x1="510" y1="108" x2="504" y2="126"/>
+      <line x1="460" y1="150" x2="454" y2="168"/><line x1="494" y1="160" x2="488" y2="178"/><line x1="522" y1="146" x2="516" y2="164"/></g>
+    <g fill="none" style="stroke:var(--lake)" stroke-width="3" stroke-dasharray="7 6" marker-end="url(#prah)">
+      <path d="M150 272 C 130 220, 180 190, 160 140"/><path d="M345 150 C 360 120, 380 100, 410 80"/>
+      <path d="M555 70 C 590 110, 585 170, 545 220"/><path d="M470 260 C 380 285, 300 300, 275 300"/></g>
+  </svg><span class="sunlabel">sun</span>`;
+  PR_ZONES.forEach((z,k)=>{
+    const num=start+k+1; const id="pz"+num;
+    const b=pel("button","zone",num+". ?"); b.type="button"; b.style.left=z.x+"%"; b.style.top=z.y+"%"; b.setAttribute("aria-label","Box "+num); zoneEls.push(b);
+    b.onclick=()=>{ if(prState[id]||!prArmed) return; const ok=prArmed===z.key; prState[id]={right:ok};
+      b.disabled=true; b.classList.remove("armed"); b.textContent=num+". "+(ok?z.key:prArmed+" ✗ → "+z.key); b.classList.add(ok?"is-right":"is-wrong");
+      chipEls[z.key].disabled=true; if(ok) chipEls[prArmed].disabled=true;
+      prArmed=null; Object.values(chipEls).forEach(x=>x.setAttribute("aria-pressed","false")); zoneEls.forEach(x=>x.classList.remove("armed"));
+      prUpdate(); };
+    scene.appendChild(b); });
+  scr.appendChild(scene); sec.appendChild(scr);
+  sec.appendChild(pel("p","hint","Each box shows the right word after you place a label. Arrows show which way the water moves."));
+  return sec;
+}
+function prUpdate(){
+  const vals=Object.values(prState), answered=vals.length, correct=vals.filter(v=>v.right).length;
+  document.getElementById("prScore").textContent=correct+" correct";
+  document.getElementById("prAns").textContent=answered+" / 40 answered";
+  document.getElementById("prG").style.width=(correct/40*100)+"%";
+  document.getElementById("prB").style.width=((answered-correct)/40*100)+"%";
+  const done=document.getElementById("prDone"); done.innerHTML="";
+  if(answered===40){ const pct=Math.round(correct/40*100);
+    endCard(done,`You scored ${correct} out of 40 (${pct}%)`, pct>=90?"Excellent work. You can explain how the sun's energy drives every part of the water cycle.":pct>=70?"Good job. Scroll up to the red cards and reread the explanations for the ones you missed.":"Keep practicing. Review the red cards, then play again.", ()=>{ practice(); stage.scrollIntoView({block:"start"}); }); }
+}
+
+const STD = {
+ practice:["ESS.5.1.4","Use models to explain how the sun's energy drives the processes of the water cycle (evaporation, transpiration, condensation, precipitation)."],
+ journey:["ESS.5.1.4","Use models to explain how the sun's energy drives the processes of the water cycle (evaporation, transpiration, condensation, precipitation)."],
+ match:["ESS.5.1.4","Use models to explain how the sun's energy drives the processes of the water cycle."],
+ sort:["ESS.5.1.4","Use models to explain how the sun's energy drives the processes of the water cycle."],
+ speed:["ESS.5.1.4","Use models to explain how the sun's energy drives the processes of the water cycle."],
+ weather:["ESS.5.1.1 and ESS.5.1.2","Analyze and interpret data to compare daily and seasonal weather changes, and to explain current and upcoming conditions, including severe weather like hurricanes and tornadoes."],
+ coast:["ESS.5.1.3","Construct an explanation to summarize the ocean's influences on weather and climate in North Carolina."],
+ heat:["PS.4.2.1 and PS.5.1.3","Identify heat as a form of energy that causes change (grade 4), and compare how heating and cooling affect materials (grade 5)."],
+ garden:["ESS.4.3.2 and ESS.4.2.3","Argue from evidence how people can reduce flooding and erosion with rain gardens and native plants, and how water changes Earth's surface over time (grade 4)."],
+ scramble:["ESS.4.2.3 and ESS.5.1","Vocabulary for how water changes Earth's surface (grade 4) and how the hydrosphere and atmosphere shape weather and climate (grade 5)."],
+ order:["ESS.4.3.2, ESS.4.2.3 and ESS.5.1.4","Sequence how water moves through the water cycle and how people can manage runoff and erosion."]
+};
+
+/* ---------- router ---------- */
+const GAMES={practice,journey,match,sort,speed,weather,coast,heat,garden,scramble,order};
+function open(name){ if(!GAMES[name]) name="practice"; clearInterval(speedTimer);
+  document.querySelectorAll(".pick").forEach(p=>p.setAttribute("aria-current", p.dataset.game===name?"true":"false"));
+  const sd=STD[name]; const sl=document.getElementById("stdline"); sl.innerHTML=""; const b=document.createElement("b"); b.textContent="Standard "+sd[0]+": "; sl.append(b, document.createTextNode(sd[1]));
+  GAMES[name](); }
+document.querySelectorAll(".pick").forEach(p=>p.addEventListener("click",()=>{ if(location.hash==="#"+p.dataset.game) open(p.dataset.game); else location.hash=p.dataset.game; stage.scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth", block:"start"}); }));
+document.querySelectorAll(".fchip").forEach(c=>c.addEventListener("click",()=>{ const f=c.dataset.f;
+  document.querySelectorAll(".fchip").forEach(x=>x.setAttribute("aria-pressed", x===c?"true":"false"));
+  document.querySelectorAll(".pick").forEach(p=>{ p.hidden = f!=="all" && !p.dataset.g.split(" ").includes(f); }); }));
+window.addEventListener("hashchange",()=>open(location.hash.slice(1)));
+open(location.hash.slice(1));
+</script>
+</body>
+</html>
