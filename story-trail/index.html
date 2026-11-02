@@ -94,6 +94,12 @@ details.stds summary{font-family:var(--display);font-weight:700;font-size:1.3rem
 .pnum{font-size:.8rem;font-weight:700;color:var(--muted);padding-top:.35em;font-variant-numeric:tabular-nums}
 .para.speaking p{background:var(--gold-soft)}
 .para p{margin:0;border-radius:6px}
+.para.poem p{white-space:pre-line;font-style:italic}
+.para.poem + .para.poem{margin-top:1.1em}
+.lbl{font-weight:700;margin-bottom:6px}
+.seg{display:inline-flex;flex-wrap:wrap;gap:6px}
+.seg button{border:2px solid var(--line);background:var(--paper);color:var(--ink);border-radius:999px;padding:.4em 1em;font-weight:700}
+.seg button[aria-checked="true"]{border-color:var(--pine);background:var(--pine);color:var(--pine-ink)}
 .qcard{background:var(--card);border:2px solid var(--pine);border-radius:16px;padding:20px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}
 @media (max-width:860px){.qcard{position:static}}
 .skillchip{display:inline-flex;gap:6px;align-items:center;font-size:.8rem;font-weight:700;padding:.2em .7em;border-radius:999px;background:var(--pine-soft);color:var(--ink)}
@@ -153,7 +159,7 @@ td.num{font-variant-numeric:tabular-nums;text-align:right}
     <div class="brand">
       <div class="eyebrow">NC ELA · Grades 4–5 · Reading Comprehension</div>
       <h1><span class="trailmark" aria-hidden="true"></span>Story Trail</h1>
-      <p>Read a story and an article, then answer questions about theme, main idea, and point of view. Every student gets a different set of questions.</p>
+      <p>Read stories, poems, and articles, then answer questions about theme, main idea, and point of view. Every student gets a different set of passages and questions.</p>
     </div>
     <div class="row">
       <button class="btn ghost small" id="teacherBtn" hidden>Teacher results</button>
@@ -368,6 +374,197 @@ const LEVELS = [
  ]}
 ];
 
+/* ---------- Additional passages (bank of 5 per trail) ---------- */
+const Q=(s,std,q,c,...w)=>({s,std,q,c,w});
+LEVELS.forEach(L=>{L.passages[0].type="lit";L.passages[1].type="info"});
+const EXTRA=[
+/* Trailhead */
+[
+{title:"The Ant and the Dove",genre:"Fable (retold)",type:"lit",paras:[
+ "An ant went to the river to get a drink. A wave washed over her, and she began to sink.",
+ "A dove in a tree saw the ant. She dropped a leaf into the water. The ant climbed onto the leaf and floated safely to shore.",
+ "The next day, a hunter crept toward the dove's tree. He lifted his net to catch her. The ant saw him and bit his foot as hard as she could.",
+ "\"Ouch!\" yelled the hunter. The dove heard him and flew away. The tiny ant had saved her new friend."],
+ slots:[
+ {must:true,v:[Q("theme","RL.4.2","What is the theme of this fable?","One good deed can lead to another.","Rivers are dangerous places.","Hunters are always mean.","Big animals are stronger than small ones."),
+   Q("theme","RL.4.2","What lesson does the ant teach the reader?","Even someone small can help a friend.","Ants are afraid of water.","Never go near a river.","Doves cannot fly very far.")]},
+ {v:[Q("npov","RL.4.6","Who tells this story?","A narrator outside the story","The ant, using \"I\"","The dove, using \"I\"","The hunter, using \"I\""),
+   Q("npov","RL.4.6","Which sentence shows the story is told in third person?","\"The ant saw him and bit his foot.\"","\"I went to the river.\"","\"My friend saved me.\"","\"We flew away together.\"")]},
+ {v:[Q("detail","RL.4.1","How did the dove help the ant?","She dropped a leaf into the water.","She carried the ant in her beak.","She built a bridge.","She called the hunter."),
+   Q("detail","RL.4.1","Why did the hunter yell \"Ouch!\"?","The ant bit his foot.","He fell in the river.","The dove pecked him.","He stepped on a leaf.")]},
+ {v:[Q("char","RL.4.3","Which word best describes the ant at the end?","brave","lazy","selfish","sleepy"),
+   Q("char","RL.4.3","Why did the ant bite the hunter?","to pay back the dove for saving her","because she was hungry","because she was lost","because the hunter was in her home")]},
+ {v:[Q("lang","RL.4.4","In paragraph 3, \"crept\" means…","moved slowly and quietly","ran very fast","jumped up high","called out loudly"),
+   Q("lang","RL.4.4","What does \"floated safely to shore\" mean?","drifted on the water to land without getting hurt","sank to the bottom","flew into the sky","swam far away from land")]}
+]},
+{title:"My First Night Camping",genre:"Personal narrative",type:"lit",paras:[
+ "Last summer, my family went camping at a state park. When the sun went down, the woods got very dark. I heard a crunch outside our tent. My stomach flipped.",
+ "\"What was that?\" I whispered.",
+ "My sister clicked on her flashlight. \"Let's look together,\" she said. We peeked out of the tent.",
+ "A raccoon was sniffing our cooler! It looked at us with its shiny eyes and waddled away.",
+ "I laughed so hard I snorted. The noise was not scary at all. That night, I fell asleep listening to the crickets."],
+ slots:[
+ {must:true,v:[Q("theme","RL.4.2","What is the theme of this story?","Things often seem less scary once you face them.","Raccoons are dangerous.","Camping is boring.","Always bring a big cooler."),
+   Q("theme","RL.4.2","What does the narrator learn?","Facing a fear can make it go away.","Woods are too dark to visit.","Sisters are always scared.","Flashlights are the best gift.")]},
+ {v:[Q("npov","RL.4.6","Who is telling this story?","The kid who went camping, using \"I\"","The sister, using \"she\"","The raccoon","A narrator outside the story"),
+   Q("npov","RL.4.6","This story is told in first person. How can you tell?","The narrator uses words like \"I\" and \"my.\"","The story is about camping.","The sister has a flashlight.","The story has a raccoon in it.")]},
+ {v:[Q("detail","RL.4.1","What made the crunch outside the tent?","a raccoon","the narrator's sister","a bear","the wind"),
+   Q("detail","RL.4.1","What did the sister do to help?","She turned on her flashlight and looked with the narrator.","She went to sleep.","She yelled at the raccoon.","She ran to the car.")]},
+ {v:[Q("char","RL.4.3","How does the narrator feel at the beginning of the night?","scared","bored","angry","proud"),
+   Q("char","RL.4.3","How does the narrator change?","from scared to relaxed","from happy to sad","from brave to scared","from tired to hungry")]},
+ {v:[Q("lang","RL.4.4","\"My stomach flipped.\" What does this mean?","The narrator felt nervous.","The narrator was hungry.","The narrator did a flip.","The narrator ate too much."),
+   Q("lang","RL.4.4","What does \"waddled\" mean in paragraph 4?","walked with short, rocking steps","climbed up fast","swam away","flew off")]}
+]},
+{title:"Lights Out for Sea Turtles",genre:"Informational · opinion",type:"info",paras:[
+ "Every summer, loggerhead sea turtles crawl onto North Carolina beaches at night. Each mother turtle digs a nest in the sand and lays about 100 eggs.",
+ "About two months later, the baby turtles hatch. They crawl toward the brightest light they can see. On a natural beach, that light is the moon shining on the ocean.",
+ "Bright lights from houses can trick the babies. They crawl the wrong way, toward roads and danger.",
+ "I think people at the beach should turn off outdoor lights at night during nesting season. It is an easy way to help baby turtles reach the sea."],
+ slots:[
+ {must:true,v:[Q("main","RI.4.2","What is the main idea of this text?","Bright lights can hurt baby sea turtles, so people should help.","Sea turtles are very big.","The moon is bright at night.","Beaches are fun in summer."),
+   Q("main","RI.4.2","What is this text mostly about?","how people can help baby sea turtles reach the ocean","how to build a sand castle","what sea turtles eat","why houses need lights")]},
+ {must:true,v:[Q("apov","RI.4.8","What does the author think people should do?","Turn off outdoor lights at night during nesting season.","Dig up turtle nests.","Build more houses on the beach.","Shine flashlights on the sand."),
+   Q("apov","RI.4.8","Which sentence shows the author's opinion?","\"I think people at the beach should turn off outdoor lights.\"","\"Each mother turtle digs a nest.\"","\"The baby turtles hatch.\"","\"Every summer, loggerhead sea turtles crawl onto beaches.\"")]},
+ {v:[Q("detail","RI.4.1","Why do baby turtles crawl toward light?","Light usually leads them to the ocean.","They are looking for food.","They want to find their mother.","They like warm houses."),
+   Q("detail","RI.4.1","About how many eggs does a mother turtle lay?","about 100","about 10","about 2","about 1,000")]},
+ {v:[Q("lang","RI.4.4","What does \"hatch\" mean?","come out of an egg","dig a hole","swim fast","go to sleep"),
+   Q("lang","RI.4.4","What does \"trick\" mean in paragraph 3?","fool or confuse","help","feed","wake up")]},
+ {v:[Q("craft","RI.4.8","Why does the author explain how house lights trick the babies?","To give a reason why people should turn off lights","To tell a funny story","To explain how houses are built","To describe the moon"),
+   Q("craft","RI.4.8","Why does the author call turning off lights \"an easy way to help\"?","To show that helping turtles is simple for anyone","To say turtles are easy to catch","To say the beach is easy to find","To say lights are hard to turn off")]}
+]}
+],
+/* Ridge */
+[
+{title:"Kendra's Map",genre:"Realistic fiction",type:"lit",paras:[
+ "The fourth graders at Eno Creek Elementary were having an orienteering contest at the nature center. Each team got a map, a compass, and a list of five checkpoints to find.",
+ "Kendra grabbed the map before anyone else could. \"I'm great at this,\" she said. \"Just follow me.\" Her teammates, Omar and Bree, looked at each other but followed.",
+ "Twenty minutes later, they had found only one checkpoint. The trail had turned into a muddy ditch. Kendra turned the map sideways, then upside down. Her cheeks burned.",
+ "Omar cleared his throat. \"Um, I think the compass says we're going west. The next checkpoint is north.\" He had been quietly checking the compass the whole time.",
+ "Kendra stared at the map for a long moment. Then she handed it to Omar. \"You read the compass, and I'll look for landmarks,\" she said. \"Bree, you keep track of the time.\"",
+ "With everyone helping, they found the last four checkpoints in half an hour. They didn't finish first, but Kendra decided it was the best team she had ever been on."],
+ slots:[
+ {must:true,v:[Q("theme","RL.4.2","Which theme does the story best show?","A team does better when everyone's strengths are used.","Maps are hard to read.","The leader should always do everything.","Winning first place is the only goal."),
+   Q("theme","RL.4.2","What does Kendra learn?","Listening to others can help you succeed.","Muddy ditches are dangerous.","She should never join a team again.","Compasses are better than maps.")]},
+ {v:[Q("npov","RL.4.6","From what point of view is this story told?","Third person, by a narrator outside the story","First person, by Kendra","First person, by Omar","Second person, using \"you\""),
+   Q("npov","RL.4.6","The narrator says, \"Her cheeks burned.\" What does this show about how the story is told?","The narrator can describe how Kendra feels.","Kendra is telling the story.","Omar is telling the story.","The story is a poem.")]},
+ {v:[Q("detail","RL.4.1","Why did the team find only one checkpoint at first?","They were going west instead of north.","The map was missing.","It started to rain.","Omar was not paying attention."),
+   Q("detail","RL.4.1","What had Omar been doing the whole time?","quietly checking the compass","looking for landmarks","keeping track of time","complaining to Bree")]},
+ {v:[Q("char","RL.4.3","How does Kendra change in the story?","She goes from bossy to willing to share the work.","She goes from shy to bossy.","She goes from happy to angry.","She does not change."),
+   Q("char","RL.4.3","Which detail shows Kendra was too sure of herself at first?","She grabbed the map and said, \"Just follow me.\"","She handed the map to Omar.","She looked for landmarks.","She decided it was the best team.")]},
+ {v:[Q("lang","RL.4.4","\"Her cheeks burned.\" What does this tell you?","Kendra was embarrassed.","Kendra had a sunburn.","Kendra was cold.","Kendra was eating something hot."),
+   Q("lang","RL.4.4","In paragraph 4, \"cleared his throat\" suggests Omar was…","nervous about speaking up","very sick","angry at Bree","singing a song")]},
+ {v:[Q("sum","RL.4.2","Which is the best summary of the story?","Kendra tries to lead alone and gets her team lost, then lets her teammates help, and they find the rest of the checkpoints.","Omar reads a compass at the nature center.","The team walks into a muddy ditch.","Kendra's team wins first place in the contest."),
+   Q("sum","RL.4.2","Which event is the turning point of the story?","Kendra hands the map to Omar.","The teams get maps and compasses.","The trail turns into a ditch.","Bree keeps track of the time.")]}
+]},
+{title:"The Old Oak",genre:"Poem",type:"lit",poem:true,paras:[
+ "Behind our school there stands an oak,\nIts arms stretched wide and gray.\nIt's watched a hundred years of kids\nRun out at noon to play.",
+ "The ice storms came and cracked its limbs,\nThe summer droughts were long,\nBut every spring it pushed out leaves\nAs if to hum a song.",
+ "When I feel small or want to quit,\nI sit beneath its shade,\nAnd think of all the storms it knew\nAnd all the leaves it made."],
+ slots:[
+ {must:true,v:[Q("theme","RL.4.2","What is the theme of the poem?","You can keep going and grow even after hard times.","Oak trees are the tallest trees.","Recess should be longer.","Ice storms happen every winter."),
+   Q("theme","RL.4.2","Why does the speaker think about the oak when feeling small?","The oak reminds the speaker to keep going through hard times.","The oak makes the speaker feel cold.","The speaker wants to cut down the tree.","The speaker is hiding from friends.")]},
+ {v:[Q("npov","RL.4.6","Who is the speaker of the poem?","a student who sits under the oak tree","the oak tree itself","a teacher","an ice storm"),
+   Q("npov","RL.4.6","Which line shows the speaker is a person in the poem?","\"When I feel small or want to quit\"","\"Its arms stretched wide and gray.\"","\"The summer droughts were long,\"","\"Run out at noon to play.\"")]},
+ {v:[Q("lang","RL.4.4","\"Its arms stretched wide and gray.\" What are the oak's \"arms\"?","its branches","its roots","its leaves","its acorns"),
+   Q("lang","RL.4.4","\"As if to hum a song\" gives the tree a human action. What is this called?","personification","rhyme","a fact","a question")]},
+ {v:[Q("craft","RL.4.5","How is this poem organized?","in three stanzas with lines that rhyme","in paragraphs with no rhyme","as a list of facts","as a conversation between characters"),
+   Q("craft","RL.4.5","What does stanza 2 describe?","the hard times the tree has lived through","children playing at noon","the speaker sitting in the shade","how to plant an oak")]},
+ {v:[Q("detail","RL.4.1","Which detail shows the tree is very old?","It has watched a hundred years of kids.","It has gray branches.","It is behind the school.","It gives shade."),
+   Q("detail","RL.4.1","What did the oak do every spring?","pushed out new leaves","lost its branches","fell over","dropped its bark")]},
+ {v:[Q("lang","RL.4.4","What is a \"drought\"?","a long time with little or no rain","a heavy snowstorm","a strong wind","a cold night"),
+   Q("lang","RL.4.4","What does \"feel small\" mean in stanza 3?","feel unimportant or not strong enough","be very short","shrink in size","feel sleepy")]}
+]},
+{title:"The Lost Colony",genre:"Informational · history",type:"info",paras:[
+ "In 1587, a group of about 115 English men, women, and children sailed to Roanoke Island, off the coast of what is now North Carolina. They hoped to build a new settlement. That August, a baby named Virginia Dare was born there. She was the first English child born in the Americas.",
+ "The colony needed more supplies, so its governor, John White, sailed back to England. He planned to return quickly. But England went to war with Spain, and ships were needed for the fighting. White could not get back to Roanoke for three years.",
+ "When he finally returned in 1590, the colonists were gone. Their houses had been taken apart. The main clue was the word \"CROATOAN\" carved into a wooden post. Croatoan was the name of a nearby island and of the Native American people who lived there.",
+ "To this day, no one knows for sure what happened. Some historians think the colonists went to live with the Croatoan people. Others think they moved inland. Scientists are still digging for answers.",
+ "I think the mystery of the Lost Colony is worth studying. It reminds us that history is not just a list of facts. It is full of questions we can still try to answer."],
+ slots:[
+ {must:true,v:[Q("main","RI.4.2","What is the main idea of the article?","The Roanoke colonists disappeared, and people are still trying to learn what happened.","Virginia Dare was born in 1587.","England and Spain went to war.","Croatoan is an island."),
+   Q("main","RI.4.2","Which sentence best states the main idea?","The Lost Colony is a mystery that people are still trying to solve.","John White was the governor.","The houses were taken apart.","Ships were needed for fighting.")]},
+ {must:true,v:[Q("apov","RI.4.8","What is the author's point of view about the Lost Colony?","It is worth studying because history is full of questions.","It is a boring topic.","The mystery has already been solved.","People should stop digging on Roanoke Island."),
+   Q("apov","RI.4.8","Which sentence shows the author's opinion?","\"I think the mystery of the Lost Colony is worth studying.\"","\"They hoped to build a new settlement.\"","\"White could not get back to Roanoke for three years.\"","\"Croatoan was the name of a nearby island.\"")]},
+ {v:[Q("detail","RI.4.3","Why couldn't John White return to Roanoke quickly?","England was at war with Spain and needed its ships.","He forgot where the island was.","A storm sank his ship.","The colonists told him not to come back."),
+   Q("detail","RI.4.3","What clue did White find when he returned?","the word \"CROATOAN\" carved into a post","a map to the colonists' new home","a letter from Virginia Dare","a buried treasure chest")]},
+ {v:[Q("lang","RI.4.4","In paragraph 1, a \"settlement\" is…","a place where people build homes and live","a kind of ship","an argument","a map of an island"),
+   Q("lang","RI.4.4","What does \"inland\" mean in paragraph 4?","away from the coast, farther into the land","into the ocean","onto a ship","under the ground")]},
+ {v:[Q("craft","RI.4.3","Why does the author explain the war with Spain?","To show why White was gone for three years","To teach about Spanish ships","To describe Virginia Dare","To argue that war is good"),
+   Q("craft","RI.4.8","Why does the author include two different ideas from historians in paragraph 4?","To show that experts disagree about what happened","To prove the mystery is solved","To tell a story about digging","To describe Croatoan Island")]},
+ {v:[Q("sum","RI.4.2","Which is the best summary of the article?","English colonists settled on Roanoke Island in 1587, but when their governor returned in 1590 they were gone, and what happened is still a mystery.","John White sailed to England for supplies.","Scientists dig on Roanoke Island.","Virginia Dare was born on Roanoke Island in 1587."),
+   Q("detail","RI.4.1","How long was John White away from Roanoke?","three years","one year","ten years","three months")]}
+]}
+],
+/* Summit */
+[
+{title:"After the Storm",genre:"Realistic fiction",type:"lit",paras:[
+ "When the weather radio warned that Hurricane Lena would reach Wilmington by Thursday night, Dani started a checklist. Batteries. Water jugs. Flashlights. Her brother Marcus, who was thirteen, flopped onto the couch. \"It'll turn out to sea,\" he said. \"They always do.\"",
+ "Dani didn't argue, but she didn't stop writing either. She filled every pitcher in the kitchen and stacked canned soup in a laundry basket like bricks in a wall.",
+ "The storm did not turn. All night the wind screamed around the house, and rain hammered the windows like fists. Dani lay awake counting the seconds between gusts. Across the hall, Marcus's flashlight clicked on and off, on and off.",
+ "By morning the power was out, and the street was a river of branches. Their neighbor, Mrs. Ruiz, stood on her porch staring at a fallen pine that blocked her steps. She was eighty-one and lived alone.",
+ "Marcus was already pulling on his boots. \"Come on,\" he said. Dani grabbed two jugs of water and a sleeve of crackers from her basket.",
+ "They spent the afternoon dragging branches and sharing soup heated on the camp stove. Mrs. Ruiz told stories about Hurricane Hazel in 1954. As the sun went down, Marcus nudged Dani. \"Good thing somebody made a list,\" he said. Dani smiled. \"Good thing somebody had strong arms.\""],
+ slots:[
+ {must:true,v:[Q("theme","RL.5.2","Which theme is best supported by the story?","People are stronger when they prepare and help each other through hard times.","Hurricanes always turn out to sea.","Older siblings are always right.","Stories about the past are boring."),
+   Q("theme","RL.5.2","How do the characters' responses to the hurricane develop the theme?","Dani prepares and Marcus does the heavy work, showing that different strengths together help a community.","Both ignore the storm, showing that worrying is pointless.","Marcus refuses to help, showing that teenagers are selfish.","Dani hides in her room, showing that fear wins.")]},
+ {v:[Q("npov","RL.5.6","The narrator describes the night mostly through Dani's experience. How does this affect the description of the storm?","The storm seems frightening because readers share Dani's worry as she lies awake.","The storm seems calm because Dani sleeps through it.","The storm seems funny because Marcus tells jokes.","The storm is not described at all."),
+   Q("npov","RL.5.6","Dani notices Marcus's flashlight clicking \"on and off, on and off.\" What does this detail suggest?","Marcus was more nervous than he admitted.","Marcus's flashlight was broken.","Marcus was reading a book.","Marcus was signaling Mrs. Ruiz.")]},
+ {v:[Q("char","RL.5.3","How are Dani and Marcus different before the storm?","Dani takes the warning seriously; Marcus thinks the storm will miss them.","Marcus makes a checklist; Dani watches TV.","Both think the storm will turn out to sea.","Dani wants to leave town; Marcus wants to stay."),
+   Q("char","RL.5.3","How are Dani and Marcus alike after the storm?","Both want to help Mrs. Ruiz.","Both are angry at their neighbor.","Both want to leave Wilmington.","Both refuse to share their supplies.")]},
+ {v:[Q("lang","RL.5.4","\"Rain hammered the windows like fists.\" What does this simile show?","The rain was loud and forceful.","The rain was gentle.","Someone was knocking on the door.","The windows were being fixed."),
+   Q("lang","RL.5.4","\"The street was a river of branches.\" What does this metaphor mean?","Branches covered the street the way water fills a river.","The street had flooded with clean water.","A river ran beside the street.","The branches were floating away.")]},
+ {v:[Q("detail","RL.5.1","Which quotation best shows that Marcus changes his mind about Dani's preparations?","\"Good thing somebody made a list,\" he said.","\"It'll turn out to sea,\" he said.","Marcus's flashlight clicked on and off.","Marcus was already pulling on his boots."),
+   Q("detail","RL.5.1","Which quotation best shows that Dani was prepared?","\"She filled every pitcher in the kitchen and stacked canned soup in a laundry basket.\"","\"Dani lay awake counting the seconds between gusts.\"","\"Dani smiled.\"","\"Dani didn't argue.\"")]},
+ {v:[Q("craft","RL.5.2","Why does the author include Mrs. Ruiz's stories about Hurricane Hazel?","To show that the community has faced storms before and gotten through them together","To explain how hurricanes form","To show that Mrs. Ruiz was bored","To change the setting to 1954"),
+   Q("craft","RL.5.5","How does paragraph 6 fit into the structure of the story?","It resolves the conflict by showing the characters recovering together.","It introduces the problem of the storm.","It describes the night of the storm.","It explains how to make a checklist.")]},
+ {v:[Q("sum","RL.5.2","Which is the best summary of the story?","As a hurricane approaches, Dani prepares while Marcus brushes it off; afterward, they work together to help their neighbor and appreciate each other's strengths.","Dani makes a checklist of batteries and water.","Mrs. Ruiz tells stories about Hurricane Hazel.","Marcus and Dani argue about the weather all week.")]}
+]},
+{title:"The Lighthouse Speaks",genre:"Poem",type:"lit",poem:true,paras:[
+ "I stand where sand and ocean meet,\na striped and silent tower.\nI do not walk, I do not sleep;\nI count the dark by hour.",
+ "The sailors never learn my name;\nthey only see my light,\na steady eye that sweeps the waves\nand stitches up the night.",
+ "The storms have tried to pull me down,\nthe sea has crept so near\nthat people moved me, brick by brick,\nto keep me standing here.",
+ "So let the waves roar all they like;\nI have one job to do:\nto shine for ships I'll never meet\nuntil the dark is through."],
+ slots:[
+ {must:true,v:[Q("theme","RL.5.2","Which theme is best supported by the poem?","Faithfully serving others matters even when you receive no thanks.","Lighthouses are hard to move.","The ocean is dangerous for swimmers.","Storms always win in the end."),
+   Q("theme","RL.5.2","How does the speaker's response to challenges in stanzas 3 and 4 develop the theme?","Despite storms and the rising sea, the speaker keeps shining for others, showing steady dedication.","The speaker gives up, showing that challenges are too hard.","The speaker asks for thanks, showing that rewards matter most.","The speaker moves away, showing that change is bad.")]},
+ {v:[Q("npov","RL.5.6","Who is the speaker of this poem?","the lighthouse","a sailor","the ocean","a tourist"),
+   Q("npov","RL.5.6","How does having the lighthouse as the speaker affect how the storms are described?","The storms seem like attacks the lighthouse must stand up to.","The storms seem exciting and fun.","The storms are described with scientific facts.","The storms are not mentioned.")]},
+ {v:[Q("lang","RL.5.4","\"a steady eye that sweeps the waves\" — what is the \"eye\"?","the lighthouse's beam of light","a sailor watching","the moon","a storm"),
+   Q("lang","RL.5.4","What does \"stitches up the night\" suggest the light does?","It holds the darkness together and keeps it safe, like sewing a tear closed.","It makes the night darker.","It sews sails for the ships.","It wakes up the sailors.")]},
+ {v:[Q("craft","RL.5.5","How does stanza 3 fit into the overall structure of the poem?","It shows the challenges the lighthouse has faced before the speaker's final promise.","It introduces the setting for the first time.","It describes the sailors' homes.","It ends the poem with a question."),
+   Q("craft","RL.5.5","What changes from stanza 3 to stanza 4?","The poem moves from describing threats to the speaker's determination.","The speaker changes from the lighthouse to a sailor.","The setting moves to a city.","The poem stops rhyming.")]},
+ {v:[Q("detail","RL.5.1","Which line best supports the idea that the lighthouse receives no thanks?","\"The sailors never learn my name\"","\"I stand where sand and ocean meet\"","\"a striped and silent tower\"","\"So let the waves roar all they like\""),
+   Q("detail","RL.5.1","Which line shows that people worked to save the lighthouse?","\"that people moved me, brick by brick\"","\"I do not walk, I do not sleep\"","\"they only see my light\"","\"until the dark is through\"")]},
+ {v:[Q("lang","RL.5.4","\"I count the dark by hour.\" What does this line suggest?","The lighthouse stays awake and watchful all night.","The lighthouse is a clock.","The lighthouse is afraid of the dark.","The lighthouse sleeps during the day."),
+   Q("lang","RL.5.4","What does \"crept so near\" mean in stanza 3?","slowly came closer","ran far away","jumped over","dried up")]}
+]},
+{title:"A Skate Park for Riverbend?",genre:"Informational · two letters to the editor",type:"info",paras:[
+ "The Riverbend Town Council is deciding whether to turn an empty lot on Pine Street into a skate park. Two residents wrote letters to the local newspaper.",
+ "Letter 1, from a sixth-grade student: Our town has three baseball fields and two tennis courts, but nowhere to skate. Right now, kids skate in parking lots, where cars and shoppers make it dangerous. A skate park would give us a safe place to practice. It would also bring people downtown. When the nearby town of Greenview opened its skate park, families started visiting the shops around it. Please vote yes. Kids need a place that is built for us.",
+ "Letter 2, from a downtown business owner: I support young people, but I have concerns about this plan. The Pine Street lot is next to the library, which is supposed to be a quiet place. Skate parks can be noisy from early morning until dark. The project would also cost about $250,000, and our town budget is already tight. I believe the council should look for a different location, such as the park on the edge of town, where the noise would bother fewer people."],
+ slots:[
+ {must:true,v:[Q("main","RI.5.2","What is the main idea of Letter 1?","The town should build the skate park because kids need a safe place to skate.","Parking lots are good places to skate.","Greenview has too many shops.","Baseball fields should be removed."),
+   Q("main","RI.5.2","What is the main idea of Letter 2?","The skate park should be built somewhere else because of noise and cost.","Young people should not be allowed to skate.","The library should be torn down.","The town has plenty of money.")]},
+ {must:true,v:[Q("apov","RI.5.6","How are the two writers' points of view different?","The student wants the skate park on Pine Street; the business owner wants it in a different place.","Both writers want the skate park on Pine Street.","The student is against any skate park; the business owner wants one downtown.","Neither writer has an opinion."),
+   Q("apov","RI.5.6","How are the two writers' points of view similar?","Both say they care about young people having good places in town.","Both want the library moved.","Both say the town has extra money.","Both want the skate park next to the library.")]},
+ {v:[Q("detail","RI.5.8","Which evidence does the student use to support the point that a skate park helps the town?","Families visited nearby shops after Greenview opened its skate park.","The lot is next to the library.","The project would cost about $250,000.","The town has two tennis courts."),
+   Q("detail","RI.5.8","Which reason does the business owner give against the Pine Street location?","The skate park would be noisy next to the library.","Kids skate in parking lots.","There are three baseball fields.","Greenview's shops got busier.")]},
+ {v:[Q("apov","RI.5.8","Why does the student mention that kids now skate in parking lots?","To show that kids need a safer place to skate","To suggest parking lots should be bigger","To complain about shoppers","To prove the town has no money"),
+   Q("apov","RI.5.8","Why does the business owner suggest the park on the edge of town?","To offer a solution that would bother fewer people","To keep kids from skating at all","To make the skate park cost more","To move the library")]},
+ {v:[Q("lang","RI.5.4","In Letter 2, \"our town budget is already tight\" means…","the town does not have much extra money","the town's buildings are small","the town has too many rules","the town's streets are crowded"),
+   Q("lang","RI.5.4","In Letter 2, what does \"concerns\" mean?","worries","compliments","questions about skating tricks","final decisions")]},
+ {v:[Q("craft","RI.5.6","Why might a reader benefit from reading both letters?","Seeing both sides helps the reader make a fair decision.","Both letters say exactly the same thing.","The second letter proves the first one is false.","Readers only need the longer letter."),
+   Q("sum","RI.5.2","Which statement accurately summarizes both letters?","A student supports a Pine Street skate park for safety and business; a business owner prefers another site because of noise and cost.","Both writers want the town to spend more on baseball.","A student and a business owner agree the library is too noisy.","Both writers think Greenview's skate park was a mistake.")]}
+]}
+]];
+EXTRA.forEach((arr,i)=>LEVELS[i].passages.push(...arr));
+Object.assign(STANDARDS,{
+  "RL.4.5":"Explain major differences between poems, drama, and prose, and refer to structural elements of poems such as verse and stanzas.",
+  "RI.4.3":"Explain events, procedures, ideas, or concepts in a historical, scientific, or technical text, including what happened and why.",
+  "RL.5.5":"Explain how a series of chapters, scenes, or stanzas fits together to provide the overall structure of a story, drama, or poem.",
+  "RI.5.6":"Analyze multiple accounts of the same event or topic, noting important similarities and differences in point of view."
+});
+
 const TEACHER_EMAIL = "darren-echols@dpsnc.net";
 
 /* ---------- Randomizer ---------- */
@@ -376,26 +573,32 @@ function newSeed(){try{const b=new Uint32Array(1);crypto.getRandomValues(b);retu
 function shuffle(arr,rnd){const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 function versionCode(seed,lvl){const al="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";let s="",n=seed;for(let i=0;i<5;i++){s+=al[n%al.length];n=Math.floor(n/al.length)}return "L"+lvl+"-"+s}
 
-function buildQuiz(level,seed){
+function buildQuiz(level,seed,n){
   const rnd=mulberry32(seed);
   const items=[];
-  level.passages.forEach((p,pi)=>{
+  const idx=level.passages.map((_,i)=>i);
+  const lit=shuffle(idx.filter(i=>level.passages[i].type==="lit"),rnd), info=shuffle(idx.filter(i=>level.passages[i].type==="info"),rnd);
+  let pick=[];
+  if(n>=level.passages.length)pick=idx.slice();
+  else{pick=[lit[0],info[0]].filter(x=>x!=null);const rest=shuffle(idx.filter(i=>!pick.includes(i)),rnd);while(pick.length<n&&rest.length)pick.push(rest.shift())}
+  const chosenP=shuffle(pick,rnd).map(i=>level.passages[i]);
+  chosenP.forEach((p,pi)=>{
     const must=p.slots.filter(s=>s.must), rest=shuffle(p.slots.filter(s=>!s.must),rnd);
     const chosen=shuffle(must.concat(rest.slice(0,Math.max(0,level.perPassage-must.length))),rnd);
     chosen.forEach(slot=>{
       const vi=Math.floor(rnd()*slot.v.length), v=slot.v[vi];
       const opts=shuffle([v.c].concat(v.w),rnd);
-      items.push({p:pi,s:v.s,std:v.std,q:v.q,opts,ans:opts.indexOf(v.c),pick:null,hint:false,qid:p.title.slice(0,4)+p.slots.indexOf(slot)+"v"+vi});
+      items.push({p:pi,s:v.s,std:v.std,q:v.q,opts,ans:opts.indexOf(v.c),pick:null,hint:false,qid:p.title+"#"+p.slots.indexOf(slot)+"v"+vi});
     });
   });
-  return items;
+  return {items,passages:chosenP};
 }
 
 /* ---------- State ---------- */
-const S={view:"home",name:"",cls:"",level:null,seed:0,items:[],i:0,chosen:null,locked:false,started:0,result:null,saveMsg:""};
+const S={view:"home",name:"",cls:"",level:null,npass:2,passages:[],seed:0,items:[],i:0,chosen:null,locked:false,started:0,result:null,saveMsg:""};
 const app=document.getElementById("app");
 const el=(tag,attrs={},...kids)=>{const n=document.createElement(tag);for(const[k,v]of Object.entries(attrs)){if(k==="class")n.className=v;else if(k==="text")n.textContent=v;else if(k.startsWith("on"))n.addEventListener(k.slice(2),v);else if(v!==false&&v!=null)n.setAttribute(k,v===true?"":v)}kids.flat().forEach(c=>{if(c!=null)n.append(c.nodeType?c:document.createTextNode(c))});return n};
-try{const s=JSON.parse(localStorage.getItem("st_student")||"{}");S.name=s.name||"";S.cls=s.cls||""}catch(e){}
+try{const s=JSON.parse(localStorage.getItem("st_student")||"{}");S.name=s.name||"";S.cls=s.cls||"";if([2,3,5].includes(s.npass))S.npass=s.npass}catch(e){}
 
 /* ---------- Platform: saving results + teacher view ---------- */
 let db=null,user=null,isTeacher=false,uid=null;
@@ -443,15 +646,18 @@ function renderHome(){
 
   const lv=el("div",{class:"levels",role:"group","aria-label":"Choose a trail"});
   LEVELS.forEach(L=>{
-    const qcount=L.perPassage*L.passages.length;
     const b=el("button",{class:"level",type:"button","aria-pressed":S.level===L.id?"true":"false"});
     b.innerHTML=peakSVG(L.id);
-    const tags=el("div",{class:"tags"},el("span",{class:"tag",text:qcount+" questions"}),el("span",{class:"tag",text:L.passages.length+" passages"}));
+    const qtag=el("span",{class:"tag qcount","data-per":L.perPassage});
+    const tags=el("div",{class:"tags"},qtag,el("span",{class:"tag",text:L.passages.length+" passages in the bank"}));
     b.append(el("div",{},el("div",{class:"eyebrow",text:L.grade}),el("h3",{text:L.name}),el("div",{class:"meta",text:L.blurb}),tags));
     b.addEventListener("click",()=>{S.level=L.id;lv.querySelectorAll(".level").forEach(x=>x.setAttribute("aria-pressed","false"));b.setAttribute("aria-pressed","true");upd()});
     lv.append(b);
   });
   go.addEventListener("click",startQuiz);
+  const lenGroup=el("div",{class:"seg",role:"radiogroup","aria-label":"How many passages"});
+  const paintCounts=()=>{lv.querySelectorAll(".qcount").forEach(t=>t.textContent=(+t.dataset.per*S.npass)+" questions");lenGroup.querySelectorAll("button").forEach(x=>x.setAttribute("aria-checked",+x.dataset.n===S.npass?"true":"false"))};
+  [[2,"2 passages"],[3,"3 passages"],[5,"All 5"]].forEach(([n,t])=>{const x=el("button",{type:"button",role:"radio","data-n":n},t);x.addEventListener("click",()=>{S.npass=n;paintCounts()});lenGroup.append(x)});
 
   const left=el("section",{class:"panel"},
     el("div",{class:"eyebrow",text:"Step 1"}),el("h2",{text:"Who's reading?",style:"font-size:1.6rem;margin:.2rem 0 14px"}),
@@ -460,9 +666,11 @@ function renderHome(){
     el("p",{class:"hintline",text:"Your quiz is made just for you. Questions and answer choices are mixed up, so your neighbor's quiz won't match yours."}));
   const right=el("section",{class:"panel"},
     el("div",{class:"eyebrow",text:"Step 2"}),el("h2",{text:"Pick your trail",style:"font-size:1.6rem;margin:.2rem 0 14px"}),
-    lv,el("div",{class:"startbar"},go,msg));
+    lv,el("div",{class:"field",style:"margin-top:16px"},el("div",{class:"lbl",text:"How many passages?"}),lenGroup,
+      el("p",{class:"hintline",style:"margin:.4rem 0 0",text:"Each quiz always includes at least one story and one article. Passages are picked at random from the bank."})),
+    el("div",{class:"startbar"},go,msg));
   app.append(el("div",{class:"home"},left,right),standardsBlock());
-  upd();
+  paintCounts();upd();
 }
 
 function standardsBlock(){
@@ -474,9 +682,9 @@ function standardsBlock(){
 }
 
 function startQuiz(){
-  try{localStorage.setItem("st_student",JSON.stringify({name:S.name,cls:S.cls}))}catch(e){}
+  try{localStorage.setItem("st_student",JSON.stringify({name:S.name,cls:S.cls,npass:S.npass}))}catch(e){}
   const L=LEVELS.find(x=>x.id===S.level);
-  S.seed=newSeed();S.items=buildQuiz(L,S.seed);S.i=0;S.chosen=null;S.locked=false;S.started=Date.now();S.result=null;S.saveMsg="";
+  S.seed=newSeed();{const b=buildQuiz(L,S.seed,S.npass);S.items=b.items;S.passages=b.passages}S.i=0;S.chosen=null;S.locked=false;S.started=Date.now();S.result=null;S.saveMsg="";
   S.view="play";stopSpeech();render();window.scrollTo(0,0);
 }
 
@@ -498,7 +706,7 @@ function readAloud(paras,btn){
 
 function renderPlay(){
   document.getElementById("homeBtn").hidden=false;
-  const L=LEVELS.find(x=>x.id===S.level),it=S.items[S.i],P=L.passages[it.p];
+  const L=LEVELS.find(x=>x.id===S.level),it=S.items[S.i],P=S.passages[it.p];
   app.innerHTML="";
   // trail of dots
   const trail=el("div",{class:"trail","aria-label":`Question ${S.i+1} of ${S.items.length}`});
@@ -508,15 +716,16 @@ function renderPlay(){
 
   // passage
   const readBtn=el("button",{class:"btn ghost small",type:"button"},"Read to me");
-  readBtn.addEventListener("click",()=>readAloud(P.paras,readBtn));
+  readBtn.addEventListener("click",()=>readAloud(P.paras.map(x=>x.replace(/\n/g," ")),readBtn));
   const sizeDown=el("button",{class:"btn ghost small",type:"button","aria-label":"Smaller text"},"A−");
   const sizeUp=el("button",{class:"btn ghost small",type:"button","aria-label":"Bigger text"},"A+");
   const setSize=d=>{const cur=parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--read"))||1.12;document.documentElement.style.setProperty("--read",Math.min(1.6,Math.max(.95,cur+d)).toFixed(2)+"rem")};
   sizeDown.addEventListener("click",()=>setSize(-.08));sizeUp.addEventListener("click",()=>setSize(.08));
   const pass=el("article",{class:"passage"},
-    el("div",{class:"eyebrow",text:`Passage ${it.p+1} of ${L.passages.length}`}),el("h2",{text:P.title}),el("div",{class:"genre",text:P.genre}),
+    el("div",{class:"eyebrow",text:`Passage ${it.p+1} of ${S.passages.length}`}),el("h2",{text:P.title}),el("div",{class:"genre",text:P.genre}),
     el("div",{class:"tools"},readBtn,sizeDown,sizeUp),
-    P.paras.map((t,k)=>el("div",{class:"para"},el("span",{class:"pnum",text:String(k+1)}),el("p",{text:t}))));
+    P.poem?el("div",{class:"eyebrow",style:"margin-bottom:8px",text:"Numbers show stanzas"}):null,
+    P.paras.map((t,k)=>el("div",{class:"para"+(P.poem?" poem":"")},el("span",{class:"pnum",text:String(k+1)}),el("p",{text:t}))));
 
   // question
   const sk=SKILLS[it.s];
@@ -557,7 +766,7 @@ function finish(){
   const skills={};S.items.forEach(x=>{const k=x.s;skills[k]=skills[k]||[0,0];skills[k][1]++;if(x.pick===x.ans)skills[k][0]++});
   const score=S.items.filter(x=>x.pick===x.ans).length;
   S.result={name:S.name,cls:S.cls,level:L.id,levelName:L.name,version:versionCode(S.seed,L.id),seed:S.seed,
-    score,total:S.items.length,pct:Math.round(100*score/S.items.length),hints:S.items.filter(x=>x.hint).length,
+    passages:S.passages.map(p=>p.title),score,total:S.items.length,pct:Math.round(100*score/S.items.length),hints:S.items.filter(x=>x.hint).length,
     skills,items:S.items.map(x=>({std:x.std,s:x.s,ok:x.pick===x.ans,hint:x.hint,qid:x.qid})),
     startedAt:S.started,finishedAt:Date.now()};
   S.view="results";S.saveMsg="Saving…";render();window.scrollTo(0,0);
@@ -566,7 +775,7 @@ function finish(){
 
 function resultText(r){
   const lines=[`To: ${TEACHER_EMAIL}`,`Subject: Story Trail results – ${r.name}`,"",
-    `Student: ${r.name}`+(r.cls?`  (${r.cls})`:""),`Trail: ${r.levelName} (Level ${r.level})   Version: ${r.version}`,
+    `Student: ${r.name}`+(r.cls?`  (${r.cls})`:""),`Trail: ${r.levelName} (Level ${r.level})   Version: ${r.version}`,`Passages: ${(r.passages||[]).join(", ")}`,
     `Score: ${r.score}/${r.total} (${r.pct}%)   Hints used: ${r.hints}`,`Finished: ${new Date(r.finishedAt).toLocaleString()}`,"","By skill:"];
   Object.entries(r.skills).forEach(([k,[c,t]])=>lines.push(`  ${SKILLS[k].name}: ${c}/${t}`));
   lines.push("","By question:");r.items.forEach((x,i)=>lines.push(`  ${i+1}. ${x.ok?"✓":"✗"} ${x.std} ${SKILLS[x.s].name}${x.hint?" (hint)":""}`));
@@ -584,7 +793,7 @@ function renderResults(){
     el("div",{class:"eyebrow",text:"Field report"}),el("h2",{text:r.name,style:"font-size:1.8rem;margin:.2rem 0 10px"}),
     el("div",{class:"scorebig",text:`${r.score}/${r.total}`}),el("div",{class:"badge",text:`${r.pct}% · ${label}`}),
     el("dl",{class:"kv"},el("dt",{text:"Trail"}),el("dd",{text:`${r.levelName} (Level ${r.level})`}),
-      el("dt",{text:"Class"}),el("dd",{text:r.cls||"—"}),el("dt",{text:"Version"}),el("dd",{text:r.version}),
+      el("dt",{text:"Class"}),el("dd",{text:r.cls||"—"}),el("dt",{text:"Passages"}),el("dd",{text:(r.passages||[]).join(", ")}),el("dt",{text:"Version"}),el("dd",{text:r.version}),
       el("dt",{text:"Hints used"}),el("dd",{text:String(r.hints)}),el("dt",{text:"Time"}),el("dd",{text:Math.max(1,Math.round((r.finishedAt-r.startedAt)/60000))+" min"})));
   const host=el("div");
   const copyB=el("button",{class:"btn small",type:"button"},"Copy results");
@@ -613,9 +822,9 @@ function renderResults(){
 let unsub=null,teacherRows=[];
 function csv(rows){
   const sk=Object.keys(SKILLS);
-  const head=["Finished","Student","Class","Trail","Version","Score","Total","Percent","Hints",...sk.map(k=>SKILLS[k].name),"Standards missed"];
+  const head=["Finished","Student","Class","Trail","Passages","Version","Score","Total","Percent","Hints",...sk.map(k=>SKILLS[k].name),"Standards missed"];
   const esc=v=>{v=String(v??"");return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
-  return [head,...rows.map(r=>[new Date(r.finishedAt).toLocaleString(),r.name,r.cls,r.levelName,r.version,r.score,r.total,r.pct,r.hints,
+  return [head,...rows.map(r=>[new Date(r.finishedAt).toLocaleString(),r.name,r.cls,r.levelName,(r.passages||[]).join("; "),r.version,r.score,r.total,r.pct,r.hints,
     ...sk.map(k=>r.skills&&r.skills[k]?`${r.skills[k][0]}/${r.skills[k][1]}`:""),
     (r.items||[]).filter(x=>!x.ok).map(x=>x.std).join(" ")])].map(row=>row.map(esc).join(",")).join("\n");
 }
