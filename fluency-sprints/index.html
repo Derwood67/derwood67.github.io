@@ -1,0 +1,681 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,-apple-system,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Fluency Sprints</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&family=Atkinson+Hyperlegible+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: teacher's probe sheet on the left (ruled card with red margin), sticky timer + scoring rail on the right; stacks with a sticky timer on phones */
+:root{
+  --paper:#F3F6FB; --card:#FFFFFF; --ink:#1A2233; --muted:#5B6880; --rule:#D3DCEA;
+  --margin:#E26464; --accent:#2B54C6; --on-accent:#FFFFFF; --pencil:#F2B417;
+  --err:#C9303A; --ok:#24804F; --hl:#E7EEFC; --chip:#EDF1F8;
+  --font-display:"Lexend",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-body:"Lexend",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"Atkinson Hyperlegible Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  --fs:1;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#0F141E; --card:#171E2B; --ink:#E5EBF4; --muted:#97A3B8; --rule:#2A354A;
+  --margin:#B9474B; --accent:#86A7FF; --on-accent:#0C1322; --pencil:#F0C04F;
+  --err:#FF7076; --ok:#5BC98B; --hl:#22304A; --chip:#212A3B; color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --paper:#0F141E; --card:#171E2B; --ink:#E5EBF4; --muted:#97A3B8; --rule:#2A354A;
+  --margin:#B9474B; --accent:#86A7FF; --on-accent:#0C1322; --pencil:#F0C04F;
+  --err:#FF7076; --ok:#5BC98B; --hl:#22304A; --chip:#212A3B; color-scheme:dark;}
+
+body{background:var(--paper);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--paper)}
+.wrap{max-width:1180px;margin:0 auto;padding-block:22px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--font-display);text-wrap:balance;margin:0}
+button,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;margin-bottom:18px}
+.kicker{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+h1{font-size:1.85rem;font-weight:700;letter-spacing:-.01em}
+h1 span{color:var(--accent)}
+.tag{color:var(--muted);font-size:.9rem;max-width:44ch}
+
+.controls{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;background:var(--card);border:1px solid var(--rule);border-radius:12px;padding:10px 12px;margin-bottom:18px}
+.group{display:flex;align-items:center;gap:8px}
+.group > label,.lbl{font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.seg{display:inline-flex;background:var(--chip);border-radius:9px;padding:3px;gap:2px}
+.seg button{border:0;background:transparent;padding:6px 12px;border-radius:7px;cursor:pointer;font-weight:500;font-size:.88rem;white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--card);color:var(--accent);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+select{background:var(--chip);border:0;border-radius:8px;padding:7px 10px;font-size:.88rem;max-width:230px}
+.btn{border:1px solid transparent;border-radius:9px;padding:9px 16px;font-weight:600;cursor:pointer;font-size:.92rem}
+.btn.primary{background:var(--accent);color:var(--on-accent)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.ghost{background:transparent;border-color:var(--rule)}
+.btn.ghost:hover{background:var(--chip)}
+.btn.small{padding:5px 10px;font-size:.8rem}
+.spacer{flex:1}
+.switch{display:flex;align-items:center;gap:7px;font-size:.88rem;cursor:pointer}
+.switch input{width:17px;height:17px;accent-color:var(--accent)}
+
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:20px;align-items:start}
+.side{position:sticky;top:calc(env(safe-area-inset-top,0px) + 14px);display:flex;flex-direction:column;gap:16px}
+.card{background:var(--card);border:1px solid var(--rule);border-radius:12px}
+
+/* Probe sheet */
+.sheet{position:relative;padding:26px 28px 30px 58px;min-width:0}
+.sheet::before{content:"";position:absolute;left:40px;top:0;bottom:0;width:2px;background:var(--margin);opacity:.55}
+.sheet-meta{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-size:.8rem;color:var(--muted);margin-bottom:6px}
+.chip{background:var(--chip);border-radius:999px;padding:2px 10px;font-weight:500;color:var(--ink)}
+.sheet h2{font-size:1.55rem;font-weight:600;margin-bottom:4px}
+.sheet .sub{font-family:var(--font-mono);font-size:.78rem;color:var(--muted);margin-bottom:22px;font-variant-numeric:tabular-nums}
+.sizer{margin-left:auto;display:flex;gap:4px}
+
+.passage{font-size:calc(var(--fs) * 1.32rem);line-height:1.2}
+.para{display:flex;flex-wrap:wrap;column-gap:.4em;row-gap:.5em;margin:0 0 1.05em}
+.w{display:inline-flex;flex-direction:column;align-items:center;border-radius:5px;padding:1px 2px;position:relative;user-select:none;-webkit-tap-highlight-color:transparent}
+.w .t{position:relative;line-height:1.3}
+.w .n{font-family:var(--font-mono);font-size:.46em;color:var(--muted);line-height:1;margin-top:3px;font-variant-numeric:tabular-nums}
+.w.ten .n{color:var(--accent);font-weight:600}
+.hide-nums .w .n{display:none}
+.hide-nums .para{row-gap:.25em}
+.live .w{cursor:pointer}
+.live .w:hover{background:var(--hl)}
+.pick .w{cursor:crosshair}
+.pick .w:hover{background:var(--hl);box-shadow:inset -3px 0 0 var(--accent)}
+.w.err .t{color:var(--err);background-image:linear-gradient(to top right,transparent calc(50% - 1.5px),var(--err) calc(50% - 1.5px),var(--err) calc(50% + 1.5px),transparent calc(50% + 1.5px))}
+.w.err .n{color:var(--err);font-weight:600}
+.w.last .t::after{content:"]";position:absolute;right:-.42em;top:-.05em;color:var(--accent);font-weight:700;font-size:1.15em}
+.w.last{margin-right:.3em}
+.w.after{opacity:.38}
+.legend{margin-top:18px;padding-top:14px;border-top:1px dashed var(--rule);font-size:.8rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 18px}
+.legend b{color:var(--ink);font-weight:600}
+.legend .e{color:var(--err);font-weight:700}
+.legend .b{color:var(--accent);font-weight:700}
+
+/* Timer */
+.timer{padding:18px 18px 16px}
+.timer-top{display:flex;justify-content:space-between;align-items:center}
+.clock{font-family:var(--font-mono);font-weight:600;font-size:3.6rem;line-height:1;margin:10px 0 10px;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.clock.run{color:var(--accent)}
+.clock.warn{color:var(--err)}
+.bar{height:8px;background:var(--chip);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;width:100%;background:var(--pencil);border-radius:99px;transform-origin:left;transition:transform .1s linear}
+.status{font-size:.88rem;margin:12px 0 14px;min-height:2.6em;color:var(--muted)}
+.status.attn{color:var(--ink);font-weight:600}
+.timer-btns{display:flex;flex-wrap:wrap;gap:8px}
+.timer-btns .btn.primary{flex:1;min-width:150px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--muted);display:inline-block;margin-right:6px}
+.dot.on{background:var(--err);animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.3}}
+@media (prefers-reduced-motion: reduce){.dot.on{animation:none}.bar i{transition:none}}
+
+/* Results */
+.results{padding:18px}
+.results h3{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:10px}
+.big{display:flex;align-items:baseline;gap:8px}
+.big b{font-family:var(--font-mono);font-size:2.8rem;line-height:1;font-variant-numeric:tabular-nums}
+.big span{font-size:.85rem;color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}
+.stat{background:var(--chip);border-radius:9px;padding:8px 10px}
+.stat small{display:block;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.stat strong{font-family:var(--font-mono);font-size:1.15rem;font-variant-numeric:tabular-nums}
+.bench{border-top:1px solid var(--rule);padding-top:12px}
+.bench-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+.bench-head select{padding:4px 8px;font-size:.8rem}
+.track{position:relative;height:14px;background:var(--chip);border-radius:99px;margin:6px 0 22px}
+.track .fill{position:absolute;left:0;top:0;bottom:0;background:var(--accent);border-radius:99px}
+.track .mark{position:absolute;top:-4px;bottom:-4px;width:3px;background:var(--ink);border-radius:2px}
+.track .mark span{position:absolute;top:22px;left:50%;transform:translateX(-50%);font-family:var(--font-mono);font-size:.7rem;white-space:nowrap;color:var(--muted)}
+.bench p{font-size:.82rem;color:var(--muted);margin:0}
+.bench p b{color:var(--ink)}
+.empty{font-size:.88rem;color:var(--muted)}
+.empty ol{padding-left:1.2em;margin:6px 0 0}
+.empty li{margin-bottom:4px}
+
+.history{padding:16px 18px}
+.hist-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.hist-head h3{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.hist{list-style:none;margin:0;padding:0;font-size:.82rem}
+.hist li{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:7px 0;border-top:1px solid var(--rule)}
+.hist li:first-child{border-top:0}
+.hist .ht{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.hist .hr{font-family:var(--font-mono);font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
+.hist .hm{color:var(--muted);font-size:.74rem}
+
+@media (max-width: 880px){
+  .layout{grid-template-columns:1fr}
+  .side{display:contents}
+  .timer{order:1;position:sticky;top:env(safe-area-inset-top,0px);z-index:5;padding:12px 14px;box-shadow:0 6px 16px -10px rgba(0,0,0,.35)}
+  .sheet{order:2}
+  .results{order:3}
+  .history{order:4}
+  .timer-grid{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;align-items:center}
+  .clock{font-size:2.5rem;margin:0}
+  .status{margin:0;min-height:0;font-size:.8rem}
+  .timer .bar{margin:10px 0}
+}
+@media (max-width: 520px){
+  .sheet{padding:20px 16px 24px 34px}
+  .sheet::before{left:20px}
+  h1{font-size:1.5rem}
+  .controls .spacer{display:none}
+  .passage{font-size:calc(var(--fs) * 1.18rem)}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div>
+      <div class="kicker">Oral Reading Fluency · Grades 4–5</div>
+      <h1>Fluency <span>Sprints</span></h1>
+    </div>
+    <p class="tag">Pull a random passage, run a one-minute timed sprint, mark errors as the student reads, and get words correct per minute.</p>
+  </header>
+
+  <div class="controls">
+    <div class="group"><label>Grade</label>
+      <div class="seg" id="gradeSeg">
+        <button data-v="4">Grade 4</button><button data-v="5">Grade 5</button><button data-v="mix">Both</button>
+      </div>
+    </div>
+    <div class="group"><label>Mode</label>
+      <div class="seg" id="modeSeg">
+        <button data-v="sprint">1-Minute Sprint</button><button data-v="practice">Practice</button>
+      </div>
+    </div>
+    <label class="switch"><input type="checkbox" id="nums"> Number words</label>
+    <div class="spacer"></div>
+    <select id="pick" aria-label="Choose a passage"></select>
+    <a class="btn ghost" href="ORF_Passages_Grades_4-5.pdf" target="_blank" rel="noopener" style="text-decoration:none">Printable PDF</a>
+    <button class="btn primary" id="newBtn">New random passage</button>
+  </div>
+
+  <div class="layout">
+    <article class="card sheet" id="sheet">
+      <div class="sheet-meta">
+        <span class="chip" id="mGrade">Grade 4</span>
+        <span id="mGenre">Fiction</span>
+        <span id="mId">Passage 4-1</span>
+        <div class="sizer">
+          <button class="btn ghost small" id="smaller" aria-label="Smaller text">A−</button>
+          <button class="btn ghost small" id="bigger" aria-label="Larger text">A+</button>
+        </div>
+      </div>
+      <h2 id="pTitle">Passage</h2>
+      <div class="sub" id="pSub">0 words</div>
+      <div class="passage" id="passage"></div>
+      <div class="legend">
+        <span><b>Tap a word</b> during reading to mark an error <span class="e">/</span></span>
+        <span>The <span class="b">]</span> bracket marks the last word read</span>
+        <span>Every 10th number is <span class="b">blue</span></span>
+      </div>
+    </article>
+
+    <aside class="side">
+      <section class="card timer" id="timerCard">
+        <div class="timer-top">
+          <span class="lbl"><i class="dot" id="dot"></i><span id="modeLbl">1-Minute Sprint</span></span>
+        </div>
+        <div class="timer-grid">
+          <div class="clock" id="clock">1:00</div>
+          <div class="status" id="status">Press Start when the student begins reading the first word.</div>
+        </div>
+        <div class="bar"><i id="barFill"></i></div>
+        <div class="timer-btns" style="margin-top:12px">
+          <button class="btn primary" id="primary">Start sprint</button>
+          <button class="btn ghost" id="secondary" hidden>Reset</button>
+        </div>
+      </section>
+
+      <section class="card results" id="results"></section>
+
+      <section class="card history">
+        <div class="hist-head"><h3>Recent sprints</h3><button class="btn ghost small" id="clearHist" hidden>Clear</button></div>
+        <ul class="hist" id="hist"></ul>
+      </section>
+    </aside>
+  </div>
+</div>
+
+<script>
+const PASSAGES = [
+{id:"4-1",grade:4,genre:"Fiction",title:"The Lighthouse Cat",text:`Every evening, Pip the cat climbed the winding stairs of the old lighthouse. There were one hundred and twelve steps, and Pip knew every one of them. At the top, she sat beside the great lamp and watched the boats come home.
+
+The lighthouse keeper was a tall woman named Rosa. She cleaned the glass each morning and checked the lamp each night. Rosa liked to say that Pip was her assistant, but Pip mostly took naps in the warm sun.
+
+One stormy night, the wind howled and the rain beat against the windows. Rosa turned the switch, but the lamp did not light. She tried again. Nothing happened. Out on the dark water, a small fishing boat was trying to find its way back to the harbor.
+
+Rosa grabbed her flashlight and searched for the problem. Pip followed her, then suddenly ran behind a wooden cabinet and began to meow loudly. Rosa bent down and saw a loose wire hanging from the wall. A mouse had chewed right through it!
+
+Rosa quickly fixed the wire with her tools. When she flipped the switch again, the bright beam swept across the waves. A few minutes later, the fishing boat floated safely into the harbor.
+
+The next morning, Rosa gave Pip a bowl of fresh fish. "You really are my assistant," she said. Pip purred, finished her breakfast, and went back to sleep in the sun.`},
+{id:"4-2",grade:4,genre:"Informational",title:"How Honeybees Talk",text:`Honeybees cannot speak with words, but they still share important news with one another. When a worker bee finds a field full of flowers, she flies back to the hive to tell the other bees where to go. To do this, she performs a special dance.
+
+If the flowers are close to the hive, the bee does a round dance. She moves in small circles, first one way and then the other. The bees around her touch her with their antennae and smell the flowers on her body. Then they fly out to search nearby.
+
+If the flowers are far away, the bee does a waggle dance. She walks in a straight line while shaking her body from side to side. Then she circles back and does it again. The direction of the straight line shows which way to fly compared to the sun. The length of the waggle tells how far away the food is. A longer waggle means a longer trip.
+
+Scientists spent many years studying these dances. One scientist, Karl von Frisch, won a famous prize for figuring out what the movements meant. He showed that bees can share directions that are surprisingly exact.
+
+Dancing is not the only way bees communicate. They also use smells to warn each other about danger and to help the hive work together. A single hive can hold thousands of bees, and every one of them depends on this teamwork to survive.`},
+{id:"4-3",grade:4,genre:"Fiction",title:"Maya's Garden Plan",text:`Maya's school had an empty patch of dirt behind the gym. It was covered in weeds and old candy wrappers. Every day at recess, Maya walked past it and imagined what it could become.
+
+One afternoon, she asked her teacher, Mr. Delgado, if the class could plant a garden there. He smiled and said, "That is a big job. Write me a plan, and we will see."
+
+Maya went home and got to work. She made a list of what they would need: shovels, gloves, seeds, and a lot of water. She drew a map with rows for tomatoes, beans, and sunflowers. She even figured out that the hose by the gym door was long enough to reach every row.
+
+The next week, Maya shared her plan with the class. Some students wanted to grow pumpkins. Others wanted strawberries. Maya added both to her map. Mr. Delgado was impressed, and the principal agreed to buy the seeds.
+
+On Saturday morning, families came to help. Parents pulled weeds while kids raked the soil smooth. Maya's little brother found three worms and named every one of them. By lunchtime, all the seeds were planted.
+
+Weeks passed, and small green sprouts pushed up through the dirt. The sunflowers grew taller than Mr. Delgado. In the fall, the class picked so many tomatoes that the cafeteria served them with lunch. Maya smiled every time she walked past the garden at recess.`},
+{id:"4-4",grade:4,genre:"Informational",title:"The Journey of a Water Drop",text:`Imagine you are a tiny drop of water floating in the ocean. The sun shines down and warms the surface of the sea. Slowly, you begin to change. You turn from a liquid into an invisible gas called water vapor, and you rise into the sky. This part of your journey is called evaporation.
+
+High above the ground, the air is much colder. As you float higher, you cool down and join together with millions of other drops. Together you form a cloud. This step is called condensation. You can see condensation at home, too, when tiny drops of water form on the outside of a cold glass.
+
+As more and more drops crowd into the cloud, it becomes heavy and dark. Finally, the cloud cannot hold any more water. You fall back toward the earth as rain. If the air is cold enough, you might fall as snow, sleet, or hail instead. This step is called precipitation.
+
+When you land, you might soak into the soil and help a plant grow. You might trickle into a stream that flows into a river. Eventually, the river carries you all the way back to the ocean.
+
+Then the sun warms you again, and the journey starts over. This never-ending trip is called the water cycle. The water you drink today may have fallen as rain on dinosaurs millions of years ago.`},
+{id:"4-5",grade:4,genre:"Fiction",title:"The Missing Library Book",text:`Jonah had a problem. His library book was due on Friday, and he could not find it anywhere. It was a thick book about sharks with a shiny blue cover, and he had promised Ms. Patel that he would take good care of it.
+
+He looked under his bed and found two socks and a broken crayon. He searched his backpack and found a squished sandwich from Monday. He checked the kitchen table, the bathroom, and even the refrigerator. The book was not there.
+
+On Thursday night, Jonah sat on the stairs feeling worried. His older sister, Kira, sat down beside him. "When was the last time you read it?" she asked.
+
+Jonah thought hard. "I read it in the car on the way to Grandpa's house," he said. "I was showing him the picture of the whale shark."
+
+Kira grinned and grabbed her phone. She called Grandpa, who laughed and said the book was sitting right on his kitchen counter. He had been reading it himself and had learned that some sharks can live for hundreds of years.
+
+Grandpa drove the book over the next morning before school. Jonah hugged him and ran to the library just as the bell rang. Ms. Patel scanned the book and smiled.
+
+"Did you enjoy it?" she asked.
+
+"I did," said Jonah. "And so did my grandpa. Can he get his own library card?"`},
+{id:"4-6",grade:4,genre:"Informational",title:"Sea Turtles on the Move",text:`Sea turtles have lived in the ocean for more than one hundred million years. They swam in the seas when dinosaurs walked the earth. Today, there are seven kinds of sea turtles, and each one has its own way of living.
+
+Sea turtles spend almost their whole lives in the water. Their front legs are shaped like flippers, which help them glide through the waves. Unlike land turtles, they cannot pull their heads inside their shells. Instead, their hard shells are smooth and flat, which helps them move quickly.
+
+Female sea turtles come to land only to lay their eggs. On a warm summer night, a mother turtle crawls onto a sandy beach. She digs a deep hole with her back flippers and lays about one hundred eggs. Then she covers them with sand and returns to the sea.
+
+About two months later, the baby turtles hatch. They are small enough to fit in your hand. The hatchlings dig their way out of the sand, usually at night, and scramble toward the ocean. They find the water by following the light of the moon shining on the waves.
+
+The journey is dangerous. Birds, crabs, and fish hunt the tiny turtles. Bright lights from buildings can also confuse them. That is why many beach towns ask people to turn off outdoor lights during nesting season. Small actions like this help more baby turtles reach the sea.`},
+{id:"4-7",grade:4,genre:"Fiction",title:"The Snow Day Fort",text:`When Eli woke up, the world outside his window was completely white. Snow covered the cars, the mailbox, and the swing set. Then his mom called up the stairs with the best news of all. School was canceled!
+
+Eli pulled on his boots, his puffy coat, and two pairs of gloves. He ran next door to get his best friend, Tessa. Together, they decided to build the greatest snow fort the neighborhood had ever seen.
+
+First, they rolled giant snowballs for the walls. The snowballs grew so heavy that they needed to push them together. Next, they stacked the snowballs in a circle and packed snow into the cracks. Tessa used a plastic bucket to make square blocks for the top of the wall.
+
+By noon, their fingers were frozen. They went inside for hot cocoa and grilled cheese sandwiches. Eli's dad told them a trick. If they sprayed a little water on the walls, the fort would freeze hard like ice.
+
+After lunch, they carefully sprinkled water over every wall. Then they dug a small doorway and added a flag made from an old red scarf. Inside, the fort was quiet and surprisingly cozy.
+
+As the sun went down, the neighborhood kids gathered to see it. Even the mail carrier stopped to take a picture. Eli and Tessa sat inside their icy castle, tired and proud, hoping for one more snow day tomorrow.`},
+{id:"4-8",grade:4,genre:"Informational",title:"How Pencils Are Made",text:`Pencils are one of the most common tools in any classroom, but most people never think about how they are made. The process takes several steps and starts with two main materials: wood and graphite.
+
+The center of a pencil is often called lead, but it is not really lead at all. It is a mix of graphite and clay. Graphite is a soft, dark mineral that leaves a gray mark on paper. Workers grind the graphite and clay into a fine powder, add water, and press the mixture into thin rods. Then the rods are baked in a very hot oven until they are hard.
+
+Next comes the wood. Many pencils are made from cedar trees because cedar is soft and easy to sharpen. The wood is cut into thin, flat boards called slats. A machine carves small grooves into each slat. The graphite rods are placed into the grooves, and a second slat is glued on top, like a sandwich.
+
+The sandwich is then cut into separate pencils. Each pencil is sanded smooth and painted. Many pencils in the United States are painted yellow. Long ago, yellow was used for pencils made with the finest graphite, and the color stuck.
+
+Finally, a metal band and an eraser are attached to one end. A single factory can make thousands of pencils in one day, ready for students everywhere.`},
+{id:"5-1",grade:5,genre:"Fiction",title:"The Science Fair Surprise",text:`For three weeks, Amara had been working on her science fair project. Her question was simple: which kind of soil helps bean plants grow the fastest? She planted beans in sand, clay, and garden soil, then measured each plant every afternoon and recorded the results in a notebook.
+
+By the second week, the plants in the garden soil were thriving. The beans in the sand looked thin and pale, and the clay pots barely showed any growth at all. Amara felt confident about her conclusion.
+
+Then, two days before the fair, disaster struck. Her younger cousin, Theo, had been visiting, and he decided to help by watering the plants. Unfortunately, he used an entire pitcher on each pot. By morning, the clay pots were flooded, and the roots in the sand had washed loose.
+
+Amara was furious at first. She wanted to start over, but there was no time. Then she noticed something interesting. The plants in the garden soil had survived the flood because the soil drained well. The clay held the water like a bathtub.
+
+Instead of hiding the accident, Amara added a new section to her poster titled "Unexpected Results." She explained how each soil handled too much water and included photos from the morning after the flood.
+
+At the fair, the judges spent extra time at her table. They told her that the best scientists learn from surprises. Amara won second place, and she thanked Theo, though she asked him to never water her plants again.`},
+{id:"5-2",grade:5,genre:"Informational",title:"Volcanoes Under the Sea",text:`When most people picture a volcano, they imagine a tall mountain with smoke rising from its peak. However, the majority of volcanoes on Earth are hidden deep beneath the ocean. Scientists estimate that there are more than one million underwater volcanoes, although only a small fraction have ever been studied.
+
+Earth's outer layer is broken into enormous pieces called tectonic plates. These plates move very slowly, about as fast as your fingernails grow. In some places on the ocean floor, two plates pull apart from each other. Melted rock, called magma, rises through the gap. When magma reaches the cold seawater, it cools and hardens into new rock. Over millions of years, this process builds long underwater mountain ranges.
+
+Some underwater volcanoes grow so tall that they eventually break through the surface of the ocean. The Hawaiian Islands formed this way. Each island began as a volcano on the sea floor and slowly grew upward, layer by layer, until it rose above the waves.
+
+Underwater volcanoes also create unusual habitats. Near some of them, hot water filled with minerals shoots out of cracks called hydrothermal vents. Even though sunlight never reaches these depths, strange creatures live there, including giant tube worms and pale crabs. They rely on bacteria that turn chemicals into food.
+
+Exploring these places is difficult and expensive. Researchers use remote-controlled submarines to collect samples and photographs. Every expedition reveals new discoveries about the restless world beneath the sea.`},
+{id:"5-3",grade:5,genre:"Informational",title:"First Flight at Kitty Hawk",text:`On a cold, windy morning in December 1903, two brothers from Ohio stood on a sandy hill near Kitty Hawk, North Carolina. Wilbur and Orville Wright had spent years preparing for this moment. They were about to test a machine that many people believed was impossible: an airplane powered by an engine.
+
+The Wright brothers did not start out as inventors of aircraft. They owned a bicycle shop, where they built and repaired bikes. Working with bicycles taught them about balance, lightweight materials, and careful design. They used those lessons when they began studying flight.
+
+The brothers chose Kitty Hawk because it offered steady winds and soft sand for landings. Before building their airplane, they tested gliders there for several summers. They also built a small wind tunnel at their shop to test hundreds of wing shapes. Their careful experiments helped them solve problems that had puzzled other inventors.
+
+That morning, Orville lay on the lower wing of the Flyer while Wilbur ran alongside to steady it. The engine roared, and the airplane lifted into the air. It stayed up for only twelve seconds and traveled about one hundred twenty feet. That is shorter than the wingspan of many modern jets.
+
+The brothers made three more flights that day, and the longest lasted nearly a minute. Few newspapers reported the event at first. Yet those short flights changed the world, leading to the airplanes that carry millions of passengers today.`},
+{id:"5-4",grade:5,genre:"Fiction",title:"The Silent Clock Tower",text:`The clock tower in the center of Millbrook had been silent for as long as anyone could remember. Its hands were frozen at a quarter past three, and pigeons nested behind its cracked face. Most people in town no longer even noticed it.
+
+Gabriel noticed it every day. He passed the tower on his walk to school and wondered what was inside. One Saturday, he discovered that the side door was unlocked. Heart pounding, he stepped inside and climbed a narrow staircase coated in dust.
+
+At the top, he found a room filled with gears of every size. Some were as small as coins, while others were taller than he was. A thick leather journal lay open on a workbench. Its pages were covered with sketches and notes written by the clockmaker who had built the tower a century earlier.
+
+Gabriel returned the next weekend with his grandmother, who had once repaired watches. Together, they studied the journal and discovered that a single bent gear had stopped the entire machine. Gabriel's grandmother contacted the town council, and they agreed to let her try to fix it.
+
+For two months, Gabriel helped her every Saturday. They cleaned rust from the gears, oiled the moving parts, and carefully straightened the bent tooth.
+
+On the first day of spring, the town gathered in the square. Gabriel's grandmother pulled a lever, and the gears began to turn. Then, for the first time in fifty years, the bell rang out across Millbrook.`},
+{id:"5-5",grade:5,genre:"Informational",title:"The Monarch Migration",text:`Every autumn, millions of monarch butterflies begin one of the most remarkable journeys in the animal kingdom. Monarchs from the eastern United States and Canada fly as far as three thousand miles to reach the mountain forests of central Mexico. What makes this trip even more amazing is that none of the butterflies have ever made it before.
+
+Monarchs that hatch in late summer are different from those born earlier in the year. Most monarchs live only a few weeks, but this special generation can survive for up to eight months. Instead of laying eggs right away, they store energy and prepare for the long flight south.
+
+Scientists have long wondered how the butterflies find their way. Research suggests that monarchs use the position of the sun as a compass. They also have an internal clock that helps them adjust as the sun moves across the sky. Some evidence shows they may sense Earth's magnetic field on cloudy days.
+
+When the monarchs arrive in Mexico, they gather in fir trees by the millions. The branches become so crowded with orange wings that they sometimes bend under the weight. The butterflies rest there through the winter, protected from freezing temperatures.
+
+In spring, the monarchs head north again. Along the way, they lay eggs on milkweed plants, which are the only food their caterpillars can eat. Planting milkweed in gardens and schoolyards is one way people help protect this incredible migration.`},
+{id:"5-6",grade:5,genre:"Fiction",title:"The Robot Challenge",text:`Priya had joined the robotics club hoping to build something incredible. On the first day, the coach, Mrs. Okafor, announced the team's challenge. Each group had six weeks to design a robot that could pick up a tennis ball and drop it into a bucket across the room.
+
+Priya's group included Marcus, who loved writing code, and Lily, who was great at building things. Priya was not sure what her role would be. She was nervous that she would not be helpful.
+
+During the first week, the team argued constantly. Marcus wanted the robot to use a claw. Lily wanted a scoop. Both ideas seemed reasonable, and nobody would compromise. Priya finally suggested that they build simple versions of each design and test them both. The others agreed.
+
+The claw grabbed the ball firmly but often dropped it while moving. The scoop was steady but kept pushing the ball away instead of lifting it. Priya noticed that the scoop worked better when the robot approached slowly. She suggested adding a small rubber lip to the front edge so the ball would roll in instead of bouncing out.
+
+That small change made a big difference. By the final week, their robot succeeded nine times out of ten.
+
+On competition day, the team placed third out of twelve groups. As they packed up, Mrs. Okafor stopped by their table. She told Priya that asking good questions was one of the most valuable skills an engineer could have. Priya finally understood exactly where she fit.`},
+{id:"5-7",grade:5,genre:"Informational",title:"How Maps Changed the World",text:`For thousands of years, people have made maps to understand the world around them. The earliest maps were carved into clay tablets or drawn on animal skins. They often showed only nearby rivers, hills, and villages. Places far away were sometimes filled with guesses, imaginary islands, or drawings of sea monsters.
+
+As explorers traveled farther, mapmakers, called cartographers, gathered new information. Sailors recorded coastlines, measured distances, and noted the positions of stars. Little by little, maps became more accurate. Still, making a map was slow work. A single map could take months or even years to complete, and it was copied entirely by hand.
+
+The invention of the printing press in the fifteenth century changed everything. Maps could now be reproduced quickly and shared with many people. Traders, travelers, and governments relied on them to plan journeys and settle disputes about borders.
+
+In the twentieth century, airplanes allowed people to photograph the land from above. Later, satellites orbiting Earth captured images of entire continents. These pictures helped cartographers create maps with remarkable detail.
+
+Today, many people carry a map in their pocket. Smartphones use signals from satellites to show exactly where a person is standing. Digital maps can display traffic, weather, and directions in seconds. Even so, the purpose of a map has not changed. Whether it is scratched into clay or glowing on a screen, a map helps people understand where they are and where they want to go.`},
+{id:"5-8",grade:5,genre:"Fiction",title:"Storm on the Farm",text:`The afternoon sky over the Harlan farm turned a strange shade of green. Ruby looked up from the chicken coop and felt the wind shift. Her father had warned her about skies like this. They often meant a dangerous storm was coming.
+
+Ruby's parents had driven into town for supplies, leaving her in charge of her younger brother, Wes. She remembered the plan the family had practiced many times. First, she checked the weather radio on the kitchen counter. An alert crackled through the speaker, warning of severe thunderstorms and possible tornadoes in the county.
+
+Ruby acted quickly. She told Wes to grab his shoes and the flashlight from the drawer. Then she filled two bottles with water and picked up the emergency bag that hung by the back door. Together, they hurried down the steps into the basement.
+
+The storm arrived with a roar. Rain hammered the windows, and something heavy crashed against the side of the barn. Wes squeezed Ruby's hand. To keep him calm, she counted the seconds between flashes of lightning and booms of thunder. Slowly, the numbers grew larger, which meant the storm was moving away.
+
+When the radio announced that the warning had ended, they climbed back upstairs. A large tree branch lay across the yard, and part of the fence had blown down, but the house was safe.
+
+That evening, Ruby's parents rushed home. When they heard what had happened, her father hugged her tightly. "You did everything exactly right," he said.`}
+];
+
+// Hasbrouck & Tindal (2017) oral reading fluency norms, 50th percentile WCPM
+const BENCH = {4:{fall:94,winter:120,spring:133},5:{fall:121,winter:133,spring:146}};
+const SPRINT_SECS = 60;
+
+PASSAGES.forEach(p=>{
+  p.paras = p.text.trim().split(/\n\s*\n/).map(x=>x.trim().split(/\s+/));
+  p.count = p.paras.reduce((a,b)=>a+b.length,0);
+});
+
+const $ = s=>document.querySelector(s);
+const store = {
+  get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+};
+const prefs = Object.assign({grade:"4",mode:"sprint",nums:true,size:1}, store.get("orf-prefs",{}));
+let history = store.get("orf-history",[]);
+if(!Array.isArray(history)) history=[];
+
+function defaultSeason(){const m=new Date().getMonth();return (m>=7&&m<=10)?"fall":(m===11||m<=2)?"winter":"spring"}
+
+const S = {grade:prefs.grade, mode:prefs.mode, nums:prefs.nums, size:prefs.size, season:defaultSeason(),
+  p:null, els:[], phase:"ready", errs:new Set(), last:null, t0:0, elapsed:0, tick:null, histId:null};
+
+function savePrefs(){store.set("orf-prefs",{grade:S.grade,mode:S.mode,nums:S.nums,size:S.size})}
+
+/* ---------- passage selection ---------- */
+const bags = {};
+function pool(){return PASSAGES.filter(p=>S.grade==="mix"||String(p.grade)===S.grade)}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function randomPassage(){
+  const ids = pool().map(p=>p.id);
+  let bag = bags[S.grade];
+  if(!bag||!bag.length){
+    bag = bags[S.grade] = shuffle(ids.slice());
+    if(S.p && bag.length>1 && bag[bag.length-1]===S.p.id){[bag[0],bag[bag.length-1]]=[bag[bag.length-1],bag[0]]}
+  }
+  load(bag.pop());
+}
+
+function buildPicker(){
+  const sel=$("#pick"); sel.innerHTML="";
+  [4,5].forEach(g=>{
+    const og=document.createElement("optgroup"); og.label="Grade "+g;
+    PASSAGES.filter(p=>p.grade===g).forEach(p=>{
+      const o=document.createElement("option"); o.value=p.id; o.textContent=p.id+"  "+p.title; og.appendChild(o);
+    });
+    sel.appendChild(og);
+  });
+}
+
+function load(id){
+  const p = PASSAGES.find(x=>x.id===id); if(!p) return;
+  stopTimer(); S.p=p; resetRun();
+  $("#pick").value=p.id;
+  $("#mGrade").textContent="Grade "+p.grade;
+  $("#mGenre").textContent=p.genre;
+  $("#mId").textContent="Passage "+p.id;
+  $("#pTitle").textContent=p.title;
+  $("#pSub").textContent=p.count+" words · "+p.paras.length+" paragraphs";
+  const box=$("#passage"); box.innerHTML=""; S.els=[];
+  let i=0;
+  p.paras.forEach(words=>{
+    const para=document.createElement("div"); para.className="para";
+    words.forEach(w=>{
+      const s=document.createElement("span"); s.className="w"+((i+1)%10===0?" ten":""); s.dataset.i=i;
+      const t=document.createElement("span"); t.className="t"; t.textContent=w;
+      const n=document.createElement("span"); n.className="n"; n.textContent=i+1;
+      s.append(t,n); para.appendChild(s); S.els.push(s); i++;
+    });
+    box.appendChild(para);
+  });
+  render();
+}
+
+/* ---------- timing ---------- */
+let audio=null, wake=null;
+function ensureAudio(){try{if(!audio)audio=new (window.AudioContext||window.webkitAudioContext)();if(audio.state==="suspended")audio.resume()}catch(e){}}
+function beep(){
+  if(!audio) return;
+  try{
+    [0,0.28].forEach(off=>{
+      const o=audio.createOscillator(), g=audio.createGain();
+      o.type="sine"; o.frequency.value=880; o.connect(g); g.connect(audio.destination);
+      const t=audio.currentTime+off;
+      g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.3,t+0.02); g.gain.exponentialRampToValueAtTime(0.0001,t+0.22);
+      o.start(t); o.stop(t+0.24);
+    });
+  }catch(e){}
+}
+async function lockScreen(){try{if(navigator.wakeLock)wake=await navigator.wakeLock.request("screen")}catch(e){wake=null}}
+function unlockScreen(){try{if(wake){wake.release();wake=null}}catch(e){}}
+
+function start(){
+  ensureAudio(); lockScreen();
+  S.phase="running"; S.t0=performance.now(); S.elapsed=0;
+  S.tick=setInterval(onTick,100); render();
+}
+function onTick(){
+  S.elapsed=(performance.now()-S.t0)/1000;
+  if(S.mode==="sprint" && S.elapsed>=SPRINT_SECS){S.elapsed=SPRINT_SECS; stopTimer(); S.phase="pick"; beep(); render(); return}
+  renderClock();
+}
+function stopTimer(){if(S.tick){clearInterval(S.tick);S.tick=null}unlockScreen()}
+function stopEarly(){S.elapsed=(performance.now()-S.t0)/1000; stopTimer(); S.phase="pick"; render()}
+function resetRun(){stopTimer(); S.phase="ready"; S.errs=new Set(); S.last=null; S.elapsed=0; S.histId=null}
+
+/* ---------- scoring ---------- */
+function score(){
+  if(S.last===null) return null;
+  const attempted=S.last+1;
+  let e=0; S.errs.forEach(i=>{if(i<=S.last)e++});
+  const correct=Math.max(0,attempted-e);
+  const secs=Math.max(1,S.mode==="sprint"?Math.min(S.elapsed,SPRINT_SECS):S.elapsed);
+  const rate=Math.round(correct*60/secs);
+  const acc=attempted?Math.round(correct/attempted*1000)/10:0;
+  return {attempted,errors:e,correct,secs,rate,acc};
+}
+function finish(){
+  S.phase="done";
+  const r=score();
+  const entry={id:S.histId||Date.now(),ts:Date.now(),pid:S.p.id,title:S.p.title,grade:S.p.grade,mode:S.mode,rate:r.rate,errors:r.errors,acc:r.acc,secs:Math.round(r.secs)};
+  if(S.histId){history=history.map(h=>h.id===S.histId?entry:h)}else{history.unshift(entry);S.histId=entry.id}
+  history=history.slice(0,30); store.set("orf-history",history);
+  render();
+}
+
+/* ---------- rendering ---------- */
+function fmt(s){s=Math.max(0,Math.ceil(s-0.0001));return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")}
+function renderClock(){
+  const c=$("#clock"), sprint=S.mode==="sprint";
+  const shown = sprint ? SPRINT_SECS-S.elapsed : S.elapsed;
+  c.textContent = sprint ? fmt(shown) : fmtUp(S.elapsed);
+  c.className="clock"+(S.phase==="running"?(sprint&&shown<=10?" warn":" run"):"");
+  const frac = sprint ? Math.max(0,shown/SPRINT_SECS) : Math.min(1,S.elapsed/180);
+  $("#barFill").style.transform="scaleX("+(sprint?frac:(S.phase==="ready"?0:frac))+")";
+}
+function fmtUp(s){s=Math.floor(s);return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")}
+
+function render(){
+  // controls
+  document.querySelectorAll("#gradeSeg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.v===S.grade));
+  document.querySelectorAll("#modeSeg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.v===S.mode));
+  $("#nums").checked=S.nums;
+  const sheet=$("#sheet");
+  sheet.classList.toggle("hide-nums",!S.nums);
+  sheet.classList.toggle("live",S.phase==="running"||S.phase==="done");
+  sheet.classList.toggle("pick",S.phase==="pick");
+  document.documentElement.style.setProperty("--fs",S.size);
+
+  // word marks
+  S.els.forEach((el,i)=>{
+    el.classList.toggle("err",S.errs.has(i));
+    el.classList.toggle("last",S.last===i);
+    el.classList.toggle("after",S.last!==null&&i>S.last);
+  });
+
+  // timer card
+  const sprint=S.mode==="sprint";
+  $("#modeLbl").textContent=sprint?"1-Minute Sprint":"Practice · stopwatch";
+  $("#dot").className="dot"+(S.phase==="running"?" on":"");
+  const st=$("#status"), pb=$("#primary"), sb=$("#secondary");
+  st.classList.remove("attn"); sb.hidden=false;
+  if(S.phase==="ready"){
+    st.textContent=sprint?"Press Start as the student reads the first word. The timer stops at 1:00.":"Untimed practice. The stopwatch counts up so you can see the reading rate.";
+    pb.textContent=sprint?"Start sprint":"Start reading"; sb.hidden=true;
+  }else if(S.phase==="running"){
+    st.textContent="Tap any word the student misreads, skips, or needs help with.";
+    pb.textContent=sprint?"Finished early":"Finish"; sb.textContent="Reset";
+  }else if(S.phase==="pick"){
+    st.textContent=sprint&&S.elapsed>=SPRINT_SECS?"Time! Tap the last word the student read.":"Tap the last word the student read.";
+    st.classList.add("attn");
+    pb.textContent="Read whole passage"; sb.textContent="Reset";
+  }else{
+    st.textContent="Tap words to adjust errors. Results update automatically.";
+    pb.textContent="Run again"; sb.textContent="Move ] bracket";
+  }
+  renderClock(); renderResults(); renderHistory();
+}
+
+function renderResults(){
+  const box=$("#results"), r=S.phase==="done"?score():null;
+  if(!r){
+    box.innerHTML=`<h3>Score</h3><div class="empty">How a sprint is scored:
+      <ol><li>Start the timer when the student begins.</li><li>Tap words that are read incorrectly.</li><li>At 1:00, tap the last word read.</li></ol>
+      Words correct per minute = words read − errors.</div>`;
+    return;
+  }
+  const g=S.p.grade, b=BENCH[g][S.season];
+  const max=Math.max(r.rate,b)*1.2;
+  const diff=r.rate-b;
+  const label=S.mode==="sprint"?"words correct per minute":"words correct per minute (practice)";
+  const prorated=S.mode==="sprint"&&r.secs<SPRINT_SECS?` <span style="color:var(--muted)">(prorated from ${Math.round(r.secs)} s)</span>`:"";
+  box.innerHTML=`<h3>Score</h3>
+    <div class="big"><b>${r.rate}</b><span>${label}</span></div>${prorated?`<div style="font-size:.78rem;margin-top:4px">${prorated}</div>`:""}
+    <div class="stats">
+      <div class="stat"><small>Words read</small><strong>${r.attempted}</strong></div>
+      <div class="stat"><small>Errors</small><strong style="color:${r.errors?"var(--err)":"inherit"}">${r.errors}</strong></div>
+      <div class="stat"><small>Accuracy</small><strong style="color:${r.acc>=95?"var(--ok)":"inherit"}">${r.acc}%</strong></div>
+    </div>
+    ${S.mode==="practice"?`<div style="font-size:.8rem;color:var(--muted);margin-bottom:12px">Time: ${fmtUp(r.secs)}</div>`:""}
+    <div class="bench">
+      <div class="bench-head"><span class="lbl">Grade ${g} median</span>
+        <select id="season" aria-label="Benchmark season"><option value="fall">Fall</option><option value="winter">Winter</option><option value="spring">Spring</option></select></div>
+      <div class="track"><div class="fill" style="width:${(r.rate/max*100).toFixed(1)}%"></div><div class="mark" style="left:calc(${(b/max*100).toFixed(1)}% - 1px)"><span>${b}</span></div></div>
+      <p><b>${Math.abs(diff)} ${diff>=0?"above":"below"}</b> the grade ${g} ${S.season} 50th percentile of ${b} WCPM.${r.acc<95?" Accuracy under 95% suggests slowing down for decoding practice.":""}</p>
+      <p style="margin-top:6px;font-size:.72rem">Norms: Hasbrouck &amp; Tindal (2017).</p>
+    </div>`;
+  const ss=$("#season"); ss.value=S.season;
+  ss.addEventListener("change",()=>{S.season=ss.value;renderResults()});
+}
+
+function renderHistory(){
+  const ul=$("#hist");
+  if(!history.length){ul.innerHTML=`<li style="display:block;color:var(--muted)">Finished sprints appear here, saved in this browser.</li>`;$("#clearHist").hidden=true;return}
+  $("#clearHist").hidden=false;
+  ul.innerHTML=history.slice(0,8).map(h=>{
+    const d=new Date(h.ts);
+    const when=d.toLocaleDateString(undefined,{month:"short",day:"numeric"})+" "+d.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"});
+    return `<li><span class="ht">${h.pid} ${esc(h.title)}</span><span class="hr">${h.rate}</span>
+      <span class="hm">${when} · ${h.mode==="sprint"?"Sprint":"Practice"} · ${h.errors} err · ${h.acc}%</span><span class="hm" style="text-align:right">WCPM</span></li>`;
+  }).join("");
+}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+
+/* ---------- events ---------- */
+$("#passage").addEventListener("click",e=>{
+  const w=e.target.closest(".w"); if(!w) return;
+  const i=+w.dataset.i;
+  if(S.phase==="running"||S.phase==="done"){
+    S.errs.has(i)?S.errs.delete(i):S.errs.add(i);
+    if(S.phase==="done"){finish();return}
+    render();
+  }else if(S.phase==="pick"){S.last=i; finish()}
+});
+$("#primary").addEventListener("click",()=>{
+  if(S.phase==="ready") start();
+  else if(S.phase==="running") stopEarly();
+  else if(S.phase==="pick"){S.last=S.p.count-1; finish()}
+  else {resetRun(); render()}
+});
+$("#secondary").addEventListener("click",()=>{
+  if(S.phase==="done"){S.phase="pick"; render()}
+  else {resetRun(); render()}
+});
+$("#newBtn").addEventListener("click",randomPassage);
+$("#pick").addEventListener("change",e=>load(e.target.value));
+$("#gradeSeg").addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(!b||b.dataset.v===S.grade) return;
+  S.grade=b.dataset.v; savePrefs(); randomPassage();
+});
+$("#modeSeg").addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(!b||b.dataset.v===S.mode) return;
+  S.mode=b.dataset.v; savePrefs(); resetRun(); render();
+});
+$("#nums").addEventListener("change",e=>{S.nums=e.target.checked; savePrefs(); render()});
+$("#smaller").addEventListener("click",()=>{S.size=Math.max(.8,Math.round((S.size-.1)*10)/10); savePrefs(); render()});
+$("#bigger").addEventListener("click",()=>{S.size=Math.min(1.7,Math.round((S.size+.1)*10)/10); savePrefs(); render()});
+let clearArm=null;
+$("#clearHist").addEventListener("click",e=>{
+  const b=e.currentTarget;
+  if(!clearArm){b.textContent="Confirm clear";clearArm=setTimeout(()=>{b.textContent="Clear";clearArm=null},3000);return}
+  clearTimeout(clearArm); clearArm=null; b.textContent="Clear";
+  history=[]; store.set("orf-history",history); renderHistory();
+});
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&S.phase==="running")lockScreen()});
+
+buildPicker();
+randomPassage();
+</script>
+</body>
+</html>
