@@ -48,6 +48,13 @@ h1 span{color:var(--accent)}
 .seg button{border:0;background:transparent;padding:6px 12px;border-radius:7px;cursor:pointer;font-weight:500;font-size:.88rem;white-space:nowrap}
 .seg button[aria-pressed="true"]{background:var(--card);color:var(--accent);box-shadow:0 1px 2px rgba(0,0,0,.12)}
 select{background:var(--chip);border:0;border-radius:8px;padding:7px 10px;font-size:.88rem;max-width:230px}
+#student{background:var(--chip);border:1px solid var(--rule);border-radius:8px;padding:7px 10px;font:inherit;font-size:.92rem;color:var(--ink);width:180px;max-width:100%}
+#student::placeholder{color:var(--muted)}
+.basebox{border-top:1px solid var(--rule);padding-top:12px;margin-bottom:12px;font-size:.84rem;color:var(--muted)}
+.basebox .row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:6px}
+.basebox .delta{font-family:var(--font-mono);font-weight:600;font-size:1.3rem;font-variant-numeric:tabular-nums}
+.basebox .up{color:var(--ok)} .basebox .down{color:var(--err)}
+.bpill{display:inline-block;background:var(--pencil);color:#1A2233;border-radius:999px;padding:0 7px;font-size:.66rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;margin-left:6px;vertical-align:1px}
 .btn{border:1px solid transparent;border-radius:9px;padding:9px 16px;font-weight:600;cursor:pointer;font-size:.92rem}
 .btn.primary{background:var(--accent);color:var(--on-accent)}
 .btn.primary:hover{filter:brightness(1.08)}
@@ -186,6 +193,7 @@ select{background:var(--chip);border:0;border-radius:8px;padding:7px 10px;font-s
         <button data-v="sprint">1-Minute Sprint</button><button data-v="practice">Practice</button>
       </div>
     </div>
+    <div class="group"><label for="student">Student</label><input id="student" type="text" list="studentList" placeholder="Type a name" autocomplete="off"><datalist id="studentList"></datalist></div>
     <label class="switch"><input type="checkbox" id="nums"> Number words</label>
     <div class="spacer"></div>
     <select id="pick" aria-label="Choose a passage"></select>
@@ -422,16 +430,26 @@ const store = {
   get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},
   set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 };
-const prefs = Object.assign({grade:"4",mode:"sprint",nums:true,size:1}, store.get("orf-prefs",{}));
+const prefs = Object.assign({grade:"4",mode:"sprint",nums:true,size:1,student:""}, store.get("orf-prefs",{}));
+let baselines = store.get("orf-baselines",{});
+if(!baselines||typeof baselines!=="object"||Array.isArray(baselines)) baselines={};
 let history = store.get("orf-history",[]);
 if(!Array.isArray(history)) history=[];
 
 function defaultSeason(){const m=new Date().getMonth();return (m>=7&&m<=10)?"fall":(m===11||m<=2)?"winter":"spring"}
 
-const S = {grade:prefs.grade, mode:prefs.mode, nums:prefs.nums, size:prefs.size, season:defaultSeason(),
+const S = {grade:prefs.grade, mode:prefs.mode, nums:prefs.nums, size:prefs.size, student:prefs.student||"", season:defaultSeason(),
   p:null, els:[], phase:"ready", errs:new Set(), last:null, t0:0, elapsed:0, tick:null, histId:null};
 
-function savePrefs(){store.set("orf-prefs",{grade:S.grade,mode:S.mode,nums:S.nums,size:S.size})}
+function savePrefs(){store.set("orf-prefs",{grade:S.grade,mode:S.mode,nums:S.nums,size:S.size,student:S.student})}
+function skey(n){return String(n==null?S.student:n).trim().toLowerCase().replace(/\s+/g," ")}
+function shortDate(ts){return new Date(ts).toLocaleDateString(undefined,{month:"short",day:"numeric"})}
+function fillStudents(){
+  const names=new Map();
+  Object.values(baselines).forEach(b=>b.student&&names.set(skey(b.student),b.student));
+  history.forEach(h=>h.student&&!names.has(skey(h.student))&&names.set(skey(h.student),h.student));
+  $("#studentList").innerHTML=[...names.values()].sort().map(n=>`<option value="${esc(n)}"></option>`).join("");
+}
 
 /* ---------- passage selection ---------- */
 const bags = {};
@@ -528,9 +546,16 @@ function score(){
 function finish(){
   S.phase="done";
   const r=score();
-  const entry={id:S.histId||Date.now(),ts:Date.now(),pid:S.p.id,title:S.p.title,grade:S.p.grade,mode:S.mode,rate:r.rate,errors:r.errors,acc:r.acc,secs:Math.round(r.secs)};
+  const name=S.student.trim();
+  const entry={id:S.histId||Date.now(),ts:Date.now(),student:name,pid:S.p.id,title:S.p.title,grade:S.p.grade,mode:S.mode,rate:r.rate,errors:r.errors,acc:r.acc,secs:Math.round(r.secs)};
   if(S.histId){history=history.map(h=>h.id===S.histId?entry:h)}else{history.unshift(entry);S.histId=entry.id}
-  history=history.slice(0,30); store.set("orf-history",history);
+  history=history.slice(0,200); store.set("orf-history",history);
+  const k=skey(name);
+  if(k && S.mode==="sprint"){
+    const b=baselines[k];
+    if(!b || b.id===entry.id){baselines[k]=entry; store.set("orf-baselines",baselines)}
+  }
+  fillStudents();
   render();
 }
 
@@ -608,6 +633,7 @@ function renderResults(){
       <div class="stat"><small>Accuracy</small><strong style="color:${r.acc>=95?"var(--ok)":"inherit"}">${r.acc}%</strong></div>
     </div>
     ${S.mode==="practice"?`<div style="font-size:.8rem;color:var(--muted);margin-bottom:12px">Time: ${fmtUp(r.secs)}</div>`:""}
+    ${baselineHTML(r)}
     <div class="bench">
       <div class="bench-head"><span class="lbl">Grade ${g} median</span>
         <select id="season" aria-label="Benchmark season"><option value="fall">Fall</option><option value="winter">Winter</option><option value="spring">Spring</option></select></div>
@@ -617,17 +643,39 @@ function renderResults(){
     </div>`;
   const ss=$("#season"); ss.value=S.season;
   ss.addEventListener("change",()=>{S.season=ss.value;renderResults()});
+  const sb=$("#setBase");
+  if(sb) sb.addEventListener("click",()=>{
+    const h=history.find(x=>x.id===S.histId); if(!h) return;
+    baselines[skey()]=h; store.set("orf-baselines",baselines); renderResults(); renderHistory();
+  });
+}
+function baselineHTML(r){
+  const name=S.student.trim();
+  if(!name) return `<div class="basebox">Type a student name above to save a baseline and track growth.</div>`;
+  if(S.mode!=="sprint") return `<div class="basebox">Baselines come from 1-minute sprints. Practice reads are not compared.</div>`;
+  const b=baselines[skey()];
+  if(!b) return "";
+  if(b.id===S.histId) return `<div class="basebox"><div class="row"><span><b style="color:var(--ink)">${esc(name)}</b> baseline</span><span class="bpill">Baseline</span></div>This sprint is saved as ${esc(name)}'s baseline. Later sprints will show the change from ${r.rate} WCPM.</div>`;
+  const d=r.rate-b.rate, cls=d>0?"up":d<0?"down":"";
+  return `<div class="basebox"><div class="row"><span>Since baseline <b style="color:var(--ink)">${b.rate}</b> WCPM (${shortDate(b.ts)}, ${esc(b.pid)})</span><span class="delta ${cls}">${d>0?"+":""}${d}</span></div>
+    <button class="btn ghost small" id="setBase">Make this sprint the new baseline</button></div>`;
 }
 
 function renderHistory(){
-  const ul=$("#hist");
-  if(!history.length){ul.innerHTML=`<li style="display:block;color:var(--muted)">Finished sprints appear here, saved in this browser.</li>`;$("#clearHist").hidden=true;return}
-  $("#clearHist").hidden=false;
-  ul.innerHTML=history.slice(0,8).map(h=>{
+  const ul=$("#hist"), k=skey();
+  const list=k?history.filter(h=>skey(h.student||"")===k):history;
+  $(".hist-head h3").textContent=k?"Sprints · "+S.student.trim():"Recent sprints";
+  $("#clearHist").hidden=!history.length;
+  if(!list.length){ul.innerHTML=`<li style="display:block;color:var(--muted)">${k?"No sprints yet for "+esc(S.student.trim())+". The first 1-minute sprint becomes the baseline.":"Finished sprints appear here, saved in this browser."}</li>`;return}
+  const base=k?baselines[k]:null;
+  ul.innerHTML=list.slice(0,10).map(h=>{
     const d=new Date(h.ts);
     const when=d.toLocaleDateString(undefined,{month:"short",day:"numeric"})+" "+d.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"});
-    return `<li><span class="ht">${h.pid} ${esc(h.title)}</span><span class="hr">${h.rate}</span>
-      <span class="hm">${when} · ${h.mode==="sprint"?"Sprint":"Practice"} · ${h.errors} err · ${h.acc}%</span><span class="hm" style="text-align:right">WCPM</span></li>`;
+    const isBase=Object.values(baselines).some(b=>b.id===h.id);
+    const who=!k&&h.student?esc(h.student)+" · ":"";
+    const dv=base&&!isBase&&h.mode==="sprint"?h.rate-base.rate:null;
+    return `<li><span class="ht">${who}${h.pid} ${esc(h.title)}${isBase?'<span class="bpill">Baseline</span>':""}</span><span class="hr">${h.rate}</span>
+      <span class="hm">${when} · ${h.mode==="sprint"?"Sprint":"Practice"} · ${h.errors} err · ${h.acc}%</span><span class="hm" style="text-align:right">${dv===null?"WCPM":(dv>=0?"+":"")+dv+" vs base"}</span></li>`;
   }).join("");
 }
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
@@ -663,6 +711,8 @@ $("#modeSeg").addEventListener("click",e=>{
   S.mode=b.dataset.v; savePrefs(); resetRun(); render();
 });
 $("#nums").addEventListener("change",e=>{S.nums=e.target.checked; savePrefs(); render()});
+$("#student").value=S.student;
+$("#student").addEventListener("input",e=>{S.student=e.target.value; savePrefs(); renderResults(); renderHistory()});
 $("#smaller").addEventListener("click",()=>{S.size=Math.max(.8,Math.round((S.size-.1)*10)/10); savePrefs(); render()});
 $("#bigger").addEventListener("click",()=>{S.size=Math.min(1.7,Math.round((S.size+.1)*10)/10); savePrefs(); render()});
 let clearArm=null;
@@ -675,6 +725,7 @@ $("#clearHist").addEventListener("click",e=>{
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&S.phase==="running")lockScreen()});
 
 buildPicker();
+fillStudents();
 randomPassage();
 </script>
 </body>
