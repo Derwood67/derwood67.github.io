@@ -1,0 +1,680 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Paragraph Quest</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Grandstander:wght@600;800&family=Lexend:wght@400;500;600&family=Gochi+Hand&family=Atkinson+Hyperlegible:wght@400;700&family=Andika:wght@400;700&family=Patrick+Hand&family=Comic+Neue:wght@400;700&family=Schoolbell&display=swap">
+<style>
+/* Layout: a student desk — sticky header, composition-notebook pages stacked down the middle, red-pen feedback on the same paper. */
+:root{
+  --desk:#E9EFF6; --paper:#FFFEF9; --ink:#1E2A44; --muted:#5A6680; --rule:#BCD4EE; --margin:#E79A9A;
+  --pencil:#F2B632; --pencil-ink:#3A2A00; --redpen:#C2302B; --ok:#1F7A52; --warn:#9A6408; --line:#D3DCE8; --chip:#E3EBF5;
+  --fix-bg:#FBE4E2; --warn-bg:#FBF0D9; --ok-bg:#DFF3E8;
+  --f-display:"Grandstander","Comic Sans MS",system-ui,sans-serif;
+  --f-ui:"Lexend",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-pen:"Gochi Hand","Comic Sans MS",cursive;
+  --f-write:"Lexend",system-ui,sans-serif;
+  --write-size:20px; --lh:36px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --desk:#121822; --paper:#1B2230; --ink:#E7ECF4; --muted:#9BA8BE; --rule:#2C3A52; --margin:#7E4141;
+  --pencil:#F2B632; --pencil-ink:#2A1E00; --redpen:#FF8078; --ok:#57C994; --warn:#E8B655; --line:#2B3648; --chip:#253145;
+  --fix-bg:#3A2224; --warn-bg:#3A311C; --ok-bg:#1C3529; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --desk:#121822; --paper:#1B2230; --ink:#E7ECF4; --muted:#9BA8BE; --rule:#2C3A52; --margin:#7E4141;
+  --pencil:#F2B632; --pencil-ink:#2A1E00; --redpen:#FF8078; --ok:#57C994; --warn:#E8B655; --line:#2B3648; --chip:#253145;
+  --fix-bg:#3A2224; --warn-bg:#3A311C; --ok-bg:#1C3529; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--desk);color:var(--ink);font-family:var(--f-ui);font-size:16px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 48px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--desk)}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.15}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--pencil);outline-offset:2px}
+.wrap{max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--desk);display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-block:14px;border-bottom:2px dashed var(--line)}
+.brand{display:flex;align-items:center;gap:10px;margin-right:auto}
+.brand h1{font-size:1.5rem;font-weight:800;letter-spacing:.01em}
+.pencil{width:38px;height:38px;flex:none}
+.who{font-size:.9rem;color:var(--muted)}
+.btn{border:2px solid var(--ink);background:var(--paper);border-radius:10px;padding:10px 16px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px;box-shadow:0 3px 0 var(--ink);transition:transform .08s, box-shadow .08s}
+.btn:hover{transform:translateY(-1px);box-shadow:0 4px 0 var(--ink)}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
+.btn.primary{background:var(--pencil);color:var(--pencil-ink);border-color:var(--pencil-ink);box-shadow:0 3px 0 var(--pencil-ink)}
+.btn.small{padding:6px 12px;font-size:.88rem}
+.btn.ghost{box-shadow:none;border-color:var(--line)}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.label{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.sheet{background:var(--paper);border-radius:6px;box-shadow:0 1px 0 var(--line),0 8px 24px rgba(20,30,50,.08);padding:24px;position:relative}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+input[type=text]{width:100%;padding:12px 14px;border:2px solid var(--line);border-radius:10px;background:var(--paper)}
+.seg{display:inline-flex;border:2px solid var(--ink);border-radius:10px;overflow:hidden}
+.seg button{border:0;background:transparent;padding:10px 18px;cursor:pointer;font-weight:600}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.fonts{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.fontcard{border:2px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--paper);cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:2px}
+.fontcard[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 2px var(--pencil)}
+.fontcard .sample{font-size:1.25rem;line-height:1.3}
+.fontcard .nm{font-size:.75rem;color:var(--muted)}
+/* prompt card */
+.prompt{display:flex;flex-direction:column;gap:12px}
+.prompt .genre{display:inline-flex;align-self:flex-start;background:var(--ink);color:var(--paper);border-radius:999px;padding:3px 12px;font-size:.8rem;font-weight:600;letter-spacing:.04em}
+.prompt h2{font-size:1.45rem;font-weight:800}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{background:var(--chip);border-radius:999px;padding:4px 12px;font-size:.88rem}
+.chip.used{background:var(--ok-bg);color:var(--ok);font-weight:600;text-decoration:line-through}
+.code{font-family:var(--f-ui);font-size:.72rem;font-weight:600;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:1px 6px;white-space:nowrap}
+/* notebook paragraphs */
+.para{display:flex;flex-direction:column;gap:8px}
+.para-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.para-head h3{font-size:1.15rem}
+.para-head .tip{color:var(--muted);font-size:.9rem;flex:1 1 260px;min-width:0}
+.para-head .wc{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums}
+textarea.nb{width:100%;min-height:calc(var(--lh)*6 + 16px);resize:vertical;border:1px solid var(--line);border-radius:4px;
+  padding:8px 14px 8px 56px;font-family:var(--f-write);font-size:var(--write-size);line-height:var(--lh);color:var(--ink);
+  background-color:var(--paper);
+  background-image:linear-gradient(90deg,transparent 42px,var(--margin) 42px,var(--margin) 44px,transparent 44px),
+    repeating-linear-gradient(to bottom,transparent 0,transparent calc(var(--lh) - 1px),var(--rule) calc(var(--lh) - 1px),var(--rule) var(--lh));
+  background-position:0 0,0 8px;background-attachment:local}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.size{display:flex;align-items:center;gap:8px;font-size:.88rem;color:var(--muted)}
+/* modal */
+.scrim{position:fixed;inset:0;background:rgba(10,15,25,.55);display:flex;align-items:center;justify-content:center;z-index:20;
+  padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.modal{background:var(--paper);border-radius:12px;max-width:520px;width:100%;padding:24px;display:flex;flex-direction:column;gap:14px;max-height:100%;overflow:auto}
+.modal h2{font-size:1.4rem}
+.checklist{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px}
+.checklist label{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+.checklist input{width:20px;height:20px;margin-top:3px;accent-color:var(--ink);flex:none}
+.warnline{background:var(--warn-bg);color:var(--warn);border-radius:8px;padding:8px 12px;font-size:.92rem}
+/* results */
+.score{display:grid;grid-template-columns:auto 1fr;gap:24px;align-items:center}
+@media (max-width:560px){.score{grid-template-columns:1fr;justify-items:start}}
+.dial{width:150px;height:150px;position:relative}
+.dial svg{width:100%;height:100%}
+.dial .num{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.dial .num b{font-family:var(--f-display);font-size:2.6rem;line-height:1;font-variant-numeric:tabular-nums}
+.dial .num span{font-size:.8rem;color:var(--muted)}
+.level{font-family:var(--f-pen);font-size:2rem;color:var(--redpen);transform:rotate(-3deg);display:inline-block;line-height:1.1}
+.bars{display:flex;flex-direction:column;gap:8px;min-width:0}
+.bar{display:grid;grid-template-columns:150px 1fr 54px;gap:10px;align-items:center;font-size:.9rem}
+@media (max-width:480px){.bar{grid-template-columns:110px 1fr 48px}}
+.track{height:10px;background:var(--chip);border-radius:6px;overflow:hidden}
+.track i{display:block;height:100%;background:var(--ink);border-radius:6px}
+.bar .v{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+.badges{display:flex;flex-wrap:wrap;gap:8px}
+.badge{display:inline-flex;align-items:center;gap:6px;border:2px solid var(--ok);color:var(--ok);border-radius:999px;padding:4px 12px;font-weight:600;font-size:.88rem}
+.badge.locked{border-color:var(--line);color:var(--muted);font-weight:400}
+.stars{display:flex;gap:4px}
+.stars svg{width:28px;height:28px}
+.marked{font-family:var(--f-write);font-size:calc(var(--write-size) * .95);line-height:1.9;white-space:pre-wrap;overflow-wrap:anywhere;padding:8px 14px 8px 56px;
+  background-image:linear-gradient(90deg,transparent 42px,var(--margin) 42px,var(--margin) 44px,transparent 44px);border:1px solid var(--line);border-radius:4px}
+mark{color:inherit;background:transparent;border-radius:3px;padding:0 1px}
+mark.fix{background:var(--fix-bg);text-decoration:underline wavy var(--redpen);text-underline-offset:4px}
+mark.almost{background:var(--warn-bg);text-decoration:underline dashed var(--warn);text-underline-offset:4px}
+mark.great{background:var(--ok-bg)}
+mark sup{font-family:var(--f-pen);font-size:.8em;color:var(--redpen);margin-left:1px}
+mark.great sup{color:var(--ok)} mark.almost sup{color:var(--warn)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:14px;height:14px;border-radius:3px;display:inline-block}
+.cards{display:flex;flex-direction:column;gap:10px}
+.card{border:1px solid var(--line);border-left-width:6px;border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;background:var(--paper);min-width:0}
+.card.fix{border-left-color:var(--redpen)} .card.almost{border-left-color:var(--warn)} .card.great{border-left-color:var(--ok)}
+.card .hd{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.tag{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;border-radius:5px;padding:2px 8px}
+.card.fix .tag{background:var(--fix-bg);color:var(--redpen)} .card.almost .tag{background:var(--warn-bg);color:var(--warn)} .card.great .tag{background:var(--ok-bg);color:var(--ok)}
+.card .num{font-family:var(--f-pen);font-size:1.25rem;color:var(--muted)}
+.card .title{font-weight:600}
+.card .change{font-family:var(--f-write);font-size:1.05rem;overflow-wrap:anywhere}
+.card .change s{color:var(--redpen);text-decoration-thickness:2px}
+.card .change .to{font-family:var(--f-pen);font-size:1.3rem;color:var(--ok)}
+.card .why{color:var(--muted);font-size:.93rem}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs button{border:2px solid var(--line);background:var(--paper);border-radius:999px;padding:6px 14px;cursor:pointer;font-weight:600;font-size:.9rem}
+.tabs button[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:var(--paper)}
+.history{width:100%;border-collapse:collapse;font-size:.9rem;font-variant-numeric:tabular-nums}
+.history th,.history td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+.tablewrap{overflow-x:auto}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 18px;border-radius:999px;z-index:30;font-weight:600}
+.demo .marked{font-size:1.05rem;padding-left:14px;background-image:none}
+.muted{color:var(--muted)}
+.redpen{font-family:var(--f-pen);color:var(--redpen);font-size:1.3rem}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap" id="app"></div>
+<div id="modalRoot"></div>
+<div id="toastRoot"></div>
+
+<script>
+/* ---------------- data ---------------- */
+const FONTS=[
+ {id:'Lexend',css:'"Lexend",system-ui,sans-serif',note:'Easy reading'},
+ {id:'Atkinson Hyperlegible',css:'"Atkinson Hyperlegible",system-ui,sans-serif',note:'Extra clear letters'},
+ {id:'Andika',css:'"Andika",system-ui,sans-serif',note:'Made for new readers'},
+ {id:'Comic Neue',css:'"Comic Neue","Comic Sans MS",sans-serif',note:'Friendly'},
+ {id:'Patrick Hand',css:'"Patrick Hand","Comic Sans MS",cursive',note:'Handwriting'},
+ {id:'Schoolbell',css:'"Schoolbell","Comic Sans MS",cursive',note:'Chalkboard'},
+];
+const GENRES={
+ opinion:{label:'Opinion',std:g=>`W.${g}.1`,
+  tips:{intro:'Hook your reader, then state your opinion clearly.',body:'Give at least two reasons with facts or examples. Link them with words like "for example" and "another reason."',concl:'Restate your opinion in new words and leave a strong final thought.'}},
+ informative:{label:'Informative',std:g=>`W.${g}.2`,
+  tips:{intro:'Hook your reader and introduce your topic.',body:'Share facts, details, and examples. Use linking words like "also," "for example," and "in addition."',concl:'Sum up the most important ideas about your topic.'}},
+ narrative:{label:'Narrative',std:g=>`W.${g}.3`,
+  tips:{intro:'Introduce your character and setting. Start with action, a sound, or dialogue.',body:'Tell what happens in order. Use time words (next, suddenly, later) and dialogue in quotation marks.',concl:'Wrap up the story. Tell how the character felt or what they learned.'}},
+};
+const TOPICS={
+ opinion:[
+  {t:'Should students have homework on the weekend?',k:['homework','weekend']},
+  {t:'Is it better to have a dog or a cat as a pet?',k:['dog','cat','pet']},
+  {t:'Should recess be longer at school?',k:['recess','longer','play']},
+  {t:'Should every student learn to play a musical instrument?',k:['instrument','music']},
+  {t:'Which season is the best: summer, fall, winter, or spring?',k:['season','summer','fall','winter','spring']},
+  {t:'Should kids be allowed a later bedtime on Fridays?',k:['bedtime','friday','sleep']},
+  {t:'Should our school start a vegetable garden?',k:['garden','vegetable','plant']},
+  {t:'Is reading the book better than watching the movie?',k:['book','movie','read']},
+  {t:'Should students wear school uniforms?',k:['uniform','clothes','wear']},
+  {t:'Would you rather live near the North Carolina beaches or the Blue Ridge Mountains?',k:['beach','mountain','carolina']},
+  {t:'Should every classroom have a class pet?',k:['class pet','pet','classroom']},
+  {t:'Is it better to work alone or in a group?',k:['group','alone','work']},
+  {t:'Should kids be allowed to pick the school lunch menu one day a week?',k:['lunch','menu','food']},
+  {t:'Should video games count as a sport?',k:['video game','sport','game']},
+  {t:'What is the best field trip a 4th or 5th grade class could take in North Carolina?',k:['field trip','trip','visit']},
+  {t:'Should students get a "free choice" hour every Friday?',k:['free choice','friday','choice']},
+  {t:'Is it more fun to be the oldest or the youngest kid in a family?',k:['oldest','youngest','family']},
+  {t:'Should kids help make the classroom rules?',k:['rules','classroom']},
+ ],
+ informative:[
+  {t:'Explain how to take good care of a pet.',k:['pet','care','food','water']},
+  {t:'Explain the life cycle of a butterfly.',k:['butterfly','caterpillar','egg','chrysalis']},
+  {t:'Explain why the Wright brothers\' first flight at Kitty Hawk was important.',k:['wright','flight','kitty hawk','airplane']},
+  {t:'Explain how the water cycle works.',k:['water','evaporation','rain','cloud']},
+  {t:'Explain why bees are important to people and plants.',k:['bee','pollen','flower','honey']},
+  {t:'Explain how sea turtles nest on North Carolina beaches.',k:['turtle','nest','egg','beach']},
+  {t:'Explain how a seed grows into a plant.',k:['seed','plant','root','sun']},
+  {t:'Explain why sleep is important for kids.',k:['sleep','rest','brain','body']},
+  {t:'Explain how to be a good friend.',k:['friend','kind','listen']},
+  {t:'Explain what causes a hurricane and how families can stay safe.',k:['hurricane','storm','wind','safe']},
+  {t:'Explain how the Venus flytrap catches its food.',k:['flytrap','venus','insect','trap']},
+  {t:'Explain how to plan a healthy lunch.',k:['lunch','healthy','fruit','vegetable']},
+  {t:'Explain how recycling helps the Earth.',k:['recycl','trash','earth','plastic']},
+  {t:'Explain the three branches of government.',k:['branch','government','president','congress','court']},
+  {t:'Explain how lighthouses helped ships along the Outer Banks.',k:['lighthouse','ship','light','outer banks']},
+  {t:'Explain how to get ready for a big test.',k:['test','study','sleep']},
+  {t:'Explain what the planets in our solar system are like.',k:['planet','sun','solar','orbit']},
+  {t:'Explain how a library is organized and how to find a book.',k:['library','book','shelf']},
+ ],
+ narrative:[
+  {t:'You wake up and discover you can talk to animals.',k:['animal','talk']},
+  {t:'A mysterious box with your name on it shows up at your front door.',k:['box']},
+  {t:'You become the first kid to visit Mars.',k:['mars','space','rocket']},
+  {t:'Your class pet escapes during a field trip to the North Carolina Zoo.',k:['zoo','pet']},
+  {t:'You find an old map tucked inside a library book.',k:['map','library']},
+  {t:'You shrink to the size of an ant for one whole day.',k:['ant','tiny','shrink']},
+  {t:'A thunderstorm knocks out the power on your birthday.',k:['storm','power','birthday']},
+  {t:'You trade places with your teacher for one school day.',k:['teacher','class']},
+  {t:'You discover a secret door in your school\'s gym.',k:['door','gym','secret']},
+  {t:'Your shadow starts doing things on its own.',k:['shadow']},
+  {t:'You win a contest, and the prize is a ride in a hot air balloon.',k:['balloon','contest','prize']},
+  {t:'A friendly robot follows you home from school.',k:['robot']},
+  {t:'You are a ship captain sailing near the Outer Banks when a storm rolls in.',k:['ship','storm','captain']},
+  {t:'You find a pair of sneakers that let you run faster than a car.',k:['sneaker','shoe','run']},
+  {t:'You get lost in a corn maze on a fall afternoon.',k:['maze','corn']},
+  {t:'You hear a strange knock coming from inside your closet.',k:['closet','knock']},
+  {t:'You and a friend build a time machine out of cardboard, and it works.',k:['time machine','time','cardboard']},
+  {t:'Your dog brings home something that does not belong to anyone you know.',k:['dog']},
+ ]};
+const AUDIENCE={
+ opinion:['your principal','your classmates','your family','the readers of the school newsletter','the town mayor'],
+ informative:['a 2nd grader','a visitor from another country','your classmates','a younger cousin','readers of a kids\' science magazine'],
+ narrative:['your classmates','a younger kid at bedtime','a kids\' story contest','your best friend','your family at dinner']};
+const BANK={
+ 4:['enormous','curious','delighted','explore','observe','protect','gigantic','ancient','gather','brave','swift','cautious','eager','journey','discover','shimmer','furious','grateful','peculiar','scurry','determined','fragile','harmful','helpful','tremendous'],
+ 5:['essential','persuade','consequently','evidence','compassionate','spectacular','persistent','vibrant','astonished','benefit','reluctant','frantic','analyze','convince','remarkable','bewildered','environment','significant','unforgettable','resourceful','meanwhile','furthermore','courageous','observe','contribute']};
+
+const SPELL={alot:'a lot',becuase:'because',becasue:'because',beacuse:'because',becaus:'because',becouse:'because',bcuz:'because',cuz:'because',definately:'definitely',definatly:'definitely',recieve:'receive',freind:'friend',freinds:'friends',frend:'friend',frends:'friends',wierd:'weird',untill:'until',thier:'their',beleive:'believe',belive:'believe',wich:'which',whith:'with',realy:'really',reely:'really',finaly:'finally',tommorow:'tomorrow',tomorow:'tomorrow',tommorrow:'tomorrow',togather:'together',diffrent:'different',favrite:'favorite',favorit:'favorite',beutiful:'beautiful',beatiful:'beautiful',sayed:'said',sed:'said',wanna:'want to',gonna:'going to',gotta:'got to',intresting:'interesting',suprise:'surprise',suprised:'surprised',probaly:'probably',probly:'probably',libary:'library',wensday:'Wednesday',febuary:'February',enviroment:'environment',goverment:'government',neccessary:'necessary',necesary:'necessary',peice:'piece',sience:'science',scool:'school',shcool:'school',skool:'school',peple:'people',poeple:'people',writting:'writing',runing:'running',stoped:'stopped',swiming:'swimming',hapen:'happen',happend:'happened',frist:'first',fisrt:'first',seperate:'separate',truely:'truly',whent:'went',wen:'when',wat:'what',waht:'what',thru:'through',nite:'night',ur:'your',animels:'animals',aminal:'animal',aminals:'animals',imporant:'important',importent:'important',exsited:'excited',famly:'family',vacasion:'vacation',vaction:'vacation',minits:'minutes',minuts:'minutes',everytime:'every time',alittle:'a little',infront:'in front',allways:'always',alway:'always',anoying:'annoying',begining:'beginning',buisness:'business',calender:'calendar',comming:'coming',dissapear:'disappear',excercise:'exercise',grammer:'grammar',hieght:'height',knowlege:'knowledge',rember:'remember',remeber:'remember',sentance:'sentence',successfull:'successful',tounge:'tongue',vegtable:'vegetable',vegtables:'vegetables',writen:'written',lerned:'learned',evryone:'everyone',evrything:'everything',everthing:'everything',somthing:'something',sometimes:'sometimes',somtimes:'sometimes',agian:'again',aginst:'against',arround:'around',awsome:'awesome',bycicle:'bicycle',cloths:'clothes',dosent:'doesn\'t',doesnt:'doesn\'t',dont:'don\'t',cant:'can\'t',didnt:'didn\'t',isnt:'isn\'t',wasnt:'wasn\'t',couldnt:'couldn\'t',shouldnt:'shouldn\'t',wouldnt:'wouldn\'t',arent:'aren\'t',werent:'weren\'t',hasnt:'hasn\'t',havent:'haven\'t',im:'I\'m',ive:'I\'ve',thats:'that\'s',whats:'what\'s',theyre:'they\'re',youre:'you\'re',lets:'let\'s',excitment:'excitement',hungery:'hungry',kitchin:'kitchen',lunchroom:'lunchroom',outsid:'outside',pepole:'people',plesant:'pleasant',pritty:'pretty',purpel:'purple',quite:'quite',raelly:'really',reson:'reason',resons:'reasons',shoud:'should',scard:'scared',storey:'story',teecher:'teacher',teacer:'teacher',thougt:'thought',tryed:'tried',cryed:'cried',studyed:'studied',carryed:'carried',hurryed:'hurried',wating:'waiting',woud:'would',yesturday:'yesterday',yestarday:'yesterday',choclate:'chocolate',chocolat:'chocolate',insted:'instead',instaed:'instead',jurney:'journey',explane:'explain',importint:'important',beggining:'beginning',plase:'place',pleese:'please',plz:'please',bcause:'because'};
+delete SPELL.sometimes; delete SPELL.quite; delete SPELL.lunchroom;
+const IRREG={brang:'brought',brung:'brought',thinked:'thought',buyed:'bought',catched:'caught',teached:'taught',goed:'went',runned:'ran',eated:'ate',drawed:'drew',throwed:'threw',knowed:'knew',maked:'made',sleeped:'slept',falled:'fell',swimmed:'swam',writed:'wrote',gived:'gave',taked:'took',comed:'came',finded:'found',holded:'held',seed:'saw',feeled:'felt',fighted:'fought',flyed:'flew',growed:'grew',hided:'hid',keeped:'kept',leaved:'left',losed:'lost',meeted:'met',readed:'read',ringed:'rang',rided:'rode',sayed:'said',singed:'sang',sitted:'sat',speaked:'spoke',standed:'stood',stealed:'stole',telled:'told',weared:'wore',winned:'won',bited:'bit',blowed:'blew',breaked:'broke',builded:'built',choosed:'chose',digged:'dug',drinked:'drank',drived:'drove',forgetted:'forgot',freezed:'froze',hitted:'hit',hurted:'hurt',shaked:'shook',shined:'shone',spended:'spent',sticked:'stuck',swinged:'swung',throwed:'threw',understanded:'understood',waked:'woke'};
+delete IRREG.seed; delete IRREG.shined;
+const PROPER=['monday','tuesday','wednesday','thursday','friday','saturday','sunday','january','february','april','june','july','august','september','october','november','december','north carolina','south carolina','raleigh','charlotte','durham','mebane','greensboro','wilmington','asheville','kitty hawk','outer banks','america','american','united states','christmas','thanksgiving','halloween','easter','english','spanish','mars','jupiter','saturn','venus','mercury','neptune','uranus','pluto','atlantic ocean','pacific ocean','blue ridge','appalachian'];
+const TRANSITIONS=['first of all','first','second','third','next','then','after that','finally','lastly','also','another','in addition','for example','for instance','however','therefore','as a result','meanwhile','later','suddenly','in conclusion','to sum up','overall','in the end','most importantly','on the other hand','besides','furthermore','consequently','afterward','eventually','the next day','one day','because','all in all','in summary','that is why','as you can see','to begin'];
+const CLOSERS=['in conclusion','to sum up','overall','in the end','finally','that is why','that\'s why','as you can see','all in all','in summary','to conclude','from now on','ever since','after all','lastly'];
+const WOW=['enormous','magnificent','delicious','fascinating','incredible','curious','furious','exhausted','thrilled','terrified','gigantic','brilliant','hilarious','mysterious','ancient','gorgeous','determined','nervous','anxious','eager','essential','discover','explore','observe','protect','consequently','furthermore','moreover','although','especially','unfortunately','fortunately','eventually','immediately','carefully','quietly','frantically','cautiously','grateful','generous','responsible','independent','creative','adventurous','peculiar','vibrant','shimmering','glistening','towering','rumbled','whispered','shrieked','gasped','sprinted','wandered','scurried','crept','soared','plunged','habitat','environment','ecosystem','evidence','survive','community','tradition','benefit','improve','encourage','convince','recommend','valuable','unforgettable','spectacular','tremendous','delighted','astonished','bewildered','courageous','compassionate','persistent','remarkable','significant','reluctant','resourceful','frantic','journey','gather','swift','fragile','dazzling','crisp','gloomy','cozy','fierce','precious','scrumptious','energetic','peaceful','ferocious','massive','miniature','thunderous','sparkling','stunning','enormously','definitely','absolutely','realized','wondered','explained','replied','exclaimed','muttered','hollered'];
+const OVERUSED={
+ good:'excellent, helpful, wonderful, or delightful',bad:'awful, harmful, terrible, or unfair',nice:'kind, friendly, pleasant, or generous',fun:'exciting, enjoyable, or thrilling',
+ stuff:'the actual thing (supplies, toys, food, belongings)',things:'the actual things you mean (games, chores, ideas)','a lot':'many, plenty of, or countless',
+ got:'received, earned, grabbed, or became',big:'huge, enormous, giant, or massive',awesome:'amazing, incredible, or spectacular',cool:'interesting, clever, or impressive',
+ happy:'thrilled, delighted, cheerful, or proud',sad:'upset, heartbroken, gloomy, or disappointed',mad:'furious, angry, or frustrated'};
+const VERY={big:'enormous',small:'tiny',happy:'thrilled',sad:'miserable',good:'excellent',bad:'terrible',tired:'exhausted',scared:'terrified',hungry:'starving',cold:'freezing',hot:'scorching',fast:'speedy',pretty:'gorgeous',funny:'hilarious',smart:'brilliant',loud:'deafening',quiet:'silent',angry:'furious',mad:'furious',fun:'thrilling',nice:'generous',important:'essential',excited:'thrilled',old:'ancient',tall:'towering',dirty:'filthy',clean:'spotless',wet:'soaked',sure:'certain',hard:'difficult',easy:'effortless',interesting:'fascinating',surprised:'astonished',strong:'powerful',slow:'sluggish',scary:'terrifying',beautiful:'stunning',delicious:'scrumptious',bright:'dazzling',dark:'pitch-black'};
+const NOUNS='dog|dogs|cat|cats|house|home|mom|dad|mother|father|friend|friends|teacher|teachers|class|school|own|bike|bikes|toys|toy|parents|family|homework|car|room|team|name|names|book|books|pet|pets|lunch|backpack|turn';
+
+/* ---------------- helpers ---------------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const caseLike=(orig,rep)=>/^[A-Z]/.test(orig)?rep.charAt(0).toUpperCase()+rep.slice(1):rep;
+const wordsOf=t=>(t.match(/[A-Za-z][A-Za-z'’-]*/g)||[]);
+const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+function hash(s){let h=2166136261;for(const c of s){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const pick=(r,a)=>a[Math.floor(r()*a.length)];
+function shuffle(r,a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+
+function sentencesOf(text){
+  const out=[];const re=/[^.!?]+(?:[.!?]+["”’']?|$)/g;let m;
+  while((m=re.exec(text))){if(!m[0].length){re.lastIndex++;continue}
+    const raw=m[0];const lead=raw.length-raw.trimStart().length;const s=raw.trim();
+    if(s){const prev=out[out.length-1];
+      if(prev&&/\b(Mr|Mrs|Ms|Dr|St)\.$/.test(prev.text)){prev.text=text.slice(prev.start,m.index+lead+s.length);prev.end=m.index+lead+s.length}
+      else out.push({text:s,start:m.index+lead,end:m.index+lead+s.length})}}
+  return out;
+}
+
+/* ---------------- prompt maker ---------------- */
+function makePrompt(name,grade,forceGenre){
+  const used=store.get('pq-used',[]);
+  const r=rng(hash(name.toLowerCase()+'|'+Date.now()+'|'+Math.random()));
+  let p,tries=0;
+  do{
+    const g=forceGenre||pick(r,['opinion','informative','narrative']);
+    const topic=pick(r,TOPICS[g]);
+    p={genre:g,topic:topic.t,keys:topic.k,audience:pick(r,AUDIENCE[g]),bank:shuffle(r,BANK[grade]).slice(0,3),grade,
+       challenge:pick(r,['Use at least three transition words.','Use at least one word from your word bank.','Include one question to hook your reader.','Use at least one sentence with a comma before "but" or "so."','Give at least one specific example or number.'])};
+    tries++;
+  }while(used.includes(p.genre+'|'+p.topic+'|'+p.audience)&&tries<60);
+  used.push(p.genre+'|'+p.topic+'|'+p.audience);store.set('pq-used',used.slice(-300));
+  return p;
+}
+
+/* ---------------- grader ---------------- */
+const PARTS=[{id:'intro',name:'Introduction',min:3},{id:'body',name:'Middle paragraph',min:4},{id:'concl',name:'Conclusion',min:3}];
+const STARTERS=/^(When|If|Because|After|Before|Although|Though|Since|While|As|Once|Until|Unless|In|On|At|During|First|Second|Third|Next|Then|Finally|Lastly|However|Yes|No|Well|Also|Later|Suddenly|Today|Yesterday|Tomorrow|One|Every|Last|This|After|For|Overall|To|Meanwhile|Sadly|Luckily|Fortunately|Unfortunately|Wow|Oh|Hey|Ouch|Instead|Besides|Of|Most|Furthermore|Therefore|As|Even|Without|With|Whenever|Wherever|So)\b/;
+const INTRO_RE=/^(First of all|First|Second|Third|Finally|Lastly|However|In conclusion|For example|For instance|In my opinion|To sum up|Overall|Yes|Well|Afterward|Meanwhile|Furthermore|Therefore|In addition|Most importantly|In fact|Of course|After that|To begin|In the end|All in all|In summary|As a result|On the other hand|Later that day|The next day|The next morning|Sadly|Luckily|Fortunately|Unfortunately|Surprisingly|Besides|Next|No(?! one)(?= [a-z]))(?![A-Za-z'])/;
+
+function grade(texts,P){
+  const issues=[];const add=o=>{if(o.start>=0&&o.type!=='great'&&issues.some(x=>x.para===o.para&&x.start===o.start&&x.type!=='great'))return;issues.push(o)};
+  const g=P.grade;
+  PARTS.forEach(part=>{
+    const text=texts[part.id]||'';if(!text.trim())return;
+    const sents=sentencesOf(text);
+    const at=(i,len)=>({para:part.id,start:i,end:i+len,original:text.slice(i,i+len)});
+    // spelling + irregular verbs
+    for(const m of text.matchAll(/[A-Za-z][A-Za-z']*/g)){
+      const low=m[0].toLowerCase();
+      if(IRREG[low])add({...at(m.index,m[0].length),type:'fix',cat:'conv',kind:'verb',title:'Irregular past-tense verb',suggestion:caseLike(m[0],IRREG[low]),why:`"${IRREG[low]}" is an irregular verb. It changes its spelling in the past tense instead of adding -ed.`,std:`L.${g}.1`});
+      else if(SPELL[low]&&!(low==='lets'&&/\blets\s+(us|me|him|her|them)\b/i.test(text.slice(m.index,m.index+12))))
+        add({...at(m.index,m[0].length),type:'fix',cat:'conv',kind:'spell',title:SPELL[low].includes("'")?'Contraction needs an apostrophe':'Spelling',suggestion:low==='im'||low==='ive'?SPELL[low]:caseLike(m[0],SPELL[low]),why:SPELL[low].includes("'")?`A contraction squeezes two words together. The apostrophe shows where letters were left out: "${SPELL[low]}."`:`This word is spelled "${SPELL[low]}." Try saying it slowly in parts and checking a word wall or dictionary.`,std:`L.${g}.2${g==4?'d':'e'}`});
+    }
+    // lowercase i
+    for(const m of text.matchAll(/(?<![\w'’])i(?:'m|'ve|'ll|'d|’m|’ve|’ll|’d)?(?![\w'’])/g))
+      add({...at(m.index,m[0].length),type:'fix',cat:'conv',kind:'cap',title:'Capitalize "I"',suggestion:'I'+m[0].slice(1),why:'When you write about yourself, the word "I" is always a capital letter, even in the middle of a sentence.',std:`L.${g}.2a`});
+    // proper nouns
+    for(const pn of PROPER){const re=new RegExp('\\b'+pn+'\\b','g');for(const m of text.matchAll(re)){
+      const cap=pn.replace(/\b[a-z]/g,c=>c.toUpperCase());
+      add({...at(m.index,m[0].length),type:'fix',cat:'conv',kind:'cap',title:'Capitalize proper nouns',suggestion:cap,why:'Names of specific places, days, months, holidays, languages, and planets are proper nouns, so they start with a capital letter.',std:`L.${g}.2a`})}}
+    // context rules
+    const rules=[
+     [/\b(could|should|would|must|might) of\b/gi,m=>m[1]+' have','Helping verb + "have"','Helping verbs like could, should, and would are followed by "have," not "of." It sounds like "of" when we talk fast, but we write "have."',`L.${g}.1${g==4?'c':''}`,'fix'],
+     [/\btheir (is|are|was|were)\b/gi,m=>'there '+m[1],'There / their','Use "there" to show that something exists (there is, there are). "Their" shows something belongs to a group of people.',`L.${g}.1${g==4?'g':''}`,'fix'],
+     [new RegExp('\\b(there|they\'re|they’re) ('+NOUNS+')\\b','gi'),m=>'their '+m[2],'Their / there / they\'re','Use "their" to show something belongs to them, like "their dog." "There" is a place, and "they\'re" means "they are."',`L.${g}.1${g==4?'g':''}`,'fix'],
+     [/\btheir (going|coming|not|so|very|really|happy|sad|playing|running|always|never|the best)\b/gi,m=>'they\'re '+m[1],'They\'re / their','"They\'re" is short for "they are." Read it as "they are" to check. "Their" shows ownership.',`L.${g}.1${g==4?'g':''}`,'fix'],
+     [/\byour (welcome|right|going|not|so|the best|really|very|always|never)\b/gi,m=>'you\'re '+m[1],'You\'re / your','"You\'re" is short for "you are." If you can say "you are," write "you\'re." "Your" shows ownership.',`L.${g}.1${g==4?'g':''}`,'fix'],
+     [new RegExp('\\byou(\'|’)re ('+NOUNS+')\\b','gi'),m=>'your '+m[2],'Your / you\'re','"Your" shows something belongs to someone, like "your dog." "You\'re" means "you are."',`L.${g}.1${g==4?'g':''}`,'fix'],
+     [/\bits (a|an|the|not|so|very|really|fun|time|going|raining|snowing|cold|hot|my|important|good|bad|great|easy|hard|also|always|never|true|okay)\b/gi,m=>'it\'s '+m[1],'It\'s / its','"It\'s" is short for "it is" or "it has." "Its" (no apostrophe) shows ownership, like "the dog wagged its tail."',`L.${g}.1${g==4?'g':''}`,'fix'],
+     [/\bit(?:'|’)s (own|tail|wings|leaves|shell|fur|legs|eyes|nest|color|babies|food|habitat|body|head|roots|stem|mouth|teeth|trap)\b/gi,m=>'its '+m[1],'Its / it\'s','"Its" with no apostrophe shows ownership, like "its tail." "It\'s" always means "it is" or "it has."',`L.${g}.1${g==4?'g':''}`,'fix'],
+     [/\bto (much|many|big|small|late|early|hot|cold|scary|tired|long)\b(?! to)/gi,m=>'too '+m[1],'Too / to','"Too" means "very" or "also." "To" shows direction, like "to the store."',`L.${g}.1${g==4?'g':''}`,'fix'],
+     [/\b(me|us|them|him|her) to(?=[.!?,])/gi,m=>m[1]+' too','Too / to','When you mean "also," spell it "too" with two o\'s.',`L.${g}.1${g==4?'g':''}`,'fix'],
+     [/\b(better|bigger|smaller|faster|slower|more|less|older|younger|taller|shorter|rather|other|harder|easier) then\b/gi,m=>m[1]+' than','Than / then','Use "than" to compare things (bigger than). Use "then" to tell when something happens (first..., then...).',`L.${g}.1${g==4?'g':''}`,'fix'],
+     [/\b(a) (?!(?:uni|use|usu|eu|one|once|u\b))([aeiou][a-z]+)/gi,m=>caseLike(m[1],'an')+' '+m[2],'A / an','Use "an" before a word that starts with a vowel sound: an apple, an elephant, an hour.',`L.${g}.1`,'fix'],
+     [/\b(an) (?!(?:hour|honest|honor|herb|heir))([bcdfgjklmnpqrstvwxyz][a-z]*)/gi,m=>caseLike(m[1],'a')+' '+m[2],'A / an','Use "a" before a word that starts with a consonant sound: a dog, a tree, a house.',`L.${g}.1`,'fix'],
+     [/\b(don'?t|didn'?t|can'?t|won'?t|isn'?t|wasn'?t|ain'?t|never|doesn'?t) (no|nothing|nobody|none|nowhere)\b/gi,m=>m[1]+' '+({no:'any',nothing:'anything',nobody:'anybody',none:'any',nowhere:'anywhere'})[m[2].toLowerCase()],'Double negative','Two "no" words in a row cancel each other out. Use only one: "I don\'t have any" or "I have none."',`L.${g}.1`,'fix'],
+     [/\b([A-Za-z]+) \1\b/gi,m=>m[1],'Repeated word','The same word is written twice in a row. Delete one.',`L.${g}.2`,'fix'],
+     [/!{2,}/g,()=>'!','Too many exclamation marks','One exclamation mark is enough to show strong feeling. Let your words do the shouting.',`L.${g}.2`,'almost'],
+     [/\s+,/g,()=>',','Space before a comma','A comma sits right after the word, with no space in front of it.',`L.${g}.2`,'almost'],
+     [/[a-z][.!?,][A-Za-z]{2}/g,m=>m[0].slice(0,2)+' '+m[0].slice(2),'Add a space','Put one space after a period, comma, question mark, or exclamation mark.',`L.${g}.2`,'almost'],
+    ];
+    for(const [re,fix,title,why,std,type] of rules)for(const m of text.matchAll(re)){
+      if(title==='Repeated word'&&/^(had|that)$/i.test(m[1]))continue;
+      add({...at(m.index,m[0].length),type,cat:'conv',kind:'usage',title,suggestion:caseLike(m[0],fix(m)),why,std});}
+    // quotation marks
+    const q=(text.match(/["“”]/g)||[]).length;
+    if(q%2===1){const i=text.search(/["“”]/);add({...at(i,1),type:'fix',cat:'conv',kind:'quote',title:'Missing quotation mark',suggestion:'Close the quote: "…"',why:'Quotation marks come in pairs. One goes before the first spoken word and one goes after the last spoken word.',std:`L.${g}.2b`})}
+    for(const m of text.matchAll(/([A-Za-z])(["”]) (said|asked|yelled|shouted|whispered|replied|cried|exclaimed|answered|screamed)\b/g))
+      add({...at(m.index,m[0].length),type:'almost',cat:'conv',kind:'comma',title:'Comma before the closing quote',suggestion:m[1]+','+m[2]+' '+m[3],why:'When a speaker tag like "said" comes after dialogue, put a comma inside the closing quotation mark: "Let\'s go," she said.',std:`L.${g}.2b`});
+    // sentence-level
+    let prevStart='',sameRun=1;
+    sents.forEach((s,si)=>{
+      const st=s.text, wc=wordsOf(st).length, fl=st.search(/[A-Za-z]/);
+      if(fl>=0&&/[a-z]/.test(st[fl])&&!/^[a-z]+\.[a-z]/.test(st))add({...at(s.start+fl,1),type:'fix',cat:'conv',kind:'cap',title:'Capital letter to start a sentence',suggestion:st[fl].toUpperCase(),why:'Every sentence begins with a capital letter. It tells the reader a new thought is starting.',std:`L.${g}.2a`});
+      if(si===sents.length-1&&!/[.!?]["”’']?$/.test(st))add({...at(s.end-1,1),type:'fix',cat:'conv',kind:'punct',title:'End punctuation',suggestion:st.slice(-1)+'.',why:'Every sentence needs an ending mark: a period (.), a question mark (?), or an exclamation mark (!).',std:`L.${g}.2`});
+      const me=st.match(/^(Me and ((?:my |the )?[A-Za-z]+)|((?:My |The )?[A-Za-z]+) and me) (went|go|are|were|played|like|love|have|had|did|saw|made|ran|walked|rode|ate|got|want|wanted|will|can|both|always)\b/i);
+      if(me){const other=(me[2]||me[3]);add({...at(s.start,me[1].length),type:'fix',cat:'conv',kind:'usage',title:'Me / I',suggestion:caseLike('X',other.toLowerCase().replace(/^(my|the) /,(x)=>x))+' and I',why:'When you are one of the people doing the action, use "I," and name the other person first: "My friend and I went." Test it: you would say "I went," not "me went."',std:`L.${g}.1`})}
+      const im=st.match(INTRO_RE);
+      if(im&&st[im[0].length]!==','&&st.length>im[0].length+2)add({...at(s.start,im[0].length),type:'almost',cat:'conv',kind:'comma',title:'Comma after an introductory word',suggestion:im[0]+',',why:`Put a comma after an opening word or phrase like "${im[0]}" so the reader pauses before the main part of the sentence.`,std:g==5?'L.5.2b':'L.4.2'});
+      for(const m of st.matchAll(/([A-Za-z]+) (but|so) (I|he|she|we|they|it|my|the|our|you|his|her|their|there|that|we're|it's|I'm)\b/g)){
+        if(wordsOf(st.slice(0,m.index)).length<2)continue;
+        add({...at(s.start+m.index,m[0].length),type:'almost',cat:'conv',kind:'comma',title:'Comma in a compound sentence',suggestion:`${m[1]}, ${m[2]} ${m[3]}`,why:`If the words before and after "${m[2]}" could each be their own sentence, put a comma before "${m[2]}." That makes a compound sentence.`,std:'L.4.2c'});break}
+      const ands=(st.match(/\band\b/gi)||[]).length;
+      if(wc>32||ands>=3)add({...at(s.start,st.length),type:'almost',cat:'conv',kind:'runon',title:'Run-on sentence',suggestion:ands>=3?'Split at one of the "and"s into two sentences.':'Break this into two or three shorter sentences.',why:`This sentence has ${wc} words${ands>=3?` and ${ands} "and"s`:''}. Long chains are hard to follow. End one idea with a period and start the next with a capital letter.`,std:`L.${g==4?'4.1f':'5.1'}`});
+      if(!STARTERS.test(st)&&!/["“”]/.test(st)){const cs=st.match(/, (I|he|she|it|we|they|you) (am|is|was|were|are|went|like|love|loved|liked|have|had|can|will|did|do|think|thought|felt|saw|ran|got|want|wanted|need|needed)\b/);
+        if(cs)add({...at(s.start+cs.index,1),type:'almost',cat:'conv',kind:'runon',title:'Comma splice',suggestion:`Change the comma to a period, or add "and," "but," or "so" after it.`,why:'A comma by itself is not strong enough to join two complete sentences. Use a period, or a comma plus a joining word.',std:`L.${g==4?'4.1f':'5.1'}`})}
+      const sub=st.match(/^(Because|Since|When|Although|If|While|After|Before|Unless|Whenever)\b/);
+      if(sub&&!st.includes(',')){const bad=sub[1]==='Because'&&wc<=9;
+        add({...at(s.start,st.length),type:bad?'fix':'almost',cat:'conv',kind:'frag',title:bad?'Sentence fragment':'Comma after the opening part',suggestion:bad?'Join it to the sentence before it, or finish the thought.':`Add a comma after the "${sub[1].toLowerCase()}" part.`,why:bad?'A sentence that starts with "Because" is only half a thought. Attach it to the sentence before it: "I love dogs because they are loyal."':`When a sentence starts with "${sub[1]}," put a comma after that opening part before the main idea. If there is no main idea yet, add one.`,std:`L.${g==4?'4.1f':'5.2b'}`})}
+      if(wc<=2&&!/!$/.test(st)&&!/^(Wow|Oh|Hey|Ouch|Yikes|Whoa|Yes|No|Boom|Crash)/i.test(st))add({...at(s.start,st.length),type:'almost',cat:'conv',kind:'frag',title:'Possible fragment',suggestion:'Add a subject and a verb so it is a complete thought.',why:'A complete sentence tells who or what (subject) and what they do or are (verb).',std:`L.${g==4?'4.1f':'5.1'}`});
+      const first=(st.match(/^[A-Za-z']+/)||[''])[0].toLowerCase();
+      if(first&&first===prevStart){sameRun++;if(sameRun===3)add({...at(s.start,first.length),type:'almost',cat:'word',kind:'variety',title:'Vary your sentence beginnings',suggestion:'Start with a time word, a describing word, or a "When…" phrase.',why:`Three sentences in a row start with "${first}." Changing how sentences begin makes your writing flow.`,std:`L.${g}.3a`})}else sameRun=1;
+      prevStart=first;
+    });
+    // word choice
+    let wcNotes=0;const lower=text.toLowerCase();
+    for(const m of text.matchAll(/\b(very|really|so) ([a-z]+)\b/gi)){if(wcNotes>=4)break;const w=m[2].toLowerCase();if(VERY[w]){add({...at(m.index,m[0].length),type:'almost',cat:'word',kind:'word',title:'Use one strong word',suggestion:caseLike(m[0],VERY[w]),why:`"${m[0]}" can become one powerful word: "${VERY[w]}." Precise words paint a clearer picture.`,std:`L.${g}.3a`});wcNotes++}}
+    for(const w in OVERUSED){if(wcNotes>=4)break;const m=new RegExp('\\b'+w+'\\b','i').exec(text);if(m&&!/\b(very|really|so) $/i.test(text.slice(Math.max(0,m.index-7),m.index))){add({...at(m.index,m[0].length),type:'almost',cat:'word',kind:'word',title:`Upgrade "${w}"`,suggestion:`Try ${OVERUSED[w]}`,why:`"${w}" is a word everyone uses. A more exact word helps your reader see and feel what you mean.`,std:`L.${g}.3a`});wcNotes++}}
+    // praise
+    let wow=0;const seen=new Set();
+    for(const m of text.matchAll(/[A-Za-z]+/g)){const w=m[0].toLowerCase();if(wow>=4)break;
+      const inBank=P.bank.some(b=>w.startsWith(b.replace(/e$/,'').toLowerCase())&&w.length<=b.length+3);
+      if((WOW.includes(w)||inBank)&&!seen.has(w)){seen.add(w);wow++;add({...at(m.index,m[0].length),type:'great',cat:'word',kind:inBank?'bank':'wow',title:inBank?'Word bank word!':'Strong word choice',suggestion:'',why:inBank?`You used "${m[0]}" from your word bank. That shows you can use new vocabulary.`:`"${m[0]}" is a precise, vivid word. It helps your reader picture exactly what you mean.`,std:`L.${g}.${inBank?6:'3a'}`})}}
+    const gram=[
+     [/\b[A-Za-z]+,? (who|whose|whom|which)\b/i,'Relative pronoun',`You used "$1" to add detail about a noun. That is a relative pronoun.`,'L.4.1a'],
+     [/\b(am|is|are|was|were|will be) [a-z]+ing\b/i,'Progressive verb tense','You used a progressive verb ("$0") to show an action that keeps going.','L.4.1b'],
+     [/\b(can|may|must|might|should|could|would)(?! of) [a-z]+/i,'Helping (modal) verb','You used "$1" to show how likely or needed an action is.','L.4.1c'],
+    ];
+    if(g==5)gram.push([/\b(have|has|had) (\w+ed|been|seen|gone|done|eaten|written|taken|given|known|grown|flown|ridden|driven|chosen|spoken|forgotten|begun|found|made|built)\b/i,'Perfect verb tense','"$0" uses a perfect tense to show an action that is finished or happened before another one.','L.5.1b'],
+      [/\b(either\b[^.!?]{1,60}\bor|neither\b[^.!?]{1,60}\bnor|not only\b[^.!?]{1,60}\bbut also)\b/i,'Correlative conjunctions','You used a conjunction pair ("$0") to connect ideas.','L.5.1e'],
+      [/\b(Wow|Oh|Hey|Ouch|Yikes|Whoa|Hooray|Oops)[,!]/,'Interjection','"$1" is an interjection. It shows strong feeling, and you punctuated it correctly.','L.5.1a']);
+    for(const [re,title,why,std] of gram){const m=re.exec(text);if(m)add({...at(m.index,m[0].length),type:'great',cat:'gram',kind:'gram',title,suggestion:'',why:why.replace('$0',m[0]).replace('$1',m[1]||''),std})}
+    for(const m of text.matchAll(/([A-Za-z]+), (but|so|and) (I|he|she|we|they|it|my|the)\b/g)){add({...at(m.index,m[0].length),type:'great',cat:'gram',kind:'comma',title:'Compound sentence',suggestion:'',why:`You joined two complete thoughts with a comma and "${m[2]}." That is a correctly punctuated compound sentence.`,std:'L.4.2c'});break}
+  });
+  // structure
+  const S=(para,o)=>add({para,start:-1,end:-1,original:'',cat:'org',suggestion:'',...o});
+  const lc={},sc={};PARTS.forEach(p=>{lc[p.id]=(texts[p.id]||'').toLowerCase();sc[p.id]=sentencesOf(texts[p.id]||'').length});
+  const gs=GENRES[P.genre].std(g);
+  PARTS.forEach(p=>{
+    if(!lc[p.id].trim())S(p.id,{type:'fix',title:`${p.name} is missing`,why:`Your writing needs all three paragraphs. Write your ${p.name.toLowerCase()} before you submit.`,std:gs});
+    else if(sc[p.id]<p.min)S(p.id,{type:sc[p.id]<p.min-1?'fix':'almost',title:`Add more sentences to your ${p.name.toLowerCase()}`,why:`This paragraph has ${sc[p.id]} sentence${sc[p.id]==1?'':'s'}. Aim for at least ${p.min} so your ideas are fully developed.`,std:gs});
+  });
+  const firstSent=(sentencesOf(texts.intro||'')[0]||{text:''}).text;
+  if(lc.intro.trim()){
+    if(/\?$/.test(firstSent)||/!$/.test(firstSent)||/^(have you ever|imagine|did you know|what if|picture this|close your eyes|"|“)/i.test(firstSent)||(P.genre==='narrative'&&/^(boom|crash|bang|splash|knock|ring|zoom|whoosh|suddenly)/i.test(firstSent)))
+      S('intro',{type:'great',cat:'org',title:'Great hook!',why:'Your first sentence grabs the reader\'s attention and makes them want to keep reading.',std:gs+'a'});
+    else S('intro',{type:'almost',title:'Try a stronger hook',why:'Start with a question, a surprising fact, a sound, or a line of dialogue to pull your reader in. Example: "Have you ever wondered…?"',std:gs+'a'});
+    if(P.genre==='opinion'){
+      if(/\b(i think|i believe|in my opinion|i feel|should|shouldn't|is the best|are the best|is better|are better|i prefer|i would rather|i'd rather)\b/.test(lc.intro))S('intro',{type:'great',cat:'org',title:'Clear opinion statement',why:'You told the reader exactly what you think. That is the heart of opinion writing.',std:gs+'a'});
+      else S('intro',{type:'fix',title:'State your opinion',why:'Your introduction needs a sentence that tells your opinion, like "I believe…" or "Students should…"',std:gs+'a'});
+    }else if(P.genre==='informative'){
+      if(P.keys.some(k=>lc.intro.includes(k)))S('intro',{type:'great',cat:'org',title:'Topic introduced',why:'You told the reader what your writing is about right away.',std:gs+'a'});
+      else S('intro',{type:'almost',title:'Name your topic',why:'Make sure your introduction clearly says what topic you will explain.',std:gs+'a'});
+    }else{
+      const setting=/\b(one day|morning|afternoon|night|evening|yesterday|last (week|summer|year)|at (the|my|school|home)|in (the|my)|on (the|a|my))\b/.test(lc.intro);
+      if(setting)S('intro',{type:'great',cat:'org',title:'Setting and character',why:'You let the reader know who the story is about and where or when it happens.',std:gs+'a'});
+      else S('intro',{type:'almost',title:'Show the setting',why:'Tell the reader when and where your story happens, like "One rainy morning at school…"',std:gs+'a'});
+    }
+  }
+  const all=[lc.intro,lc.body,lc.concl].join(' ');
+  const trans=TRANSITIONS.filter(t=>new RegExp('\\b'+t+'\\b').test(lc.body));
+  if(lc.body.trim()){
+    if(trans.length>=2)S('body',{type:'great',cat:'org',title:'Transition words',why:`You linked your ideas with transitions (${trans.slice(0,4).map(t=>'"'+t+'"').join(', ')}). They guide your reader from one idea to the next.`,std:gs+(P.genre==='narrative'?'c':'c')});
+    else if(trans.length===1)S('body',{type:'almost',title:'Add another transition',why:`You used "${trans[0]}." Add at least one more, like "for example," "another reason," "next," or "after that."`,std:gs+'c'});
+    else S('body',{type:'fix',title:'Use transition words',why:'Your middle paragraph needs linking words such as "first," "also," "for example," or "next" to connect your ideas.',std:gs+'c'});
+    if(P.genre==='opinion'){
+      if(/\b(because|for example|for instance|another reason|one reason|this is why|since)\b/.test(lc.body))S('body',{type:'great',cat:'org',title:'Reasons that support your opinion',why:'You backed up your opinion with reasons. That makes your writing convincing.',std:gs+'b'});
+      else S('body',{type:'almost',title:'Give reasons',why:'Explain why you feel this way. Use "because," "one reason is," or "for example" to support your opinion.',std:gs+'b'});
+    }else if(P.genre==='informative'){
+      if(/\d|\b(for example|for instance|such as|in fact|scientists|experts)\b/.test(lc.body))S('body',{type:'great',cat:'org',title:'Facts and examples',why:'You included specific facts or examples. Details like these make informative writing strong.',std:gs+'b'});
+      else S('body',{type:'almost',title:'Add a fact or example',why:'Add a specific fact, number, or example. Try "For example," or "Did you know that…"',std:gs+'b'});
+    }else{
+      if(/["“”]/.test(texts.body||''))S('body',{type:'great',cat:'org',title:'Dialogue',why:'Your characters speak! Dialogue brings a story to life and shows how characters feel.',std:gs+'b'});
+      else S('body',{type:'almost',title:'Add dialogue',why:'Let a character talk. Put their exact words inside quotation marks: "Watch out!" yelled Mia.',std:gs+'b'});
+    }
+  }
+  if(lc.concl.trim()){
+    if(CLOSERS.some(c=>lc.concl.includes(c)))S('concl',{type:'great',cat:'org',title:'Strong closing transition',why:'You signaled that your writing is wrapping up.',std:gs+(P.genre==='narrative'?'e':'d')});
+    else S('concl',{type:'almost',title:'Signal the ending',why:'Begin your conclusion with a closing phrase such as "In conclusion," "Overall," "In the end," or "That is why."',std:gs+(P.genre==='narrative'?'e':'d')});
+    if(P.genre==='narrative'){
+      if(/\b(learned|realized|felt|feel|never forget|from then on|from now on|ever since|grateful|proud|glad|relieved|happiest|best day)\b/.test(lc.concl))S('concl',{type:'great',cat:'org',title:'Meaningful ending',why:'You showed how your character felt or what they learned. That gives your story a satisfying ending.',std:gs+'e'});
+      else S('concl',{type:'almost',title:'Show what changed',why:'End by telling how your character felt or what they learned from the adventure.',std:gs+'e'});
+    }else{
+      const stop=new Set(['about','their','there','these','those','would','could','should','which','where','because','other','think','believe','really','opinion','conclusion','reason','reasons','things','every','after','before','while','first','also']);
+      const kw=new Set(wordsOf(lc.intro).filter(w=>w.length>4&&!stop.has(w)).map(w=>w.slice(0,5)));
+      const hit=wordsOf(lc.concl).some(w=>w.length>4&&kw.has(w.slice(0,5)));
+      if(hit)S('concl',{type:'great',cat:'org',title:P.genre==='opinion'?'Opinion restated':'Main idea restated',why:'Your conclusion connects back to your introduction. That ties your whole piece together.',std:gs+'d'});
+      else S('concl',{type:'almost',title:P.genre==='opinion'?'Restate your opinion':'Restate your main idea',why:'Remind the reader of your main idea from the introduction, using new words.',std:gs+'d'});
+    }
+  }
+  return {issues,trans:TRANSITIONS.filter(t=>new RegExp('\\b'+t+'\\b').test(all)).length,words:wordsOf(all).length};
+}
+
+function score(res,P){
+  const I=res.issues;const c=(cat,type)=>I.filter(i=>i.cat===cat&&i.type===type).length;
+  const conv=Math.max(0,40-4*c('conv','fix')-1.5*c('conv','almost'));
+  const org=Math.max(0,30-8*c('org','fix')-4*c('org','almost'));
+  const praiseW=I.filter(i=>i.type==='great'&&i.cat==='word').length;
+  const word=Math.max(0,Math.min(15,8+1.4*praiseW+0.6*I.filter(i=>i.cat==='gram').length-1*c('word','almost')));
+  const target=P.grade==5?180:150;
+  const dev=Math.round(15*Math.min(1,res.words/target));
+  const total=Math.round(conv+org+word+dev);
+  const has=k=>I.some(i=>i.kind===k);
+  const kinds=t=>I.filter(i=>i.type!=='great'&&i.kind===t).length;
+  const badges=[
+   {n:'Spelling Bee',ok:kinds('spell')===0&&kinds('verb')===0&&res.words>=60},
+   {n:'Comma Captain',ok:kinds('comma')===0&&res.words>=60},
+   {n:'Hook Master',ok:I.some(i=>i.title==='Great hook!')},
+   {n:'Transition Trailblazer',ok:res.trans>=3},
+   {n:'Word Wizard',ok:I.filter(i=>i.kind==='wow'||i.kind==='bank').length>=3},
+   {n:'Sentence Builder',ok:kinds('runon')===0&&kinds('frag')===0&&res.words>=60},
+   {n:'Grammar Guardian',ok:I.filter(i=>i.kind==='gram').length>=2},
+  ];
+  const level=total>=90?'Wow! Publish-ready':total>=75?'Almost there!':total>=55?'Good start. Keep revising!':'Keep building!';
+  const stars=total>=90?3:total>=75?2:total>=55?1:0;
+  return {total,conv:Math.round(conv),org:Math.round(org),word:Math.round(word),dev,badges,level,stars,target};
+}
+
+/* ---------------- state + views ---------------- */
+let S={view:'start',name:'',grade:4,font:'Lexend',size:20,prompt:null,texts:{intro:'',body:'',concl:''},result:null,tab:'all',history:[],attempt:0,modal:null};
+function saveDraft(){if(S.name)store.set('pq-draft-'+S.name.toLowerCase(),{prompt:S.prompt,texts:S.texts,history:S.history,attempt:S.attempt})}
+function applyFont(){const f=FONTS.find(f=>f.id===S.font)||FONTS[0];document.documentElement.style.setProperty('--f-write',f.css);document.documentElement.style.setProperty('--write-size',S.size+'px');document.documentElement.style.setProperty('--lh',Math.round(S.size*1.8)+'px');store.set('pq-font',{font:S.font,size:S.size})}
+function toast(msg){const t=$('#toastRoot');t.innerHTML=`<div class="toast" role="status">${esc(msg)}</div>`;clearTimeout(toast.t);toast.t=setTimeout(()=>t.innerHTML='',2200)}
+
+const pencilSVG=`<svg class="pencil" viewBox="0 0 40 40" aria-hidden="true"><g transform="rotate(-35 20 20)"><rect x="6" y="15" width="22" height="10" rx="1.5" fill="var(--pencil)" stroke="var(--ink)" stroke-width="1.6"/><rect x="2" y="15" width="5" height="10" rx="1.5" fill="var(--margin)" stroke="var(--ink)" stroke-width="1.6"/><path d="M28 15 L37 20 L28 25 Z" fill="var(--paper)" stroke="var(--ink)" stroke-width="1.6"/><path d="M34.5 18.6 L37 20 L34.5 21.4 Z" fill="var(--ink)"/></g></svg>`;
+const starSVG=on=>`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4 6.1 20.5l1.2-6.5L2.5 9.4l6.6-.9z" fill="${on?'var(--pencil)':'none'}" stroke="var(--ink)" stroke-width="1.5" stroke-linejoin="round"/></svg>`;
+
+function header(){
+  return `<header class="top"><div class="brand">${pencilSVG}<h1>Paragraph Quest</h1></div>
+  ${S.name?`<span class="who">${esc(S.name)} · Grade ${S.grade}</span>`:''}
+  ${S.view!=='start'?`<button class="btn small ghost" data-act="home" type="button">Switch student</button>`:''}</header>`;
+}
+
+function viewStart(){
+  const demoP={grade:4,genre:'opinion',bank:['eager'],keys:[]};
+  const demoText='i think recess should be longer becuase kids need to move. Their is so much energy in our class, and being eager to learn starts with a break.';
+  const r=grade({intro:demoText,body:'',concl:''},demoP).issues.filter(i=>i.start>=0&&i.para==='intro');
+  return `${header()}
+  <section class="sheet" style="display:flex;flex-direction:column;gap:18px">
+    <div><p class="label">Step 1</p><h2 style="font-size:1.8rem">Who is writing today?</h2></div>
+    <div class="grid2">
+      <div style="display:flex;flex-direction:column;gap:6px;min-width:0"><label for="nm" class="label">Your first name</label><input type="text" id="nm" autocomplete="off" placeholder="Type your name" value="${esc(S.name)}"></div>
+      <div style="display:flex;flex-direction:column;gap:6px"><span class="label">Your grade</span>
+        <div class="seg" role="group" aria-label="Grade"><button type="button" data-grade="4" aria-pressed="${S.grade==4}">4th grade</button><button type="button" data-grade="5" aria-pressed="${S.grade==5}">5th grade</button></div></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px"><span class="label">Pick your writing font</span>
+      <div class="fonts">${FONTS.map(f=>`<button type="button" class="fontcard" data-font="${esc(f.id)}" aria-pressed="${S.font===f.id}"><span class="sample" style="font-family:${f.css}">Aa Bb Cc 123</span><span class="nm">${esc(f.id)} · ${esc(f.note)}</span></button>`).join('')}</div>
+      <div class="size"><label for="sz">Text size</label><input type="range" id="sz" min="16" max="28" step="2" value="${S.size}"><span>${S.size}px</span></div>
+    </div>
+    <div class="row"><button class="btn primary" type="button" data-act="begin">Get my writing prompt</button><span class="muted" style="font-size:.9rem">Every writer gets a different prompt.</span></div>
+  </section>
+  <section class="sheet demo" style="display:flex;flex-direction:column;gap:12px">
+    <div><p class="label">How it works</p><h2 style="font-size:1.3rem">Write three paragraphs, submit, and get red-pen feedback</h2></div>
+    <p class="muted" style="margin:0">After you submit, the checker marks your writing like this example. Red is a mistake to fix, gold means you are almost there, and green is great work.</p>
+    <div class="marked">${markup(demoText,r)}</div>
+    ${legend()}
+  </section>`;
+}
+
+function promptCard(){
+  const P=S.prompt,G=GENRES[P.genre];
+  const used=P.bank.map(b=>new RegExp('\\b'+b.replace(/e$/,''),'i').test(Object.values(S.texts).join(' ')));
+  return `<section class="sheet prompt">
+    <div class="row" style="justify-content:space-between"><span class="genre">${G.label} writing · ${G.std(P.grade)}</span>
+      <button class="btn small ghost" type="button" data-act="newprompt">New prompt</button></div>
+    <h2>${esc(P.topic)}</h2>
+    <p style="margin:0"><b>Write for:</b> ${esc(P.audience)}</p>
+    <p style="margin:0"><b>Bonus challenge:</b> ${esc(P.challenge)}</p>
+    <div style="display:flex;flex-direction:column;gap:6px"><span class="label">Word bank (try to use at least one)</span>
+      <div class="chips">${P.bank.map((b,i)=>`<span class="chip ${used[i]?'used':''}">${esc(b)}</span>`).join('')}</div></div>
+  </section>`;
+}
+
+function viewWrite(){
+  const P=S.prompt,G=GENRES[P.genre];
+  return `${header()}${promptCard()}
+  <section class="sheet" style="display:flex;flex-direction:column;gap:22px">
+    <div class="controls"><span class="label">Font</span>
+      <select id="fontSel" aria-label="Writing font">${FONTS.map(f=>`<option ${f.id===S.font?'selected':''}>${esc(f.id)}</option>`).join('')}</select>
+      <div class="size"><label for="sz2">Size</label><input type="range" id="sz2" min="16" max="28" step="2" value="${S.size}"></div>
+      ${S.attempt?`<span class="muted" style="margin-left:auto;font-size:.9rem">Revision ${S.attempt+1}</span>`:''}</div>
+    ${PARTS.map((p,i)=>`<div class="para">
+      <div class="para-head"><h3>${i+1}. ${p.name}</h3><span class="tip">${esc(G.tips[p.id])}</span><span class="wc" id="wc-${p.id}">${wordsOf(S.texts[p.id]).length} words</span></div>
+      <textarea class="nb" id="ta-${p.id}" data-part="${p.id}" spellcheck="false" aria-label="${p.name}" placeholder="Start your ${p.name.toLowerCase()} here…">${esc(S.texts[p.id])}</textarea></div>`).join('')}
+    <div class="row"><button class="btn primary" type="button" data-act="submit">Submit my writing</button><span class="muted" style="font-size:.9rem">You will get a score, corrections, and tips.</span></div>
+  </section>`;
+}
+
+function markup(text,list){
+  const spans=list.filter(i=>i.start>=0).sort((a,b)=>a.start-b.start||b.end-a.end);
+  let out='',pos=0;
+  for(const s of spans){if(s.start<pos)continue;out+=esc(text.slice(pos,s.start))+`<mark class="${s.type}" title="${esc(s.title)}">${esc(text.slice(s.start,s.end))}<sup>${s.n||''}</sup></mark>`;pos=s.end}
+  return out+esc(text.slice(pos));
+}
+const legend=()=>`<div class="legend"><span><i class="sw" style="background:var(--fix-bg);border:1px solid var(--redpen)"></i>Fix it</span><span><i class="sw" style="background:var(--warn-bg);border:1px solid var(--warn)"></i>Almost there</span><span><i class="sw" style="background:var(--ok-bg);border:1px solid var(--ok)"></i>Great work</span></div>`;
+
+function card(i){
+  const tag={fix:'Fix it',almost:'Almost there',great:'Great work'}[i.type];
+  const change=i.type!=='great'&&i.original&&i.suggestion?`<div class="change"><s>${esc(i.original.length>70?i.original.slice(0,70)+'…':i.original)}</s> &rarr; <span class="to">${esc(i.suggestion)}</span></div>`:
+    (i.type!=='great'&&i.suggestion?`<div class="change"><span class="to">${esc(i.suggestion)}</span></div>`:(i.original&&i.type==='great'?`<div class="change">“${esc(i.original.length>70?i.original.slice(0,70)+'…':i.original)}”</div>`:''));
+  return `<div class="card ${i.type}"><div class="hd">${i.n?`<span class="num">#${i.n}</span>`:''}<span class="tag">${tag}</span><span class="title">${esc(i.title)}</span><span class="code">${esc(i.std)}</span></div>${change}<div class="why"><b>Why:</b> ${esc(i.why)}</div></div>`;
+}
+
+function viewResults(){
+  const R=S.result,sc=R.sc,I=R.issues;
+  let n=0;I.forEach(i=>{if(i.start>=0)i.n=++n});
+  const counts={fix:I.filter(i=>i.type==='fix').length,almost:I.filter(i=>i.type==='almost').length,great:I.filter(i=>i.type==='great').length};
+  const C=2*Math.PI*62;
+  const filt=S.tab==='all'?I:I.filter(i=>i.type===S.tab);
+  const order={fix:0,almost:1,great:2};
+  return `${header()}
+  <section class="sheet" style="display:flex;flex-direction:column;gap:18px">
+    <div class="score">
+      <div class="dial"><svg viewBox="0 0 150 150" aria-hidden="true"><circle cx="75" cy="75" r="62" fill="none" stroke="var(--chip)" stroke-width="14"/><circle cx="75" cy="75" r="62" fill="none" stroke="${sc.total>=90?'var(--ok)':sc.total>=75?'var(--pencil)':'var(--redpen)'}" stroke-width="14" stroke-linecap="round" stroke-dasharray="${C*sc.total/100} ${C}" transform="rotate(-90 75 75)"/></svg>
+        <div class="num"><b>${sc.total}</b><span>out of 100</span></div></div>
+      <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+        <div class="row"><span class="level">${esc(sc.level)}</span><div class="stars" aria-label="${sc.stars} of 3 stars">${[0,1,2].map(k=>starSVG(k<sc.stars)).join('')}</div></div>
+        <div class="bars">
+          ${[['Grammar & conventions',sc.conv,40],['Organization',sc.org,30],['Word choice',sc.word,15],['Development (length)',sc.dev,15]].map(([l,v,m])=>`<div class="bar"><span>${l}</span><div class="track"><i style="width:${100*v/m}%"></i></div><span class="v">${v}/${m}</span></div>`).join('')}
+        </div>
+        <p class="muted" style="margin:0;font-size:.88rem">${R.words} words total (goal: ${sc.target}+) · Submission ${S.attempt}</p>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px"><span class="label">Badges</span>
+      <div class="badges">${sc.badges.map(b=>`<span class="badge ${b.ok?'':'locked'}">${b.ok?'&#10003; ':''}${esc(b.n)}</span>`).join('')}</div></div>
+    <div class="row"><button class="btn primary" type="button" data-act="revise">Revise and resubmit</button><button class="btn" type="button" data-act="next">Start a new story</button><button class="btn ghost" type="button" data-act="copy">Copy results for my teacher</button></div>
+  </section>
+  <section class="sheet" style="display:flex;flex-direction:column;gap:16px">
+    <div class="row" style="justify-content:space-between"><h2 style="font-size:1.3rem">Your marked-up writing</h2>${legend()}</div>
+    ${PARTS.map(p=>`<div style="display:flex;flex-direction:column;gap:6px"><span class="label">${p.name}</span><div class="marked">${S.texts[p.id].trim()?markup(S.texts[p.id],I.filter(i=>i.para===p.id)):'<span class="redpen">Missing!</span>'}</div></div>`).join('')}
+  </section>
+  <section class="sheet" style="display:flex;flex-direction:column;gap:14px">
+    <div class="row" style="justify-content:space-between"><h2 style="font-size:1.3rem">Corrections and comments</h2>
+      <div class="tabs" role="group" aria-label="Filter feedback">
+        ${[['all','All',I.length],['fix','Fix it',counts.fix],['almost','Almost there',counts.almost],['great','Great work',counts.great]].map(([k,l,c])=>`<button type="button" data-tab="${k}" aria-pressed="${S.tab===k}">${l} (${c})</button>`).join('')}</div></div>
+    ${PARTS.map(p=>{const list=filt.filter(i=>i.para===p.id).sort((a,b)=>order[a.type]-order[b.type]||(a.n||999)-(b.n||999));
+      return list.length?`<div style="display:flex;flex-direction:column;gap:8px"><span class="label">${p.name}</span><div class="cards">${list.map(card).join('')}</div></div>`:''}).join('')||'<p class="muted">Nothing in this group.</p>'}
+  </section>
+  ${S.history.length>1?`<section class="sheet" style="display:flex;flex-direction:column;gap:10px"><h2 style="font-size:1.2rem">Your progress on this prompt</h2>
+    <div class="tablewrap"><table class="history"><thead><tr><th>Submission</th><th>Score</th><th>Fix it</th><th>Almost there</th><th>Great work</th></tr></thead><tbody>
+    ${S.history.map((h,k)=>`<tr><td>${k+1}</td><td>${h.total}</td><td>${h.fix}</td><td>${h.almost}</td><td>${h.great}</td></tr>`).join('')}</tbody></table></div></section>`:''}`;
+}
+
+function modalHTML(){
+  if(S.modal==='submit'){
+    const empty=PARTS.filter(p=>!S.texts[p.id].trim());
+    const total=wordsOf(Object.values(S.texts).join(' ')).length;
+    const items=['I wrote an introduction, a middle paragraph, and a conclusion.','I started every sentence with a capital letter and ended it with punctuation.','I reread my writing out loud to check that it makes sense.','I used transition words to connect my ideas.','I checked my spelling.'];
+    return `<div class="scrim"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="mh"><h2 id="mh">Ready to turn it in?</h2>
+      <p class="muted" style="margin:0">Check off each step before you submit. You will be able to revise after you see your feedback.</p>
+      ${empty.length?`<div class="warnline">Your ${empty.map(p=>p.name.toLowerCase()).join(' and ')} ${empty.length>1?'are':'is'} still empty. You can submit, but it will lose points.</div>`:''}
+      ${total<60&&!empty.length?`<div class="warnline">You have ${total} words. Most strong pieces have at least ${S.grade==5?180:150}.</div>`:''}
+      <ul class="checklist">${items.map((t,k)=>`<li><label><input type="checkbox" class="ck" id="ck${k}"> <span>${esc(t)}</span></label></li>`).join('')}</ul>
+      <div class="row"><button class="btn primary" type="button" data-act="confirm" id="confirmBtn" disabled>Submit for grading</button><button class="btn ghost" type="button" data-act="close">Keep writing</button></div></div></div>`;
+  }
+  if(S.modal==='newprompt'||S.modal==='next')return `<div class="scrim"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="mh"><h2 id="mh">${S.modal==='next'?'Start a new story?':'Get a new prompt?'}</h2>
+    <p style="margin:0">${S.modal==='next'?'You will get a brand-new prompt and empty paragraphs.':'Your paragraphs will be cleared so you can start on a new prompt.'}</p>
+    <div class="row"><button class="btn primary" type="button" data-act="doNew">Yes, new prompt</button><button class="btn ghost" type="button" data-act="close">Cancel</button></div></div></div>`;
+  return '';
+}
+
+function render(){
+  const app=$('#app');
+  app.innerHTML=S.view==='start'?viewStart():S.view==='write'?viewWrite():viewResults();
+  $('#modalRoot').innerHTML=modalHTML();
+  if(S.modal==='submit')setTimeout(()=>$('#ck0')&&$('#ck0').focus(),0);
+}
+
+/* ---------------- events ---------------- */
+document.addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.grade){S.grade=+b.dataset.grade;render();return}
+  if(b.dataset.font){S.font=b.dataset.font;applyFont();render();return}
+  if(b.dataset.tab){S.tab=b.dataset.tab;render();return}
+  const a=b.dataset.act;
+  if(a==='begin'){const nm=($('#nm').value||'').trim();if(!nm){toast('Type your first name to start.');$('#nm').focus();return}
+    S.name=nm;const d=store.get('pq-draft-'+nm.toLowerCase(),null);
+    if(d&&d.prompt&&d.prompt.grade==S.grade){S.prompt=d.prompt;S.texts=d.texts;S.history=d.history||[];S.attempt=d.attempt||0;toast('Welcome back! Your draft is saved.')}
+    else{S.prompt=makePrompt(nm,S.grade);S.texts={intro:'',body:'',concl:''};S.history=[];S.attempt=0}
+    S.view='write';saveDraft();render();window.scrollTo(0,0)}
+  if(a==='home'){saveDraft();S.view='start';S.name='';render()}
+  if(a==='newprompt'){S.modal='newprompt';render()}
+  if(a==='next'){S.modal='next';render()}
+  if(a==='doNew'){S.prompt=makePrompt(S.name,S.grade);S.texts={intro:'',body:'',concl:''};S.history=[];S.attempt=0;S.result=null;S.modal=null;S.view='write';S.tab='all';saveDraft();render();window.scrollTo(0,0);toast('New prompt ready')}
+  if(a==='submit'){S.modal='submit';render()}
+  if(a==='close'){S.modal=null;render()}
+  if(a==='confirm'){
+    const res=grade(S.texts,S.prompt);res.sc=score(res,S.prompt);S.result=res;S.attempt++;
+    S.history.push({total:res.sc.total,fix:res.issues.filter(i=>i.type==='fix').length,almost:res.issues.filter(i=>i.type==='almost').length,great:res.issues.filter(i=>i.type==='great').length});
+    S.modal=null;S.view='results';S.tab='all';saveDraft();render();window.scrollTo(0,0)}
+  if(a==='revise'){S.view='write';render();window.scrollTo(0,0)}
+  if(a==='copy'){const R=S.result,sc=R.sc;
+    const txt=`Paragraph Quest results\nStudent: ${S.name} (Grade ${S.grade})\nPrompt (${GENRES[S.prompt.genre].label}): ${S.prompt.topic}\nSubmission ${S.attempt}: ${sc.total}/100 — ${sc.level}\nConventions ${sc.conv}/40 · Organization ${sc.org}/30 · Word choice ${sc.word}/15 · Development ${sc.dev}/15\nWords: ${R.words}\nBadges: ${sc.badges.filter(b=>b.ok).map(b=>b.n).join(', ')||'none yet'}\nFix it: ${R.issues.filter(i=>i.type==='fix').map(i=>i.title).join('; ')||'none'}\n\nINTRODUCTION\n${S.texts.intro}\n\nMIDDLE\n${S.texts.body}\n\nCONCLUSION\n${S.texts.concl}`;
+    const fallback=()=>{const ta=document.createElement('textarea');ta.value=txt;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');toast('Copied')}catch(err){toast('Select and copy the text manually')}ta.remove()};
+    if(navigator.clipboard)navigator.clipboard.writeText(txt).then(()=>toast('Copied. Paste it where your teacher asks.'),fallback);else fallback()}
+});
+document.addEventListener('input',e=>{
+  const t=e.target;
+  if(t.matches('textarea.nb')){S.texts[t.dataset.part]=t.value;const w=$('#wc-'+t.dataset.part);if(w)w.textContent=wordsOf(t.value).length+' words';saveDraft();
+    const chips=document.querySelectorAll('.chip');const all=Object.values(S.texts).join(' ');S.prompt.bank.forEach((b,i)=>chips[i]&&chips[i].classList.toggle('used',new RegExp('\\b'+b.replace(/e$/,''),'i').test(all)))}
+  if(t.id==='sz'||t.id==='sz2'){S.size=+t.value;applyFont();if(t.id==='sz')t.nextElementSibling.textContent=S.size+'px'}
+  if(t.id==='nm')S.name=t.value;
+  if(t.classList.contains('ck')){const all=[...document.querySelectorAll('.ck')].every(c=>c.checked);$('#confirmBtn').disabled=!all}
+});
+document.addEventListener('change',e=>{if(e.target.id==='fontSel'){S.font=e.target.value;applyFont()}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&S.modal){S.modal=null;render()}if(e.key==='Enter'&&e.target.id==='nm'){document.querySelector('[data-act="begin"]').click()}});
+
+/* ---------------- boot ---------------- */
+function start(saved){
+  const f=store.get('pq-font',null);if(f){S.font=f.font;S.size=f.size}
+  if(saved&&saved.S)S=Object.assign(S,saved.S,{modal:null});
+  applyFont();render();
+}
+window.claude?.hot?.snapshot?.(()=>({S}));
+window.claude?.hot?.ready?window.claude.hot.ready(start):start(window.claude?.hot?.data??{});
+</script>
+</body>
+</html>
