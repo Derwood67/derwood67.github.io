@@ -80,7 +80,7 @@ th{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mu
 <div class="wrap">
   <div>
     <h1>Minute Reading Sprint</h1>
-    <p class="sub">Letter sounds and decoding · one minute · 50-item sets · the student reads aloud, you score</p>
+    <p class="sub">Letter sounds and decoding · one minute · 25-item sets · untimed practice · the student reads aloud, you score</p>
   </div>
 
   <div class="card setup" id="setup">
@@ -96,14 +96,14 @@ th{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mu
       <label class="row" for="redV" style="gap:6px"><input type="checkbox" id="redV"> Vowels in red</label>
     </div>
     <div class="std" id="std"></div>
-    <div class="row"><button class="btn go" id="start">Start 1 minute</button><span class="note" id="setupBase"></span></div>
+    <div class="row"><button class="btn go" id="start">Start 1 minute</button><button class="btn" id="practice">Practice (no timer)</button><span class="note" id="setupBase"></span></div>
   </div>
 
   <div class="card stage" id="drill" hidden>
     <div class="bar" aria-hidden="true"><i id="barFill"></i></div>
     <div class="clock" id="clock">1:00</div>
     <div class="chips">
-      <span class="chip" id="pnum">Item 1 of 50</span>
+      <span class="chip" id="pnum">Item 1 of 25</span>
       <span class="chip score" id="tally">0 correct</span>
       <span class="chip basechip" id="tbase">Baseline: —</span>
     </div>
@@ -138,7 +138,7 @@ th{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mu
 <script>
 (function(){
 "use strict";
-const SET=50;
+const SET=25;
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -203,7 +203,7 @@ function paint(t){
   const red=$("#redV").checked&&mode!=="ls";
   return red?esc(t).replace(/[aeiou]/gi,m=>`<span class="v">${m}</span>`):esc(t);
 }
-let set=[],idx=0,cur,log=[],endAt=0,tick=null,running=false,base=null,doneEarly=false;
+let set=[],idx=0,cur,log=[],endAt=0,tick=null,running=false,base=null,doneEarly=false,practice=false;
 const score=()=>log.filter(x=>x.ok).reduce((s,x)=>s+x.n,0);
 function show(){
   cur=set[idx];const el=$("#item");el.className="item"+(mode==="sen"?" sent":"");el.innerHTML=paint(cur.t);
@@ -230,21 +230,38 @@ document.addEventListener("keydown",e=>{
   else if(e.key==="x"||e.key==="X"||e.key==="ArrowLeft"){e.preventDefault();mark(false)}
   else if(e.key==="Backspace"){e.preventDefault();undo()}
 });
-function start(){
+function start(p){
+  practice=!!p;$(".bar").hidden=practice;$("#stop").textContent=practice?"Finish practice":"Stop";
   log=[];idx=0;doneEarly=false;running=true;base=baseline();set=buildSet();
   $("#setup").hidden=true;$("#results").hidden=true;$("#drill").hidden=false;
   show();tallyTxt();$("#bOk").focus();
-  endAt=Date.now()+60000;
-  clearInterval(tick);tick=setInterval(upd,200);upd();
+  clearInterval(tick);
+  if(practice){$("#clock").textContent="Practice · no timer";return}
+  endAt=Date.now()+60000;tick=setInterval(upd,200);upd();
 }
 function upd(){const left=Math.max(0,endAt-Date.now()),s=Math.ceil(left/1000);
   $("#clock").textContent=s>=60?"1:00":`0:${String(s).padStart(2,"0")}`;$("#barFill").style.width=(left/600)+"%";if(left<=0)finish()}
-$("#start").onclick=start;$("#again").onclick=start;
-$("#stop").onclick=()=>{running=false;clearInterval(tick);$("#drill").hidden=true;$("#setup").hidden=false;sync()};
+$("#start").onclick=()=>start(false);$("#practice").onclick=()=>start(true);$("#again").onclick=()=>start(practice);
+$("#stop").onclick=()=>{if(practice&&running){finish();return}running=false;clearInterval(tick);$("#drill").hidden=true;$("#setup").hidden=false;sync()};
 $("#back").onclick=()=>{$("#results").hidden=true;$("#setup").hidden=false;sync()};
 
 function finish(){
   if(!running)return;running=false;clearInterval(tick);
+  if(practice){
+    const pc=score(),pt=log.reduce((s,x)=>s+x.n,0),acc=pt?Math.round(pc/pt*100):0,pb=baseline(),u=UNIT[mode];
+    const ok=log.filter(x=>x.ok).length;
+    $("#drill").hidden=true;$("#results").hidden=false;
+    const pn=$("#student").value.trim();$("#rTitle").textContent=`${pn?pn+" · ":""}${NAME[mode]} · Practice`;
+    $("#stats").innerHTML=
+      `<div class="stat"><b>${ok}<small style="font-size:1rem;color:var(--muted)">/${SET}</small></b><span>${ITEM[mode]}s right (${log.length} read)</span></div>`+
+      `<div class="stat"><b>${acc}%</b><span>Accuracy (${pc}/${pt} ${u})</span></div>`+
+      `<div class="stat"><b>${pb===null?"—":pb}</b><span>Baseline</span></div>`+
+      `<div class="stat"><b style="font-size:1.2rem">Practice</b><span>Not saved to history</span></div>`;
+    const pm=[...new Set(log.filter(x=>!x.ok).map(x=>x.t))];
+    $("#miss").innerHTML=pm.map(m=>`<span>${esc(m)}</span>`).join("");$("#missWrap").hidden=!pm.length;
+    $("#baseNote").textContent="Practice round: no timer, and it doesn't change the baseline or history. Press Start 1 minute for a scored round.";
+    return;
+  }
   const secsLeft=Math.max(0,Math.round((endAt-Date.now())/1000));
   const c=score(),t=log.reduce((s,x)=>s+x.n,0);
   const acc=t?Math.round(c/t*100):0;
