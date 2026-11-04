@@ -116,7 +116,7 @@ select:disabled{opacity:.55}
     <div class="row">
       <div>
         <label class="label" for="name">Student name</label>
-        <input class="name" id="name" autocomplete="off" placeholder="Optional" maxlength="30">
+        <input class="name" id="name" autocomplete="off" placeholder="First and last name" maxlength="30">
       </div>
       <div>
         <label class="label" for="focus">Fact focus</label>
@@ -170,6 +170,7 @@ select:disabled{opacity:.55}
       <span class="label" id="missLabel">Facts to practice</span>
       <div class="misses" id="misses"></div>
     </div>
+    <p class="note" id="sent" hidden></p>
     <div class="actions">
       <button class="btn" id="again">Go again</button>
       <button class="btn ghost" id="change">Change settings</button>
@@ -180,6 +181,23 @@ select:disabled{opacity:.55}
 <script>
 const $=id=>document.getElementById(id);
 const PRACTICE_COUNT=20;
+// Teacher's Google Sheet web app URL (see teacher-setup.md). Leave "" to keep scores on this device only.
+const SHEET_URL="";
+const QKEY="sendQueue";
+function readQ(){try{return JSON.parse(localStorage.getItem(QKEY)||"[]")}catch(e){return[]}}
+function writeQ(q){try{localStorage.setItem(QKEY,JSON.stringify(q.slice(-200)))}catch(e){}}
+async function postRow(row){
+  await fetch(SHEET_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(row)});
+}
+async function sendResult(row){
+  if(!SHEET_URL)return;
+  const s=$("sent"); s.hidden=false; s.textContent="Sending your score to your teacher…";
+  const q=readQ(); q.push(row); writeQ(q);
+  const left_=[];
+  for(const r of q){try{await postRow(r)}catch(e){left_.push(r)}}
+  writeQ(left_);
+  s.textContent=left_.includes(row)?"Couldn't reach your teacher's sheet. Your score is saved here and will send next time you finish.":"Score sent to your teacher.";
+}
 let mode="sprint", op="x", t=null, left=60, total=60, score=0, tries=0, cur=null, missed=[], tryLeft=2, done=0, firstTry=0, locked=false;
 const opName={"+":"addition","-":"subtraction","x":"multiplication","/":"division","mix":"mixed"};
 const r=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
@@ -251,6 +269,11 @@ function advance(wait){
   if(wait)go(); else{locked=true;setTimeout(()=>{locked=false;fb("");go();},500);}
 }
 function start(){
+  if(SHEET_URL&&!$("name").value.trim()){
+    $("results").hidden=true;$("setup").hidden=false;
+    $("note").textContent="Type your name first so your teacher can see your score.";
+    $("name").focus();return;
+  }
   score=0;tries=0;missed=[];cur=null;done=0;firstTry=0;locked=false;
   const isP=mode==="practice";
   $("score").textContent=0; fb("");
@@ -300,6 +323,15 @@ function finish(){
   $("compare").innerHTML=cmp;
   $("again").textContent=mode==="baseline"?"Retake baseline":"Go again";
   $("again").focus();
+  const missedText=(mode==="practice"?missed.map(m=>`${m.t} = ${m.ans}${m.second?" (2nd try)":""}`):[...new Set(missed)].map(m=>m.replace(/<\/?b>/g,""))).join("; ");
+  sendResult({
+    time:new Date().toISOString(), student:name||"(no name)",
+    mode:mode[0].toUpperCase()+mode.slice(1), operation:opName[op],
+    focus:mode==="baseline"?"all":$("focus").value,
+    seconds:mode==="practice"?"":(mode==="baseline"?60:+$("len").value),
+    correct:score, tried:mode==="practice"?PRACTICE_COUNT:tries,
+    firstTry:mode==="practice"?firstTry:"", missed:missedText
+  });
 }
 $("pad").onclick=e=>{const k=e.target.closest(".key");if(!k)return;const a=$("answer");
   if(k.dataset.k==="del")a.value=a.value.slice(0,-1);else if(k.dataset.k==="go")submit();else if(a.value.length<4)a.value+=k.textContent;};
