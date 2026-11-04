@@ -178,11 +178,28 @@ select:disabled{opacity:.55}
   </section>
 </div>
 
+<script src="config.js"></script>
 <script>
 const $=id=>document.getElementById(id);
 const PRACTICE_COUNT=20;
-// Teacher's Google Sheet web app URL (see teacher-setup.md). Leave "" to keep scores on this device only.
-const SHEET_URL="";
+// Teacher's Google Sheet web app URL lives in config.js. Empty means scores stay on this device only.
+const SHEET_URL=(window.SPRINT_SHEET_URL||"").trim();
+let startedAt=0, pinger=null, running=false, recent=[];
+function livePayload(status){
+  return {type:"live", student:$("name").value.trim(), mode:mode[0].toUpperCase()+mode.slice(1),
+    operation:opName[op], focus:mode==="baseline"?"all":$("focus").value, status,
+    correct:score, tried:mode==="practice"?done:tries, timeLeft:mode==="practice"?"":left,
+    total:mode==="practice"?"":total, done:mode==="practice"?done:"", count:mode==="practice"?PRACTICE_COUNT:"",
+    elapsed:Math.round((Date.now()-startedAt)/1000), current:cur?cur.t:"", recent:recent.slice(-4).join(" | ")};
+}
+function sendLive(status){
+  if(!SHEET_URL||!$("name").value.trim())return;
+  postRow(livePayload(status)).catch(()=>{});
+}
+addEventListener("pagehide",()=>{
+  if(!running||!SHEET_URL||!$("name").value.trim())return;
+  try{navigator.sendBeacon(SHEET_URL,new Blob([JSON.stringify(livePayload("stopped"))],{type:"text/plain"}))}catch(e){}
+});
 const QKEY="sendQueue";
 function readQ(){try{return JSON.parse(localStorage.getItem(QKEY)||"[]")}catch(e){return[]}}
 function writeQ(q){try{localStorage.setItem(QKEY,JSON.stringify(q.slice(-200)))}catch(e){}}
@@ -233,6 +250,7 @@ function make(){
   let d=f==="all"?r(1,12):+f, q=r(0,12); if(!d)d=1;
   return{t:`${d*q} ÷ ${d}`,ans:q};
 }
+function fmtTime(sec){const m=Math.floor(sec/60),x=sec%60;return m?`${m} min ${x} sec`:`${x} sec`;}
 function drawTries(){[...$("tries").children].forEach((d,i)=>d.classList.toggle("used",i>=tryLeft));}
 function next(){
   let n;do{n=make()}while(cur&&n.t===cur.t);cur=n;tryLeft=2;drawTries();
@@ -243,6 +261,7 @@ function fb(txt,cls){$("feedback").textContent=txt;$("feedback").className="feed
 function submit(){
   const v=$("answer").value.trim(); if(v===""||locked)return;
   const ok=+v===cur.ans;
+  recent.push(`${cur.t} = ${v} ${ok?"✓":"✗"}`); if(recent.length>8)recent.shift();
   if(mode!=="practice"){
     if(left<=0)return; tries++;
     if(ok)score++; else missed.push(`${cur.t} = <b>${cur.ans}</b>`);
@@ -274,7 +293,7 @@ function start(){
     $("note").textContent="Type your name first so your teacher can see your score.";
     $("name").focus();return;
   }
-  score=0;tries=0;missed=[];cur=null;done=0;firstTry=0;locked=false;
+  score=0;tries=0;missed=[];cur=null;recent=[];done=0;firstTry=0;locked=false;
   const isP=mode==="practice";
   $("score").textContent=0; fb("");
   $("setup").hidden=true;$("results").hidden=true;$("run").hidden=false;
@@ -291,16 +310,20 @@ function start(){
       if(left<=0)finish();},1000);
   }
   next(); $("answer").focus();
+  startedAt=Date.now(); running=true;
+  clearInterval(pinger); sendLive("working"); pinger=setInterval(()=>sendLive("working"),5000);
 }
 function finish(){
-  clearInterval(t); left=0; $("run").hidden=true; $("results").hidden=false;
+  if(!running)return; running=false;
+  clearInterval(t); clearInterval(pinger); left=0;
+  const elapsed=Math.round((Date.now()-startedAt)/1000); $("run").hidden=true; $("results").hidden=false;
   const name=$("name").value.trim(), opn=opName[op];
   $("final").textContent=score;
   let cmp="";
   if(mode==="practice"){
     $("resultKicker").textContent=`Practice · ${opn}`+(name?` · ${name}`:"");
-    $("finalText").textContent=`correct out of ${PRACTICE_COUNT}`;
-    cmp=`${firstTry} on the first try`;
+    $("finalText").textContent=`correct out of ${done} facts`;
+    cmp=`${firstTry} on the first try · ${fmtTime(elapsed)}`;
     $("missLabel").textContent="Facts to keep practicing";
     $("misses").innerHTML=missed.length?missed.map(m=>m.second?`<span class="second">${m.t} = <b>${m.ans}</b> · 2nd try</span>`:`<span>${m.t} = <b>${m.ans}</b></span>`).join(""):"<span class='ok'>Every fact on the first try. Nice work!</span>";
   }else{
@@ -329,8 +352,8 @@ function finish(){
     mode:mode[0].toUpperCase()+mode.slice(1), operation:opName[op],
     focus:mode==="baseline"?"all":$("focus").value,
     seconds:mode==="practice"?"":(mode==="baseline"?60:+$("len").value),
-    correct:score, tried:mode==="practice"?PRACTICE_COUNT:tries,
-    firstTry:mode==="practice"?firstTry:"", missed:missedText
+    correct:score, tried:mode==="practice"?done:tries,
+    firstTry:mode==="practice"?firstTry:"", elapsed, missed:missedText
   });
 }
 $("pad").onclick=e=>{const k=e.target.closest(".key");if(!k)return;const a=$("answer");

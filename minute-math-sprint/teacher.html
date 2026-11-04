@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sprint Teacher View</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Lexend:wght@400;500;700&display=swap">
+<style>
+/* Layout: live board of student cards on top, class record table below; rows expand into each student's history */
+:root{
+  --bg:#eef3f6; --surface:#ffffff; --surface2:#f5f8fa; --ink:#14232d; --muted:#5a6b76; --line:#d3dee5;
+  --lane:#1f6f8b; --lane-ink:#ffffff; --pop:#ffcc33; --good:#1d8a4e; --good-bg:#e2f4e9; --bad:#c2410c; --bad-bg:#fdebe0; --warn:#8a6100; --warn-bg:#fdf3d4;
+  --display:"Bricolage Grotesque","Arial Black",system-ui,sans-serif;
+  --body:"Lexend","Segoe UI",system-ui,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e171d; --surface:#16232b; --surface2:#1b2a33; --ink:#e7eff3; --muted:#9db0bb; --line:#2a3a44;
+  --lane:#3aa6c9; --lane-ink:#06141a; --pop:#ffd75e; --good:#4cc887; --good-bg:#14301f; --bad:#ff8a57; --bad-bg:#3a2016; --warn:#f2c14e; --warn-bg:#352a10; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e171d; --surface:#16232b; --surface2:#1b2a33; --ink:#e7eff3; --muted:#9db0bb; --line:#2a3a44;
+  --lane:#3aa6c9; --lane-ink:#06141a; --pop:#ffd75e; --good:#4cc887; --good-bg:#14301f; --bad:#ff8a57; --bad-bg:#3a2016; --warn:#f2c14e; --warn-bg:#352a10; color-scheme:dark}
+*{box-sizing:border-box}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 48px}
+[hidden]{display:none!important}
+.wrap{max-width:1120px;margin:0 auto;display:grid;gap:24px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(26px,4vw,36px);margin:0;letter-spacing:-.01em}
+h1 span{background:var(--pop);color:#14232d;padding:0 .2em;border-radius:6px}
+h2{font-family:var(--display);font-weight:800;font-size:22px;margin:0}
+.headtools{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:6px 12px;font-size:13px;font-weight:500;background:var(--surface);border:1px solid var(--line)}
+.pill i{width:9px;height:9px;border-radius:50%;background:var(--muted)}
+.pill.on i{background:var(--good);box-shadow:0 0 0 3px var(--good-bg)}
+.pill.err i{background:var(--bad)}
+.pill.demo i{background:var(--warn)}
+.btn{font:inherit;font-weight:500;border-radius:10px;padding:8px 14px;cursor:pointer;border:2px solid var(--line);background:var(--surface);color:var(--ink);min-height:40px}
+.btn.primary{background:var(--lane);border-color:var(--lane);color:var(--lane-ink)}
+.btn:focus-visible,input:focus-visible,select:focus-visible,tr.row:focus-visible{outline:3px solid var(--pop);outline-offset:2px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:16px;min-width:0}
+.panelhead{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.muted{color:var(--muted)}
+.banner{background:var(--warn-bg);color:var(--ink);border-radius:12px;padding:14px 16px;line-height:1.5}
+.banner b{color:var(--warn)}
+.banner.err{background:var(--bad-bg)} .banner.err b{color:var(--bad)}
+.codeform{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+input,select{font:inherit;padding:8px 10px;border-radius:10px;border:2px solid var(--line);background:var(--surface);color:var(--ink);min-height:40px}
+/* live board */
+.board{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.card{border:2px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;gap:8px;background:var(--surface2)}
+.card.working{border-color:var(--lane)}
+.card .top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.card .name{font-weight:700;font-size:16px;overflow-wrap:anywhere}
+.chip{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;border-radius:999px;padding:3px 8px;white-space:nowrap}
+.chip.working{background:var(--lane);color:var(--lane-ink)}
+.chip.finished{background:var(--good-bg);color:var(--good)}
+.chip.quiet,.chip.stopped{background:var(--warn-bg);color:var(--warn)}
+.card .what{font-size:13px;color:var(--muted)}
+.card .nums{display:flex;align-items:baseline;gap:6px;font-variant-numeric:tabular-nums}
+.card .nums b{font-family:var(--display);font-size:34px;line-height:1;color:var(--good)}
+.card .nums span{color:var(--muted);font-size:14px}
+.bar{height:8px;border-radius:999px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--lane);transition:width .6s}
+.card .foot{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.recent{display:flex;flex-wrap:wrap;gap:4px;font-size:12px;font-variant-numeric:tabular-nums}
+.recent span{border-radius:6px;padding:2px 6px;background:var(--good-bg);color:var(--good)}
+.recent span.no{background:var(--bad-bg);color:var(--bad)}
+.now{font-family:var(--display);font-weight:800;font-size:22px;font-variant-numeric:tabular-nums}
+.now small{font-family:var(--body);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-right:6px}
+.empty{color:var(--muted);border:2px dashed var(--line);border-radius:12px;padding:18px;text-align:center}
+/* record */
+.filters{display:flex;gap:10px;flex-wrap:wrap}
+.tablewrap{overflow-x:auto;min-width:0}
+table{border-collapse:collapse;width:100%;min-width:760px;font-variant-numeric:tabular-nums}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:500;text-align:left;padding:8px 10px;border-bottom:2px solid var(--line);white-space:nowrap}
+td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top}
+tr.row{cursor:pointer}
+tr.row:hover td{background:var(--surface2)}
+tr.row td:first-child{font-weight:700}
+.sub{display:block;font-size:12px;color:var(--muted);font-weight:400}
+.growth{font-weight:700;border-radius:8px;padding:2px 8px;display:inline-block}
+.growth.up{background:var(--good-bg);color:var(--good)}
+.growth.down{background:var(--bad-bg);color:var(--bad)}
+.growth.same{background:var(--surface2);color:var(--muted)}
+.caret{display:inline-block;transition:transform .2s;color:var(--muted);margin-right:6px}
+tr.row[aria-expanded="true"] .caret{transform:rotate(90deg)}
+tr.detail td{background:var(--surface2);padding:16px}
+.detailgrid{display:grid;grid-template-columns:minmax(0,320px) minmax(0,1fr);gap:20px}
+@media (max-width:760px){.detailgrid{grid-template-columns:1fr}}
+.spark{width:100%;height:auto;display:block}
+.spark text{fill:var(--muted);font-size:10px;font-family:var(--body)}
+.hist{width:100%;min-width:0;border-collapse:collapse;font-size:13px}
+.hist td,.hist th{padding:6px 8px}
+.hist td{white-space:nowrap}
+.hist td.missed{white-space:normal;color:var(--muted);max-width:280px}
+.mode{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.mode.Baseline{color:var(--warn)} .mode.Sprint{color:var(--lane)} .mode.Practice{color:var(--good)}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+.legend i{display:inline-block;width:14px;height:3px;background:var(--lane);vertical-align:middle;margin-right:5px}
+.legend i.base{background:none;border-top:2px dashed var(--warn);height:0}
+@media (prefers-reduced-motion:reduce){.bar i,.caret{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Sprint <span>Teacher View</span></h1>
+    <div class="headtools">
+      <span class="pill" id="status"><i></i><span id="statusText">Connecting…</span></span>
+      <button class="btn" id="changeCode" hidden>Change teacher code</button>
+    </div>
+  </header>
+
+  <div class="banner" id="demoBanner" hidden>
+    <b>Example data.</b> This page isn't connected to your Google Sheet yet, so these students are made up.
+    Once the Sheet's web app link is added to the site, your class shows up here.
+  </div>
+
+  <section class="panel" id="codePanel" hidden>
+    <h2>Enter your teacher code</h2>
+    <p class="muted" id="codeMsg" style="margin:0">This is the TEACHER_CODE you set in the Google Sheet's Apps Script. It stays on this computer.</p>
+    <form class="codeform" id="codeForm">
+      <label for="code" class="muted">Teacher code</label>
+      <input id="code" type="password" autocomplete="off" required>
+      <button class="btn primary" type="submit">Open class view</button>
+    </form>
+  </section>
+
+  <section class="panel" id="livePanel">
+    <div class="panelhead">
+      <h2>Working now</h2>
+      <div class="headtools">
+        <span class="muted" id="liveCount"></span>
+        <button class="btn" id="clearBoard">Clear board</button>
+      </div>
+    </div>
+    <div class="board" id="board"></div>
+  </section>
+
+  <section class="panel" id="recordPanel">
+    <div class="panelhead">
+      <h2>Class record</h2>
+      <div class="filters">
+        <label class="muted" for="opFilter" hidden>Operation</label>
+        <select id="opFilter" aria-label="Operation">
+          <option value="">All operations</option>
+          <option value="addition">Addition</option>
+          <option value="subtraction">Subtraction</option>
+          <option value="multiplication">Multiplication</option>
+          <option value="division">Division</option>
+          <option value="mixed">Mixed</option>
+        </select>
+        <input id="search" type="search" placeholder="Find a student" aria-label="Find a student">
+      </div>
+    </div>
+    <p class="muted" style="margin:0">Click a student to see every baseline, sprint, and practice with dates and times.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr>
+          <th>Student</th><th>Operation</th><th>Baseline</th><th>Latest sprint</th><th>Best sprint</th>
+          <th>Growth</th><th>Last practice</th><th>Last active</th>
+        </tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<script src="config.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const URL_=(window.SPRINT_SHEET_URL||"").trim();
+const QUIET_MS=20000, SHOW_FINISHED_MS=45*60000;
+let code="", results=[], live=[], serverNow=Date.now(), demo=!URL_, open=new Set(), lastFinished=0;
+try{code=localStorage.getItem("teacherCode")||""}catch(e){}
+
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const keyOf=n=>String(n||"").trim().toLowerCase();
+const cap=s=>s?s[0].toUpperCase()+s.slice(1):"";
+function fmtWhen(iso){const d=new Date(iso);if(isNaN(d))return"";const today=new Date();
+  const same=d.toDateString()===today.toDateString();
+  const t=d.toLocaleTimeString([], {hour:"numeric",minute:"2-digit"});
+  return same?`Today ${t}`:d.toLocaleDateString([], {month:"short",day:"numeric"})+` ${t}`;}
+function fmtDur(sec){sec=Number(sec);if(!sec&&sec!==0||sec==="")return"";const m=Math.floor(sec/60),s=Math.round(sec%60);return m?`${m}:${String(s).padStart(2,"0")}`:`${s}s`;}
+function ago(ms){const s=Math.max(0,Math.round(ms/1000));if(s<60)return`${s}s ago`;const m=Math.round(s/60);return m<60?`${m} min ago`:`${Math.round(m/60)} hr ago`;}
+
+function setStatus(kind,text){$("status").className="pill "+kind;$("statusText").textContent=text;}
+
+async function call(action){
+  const r=await fetch(`${URL_}?action=${action}&key=${encodeURIComponent(code)}`);
+  const j=await r.json(); if(j.error)throw Object.assign(new Error(j.message),{kind:j.error}); return j;
+}
+function needCode(msg){
+  $("codePanel").hidden=false; $("livePanel").hidden=true; $("recordPanel").hidden=true; $("changeCode").hidden=true;
+  if(msg)$("codeMsg").textContent=msg; setStatus("err","Not connected"); $("code").focus();
+}
+$("codeForm").addEventListener("submit",e=>{e.preventDefault();code=$("code").value.trim();
+  try{localStorage.setItem("teacherCode",code)}catch(_){}; $("codePanel").hidden=true; $("livePanel").hidden=false; $("recordPanel").hidden=false; startPolling();});
+$("changeCode").onclick=()=>{try{localStorage.removeItem("teacherCode")}catch(e){};code="";stopPolling();needCode("Type the new teacher code.");};
+
+let liveTimer=null, resTimer=null, tick=null;
+function stopPolling(){clearInterval(liveTimer);clearInterval(resTimer);}
+async function pollLive(){
+  try{const j=await call("live"); serverNow=j.now; live=j.live||[];
+    const fin=Math.max(0,...live.filter(x=>x.status==="finished").map(x=>x.at));
+    if(fin>lastFinished){lastFinished=fin; pollResults();}
+    setStatus("on","Live"); drawBoard();
+  }catch(e){ if(e.kind==="code"||e.kind==="setup"){stopPolling();needCode(e.message);} else setStatus("err","Can't reach the Sheet. Retrying…"); }
+}
+async function pollResults(){
+  try{const j=await call("results"); results=j.results||[]; drawRecord();}catch(e){}
+}
+function startPolling(){
+  if(!code)return needCode();
+  $("changeCode").hidden=false; setStatus("","Connecting…");
+  stopPolling(); pollLive(); pollResults();
+  liveTimer=setInterval(pollLive,4000); resTimer=setInterval(pollResults,30000);
+}
+
+/* ---------- live board ---------- */
+function liveState(x){
+  const age=serverNow-x.at;
+  if(x.status==="finished")return"finished";
+  if(x.status==="stopped")return"stopped";
+  return age>QUIET_MS?"quiet":"working";
+}
+function drawBoard(){
+  const now=serverNow;
+  const shown=live.filter(x=>{const st=liveState(x);return st==="finished"?now-x.at<SHOW_FINISHED_MS:now-x.at<2*3600e3;});
+  const order={working:0,quiet:1,stopped:2,finished:3};
+  shown.sort((a,b)=>order[liveState(a)]-order[liveState(b)]||(liveState(a)==="finished"?b.at-a.at:String(a.student).localeCompare(b.student)));
+  const working=shown.filter(x=>liveState(x)==="working").length;
+  $("liveCount").textContent=`${working} working · ${shown.length-working} other`;
+  if(!shown.length){$("board").innerHTML=`<div class="empty" style="grid-column:1/-1">No one is working right now. Cards appear here as soon as a student starts a baseline, practice, or sprint.</div>`;return;}
+  const label={working:"Working",quiet:"No signal",stopped:"Left page",finished:"Finished"};
+  $("board").innerHTML=shown.map(x=>{
+    const st=liveState(x), isP=x.mode==="Practice";
+    const pct=isP?(x.count?x.done/x.count:0):(x.total?(x.total-x.timeLeft)/x.total:0);
+    const acc=x.tried?Math.round(100*x.correct/x.tried):null;
+    const prog=st==="finished"?`Done in ${fmtDur(x.elapsed)}`:isP?`Fact ${Math.min(x.done+1,x.count)} of ${x.count}`:`${x.timeLeft}s left of ${x.total}s`;
+    return `<article class="card ${st}">
+      <div class="top"><span class="name">${esc(x.student)}</span><span class="chip ${st}">${label[st]}</span></div>
+      <div class="what">${esc(x.mode)} · ${esc(x.operation)}${x.focus&&x.focus!=="all"?` · ${esc(x.focus)}s`:""}</div>
+      <div class="nums"><b>${x.correct}</b><span>correct of ${x.tried} ${isP?"facts":"tried"}${acc!==null?` · ${acc}%`:""}</span></div>
+      ${st==="working"&&x.current?`<div class="now"><small>On screen</small>${esc(x.current)} = ?</div>`:""}
+      ${x.recent?`<div class="recent" aria-label="Last answers">${String(x.recent).split(" | ").reverse().map(a=>`<span class="${a.endsWith("✗")?"no":""}">${esc(a)}</span>`).join("")}</div>`:""}
+      <div class="bar" aria-hidden="true"><i style="width:${Math.min(100,Math.round(pct*100))}%"></i></div>
+      <div class="foot"><span>${prog}</span><span>${ago(now-x.at)}</span></div>
+    </article>`;}).join("");
+}
+$("clearBoard").onclick=async()=>{
+  if(demo){live=[];drawBoard();return;}
+  try{await call("clearLive");live=[];drawBoard();}catch(e){setStatus("err","Couldn't clear the board");}
+};
+
+/* ---------- class record ---------- */
+function groups(){
+  const m=new Map();
+  for(const r of results){
+    const k=keyOf(r.student)+"|"+r.operation;
+    if(!m.has(k))m.set(k,{name:String(r.student).trim(),op:r.operation,rows:[]});
+    m.get(k).rows.push(r);
+  }
+  const out=[];
+  for(const [k,g] of m){
+    g.key=k; g.rows.sort((a,b)=>new Date(a.time)-new Date(b.time));
+    g.name=g.rows[g.rows.length-1].student;
+    const base=g.rows.filter(r=>r.mode==="Baseline"), spr=g.rows.filter(r=>r.mode==="Sprint"), pr=g.rows.filter(r=>r.mode==="Practice");
+    g.baseline=base[base.length-1]||null; g.firstBaseline=base[0]||null;
+    g.latest=spr[spr.length-1]||null; g.sprints=spr;
+    g.best=spr.reduce((b,r)=>!b||+r.correct>+b.correct?r:b,null);
+    g.practice=pr[pr.length-1]||null;
+    g.last=g.rows[g.rows.length-1].time;
+    out.push(g);
+  }
+  return out;
+}
+function growthCell(g){
+  if(!g.baseline||!g.latest)return'<span class="muted">—</span>';
+  const d=+g.latest.correct-+g.baseline.correct;
+  const cls=d>0?"up":d<0?"down":"same";
+  return `<span class="growth ${cls}">${d>0?"+":""}${d}</span>`;
+}
+function spark(g){
+  const pts=g.sprints.map(r=>+r.correct), base=g.baseline?+g.baseline.correct:null;
+  if(!pts.length&&base===null)return'<p class="muted">No sprints or baseline yet.</p>';
+  const W=300,H=110,pl=26,pr=10,pt=10,pb=22;
+  const max=Math.max(5,...pts,base??0); const top=Math.ceil(max/5)*5;
+  const x=i=>pts.length<2?pl+(W-pl-pr)/2:pl+i*(W-pl-pr)/(pts.length-1);
+  const y=v=>pt+(H-pt-pb)*(1-v/top);
+  let s=`<svg class="spark" viewBox="0 0 ${W} ${H}" role="img" aria-label="Sprint scores over time">`;
+  for(const v of [0,top/2,top]){s+=`<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" stroke-width="1"/><text x="${pl-6}" y="${y(v)+3}" text-anchor="end">${v}</text>`;}
+  if(base!==null)s+=`<line x1="${pl}" x2="${W-pr}" y1="${y(base)}" y2="${y(base)}" stroke="var(--warn)" stroke-width="2" stroke-dasharray="5 4"/>`;
+  if(pts.length){
+    const d=pts.map((v,i)=>`${i?"L":"M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+    if(pts.length>1)s+=`<path d="${d} L${x(pts.length-1).toFixed(1)},${y(0)} L${x(0).toFixed(1)},${y(0)} Z" fill="var(--lane)" opacity=".12"/>`;
+    s+=`<path d="${d}" fill="none" stroke="var(--lane)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+    const li=pts.length-1; s+=`<circle cx="${x(li)}" cy="${y(pts[li])}" r="4.5" fill="var(--lane)"/>`;
+    s+=`<text x="${pl}" y="${H-6}">1st sprint</text><text x="${W-pr}" y="${H-6}" text-anchor="end">${pts.length>1?"Latest":""}</text>`;
+  }
+  return s+`</svg><div class="legend"><span><i></i>Sprint score</span>${base!==null?`<span><i class="base"></i>Baseline ${base}</span>`:""}</div>`;
+}
+function detail(g){
+  const hist=[...g.rows].reverse().map(r=>{
+    const len=r.mode==="Practice"?`${fmtDur(r.elapsed)} to finish`:`${r.seconds}s${r.elapsed!==""&&r.elapsed!=null&&+r.elapsed<+r.seconds-1?` (stopped at ${fmtDur(r.elapsed)})`:""}`;
+    const score=r.mode==="Practice"?`${r.correct}/${r.tried} · ${r.firstTry} first try`:`${r.correct} of ${r.tried}`;
+    return `<tr><td>${fmtWhen(r.time)}</td><td><span class="mode ${esc(r.mode)}">${esc(r.mode)}</span></td><td>${r.focus==="all"?"0–12":esc(r.focus)+"s"}</td><td>${len}</td><td>${score}</td><td class="missed">${esc(r.missed)||"—"}</td></tr>`;}).join("");
+  const first=g.firstBaseline&&g.baseline&&g.firstBaseline!==g.baseline?`<p class="muted" style="margin:8px 0 0;font-size:13px">First baseline: ${g.firstBaseline.correct} on ${fmtWhen(g.firstBaseline.time)}</p>`:"";
+  return `<div class="detailgrid"><div>${spark(g)}${first}</div>
+    <div class="tablewrap"><table class="hist" style="min-width:560px"><thead><tr><th>When</th><th>Mode</th><th>Facts</th><th>Time</th><th>Score</th><th>Missed</th></tr></thead><tbody>${hist}</tbody></table></div></div>`;
+}
+function drawRecord(){
+  const op=$("opFilter").value, q=$("search").value.trim().toLowerCase();
+  const gs=groups().filter(g=>(!op||g.op===op)&&(!q||g.name.toLowerCase().includes(q)))
+    .sort((a,b)=>a.name.localeCompare(b.name)||a.op.localeCompare(b.op));
+  if(!gs.length){$("rows").innerHTML=`<tr><td colspan="8" class="muted">${results.length?"No students match.":"No finished baselines, practices, or sprints yet."}</td></tr>`;return;}
+  $("rows").innerHTML=gs.map(g=>{
+    const ex=open.has(g.key);
+    const sc=r=>r?`${r.correct}<span class="sub">${fmtWhen(r.time)}${r.focus&&r.focus!=="all"?` · ${esc(r.focus)}s`:""}</span>`:'<span class="muted">—</span>';
+    const pr=g.practice?`${g.practice.correct}/${g.practice.tried}<span class="sub">${g.practice.firstTry} first try · ${fmtDur(g.practice.elapsed)}</span>`:'<span class="muted">—</span>';
+    return `<tr class="row" tabindex="0" data-k="${esc(g.key)}" aria-expanded="${ex}">
+      <td><span class="caret">▸</span>${esc(g.name)}</td><td>${cap(esc(g.op))}</td><td>${sc(g.baseline)}</td><td>${sc(g.latest)}</td>
+      <td>${g.best?g.best.correct+`<span class="sub">${g.sprints.length} sprint${g.sprints.length>1?"s":""}</span>`:'<span class="muted">—</span>'}</td>
+      <td>${growthCell(g)}</td><td>${pr}</td><td>${fmtWhen(g.last)}</td></tr>`+
+      (ex?`<tr class="detail"><td colspan="8">${detail(g)}</td></tr>`:"");}).join("");
+}
+function toggle(el){const k=el.dataset.k;open.has(k)?open.delete(k):open.add(k);drawRecord();}
+$("rows").addEventListener("click",e=>{const tr=e.target.closest("tr.row");if(tr)toggle(tr);});
+$("rows").addEventListener("keydown",e=>{const tr=e.target.closest("tr.row");if(tr&&(e.key==="Enter"||e.key===" ")){e.preventDefault();toggle(tr);}});
+$("opFilter").onchange=drawRecord; $("search").oninput=drawRecord;
+
+/* ---------- example data when not connected ---------- */
+function loadDemo(){
+  $("demoBanner").hidden=false; setStatus("demo","Example data");
+  const names=["Example Student A","Example Student B","Example Student C","Example Student D","Example Student E"];
+  const day=86400e3, now=Date.now(); results=[];
+  names.forEach((n,i)=>{
+    const b=14+i*4; results.push({time:new Date(now-9*day+i*6e4).toISOString(),student:n,mode:"Baseline",operation:"multiplication",focus:"all",seconds:60,correct:b,tried:b+3,firstTry:"",elapsed:60,missed:"7 × 8 = 56; 6 × 9 = 54"});
+    for(let s=0;s<4;s++)results.push({time:new Date(now-(7-s*2)*day+i*6e4).toISOString(),student:n,mode:"Sprint",operation:"multiplication",focus:"all",seconds:60,correct:b+s*2-(i===3?3:0),tried:b+s*2+2,firstTry:"",elapsed:60,missed:"8 × 7 = 56"});
+    results.push({time:new Date(now-day+i*6e4).toISOString(),student:n,mode:"Practice",operation:"multiplication",focus:"7",seconds:"",correct:18-(i%3),tried:20,firstTry:15-(i%3),elapsed:150+i*20,missed:"7 × 8 = 56 (2nd try)"});
+  });
+  serverNow=now;
+  live=[
+    {student:names[0],mode:"Sprint",operation:"multiplication",focus:"all",status:"working",correct:17,tried:19,timeLeft:22,total:60,elapsed:38,current:"6 × 7",recent:"9 × 3 = 27 ✓ | 4 × 8 = 32 ✓ | 7 × 6 = 48 ✗ | 7 × 6 = 42 ✓",at:now-2000},
+    {student:names[1],mode:"Practice",operation:"multiplication",focus:"8",status:"working",correct:11,tried:12,done:12,count:20,elapsed:95,current:"8 × 6",recent:"8 × 9 = 72 ✓ | 8 × 7 = 54 ✗ | 8 × 7 = 56 ✓",at:now-3000},
+    {student:names[2],mode:"Baseline",operation:"division",focus:"all",status:"working",correct:5,tried:8,timeLeft:41,total:60,elapsed:19,current:"54 ÷ 9",recent:"36 ÷ 4 = 9 ✓ | 42 ÷ 7 = 7 ✗ | 18 ÷ 3 = 6 ✓",at:now-1000},
+    {student:names[3],mode:"Sprint",operation:"multiplication",focus:"all",status:"quiet",correct:9,tried:12,timeLeft:30,total:60,elapsed:30,current:"9 × 4",at:now-40000},
+    {student:names[4],mode:"Sprint",operation:"multiplication",focus:"all",status:"finished",correct:26,tried:28,timeLeft:0,total:60,elapsed:60,at:now-120000}
+  ];
+  open.add(keyOf(names[0])+"|multiplication");
+  drawBoard(); drawRecord();
+}
+
+if(demo) loadDemo(); else if(code) startPolling(); else needCode();
+setInterval(()=>{ if(!demo){serverNow+=1000;} drawBoardSoft(); },1000);
+function drawBoardSoft(){ if(!$("livePanel").hidden && !demo) drawBoard(); }
+</script>
+</body>
+</html>
