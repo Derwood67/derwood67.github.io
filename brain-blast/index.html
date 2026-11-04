@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Brain Blast Live</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* Layout: a TV studio stage — host desk on top, four-column board below, question card slides over the board */
+:root{
+  --stage:#141436; --stage-2:#1d1d4d; --ink:#f6f3ff; --dim:#b9b5dc; --line:#34346e;
+  --gold:#ffc83d; --ela:#ff6b5e; --sci:#2fd3b8; --math:#ffc83d; --ss:#a98bff; --voc:#ff8fc7; --gram:#5cb8ff;
+  --good:#3ee089; --bad:#ff5f6d;
+  --display:"Bungee","Arial Black",Impact,sans-serif;
+  --body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--stage);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45;
+  background-image:radial-gradient(ellipse at 50% -10%,#2c2c7a 0,transparent 60%);min-height:100vh;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+.wrap{max-width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+button{font:inherit;cursor:pointer;color:inherit}
+button:focus-visible,input:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+
+/* marquee */
+.marquee{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.logo{font-family:var(--display);font-size:clamp(28px,6vw,46px);line-height:1;letter-spacing:.02em;margin:0;
+  color:var(--gold);text-shadow:0 3px 0 #b5761a,0 0 24px rgba(255,200,61,.35)}
+.logo small{display:block;font-size:.34em;color:var(--dim);text-shadow:none;letter-spacing:.14em;margin-top:6px}
+.controls{display:flex;gap:8px;flex-wrap:wrap}
+.pill{border:2px solid var(--line);background:var(--stage-2);border-radius:999px;padding:6px 14px;font-weight:700;font-size:14px}
+.pill[aria-pressed="true"]{background:var(--gold);color:#1a1440;border-color:var(--gold)}
+
+/* host desk */
+.host{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center}
+.portrait{width:clamp(96px,18vw,150px);aspect-ratio:1;max-width:100%;border-radius:50%;position:relative;
+  padding:5px;background:conic-gradient(var(--ela),var(--gold),var(--sci),var(--ss),var(--ela))}
+.portrait img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;border:4px solid var(--stage)}
+.portrait .tag{position:absolute;left:50%;bottom:-10px;transform:translateX(-50%);white-space:nowrap;
+  background:var(--gold);color:#1a1440;font-family:var(--display);font-size:12px;padding:3px 10px;border-radius:6px}
+.bubble{position:relative;background:var(--ink);color:#1a1440;border-radius:18px;padding:16px 20px;min-width:0;
+  font-size:clamp(16px,2.4vw,20px);font-weight:700}
+.bubble::before{content:"";position:absolute;left:-12px;top:50%;transform:translateY(-50%);
+  border:12px solid transparent;border-right-color:var(--ink);border-left:0}
+.bubble.pop{animation:pop .35s ease}
+@keyframes pop{0%{transform:scale(.96)}60%{transform:scale(1.02)}100%{transform:scale(1)}}
+
+/* teams */
+.teams{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.team{background:var(--stage-2);border:2px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:4px}
+.team.turn{border-color:var(--gold);box-shadow:0 0 0 3px rgba(255,200,61,.25)}
+.team input{background:transparent;border:0;color:var(--ink);font:700 15px var(--body);width:100%;padding:0}
+.team .score{font-family:var(--display);font-size:28px;font-variant-numeric:tabular-nums;color:var(--gold)}
+select.pill{max-width:230px;color:var(--ink);appearance:auto}
+.team .top{display:flex;justify-content:space-between;align-items:center;gap:6px}
+.team .x{background:transparent;border:0;color:var(--dim);font-size:18px;line-height:1;padding:0 4px}
+.team .x:hover{color:var(--bad)}
+.classcard{grid-column:1/-1;background:var(--stage-2);border:2px solid var(--gold);border-radius:14px;padding:14px 18px;display:grid;grid-template-columns:auto 1fr;gap:6px 18px;align-items:center}
+.classcard .score{font-family:var(--display);font-size:clamp(32px,6vw,48px);color:var(--gold);font-variant-numeric:tabular-nums;line-height:1}
+.classcard .lbl{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.meter{height:16px;margin-top:6px;background:var(--stage);border:2px solid var(--line);border-radius:999px;overflow:hidden;position:relative}
+.meter i{display:block;height:100%;background:linear-gradient(90deg,var(--sci),var(--gold));transition:width .5s}
+.meter b{position:absolute;top:0;bottom:0;width:3px;background:var(--ink)}
+.team .turnlbl{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);min-height:1em}
+.team.turn .turnlbl{color:var(--gold)}
+
+/* board */
+.board{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+.cat{font-family:var(--display);font-size:clamp(9px,1.6vw,15px);word-break:break-word;text-align:center;padding:12px 4px;border-radius:10px;
+  color:#1a1440;display:flex;align-items:center;justify-content:center;min-height:56px;line-height:1.1}
+.tile{font-family:var(--display);font-size:clamp(15px,3.4vw,30px);color:var(--gold);background:linear-gradient(#26266a,#1b1b52);
+  border:2px solid var(--line);border-radius:10px;min-height:clamp(58px,10vw,86px);transition:transform .15s,border-color .15s;
+  text-shadow:0 2px 0 #000a}
+.tile:hover{transform:translateY(-2px);border-color:var(--gold)}
+.tile[disabled]{opacity:.22;cursor:default;transform:none;border-color:var(--line)}
+.c4{background:var(--voc)}.c5{background:var(--gram)}
+.c0{background:var(--ela)}.c1{background:var(--sci)}.c2{background:var(--math)}.c3{background:var(--ss)}
+
+/* question overlay */
+.overlay{position:fixed;inset:0;background:rgba(8,8,28,.86);display:flex;align-items:center;justify-content:center;z-index:20;
+  padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.card{background:var(--stage-2);border:3px solid var(--gold);border-radius:20px;max-width:760px;width:100%;max-height:100%;overflow:auto;
+  padding:clamp(18px,4vw,32px);display:flex;flex-direction:column;gap:18px}
+.card .meta{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-family:var(--display);font-size:14px}
+.card .meta .chip{color:#1a1440;padding:3px 10px;border-radius:6px}
+.card h2{margin:0;font-size:clamp(20px,3.4vw,30px);line-height:1.3;text-wrap:balance}
+.opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (max-width:560px){.opts{grid-template-columns:1fr}.host{grid-template-columns:1fr;justify-items:center}.bubble::before{display:none}}
+.opt{text-align:left;background:var(--stage);border:2px solid var(--line);border-radius:12px;padding:12px 14px;font-size:18px;font-weight:700;display:flex;gap:10px;align-items:baseline}
+.opt b{font-family:var(--display);color:var(--gold);font-weight:400}
+.opt:hover:not([disabled]){border-color:var(--gold)}
+.opt.right{border-color:var(--good);background:#11402c}
+.opt.wrong{border-color:var(--bad);background:#4a1622}
+.opt[disabled]{cursor:default}
+.explain{background:var(--stage);border-radius:12px;padding:12px 16px;font-size:17px}
+.explain strong{font-family:var(--display);font-weight:400}
+.row{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.btn{font-family:var(--display);background:var(--gold);color:#1a1440;border:0;border-radius:10px;padding:10px 18px;font-size:16px}
+.team{border-top:6px solid var(--tc,var(--line))}
+.buzzwrap{display:flex;flex-direction:column;gap:8px}
+.buzzhint{margin:0;font-weight:700;color:var(--gold);min-height:1.4em}
+.buzzers{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}
+.buzz{background:var(--stage);border:3px solid var(--tc);border-radius:14px;padding:12px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;font-weight:700;min-height:72px;transition:transform .1s}
+.buzz kbd{font-family:var(--display);background:var(--tc);color:#1a1440;border-radius:6px;padding:0 8px;font-size:15px}
+.buzz span{overflow-wrap:anywhere;text-align:center}
+.buzz:not([disabled]):hover{transform:scale(1.04)}
+.buzz:not([disabled]):active{transform:scale(.96)}
+.buzz[disabled]{cursor:default;opacity:.55}
+.buzz.lit{opacity:1;background:var(--tc);color:#1a1440;box-shadow:0 0 0 4px var(--ink),0 0 30px var(--tc);animation:pop .35s}
+.buzz.lit kbd{background:#1a1440;color:var(--ink)}
+.buzz.out{opacity:.25;text-decoration:line-through}
+.card h2{font-family:var(--display);font-weight:400;text-transform:uppercase;letter-spacing:.02em;text-align:center;font-size:clamp(20px,3.6vw,34px);line-height:1.35;padding:clamp(12px,3vw,28px) 0}
+.resp{background:var(--stage);border:2px solid var(--good);border-radius:14px;padding:12px 18px;text-align:center;animation:pop .35s}
+.resp p{margin:4px 0 0;font-size:clamp(20px,3vw,28px);font-weight:700}
+.lbl{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.hostbar{border-top:2px dashed var(--line);padding-top:12px;display:flex;flex-direction:column;gap:8px}
+.hostbar .row{justify-content:flex-start}
+.judge.ok{background:var(--good)}.judge.no{background:var(--bad);color:#fff}
+.btn[disabled]{opacity:.35;cursor:default}
+.btn.ghost{background:transparent;color:var(--ink);border:2px solid var(--line)}
+.foot{color:var(--dim);font-size:13px;text-align:center}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="marquee">
+    <h1 class="logo">Brain Blast Live<small>THE CLASSROOM REVIEW SHOW</small></h1>
+    <div class="controls" role="group" aria-label="Game settings">
+      <button class="pill" id="g4" aria-pressed="true">4th Grade</button>
+      <button class="pill" id="g5" aria-pressed="false">5th Grade</button>
+      <button class="pill" id="modeBtn" aria-pressed="true">Mode: Teams</button>
+      <button class="pill" id="addBtn">+ Add team</button>
+      <button class="pill" id="randBtn">Random pick</button>
+      <button class="pill" id="voiceBtn" aria-pressed="true">Voice: On</button>
+      <select class="pill" id="voiceSel" aria-label="Host accent"></select>
+      <button class="pill" id="newGame">New game</button>
+    </div>
+  </header>
+
+  <section class="host" aria-live="polite">
+    <div class="portrait"><img src="data:image/jpeg;base64,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" alt="Your host"><span class="tag" id="hostTag">YOUR HOST</span></div>
+    <div class="bubble" id="bubble"></div>
+  </section>
+
+  <section class="teams" id="teams" aria-label="Contestants"></section>
+  <section class="board" id="board" aria-label="Question board"></section>
+  <p class="foot">Questions aligned to NC Standard Course of Study for ELA, Science, Math, Social Studies, Vocabulary and Grammar. Answer in the form of a question. Only the host turns cards and judges answers. When a clue opens, the first team to buzz answers. Tap a buzzer or press keys 1 to 6. An incorrect answer reopens the buzzers for a steal. Tap the mode button for Whole class play.</p>
+</div>
+
+<div class="overlay" id="overlay" hidden>
+  <div class="card" role="dialog" aria-modal="true" aria-labelledby="qText">
+    <div class="meta"><span class="chip" id="qCat"></span><span id="qMeta"></span></div>
+    <h2 id="qText"></h2>
+    <div class="resp" id="resp" hidden><span class="lbl">Correct response</span><p id="respText"></p></div>
+    <div class="buzzwrap"><p class="buzzhint" id="buzzHint" aria-live="assertive"></p><div class="buzzers" id="buzzers" aria-label="Team buzzers"></div></div>
+    <div class="hostbar" id="hostbar"><span class="lbl">Host controls</span>
+      <div class="row"><button class="btn judge ok" id="rightBtn">✓ Correct</button><button class="btn judge no" id="wrongBtn">✗ Incorrect</button><button class="btn ghost" id="readBtn">🔊 Read clue</button><button class="btn ghost" id="revealBtn">Show answer</button><button class="btn" id="doneBtn" hidden>Back to the board</button></div>
+    </div>
+  </div>
+  </div>
+</div>
+
+<script>
+const HOST="Craig John Nelson";
+const CATS=["ELA","Science","Math","Social Studies","Vocabulary","Grammar"];
+// [clue, correct response, standard]
+const Q={4:[
+ [["\"Her smile was as bright as the sun\" is this kind of comparison using like or as.","What is a simile?","RL.4.4"],
+  ["This prefix in \"rewrite\" and \"replay\" means again.","What is re-?","L.4.4b"],
+  ["A story told by a narrator who uses \"I\" and \"me\" is told from this point of view.","What is first person?","RL.4.6"],
+  ["It's the lesson or message an author wants readers to take away from a story.","What is the theme?","RL.4.2"],
+  ["An article explaining why rainforests shrink and what happens as a result uses this text structure.","What is cause and effect?","RI.4.5"]],
+ [["A magnet will pull on this metal found in nails and paper clips.","What is iron (or steel)?","4.P.1"],
+  ["Fossils are most often found in this type of rock that forms in layers.","What is sedimentary rock?","4.E.2.1"],
+  ["The changing shapes of the Moon we see during a month are called these.","What are the phases of the Moon?","4.E.1.1"],
+  ["A complete path that lets electricity flow from a battery to a bulb and back.","What is a closed circuit?","4.P.3.1"],
+  ["A polar bear's thick fur and fat are this kind of trait that helps an animal survive.","What is an adaptation?","4.L.1.3"]],
+ [["It's the product of 6 and 7.","What is 42?","4.OA.1"],
+  ["3/6 and 4/8 are both equivalent to this simple fraction.","What is 1/2?","4.NF.1"],
+  ["This decimal is the same as seven tenths.","What is 0.7?","4.NF.6"],
+  ["The area of a rug that is 8 feet long and 5 feet wide.","What is 40 square feet?","4.MD.3"],
+  ["An angle that measures less than 90 degrees.","What is an acute angle?","4.G.1"]],
+ [["This city has been North Carolina's capital since 1792.","What is Raleigh?","4.G.1"],
+  ["NC's three regions are the Coastal Plain, the Piedmont, and this region in the west.","What are the Mountains?","4.G.1.1"],
+  ["In 1903 the Wright brothers made the first powered airplane flight near this Outer Banks town.","What is Kitty Hawk?","4.H.1"],
+  ["The English settlers who vanished from Roanoke Island are known by this name.","What is the Lost Colony?","4.H.1.1"],
+  ["In 1960, four NC A&T students began lunch counter sit-ins in this city.","What is Greensboro?","4.H.1.3"]],
+ [["A synonym for \"enormous\" that starts with the letter H.","What is huge?","L.4.5c"],
+  ["It's the antonym, or opposite, of \"ancient.\"","What is modern (or new)?","L.4.5c"],
+  ["\"We walked single file on the narrow trail.\" In this sentence, narrow means this.","What is not wide (thin)?","L.4.4a"],
+  ["This Greek root in \"autograph\" and \"paragraph\" means write.","What is graph?","L.4.4b"],
+  ["This suffix in \"fearless\" and \"careless\" means without.","What is -less?","L.4.4b"]],
+ [["This part of speech names a person, place, thing or idea.","What is a noun?","L.4.1"],
+  ["It's the contraction for \"they are.\"","What is they're?","L.4.1g"],
+  ["This relative pronoun completes the sentence: \"The girl ___ won the race is my sister.\"","What is who?","L.4.1a"],
+  ["\"After the bell rang.\" is missing a complete thought, so it is this.","What is a sentence fragment?","L.4.1f"],
+  ["In \"The cat hid under the bed,\" the words \"under the bed\" are this kind of phrase.","What is a prepositional phrase?","L.4.1e"]]
+],5:[
+ [["\"The classroom was a zoo\" compares two things without like or as, so it is this.","What is a metaphor?","L.5.5a"],
+  ["This prefix in \"unhappy\" and \"unfair\" means not.","What is un-?","L.5.4b"],
+  ["A short retelling of a text's main ideas and key details, with no opinions.","What is a summary?","RI.5.2"],
+  ["An author who writes to convince readers to recycle has this purpose.","What is to persuade?","RI.5.8"],
+  ["\"Her heart sank\" is this kind of expression that doesn't mean exactly what the words say.","What is an idiom?","L.5.5b"]],
+ [["In a food chain, plants are called this because they make their own food.","What are producers?","5.L.2.1"],
+  ["This weather tool measures air pressure.","What is a barometer?","5.E.1.1"],
+  ["Eye color and hair color passed from parents to offspring are examples of these.","What are inherited traits?","5.L.3.1"],
+  ["The heart, blood and blood vessels make up this body system.","What is the circulatory system?","5.L.1.2"],
+  ["Water vapor cooling into liquid drops on a cold glass is this process.","What is condensation?","5.E.1.2"]],
+ [["It's the sum of 3.4 and 2.15.","What is 5.55?","5.NBT.7"],
+  ["The volume of a box 4 cm long, 3 cm wide and 2 cm tall.","What is 24 cubic centimeters?","5.MD.5"],
+  ["2/3 plus 1/6 equals this fraction.","What is 5/6?","5.NF.1"],
+  ["To plot (3, 5) on a coordinate plane, the first number tells you to move 3 spaces in this direction.","What is right (along the x-axis)?","5.G.1"],
+  ["Following the order of operations, it's the value of 2 + 3 × (8 − 4).","What is 14?","5.OA.1"]],
+ [["Adopted on July 4, 1776, this document announced independence from Great Britain.","What is the Declaration of Independence?","5.H.1.3"],
+  ["This branch of government, made up of Congress, makes the laws.","What is the legislative branch?","5.C&G.1.2"],
+  ["Sailing for Spain, this explorer reached the Americas in 1492.","Who is Christopher Columbus?","5.H.1.1"],
+  ["The first ten amendments to the U.S. Constitution are called this.","What is the Bill of Rights?","5.C&G.2.1"],
+  ["This colonial trade route linked Europe, Africa and the Americas.","What is the Triangular Trade?","5.E.1.1"]],
+ [["A synonym for \"furious.\"","What is angry (or mad)?","L.5.5c"],
+  ["This Latin root in \"transport\" and \"portable\" means carry.","What is port?","L.5.4b"],
+  ["\"Maria was reluctant to jump into the cold pool.\" Reluctant means this.","What is unwilling?","L.5.4a"],
+  ["Hot is to cold as tall is to this.","What is short?","L.5.5c"],
+  ["This prefix in \"misunderstand\" and \"misspell\" means wrongly.","What is mis-?","L.5.4b"]],
+ [["Words like and, but and or that join words or ideas are called this.","What are conjunctions?","L.5.1a"],
+  ["\"Wow!\" and \"Ouch!\" are this part of speech that shows strong feeling.","What is an interjection?","L.5.1a"],
+  ["\"The movie had already started\" uses this verb tense.","What is the past perfect tense?","L.5.1b"],
+  ["Neither/nor and either/or are pairs of these.","What are correlative conjunctions?","L.5.1e"],
+  ["In \"Well, I think we should go,\" this punctuation mark comes after the introductory word.","What is a comma?","L.5.2c"]]
+]};
+const LINES={
+ intro:n=>`Welcome to Brain Blast Live! I'm ${n}. Pick a category and a point value, and remember to answer in the form of a question.`,
+ ask:t=>[`${t}, this one's yours. Take your time!`,`Okay ${t}, let's see what you've got.`,`${t}, think it through. You can do this.`,`Eyes on the question, ${t}!`],
+ right:t=>[`YES! ${t} nailed it!`,`That's what I'm talking about, ${t}!`,`Brilliant thinking, ${t}!`,`Points on the board for ${t}!`],
+ wrong:t=>[`Not this time, ${t}. Let's learn from it.`,`Close, ${t}! Read the explanation and keep going.`,`Mistakes help our brains grow. Shake it off, ${t}!`],
+ next:t=>`${t}, you're up! Choose a question.`
+};
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const TCOL=["--ela","--sci","--math","--ss","--voc","--gram","--good","--bad","--dim"];
+let grade=4,classMode=false,classScore=0,players=[],turn=0,used=new Set(),cur=null,nextId=1;
+let phase="idle",buzzed=-1,locked=new Set();
+const $=id=>document.getElementById(id);
+$("hostTag").textContent=HOST.toUpperCase();
+let voiceOn=true,voices=[],voice=null;
+const synth=window.speechSynthesis||null;
+const rank=v=>(/natural|neural/i.test(v.name)?0:/online/i.test(v.name)?1:/google/i.test(v.name)?2:/premium|enhanced/i.test(v.name)?3:5);
+const ACCENTS={
+ us:{label:"American host",lang:/^en-US/i,male:/Andrew|Brian|Guy|Christopher|Eric|Roger|Steffan|Davis|Tony|Jason|Evan|Aaron|Alex|Fred|Male/i},
+ fr:{label:"French host",lang:/^fr/i,male:/Henri|Remy|R[ée]my|Paul|Claude|J[ée]r[ôo]me|Thomas|Antoine|Alain|Fabrice|Jean|Louis|Maurice|Yves|Lucien|Daniel|Male/i},
+ it:{label:"Italian host",lang:/^it/i,male:/Diego|Giuseppe|Cosimo|Benigno|Luca|Gianni|Calimero|Lisandro|Rinaldo|Marcello|Gianluca|Male/i},
+ tt:{label:"Trinidad host",lang:/^en-TT/i,male:/./},
+ jm:{label:"Jamaican host",lang:/^en-JM/i,male:/./}
+};
+let accent="us";
+function bestFor(k){const A=ACCENTS[k];const pool=voices.filter(v=>A.lang.test(v.lang.replace("_","-"))).sort((x,y)=>rank(x)-rank(y));
+  return pool.find(v=>A.male.test(v.name))||null}
+function loadVoices(){if(!synth)return;voices=synth.getVoices();if(!voices.length)return;
+  let saved="a:us";try{saved=localStorage.getItem("bb-voice2")||"a:us"}catch(e){}
+  const sel=$("voiceSel");sel.innerHTML="";
+  const g1=document.createElement("optgroup");g1.label="Host accents";
+  Object.entries(ACCENTS).forEach(([k,A])=>{const v=bestFor(k),o=document.createElement("option");o.value="a:"+k;
+    o.textContent=v?A.label:A.label+" (not on this computer)";o.disabled=!v;g1.appendChild(o)});
+  const g2=document.createElement("optgroup");g2.label="All voices";
+  [...voices].sort((x,y)=>(/^en/i.test(x.lang)?0:1)-(/^en/i.test(y.lang)?0:1)||rank(x)-rank(y)||x.name.localeCompare(y.name)).forEach(v=>{
+    const o=document.createElement("option");o.value="v:"+v.name;
+    o.textContent=(rank(v)<3?"★ ":"")+v.name.replace(/Microsoft |Google |Online |\(Natural\)/g,"").replace(/\s+-\s+/," · ").trim().slice(0,40);g2.appendChild(o)});
+  sel.append(g1,g2);applyVoice(saved)}
+function applyVoice(val){
+  let v=null;
+  if(val.startsWith("a:")){accent=val.slice(2);v=ACCENTS[accent]&&bestFor(accent)}
+  else v=voices.find(x=>x.name===val.slice(2));
+  if(!v){val="a:us";v=bestFor("us")||voices.find(x=>/^en/i.test(x.lang))||voices[0]}
+  voice=v;$("voiceSel").value=val;return val}
+function speak(t,queue){if(!synth||!voiceOn)return;try{if(!queue)synth.cancel();const u=new SpeechSynthesisUtterance(t.replace(/___/g,"blank").replace(/…/g,"...").replace(/[“”]/g,""));if(voice){u.voice=voice;u.lang=voice.lang}u.rate=1;u.pitch=1;synth.speak(u)}catch(e){}}
+function say(t,quiet){if(!quiet)speak(t);const b=$("bubble");b.textContent=t;b.classList.remove("pop");void b.offsetWidth;b.classList.add("pop")}
+function saveRoster(){try{localStorage.setItem("bb-teams6",JSON.stringify(players.map(p=>p.name)))}catch(e){}}
+function loadRoster(){try{const r=JSON.parse(localStorage.getItem("bb-teams6")||"null");if(Array.isArray(r)&&r.length)return r}catch(e){}return ["Team 1","Team 2","Team 3","Team 4","Team 5","Team 6"]}
+function addPlayer(name){players.push({id:nextId++,name:name||`Team ${players.length+1}`,score:0})}
+const col=i=>`var(${TCOL[i%TCOL.length]})`;
+function who(){return classMode?"class":players[turn].name}
+const GOAL=6000,MAX=9000;
+function newGame(){classScore=0;players.forEach(p=>p.score=0);turn=0;used=new Set();renderTeams();renderBoard();
+  say(LINES.intro(HOST)+(classMode?` Today we play as one class. Reach ${GOAL} points together to win!`:` ${players[0].name}, you pick first. Every team, hands near your buzzer!`))}
+function renderClass(){
+  const pct=Math.min(100,classScore/MAX*100);
+  $("teams").innerHTML=`<div class="classcard"><div><div class="lbl">Class score</div><div class="score">${classScore}</div></div>
+  <div><div class="lbl">Class goal: ${GOAL} points</div><div class="meter" role="img" aria-label="${classScore} points toward the ${GOAL} point goal"><i style="width:${pct}%"></i><b style="left:${GOAL/MAX*100}%"></b></div></div></div>`;
+}
+function renderTeams(){
+  if(classMode)return renderClass();
+  $("teams").innerHTML="";
+  players.forEach((t,i)=>{
+    const d=document.createElement("div");d.className="team"+(i===turn?" turn":"");d.style.setProperty("--tc",col(i));
+    d.innerHTML=`<div class="top"><span class="turnlbl">${i===turn?"Picks next":"Buzz key "+(i<9?i+1:"–")}</span><button class="x" aria-label="Remove team">×</button></div><input id="p${t.id}" aria-label="Team name"><span class="score">${t.score}</span>`;
+    const inp=d.querySelector("input");inp.value=t.name;inp.oninput=()=>{t.name=inp.value||`Team ${i+1}`;saveRoster()};
+    d.querySelector(".x").onclick=()=>{
+      if(players.length<=2){say("We need at least two teams for a buzzer battle!");return}
+      players.splice(i,1);if(i<turn)turn--;turn%=players.length;saveRoster();renderTeams();
+    };
+    $("teams").appendChild(d);
+  });
+}
+function renderBoard(){
+  const b=$("board");b.innerHTML="";
+  CATS.forEach((c,i)=>{const h=document.createElement("div");h.className="cat c"+i;h.textContent=c;b.appendChild(h)});
+  for(let r=0;r<5;r++)for(let c=0;c<CATS.length;c++){
+    const k=`${grade}-${c}-${r}`,btn=document.createElement("button");
+    btn.className="tile";btn.textContent=(r+1)*100;btn.disabled=used.has(k);
+    btn.setAttribute("aria-label",`${CATS[c]} for ${(r+1)*100}`);
+    btn.onclick=()=>openQ(c,r);b.appendChild(btn);
+  }
+}
+/* buzzer sound */
+let actx=null;
+function buzzSound(i){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();const o=actx.createOscillator(),g=actx.createGain();
+  o.type="square";o.frequency.value=330+i*55;g.gain.setValueAtTime(.18,actx.currentTime);g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+.45);
+  o.connect(g).connect(actx.destination);o.start();o.stop(actx.currentTime+.45)}catch(e){}}
+function renderBuzzers(){
+  const z=$("buzzers");z.innerHTML="";z.hidden=classMode;
+  if(classMode)return;
+  players.forEach((t,i)=>{const b=document.createElement("button");b.className="buzz";b.style.setProperty("--tc",col(i));
+    b.disabled=phase!=="buzz"||locked.has(i);if(i===buzzed)b.classList.add("lit");if(locked.has(i)&&i!==buzzed)b.classList.add("out");
+    b.innerHTML=`<kbd>${i<9?i+1:""}</kbd><span></span>`;b.querySelector("span").textContent=t.name;
+    b.onclick=()=>buzz(i);z.appendChild(b)});
+  $("buzzHint").textContent=phase==="buzz"?"Buzzers are live! Tap your team or press your number key.":phase==="answer"&&buzzed>=0?`${players[buzzed].name} is answering…`:"";
+}
+function setJudge(on){$("rightBtn").disabled=!on;$("wrongBtn").disabled=!on}
+function openQ(c,r){
+  const [clue,resp,std]=Q[grade][c][r];cur={c,r,resp,pts:(r+1)*100};
+  $("qCat").textContent=CATS[c];$("qCat").className="chip c"+c;
+  $("qMeta").textContent=`${cur.pts} PTS · ${std}`;$("qText").textContent=clue;
+  $("respText").textContent=resp;$("resp").hidden=true;
+  $("hostbar").hidden=false;$("revealBtn").hidden=false;$("doneBtn").hidden=true;
+  locked=new Set();buzzed=-1;$("overlay").hidden=false;
+  speak(`${CATS[c]}, for ${cur.pts}. ${clue}`);
+  if(classMode){phase="answer";setJudge(true);say("Class, put your answer in the form of a question!",true)}
+  else{phase="buzz";setJudge(false);say("Buzzers are LIVE! First team to buzz gets to answer. Remember: “What is…?”",true);speak("Buzzers are live!",true)}
+  renderBuzzers();
+  ($("buzzers").querySelector("button:not([disabled])")||$("revealBtn")).focus();
+}
+function buzz(i){
+  if(phase!=="buzz"||locked.has(i)||!players[i])return;
+  buzzed=i;locked.add(i);phase="answer";buzzSound(i);setJudge(true);
+  say(`${players[i].name} buzzed in first! Give your answer in the form of a question.`);renderBuzzers();
+}
+document.addEventListener("keydown",e=>{
+  if($("overlay").hidden||classMode||e.target.tagName==="INPUT")return;
+  const n=parseInt(e.key,10);if(n>=1&&n<=9){e.preventDefault();buzz(n-1)}
+});
+function finish(){speak(cur.resp,true);phase="done";setJudge(false);$("resp").hidden=false;$("revealBtn").hidden=true;$("doneBtn").hidden=false;renderBuzzers();$("doneBtn").focus()}
+function judge(ok){
+  if(phase!=="answer")return;
+  if(classMode){if(ok){classScore+=cur.pts;say(pick(LINES.right("class")))}else say(pick(LINES.wrong("class")));return finish()}
+  const t=players[buzzed];
+  if(ok){t.score+=cur.pts;turn=buzzed;say(pick(LINES.right(t.name))+" You pick the next clue.");renderTeams();return finish()}
+  if(locked.size<players.length){phase="buzz";setJudge(false);say(`Not quite, ${t.name}. Buzzers are open again. Steal it!`);renderBuzzers()}
+  else{say("Nobody got that one. Here's the answer!");finish()}
+}
+$("readBtn").onclick=()=>{const v=voiceOn;voiceOn=true;speak($("qText").textContent);voiceOn=v};
+$("rightBtn").onclick=()=>judge(true);$("wrongBtn").onclick=()=>judge(false);
+$("revealBtn").onclick=()=>{say("Here's the correct response!");finish()};
+$("doneBtn").onclick=()=>{
+  used.add(`${grade}-${cur.c}-${cur.r}`);$("overlay").hidden=true;phase="idle";renderTeams();renderBoard();
+  const left=CATS.length*5-[...used].filter(k=>k.startsWith(grade+"-")).length;
+  if(left===0&&classMode){say(classScore>=GOAL?`You did it, class! ${classScore} points beats our goal of ${GOAL}. That was teamwork!`:`We finished with ${classScore} points, just short of ${GOAL}. Let’s play again and beat it!`)}
+  else if(left===0){const top=Math.max(...players.map(t=>t.score));const w=players.filter(t=>t.score===top).map(t=>t.name);
+    say(w.length>1?`It's a tie between ${w.join(" and ")}! Every one of you showed up today. Great game!`:`And the champion is... ${w[0]} with ${top} points! Fantastic work, everybody!`)}
+  else say(classMode?"Class, talk it over and pick the next question!":LINES.next(players[turn].name));
+};
+function setGrade(g){grade=g;$("g4").setAttribute("aria-pressed",g===4);$("g5").setAttribute("aria-pressed",g===5);newGame()}
+$("g4").onclick=()=>setGrade(4);$("g5").onclick=()=>setGrade(5);
+$("addBtn").onclick=()=>{if(players.length>=9){say("Nine teams is our max!");return}addPlayer();saveRoster();renderTeams();const ins=$("teams").querySelectorAll("input");const last=ins[ins.length-1];last.focus();last.select();say("A new team joins the show! Type its name on the scoreboard.")};
+$("randBtn").onclick=()=>{if(!$("overlay").hidden)return;turn=Math.floor(Math.random()*players.length);renderTeams();say(`The spotlight lands on... ${players[turn].name}! You pick the next question!`)};
+function setMode(m){classMode=m;$("modeBtn").setAttribute("aria-pressed",String(!m));$("modeBtn").textContent=m?"Mode: Whole class":"Mode: Teams";$("addBtn").hidden=m;$("randBtn").hidden=m;newGame()}
+$("modeBtn").onclick=()=>setMode(!classMode);
+$("newGame").onclick=()=>newGame();
+$("voiceBtn").onclick=()=>{voiceOn=!voiceOn;$("voiceBtn").setAttribute("aria-pressed",String(voiceOn));$("voiceBtn").textContent="Voice: "+(voiceOn?"On":"Off");if(voiceOn)speak($("bubble").textContent);else synth&&synth.cancel()};
+$("voiceSel").onchange=e=>{const val=applyVoice(e.target.value);try{localStorage.setItem("bb-voice2",val)}catch(_){}speak(`Hi, I'm ${HOST}, and this is Brain Blast Live!`)};
+if(synth){loadVoices();synth.onvoiceschanged=loadVoices}else{$("voiceBtn").hidden=true;$("voiceSel").hidden=true}
+loadRoster().forEach(addPlayer);setMode(false);
+</script>
+
+</html>
