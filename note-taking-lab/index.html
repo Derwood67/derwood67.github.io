@@ -1,0 +1,960 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px/1.4 system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Note-Taking Lab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap">
+<style>
+/* Layout: one column notebook page — subject picker, then passage (left) + notes (right) on wide screens, stacked on phones */
+:root{
+  --paper:#fbfcff; --ink:#1f2638; --muted:#5d6681; --line:#d7def0; --margin:#e8a0a6;
+  --panel:#ffffff; --hi:#fff27a; --hi-ink:#1f2638; --accent:#2f5bd3; --ok:#1f8a5b; --miss:#c2410c;
+  --bg-book:#ede7ff; --c-book:#6a3fd1; --bg-ela:#e3f0ff; --c-ela:#1f5fbf;
+  --bg-ss:#fff0dd; --c-ss:#b45a09; --bg-sci:#e2f6ec; --c-sci:#18794e;
+  --bg-math:#ffe6ef; --c-math:#b8235a;
+  --display:"Baloo 2","Trebuchet MS",system-ui,sans-serif;
+  --body:"Atkinson Hyperlegible",Verdana,system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#141824; --ink:#e9ecf5; --muted:#a3abc4; --line:#2b3248; --margin:#7a3a40;
+  --panel:#1c2131; --hi:#6b6420; --hi-ink:#fffbe0; --accent:#8fb0ff; --ok:#5fd39b; --miss:#ff9a66;
+  --bg-book:#2a2245; --c-book:#c4aaff; --bg-ela:#1b2b45; --c-ela:#9cc3ff;
+  --bg-ss:#3a2a14; --c-ss:#ffc27a; --bg-sci:#163225; --c-sci:#7fe0b0; --bg-math:#3d1828; --c-math:#ff9cc2; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#141824; --ink:#e9ecf5; --muted:#a3abc4; --line:#2b3248; --margin:#7a3a40;
+  --panel:#1c2131; --hi:#6b6420; --hi-ink:#fffbe0; --accent:#8fb0ff; --ok:#5fd39b; --miss:#ff9a66;
+  --bg-book:#2a2245; --c-book:#c4aaff; --bg-ela:#1b2b45; --c-ela:#9cc3ff;
+  --bg-ss:#3a2a14; --c-ss:#ffc27a; --bg-sci:#163225; --c-sci:#7fe0b0; --bg-math:#3d1828; --c-math:#ff9cc2; color-scheme:dark}
+
+body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.55}
+.wrap{max-width:1180px;margin:0 auto;padding-block:24px 56px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  display:grid;gap:28px}
+h1,h2,h3{font-family:var(--display);line-height:1.15;text-wrap:balance;margin:0}
+h1{font-size:clamp(2rem,5vw,3rem);font-weight:800}
+h2{font-size:1.55rem;font-weight:800}
+h3{font-size:1.15rem;font-weight:600}
+p{margin:0}
+.lede{color:var(--muted);max-width:62ch;margin-top:6px}
+mark{background:var(--hi);color:var(--hi-ink);padding:0 .15em;border-radius:3px}
+
+/* header */
+header{display:grid;gap:4px;border-bottom:3px double var(--line);padding-bottom:18px}
+.eyebrow{font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:700}
+
+/* picker */
+.picker{display:flex;flex-wrap:wrap;gap:16px;align-items:end;background:var(--subj-bg,var(--bg-ela));
+  border-radius:14px;padding:18px 20px;transition:background .25s}
+.field{display:grid;gap:4px;min-width:0;flex:1 1 220px}
+label,.lbl{font-weight:700;font-size:.92rem}
+select,input,textarea{font:inherit;color:var(--ink);background:var(--panel);border:2px solid var(--line);
+  border-radius:10px;padding:10px 12px;width:100%;box-sizing:border-box}
+select{font-weight:700;cursor:pointer}
+select:focus,input:focus,textarea:focus,button:focus-visible,.s:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.book-only[hidden]{display:none!important}
+
+/* steps */
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;counter-reset:st}
+.step{border-left:4px solid var(--subj,var(--accent));padding:4px 0 4px 14px}
+.step b{display:block;font-family:var(--display);font-size:1.1rem;font-weight:600}
+.step span{color:var(--muted);font-size:.95rem}
+
+/* main grid */
+.main{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:860px){.main{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:14px;min-width:0}
+.tag{display:inline-block;font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--subj);background:var(--subj-bg);padding:3px 10px;border-radius:999px;justify-self:start}
+
+/* notebook paper passage */
+.paper{position:relative;background:
+  repeating-linear-gradient(to bottom,transparent 0 33px,var(--line) 33px 34px);
+  padding:6px 8px 10px 40px;line-height:34px;font-size:1.05rem;border-radius:6px}
+.paper::before{content:"";position:absolute;top:0;bottom:0;left:26px;width:2px;background:var(--margin)}
+.s{cursor:pointer;border-radius:4px;padding:2px 1px;transition:background .15s, box-shadow .15s}
+.s:hover{background:color-mix(in srgb,var(--hi) 45%,transparent)}
+.s.picked{background:var(--hi);color:var(--hi-ink)}
+.s.key-shown{box-shadow:inset 0 -3px 0 var(--subj)}
+.s.right{background:var(--hi);color:var(--hi-ink);box-shadow:inset 0 -3px 0 var(--ok)}
+.s.wrong{text-decoration:line-through wavy var(--miss);text-decoration-thickness:1px}
+.s.missed{box-shadow:inset 0 -3px 0 var(--miss)}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px}
+button{font:inherit;font-weight:700;border-radius:999px;padding:8px 16px;cursor:pointer;
+  border:2px solid var(--subj,var(--accent));background:transparent;color:var(--ink)}
+button.primary{background:var(--subj,var(--accent));color:var(--paper);}
+button:hover{filter:brightness(1.05)}
+.score{font-weight:700;min-height:1.5em}
+.why{border-left:4px solid var(--subj);background:var(--subj-bg);border-radius:0 10px 10px 0;padding:12px 14px;display:grid;gap:4px}
+.why .k{font-family:var(--display);font-weight:600;font-size:1.05rem;color:var(--subj)}
+.why.skip{border-color:var(--muted);background:transparent}
+.why.skip .k{color:var(--muted)}
+.hint{color:var(--muted);font-size:.92rem}
+
+/* look-for chips */
+.lookfor{display:flex;flex-wrap:wrap;gap:8px;padding:0;margin:0;list-style:none}
+.lookfor li{border:1.5px dashed var(--subj);border-radius:8px;padding:4px 10px;font-size:.92rem}
+
+/* notes form */
+.nf{display:grid;gap:12px}
+.nf textarea{min-height:64px;resize:vertical;line-height:1.45}
+.nf .p{font-weight:400;color:var(--muted);font-size:.85rem;display:block}
+.model{background:var(--subj-bg);border-radius:10px;padding:12px 14px;font-size:.95rem;display:grid;gap:6px}
+.model dt{font-weight:700}
+.model dd{margin:0 0 4px 0;font-family:"Atkinson Hyperlegible",monospace}
+.saved{font-size:.85rem;color:var(--ok);min-height:1.2em}
+
+/* tips */
+.tips{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.tips ul{margin:8px 0 0;padding-left:20px;display:grid;gap:6px}
+.short{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin-top:8px;font-size:.95rem}
+.short b{font-family:var(--display);font-size:1.1rem;text-align:center;min-width:2.2em}
+.do h3{color:var(--ok)} .dont h3{color:var(--miss)}
+/* bookmark */
+.bookmark{display:flex;flex-wrap:wrap;align-items:center;gap:14px 20px;border:2px solid var(--subj);border-radius:14px;padding:14px 18px;background:var(--panel)}
+.bm-icon{width:22px;height:34px;background:var(--subj);clip-path:polygon(0 0,100% 0,100% 100%,50% 75%,0 100%);flex:none}
+.bm-text{display:grid;gap:2px;flex:1 1 220px;min-width:0}
+.bm-text b{font-family:var(--display);font-size:1.2rem}
+.bm-fields{display:flex;flex-wrap:wrap;gap:12px;flex:1 1 300px}
+.field.sm{flex:1 1 130px}
+/* word bank + worksheet */
+.bank{display:flex;flex-wrap:wrap;gap:8px}
+.bank button{border-color:var(--subj);font-size:.95rem;padding:6px 14px}
+.bank button[aria-pressed="true"]{background:var(--subj);color:var(--paper)}
+.defn{background:var(--subj-bg);border-radius:10px;padding:12px 14px;min-height:1.6em}
+.defn b{font-family:var(--display);font-size:1.15rem;color:var(--subj)}
+.wsh{margin-top:6px}
+.ws{margin:0;padding-left:28px;display:grid;gap:12px;line-height:2.1}
+.ws input{display:inline-block;width:11em;max-width:100%;padding:3px 8px;border-width:0 0 2px 0;border-radius:4px 4px 0 0;
+  background:color-mix(in srgb,var(--subj-bg) 60%,var(--panel));font-weight:700}
+.ws input.ok{border-color:var(--ok);color:var(--ok)}
+.ws input.no{border-color:var(--miss)}
+.ws .ans{font-size:.85rem;color:var(--miss);margin-left:6px}
+/* inference */
+.infex{background:var(--subj-bg);border-radius:12px;padding:12px 14px;display:grid;gap:8px}
+.eq{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:10px;align-items:center}
+.eq>div{background:var(--panel);border-radius:10px;padding:10px 12px;display:grid;gap:2px;font-size:.95rem;min-width:0}
+.eq b{font-family:var(--display);color:var(--subj)}
+.eq i{font-style:normal;font-family:var(--display);font-weight:800;font-size:1.6rem;color:var(--subj)}
+.infrow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;border-top:1px dashed var(--line);padding-top:12px}
+@media (max-width:700px){.eq,.infrow{grid-template-columns:1fr}.eq i{text-align:center}}
+/* deep notes */
+.deep textarea{min-height:70px;resize:vertical;line-height:1.45}
+.deep .p{font-weight:400;color:var(--muted);font-size:.85rem;display:block}
+.deephead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:end;gap:12px}
+.deephead>div:first-child{display:grid;gap:6px}
+.savebox{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;border-bottom:2px solid var(--line);padding-bottom:10px}
+.tabs button{border-color:var(--line);font-size:.95rem;padding:7px 14px}
+.tabs button[aria-selected="true"]{background:var(--subj);border-color:var(--subj);color:var(--paper)}
+.panel{display:grid;gap:14px}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.three{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.vrows{display:grid;gap:8px}
+.vgrid{display:grid;grid-template-columns:1fr 1.3fr 1.6fr auto;gap:8px;align-items:start}
+.vhead{font-weight:700;font-size:.85rem;color:var(--muted)}
+.vgrid input{padding:8px 10px}
+.vgrid .x{padding:6px 12px;border-color:var(--line);color:var(--muted)}
+@media (max-width:640px){.vgrid{grid-template-columns:1fr}.vhead{display:none}
+  .vrow{border:1px solid var(--line);border-radius:10px;padding:10px}}
+.plot{list-style:none;margin:0;padding:0;display:grid;gap:10px;counter-reset:pl}
+.plot li{display:grid;gap:4px;padding-left:44px;position:relative;counter-increment:pl}
+.plot li::before{content:counter(pl);position:absolute;left:0;top:2px;width:30px;height:30px;border-radius:50%;
+  background:var(--subj-bg);color:var(--subj);font-family:var(--display);font-weight:800;display:grid;place-items:center}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap" id="app">
+  <header>
+    <span class="eyebrow">Upper Elementary · Reading Skills</span>
+    <h1>Note-Taking Lab</h1>
+    <p class="lede">Good notes are not copying. They are the <mark>few important words</mark> that help you remember and explain what you read. Pick a subject, read the passage, and practice finding what matters.</p>
+  </header>
+
+  <section class="picker" aria-label="Choose what you are reading">
+    <div class="field">
+      <label for="student">My name</label>
+      <input id="student" type="text" placeholder="First and last name" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="subject">I am taking notes for…</label>
+      <select id="subject">
+        <option value="book">Book Group</option>
+        <option value="ela">ELA</option>
+        <option value="ss">Social Studies</option>
+        <option value="sci">Science</option>
+        <option value="math">Math</option>
+      </select>
+    </div>
+    <div class="field book-only">
+      <label for="group">My book group</label>
+      <input id="group" type="text" placeholder="Example: The Page Turners" autocomplete="off">
+    </div>
+    <div class="field book-only">
+      <label for="title">Name of my book</label>
+      <input id="title" type="text" placeholder="Example: Because of Winn-Dixie" autocomplete="off">
+    </div>
+  </section>
+
+  <section class="bookmark" aria-label="Where I left off">
+    <div class="bm-icon" aria-hidden="true"></div>
+    <div class="bm-text">
+      <b id="bmtitle">Where I left off</b>
+      <span class="hint" id="bmmsg">Write the page you stopped on so you can find it next time.</span>
+    </div>
+    <div class="bm-fields">
+      <div class="field sm"><label for="bm-page">Page I left off on</label><input id="bm-page" type="text" inputmode="numeric" placeholder="e.g. 47"></div>
+      <div class="field sm"><label for="bm-ch">Chapter or section</label><input id="bm-ch" type="text" placeholder="e.g. Ch. 5"></div>
+    </div>
+  </section>
+
+  <section class="steps" aria-label="How to take notes">
+    <div class="step"><b>1. Preview</b><span>Read the title and headings. What will this be about?</span></div>
+    <div class="step"><b>2. Read it all once</b><span>Don't write yet. Just understand.</span></div>
+    <div class="step"><b>3. Find what matters</b><span id="step3">Look for the main idea and key details.</span></div>
+    <div class="step"><b>4. Write it short</b><span>Use key words, symbols and your own words.</span></div>
+  </section>
+
+  <div class="main">
+    <section class="card" aria-labelledby="ptitle">
+      <span class="tag" id="ptag">Practice passage</span>
+      <h2 id="ptitle">Passage</h2>
+      <div>
+        <span class="lbl">Look for:</span>
+        <ul class="lookfor" id="lookfor"></ul>
+      </div>
+      <p class="hint">Click the sentences you think are worth putting in your notes. Then press <b>Check my picks</b>.</p>
+      <div class="paper" id="passage"></div>
+      <div class="toolbar">
+        <button class="primary" id="check">Check my picks</button>
+        <button id="show">Show what to note</button>
+        <button id="reset">Start over</button>
+      </div>
+      <p class="score" id="score" aria-live="polite"></p>
+      <div class="why" id="why" hidden></div>
+    </section>
+
+    <section class="card" aria-labelledby="ntitle">
+      <span class="tag">My notes</span>
+      <h2 id="ntitle">Notes organizer</h2>
+      <p class="hint" id="nhint">Fill in each box with short phrases. Your notes stay saved on this computer.</p>
+      <form class="nf" id="notes" autocomplete="off"></form>
+      <div class="toolbar">
+        <button id="model">See model notes</button>
+        <button id="copy">Copy my notes</button>
+        <button id="clear">Clear</button>
+      </div>
+      <p class="saved" id="saved" aria-live="polite"></p>
+      <dl class="model" id="modelbox" hidden></dl>
+    </section>
+  </div>
+
+  <section class="card words" aria-labelledby="wtitle">
+    <span class="tag" id="wtag">Word bank</span>
+    <h2 id="wtitle">Important Vocabulary</h2>
+    <p class="hint">Tap a word to see what it means. You'll use these words in the worksheet below.</p>
+    <div class="bank" id="bank"></div>
+    <div class="defn" id="defn" aria-live="polite"><span class="hint">Tap a word to see its meaning.</span></div>
+
+    <h3 class="wsh">Fill-in-the-Blank Worksheet</h3>
+    <p class="hint">Type a word from the word bank in each blank. Your answers save on this computer.</p>
+    <ol class="ws" id="ws"></ol>
+    <div class="toolbar">
+      <button class="primary" id="wscheck">Check my answers</button>
+      <button id="wsclear">Clear answers</button>
+    </div>
+    <p class="score" id="wsscore" aria-live="polite"></p>
+  </section>
+
+  <section class="card deep" aria-labelledby="dtitle">
+    <div class="deephead">
+      <div>
+        <span class="tag" id="dtag">Deep reading notes</span>
+        <h2 id="dtitle">Deep Reading Notes</h2>
+        <p class="hint" id="dfor">Notes for: —</p>
+      </div>
+      <div class="savebox">
+        <button class="primary" id="saveall">Save my notes</button>
+        <span class="saved" id="dsaved" aria-live="polite"></span>
+      </div>
+    </div>
+    <div class="tabs" role="tablist" aria-label="Note sections">
+      <button role="tab" id="t-vocab" aria-controls="p-vocab" aria-selected="true">Vocabulary</button>
+      <button role="tab" id="t-struct" aria-controls="p-struct" aria-selected="false">Story Structure</button>
+      <button role="tab" id="t-main" aria-controls="p-main" aria-selected="false">Main Idea</button>
+      <button role="tab" id="t-theme" aria-controls="p-theme" aria-selected="false">Theme</button>
+      <button role="tab" id="t-pov" aria-controls="p-pov" aria-selected="false">Author's POV</button>
+      <button role="tab" id="t-inf" aria-controls="p-inf" aria-selected="false">Inference</button>
+    </div>
+
+    <div class="panel" role="tabpanel" id="p-vocab" aria-labelledby="t-vocab">
+      <p class="hint">Write new or tricky words. Use clues in the text to figure out the meaning.</p>
+      <div class="vgrid vhead" aria-hidden="true"><span>Word</span><span>What it means</span><span>Clue or sentence from the text</span><span></span></div>
+      <div id="vrows" class="vrows"></div>
+      <button type="button" id="addword">+ Add a word</button>
+    </div>
+
+    <div class="panel" role="tabpanel" id="p-struct" aria-labelledby="t-struct" hidden>
+      <p class="hint">Follow the plot mountain. Short phrases in order.</p>
+      <ol class="plot">
+        <li><label for="d-expo">Exposition<span class="p">Characters, setting, how it starts</span></label><textarea id="d-expo" data-d="expo"></textarea></li>
+        <li><label for="d-rise">Rising action<span class="p">Problem appears and gets harder</span></label><textarea id="d-rise" data-d="rise"></textarea></li>
+        <li><label for="d-climax">Climax<span class="p">The most exciting, turning-point moment</span></label><textarea id="d-climax" data-d="climax"></textarea></li>
+        <li><label for="d-fall">Falling action<span class="p">What happens after the climax</span></label><textarea id="d-fall" data-d="fall"></textarea></li>
+        <li><label for="d-res">Resolution<span class="p">How the problem is solved</span></label><textarea id="d-res" data-d="res"></textarea></li>
+      </ol>
+    </div>
+
+    <div class="panel" role="tabpanel" id="p-main" aria-labelledby="t-main" hidden>
+      <p class="hint">The main idea is what the whole text or section is mostly about. Details prove it.</p>
+      <div class="two">
+        <div class="field"><label for="d-topic">Topic<span class="p">1–3 words</span></label><input id="d-topic" data-d="topic" type="text"></div>
+        <div class="field"><label for="d-mi">Main idea<span class="p">One sentence in your own words</span></label><textarea id="d-mi" data-d="mi"></textarea></div>
+      </div>
+      <div class="three">
+        <div class="field"><label for="d-k1">Key detail 1</label><textarea id="d-k1" data-d="k1"></textarea></div>
+        <div class="field"><label for="d-k2">Key detail 2</label><textarea id="d-k2" data-d="k2"></textarea></div>
+        <div class="field"><label for="d-k3">Key detail 3</label><textarea id="d-k3" data-d="k3"></textarea></div>
+      </div>
+    </div>
+
+    <div class="panel" role="tabpanel" id="p-theme" aria-labelledby="t-theme" hidden>
+      <p class="hint">Theme is the lesson or message the author wants you to learn. It fits real life, not just this story.</p>
+      <div class="two">
+        <div class="field">
+          <label for="d-themepick">Choose a possible theme</label>
+          <select id="d-themepick" data-d="themepick">
+            <option value="">— Pick a theme —</option>
+            <optgroup label="Friendship & family">
+              <option>True friends stick together.</option>
+              <option>Family is important.</option>
+              <option>Treat others the way you want to be treated.</option>
+              <option>It's important to accept people who are different.</option>
+            </optgroup>
+            <optgroup label="Character & choices">
+              <option>Honesty is the best policy.</option>
+              <option>Be patient; good things take time.</option>
+              <option>Think before you act.</option>
+              <option>Kindness matters more than winning.</option>
+              <option>Take responsibility for your actions.</option>
+              <option>Greed can lead to trouble.</option>
+            </optgroup>
+            <optgroup label="Growing & trying">
+              <option>Never give up.</option>
+              <option>Believe in yourself.</option>
+              <option>Mistakes help us learn and grow.</option>
+              <option>Hard work pays off.</option>
+              <option>Courage means doing the right thing even when you're scared.</option>
+              <option>Be proud of who you are.</option>
+            </optgroup>
+            <optgroup label="Community & world">
+              <option>Working together makes us stronger.</option>
+              <option>Small actions can make a big difference.</option>
+              <option>Take care of nature and the world around you.</option>
+              <option>Change can be hard, but it can be good.</option>
+            </optgroup>
+            <option value="own">My own theme (write it below)</option>
+          </select>
+        </div>
+        <div class="field"><label for="d-themeown">Theme in my own words</label><textarea id="d-themeown" data-d="themeown" placeholder="The author wants readers to learn that…"></textarea></div>
+      </div>
+      <div class="two">
+        <div class="field"><label for="d-tev">Evidence from the text<span class="p">What does a character do, say, or learn?</span></label><textarea id="d-tev" data-d="tev"></textarea></div>
+        <div class="field"><label for="d-tlife">How it connects to real life</label><textarea id="d-tlife" data-d="tlife"></textarea></div>
+      </div>
+    </div>
+
+    <div class="panel" role="tabpanel" id="p-pov" aria-labelledby="t-pov" hidden>
+      <p class="hint">Point of view is who tells the story. The author's point of view is what the author thinks or wants you to feel.</p>
+      <div class="two">
+        <div class="field">
+          <label for="d-narr">Who is telling it?</label>
+          <select id="d-narr" data-d="narr">
+            <option value="">— Choose —</option>
+            <option>First person (I, me, we): a character tells it</option>
+            <option>Second person (you): talks to the reader</option>
+            <option>Third person limited (he, she, they): knows one character's thoughts</option>
+            <option>Third person omniscient: knows every character's thoughts</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="d-purpose">Author's purpose</label>
+          <select id="d-purpose" data-d="purpose">
+            <option value="">— Choose —</option>
+            <option>To entertain</option>
+            <option>To inform or explain</option>
+            <option>To persuade</option>
+            <option>To describe</option>
+          </select>
+        </div>
+      </div>
+      <div class="two">
+        <div class="field"><label for="d-pov">What does the author think or feel about the topic?</label><textarea id="d-pov" data-d="pov" placeholder="The author believes…"></textarea></div>
+        <div class="field"><label for="d-povev">Clue words or evidence<span class="p">Strong words, opinions, what is included or left out</span></label><textarea id="d-povev" data-d="povev"></textarea></div>
+      </div>
+      <div class="field"><label for="d-agree">Do I agree? Why?</label><textarea id="d-agree" data-d="agree"></textarea></div>
+    </div>
+
+    <div class="panel" role="tabpanel" id="p-inf" aria-labelledby="t-inf" hidden>
+      <p class="hint">An inference is a smart guess. The author doesn't say it, so you use <b>clues from the text + what you already know</b>.</p>
+      <div class="infex">
+        <span class="lbl">Example</span>
+        <div class="eq">
+          <div><b>It says…</b><span>Lena hated being told to wait and stepped onto the slippery bridge.</span></div>
+          <i aria-hidden="true">+</i>
+          <div><b>I know…</b><span>People who rush sometimes take risks without thinking.</span></div>
+          <i aria-hidden="true">=</i>
+          <div><b>So I infer…</b><span>Lena is impatient, and that almost got her in trouble.</span></div>
+        </div>
+      </div>
+      <div class="field"><label for="d-infq">What am I trying to figure out?<span class="p">Example: How does the character feel? Why did this happen?</span></label><input id="d-infq" data-d="infq" type="text"></div>
+      <div class="infrow">
+        <div class="field"><label for="d-i1a">It says… (text clue)</label><textarea id="d-i1a" data-d="i1a"></textarea></div>
+        <div class="field"><label for="d-i1b">I know… (my background)</label><textarea id="d-i1b" data-d="i1b"></textarea></div>
+        <div class="field"><label for="d-i1c">So I infer…</label><textarea id="d-i1c" data-d="i1c"></textarea></div>
+      </div>
+      <div class="infrow">
+        <div class="field"><label for="d-i2a">It says… (text clue)</label><textarea id="d-i2a" data-d="i2a"></textarea></div>
+        <div class="field"><label for="d-i2b">I know… (my background)</label><textarea id="d-i2b" data-d="i2b"></textarea></div>
+        <div class="field"><label for="d-i2c">So I infer…</label><textarea id="d-i2c" data-d="i2c"></textarea></div>
+      </div>
+      <div class="field">
+        <label for="d-istart">Sentence starter for my answer</label>
+        <select id="d-istart" data-d="istart">
+          <option value="">— Choose a starter —</option>
+          <option>I can infer that… because the text says…</option>
+          <option>The clues lead me to think that…</option>
+          <option>Based on the evidence, I conclude that…</option>
+          <option>The author doesn't say it, but I can tell that…</option>
+          <option>When the text says ___, I think it means…</option>
+        </select>
+      </div>
+      <div class="field"><label for="d-iwrite">My inference in a complete sentence</label><textarea id="d-iwrite" data-d="iwrite"></textarea></div>
+    </div>
+  </section>
+
+  <section class="tips" aria-label="Note-taking tips">
+    <div class="card do">
+      <h3>Smart notes do this</h3>
+      <ul>
+        <li>Write <b>key words</b>, not whole sentences.</li>
+        <li>Put ideas in <b>your own words</b>.</li>
+        <li>Keep <b>names, dates, numbers</b> and <b>bold words</b>.</li>
+        <li>Add a question mark <b>?</b> next to something confusing.</li>
+        <li>Leave space to add more later.</li>
+      </ul>
+    </div>
+    <div class="card dont">
+      <h3>Skip these</h3>
+      <ul>
+        <li>Copying the whole paragraph.</li>
+        <li>Fun extras that don't change the big idea.</li>
+        <li>Repeated information you already wrote.</li>
+        <li>Little words like "the," "very," "really."</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Note shortcuts</h3>
+      <div class="short">
+        <b>→</b><span>leads to / causes</span>
+        <b>+</b><span>and / also</span>
+        <b>w/</b><span>with</span>
+        <b>b/c</b><span>because</span>
+        <b>≈</b><span>about / almost</span>
+        <b>★</b><span>very important</span>
+        <b>ex.</b><span>example</span>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+const S = {
+  book:{label:"Book Group", color:["--c-book","--bg-book"],
+    step3:"Track characters, setting, the problem, and how the character changes.",
+    title:"The Bridge at Pine Creek (sample chapter)",
+    look:["Character","Setting","Problem","Feelings & traits","Turning point"],
+    sentences:[
+      {t:"Rain had fallen on Pine Creek for three days, and the little wooden bridge behind Grandpa's farm was nearly underwater.", k:"Setting", w:"Tells us where (Grandpa's farm, Pine Creek) and what's happening (lots of rain, flooding). Setting can shape the problem."},
+      {t:"Lena, who was ten and hated being told to wait, stood at the edge of the muddy bank.", k:"Character trait", w:"Introduces the main character AND a trait: she is impatient. Watch whether that trait matters later."},
+      {t:"Her boots were green with yellow ducks on them.", k:null, w:"A fun detail, but it doesn't change the story. Skip it."},
+      {t:"On the other side of the creek, her little brother Theo's kite was stuck in a tree, and he was crying.", k:"Problem", w:"This is the problem: the kite is on the other side, and Theo is upset. The story will try to solve this."},
+      {t:"\"I can get it,\" Lena said, putting one foot on the slippery bridge.", k:"Action", w:"Lena's choice shows her impatience again and builds tension."},
+      {t:"Then she remembered Grandpa's rule: never cross Pine Creek when the water is high.", k:"Turning point", w:"A turning point: she stops and thinks. This is where the character starts to change."},
+      {t:"She stepped back, took Theo's hand, and walked the long way around to the road bridge.", k:"Solution / change", w:"Problem solved safely. Lena learned to be patient. This hints at the theme."},
+      {t:"It took twenty minutes, but the kite came home and so did they.", k:null, w:"Wraps up the story, but you already noted the solution. Optional."}
+    ],
+    fields:[
+      ["Book & chapter","Title, chapter or pages read"],
+      ["Characters","Who? One trait each (use evidence)"],
+      ["Setting","Where and when?"],
+      ["Problem","What goes wrong?"],
+      ["Important events","2–3 events in order"],
+      ["My thinking","Prediction, question, or connection"]],
+    model:[
+      ["Book & chapter","The Bridge at Pine Creek – sample"],
+      ["Characters","Lena (10) – impatient → learns patience. Theo – little brother"],
+      ["Setting","Grandpa's farm, Pine Creek, 3 days of rain"],
+      ["Problem","Theo's kite stuck across creek; bridge flooded"],
+      ["Important events","Lena starts to cross → remembers Grandpa's rule → takes long way w/ Theo"],
+      ["My thinking","Theme: safety > hurry. ★ Lena changed."]]
+  },
+  ela:{label:"ELA", color:["--c-ela","--bg-ela"],
+    step3:"Find the main idea, supporting details, text structure, and new vocabulary.",
+    title:"Why Do Cats Purr?",
+    look:["Main idea","Supporting detail","Vocabulary word","Text structure clue"],
+    sentences:[
+      {t:"If you have ever petted a cat, you have probably heard its soft, rumbling purr.", k:null, w:"A hook to grab your attention. Good writing, but not a note."},
+      {t:"Scientists have learned that cats purr for more than one reason.", k:"Main idea", w:"This is what the whole passage is about. Main ideas are often near the beginning."},
+      {t:"First, many cats purr when they feel calm and content, which means happy and satisfied.", k:"Detail + vocabulary", w:"\"First\" signals a list of reasons. \"Content\" is a vocabulary word defined right in the sentence."},
+      {t:"Second, cats sometimes purr when they are hurt or scared, almost like humming to calm themselves down.", k:"Supporting detail", w:"Reason #2. It surprises readers, which makes it important."},
+      {t:"My neighbor's cat, Biscuit, purrs louder than a lawnmower.", k:null, w:"A funny example, but it doesn't add a new reason. Skip it."},
+      {t:"Third, some researchers think the vibrations from purring may help a cat's bones and muscles heal.", k:"Supporting detail", w:"Reason #3. \"Some researchers think\" tells you this idea is still being studied."},
+      {t:"So the next time a cat purrs, remember that it might be saying more than \"I'm happy.\"", k:"Conclusion", w:"Restates the main idea. Good for checking your notes match."}
+    ],
+    fields:[
+      ["Topic","What is it about? (1–3 words)"],
+      ["Main idea","The most important point"],
+      ["Key details","Facts that support the main idea"],
+      ["Vocabulary","New word = meaning"],
+      ["Text structure","List, cause/effect, compare, sequence, problem/solution?"],
+      ["Summary","1–2 sentences in your own words"]],
+    model:[
+      ["Topic","Cats purring"],
+      ["Main idea","Cats purr for more than 1 reason"],
+      ["Key details","1) calm/content  2) hurt or scared → calm self  3) may help heal bones + muscles (?)"],
+      ["Vocabulary","content = happy, satisfied"],
+      ["Text structure","List / description (First, Second, Third)"],
+      ["Summary","Cats purr when happy, scared, or hurt, and purring might even help them heal."]]
+  },
+  ss:{label:"Social Studies", color:["--c-ss","--bg-ss"],
+    step3:"Track who, what, when, where, why — and causes and effects.",
+    title:"First Flight at Kitty Hawk",
+    look:["Who","What","When","Where","Why (cause)","Effect / importance"],
+    sentences:[
+      {t:"Wilbur and Orville Wright were brothers who owned a bicycle shop in Dayton, Ohio.", k:"Who", w:"The key people. Their bicycle work matters because it taught them about balance and machines."},
+      {t:"They dreamed of building a machine that could fly.", k:"What (goal)", w:"Their goal explains everything else in the passage."},
+      {t:"They chose the sand dunes near Kitty Hawk, North Carolina, because it had strong, steady winds and soft sand for landing.", k:"Where + why", w:"Location AND the reason. \"Because\" is a clue word for cause and effect."},
+      {t:"Mosquitoes there were terrible, and the brothers wrote home about them often.", k:null, w:"True and interesting, but it doesn't explain the main event. Skip it."},
+      {t:"On December 17, 1903, Orville flew their airplane for 12 seconds and traveled 120 feet.", k:"When + what happened", w:"Dates, names, and numbers are almost always worth writing down in social studies."},
+      {t:"It was the first powered airplane flight in history.", k:"Importance", w:"Tells WHY this event matters. Historians always ask this question."},
+      {t:"Today, North Carolina license plates say \"First in Flight\" to honor that day.", k:"Effect", w:"A lasting effect connected to our state. Great for an NC history note."}
+    ],
+    fields:[
+      ["Who","People or groups"],
+      ["What","What happened?"],
+      ["When","Date or time period"],
+      ["Where","Place"],
+      ["Why / cause","Why did it happen?"],
+      ["Effect / why it matters","What changed because of it?"]],
+    model:[
+      ["Who","Wilbur + Orville Wright (bike shop, Dayton OH)"],
+      ["What","1st powered airplane flight"],
+      ["When","Dec. 17, 1903"],
+      ["Where","Kitty Hawk, NC (sand dunes)"],
+      ["Why / cause","Strong steady wind + soft sand b/c safe landing"],
+      ["Effect / why it matters","★ 1st in history → NC = \"First in Flight\""]]
+  },
+  sci:{label:"Science", color:["--c-sci","--bg-sci"],
+    step3:"Find the key science words, the process steps, and the evidence.",
+    title:"Weathering and Erosion",
+    look:["Science vocabulary","Process / steps","Example","Evidence"],
+    sentences:[
+      {t:"Earth's surface is always changing, even if we can't see it happening.", k:"Main idea", w:"Sets up the big idea: slow changes to land."},
+      {t:"Weathering is the breaking down of rocks into smaller pieces called sediment.", k:"Vocabulary", w:"A bold science word with its definition. Always write these down."},
+      {t:"For example, water can seep into a crack in a rock, freeze, expand, and split the rock apart.", k:"Process + example", w:"Shows the steps in order: seep → freeze → expand → split. Use arrows!"},
+      {t:"Erosion is the moving of sediment from one place to another by water, wind, ice, or gravity.", k:"Vocabulary", w:"Second key word. Notice weathering = breaking, erosion = moving."},
+      {t:"Rocks come in many beautiful colors, like pink, gray, and black.", k:null, w:"True, but it doesn't explain weathering or erosion. Skip it."},
+      {t:"The Grand Canyon formed over millions of years as the Colorado River carried away rock and sediment.", k:"Evidence", w:"Real-world evidence that erosion happens and can make huge landforms."},
+      {t:"When the moving sediment is finally dropped in a new place, that is called deposition.", k:"Vocabulary", w:"Third key word. Weathering → erosion → deposition is a process."}
+    ],
+    fields:[
+      ["Topic / question","What are we learning?"],
+      ["Key vocabulary","Word = meaning"],
+      ["Process (steps)","Use arrows →"],
+      ["Example or evidence","Real-world proof"],
+      ["Diagram idea","What would you sketch?"],
+      ["I still wonder…","A question to ask"]],
+    model:[
+      ["Topic / question","How does Earth's surface change?"],
+      ["Key vocabulary","weathering = breaking rock; erosion = moving sediment; deposition = dropping it"],
+      ["Process (steps)","weathering → erosion → deposition"],
+      ["Example or evidence","ice wedging: water → freeze → expand → crack. Grand Canyon = river erosion"],
+      ["Diagram idea","Rock w/ crack + ice, river carrying sand downhill"],
+      ["I still wonder…","How fast does erosion happen near the beach?"]]
+  },
+  math:{label:"Math", color:["--c-math","--bg-math"],
+    step3:"Find the question, the numbers you need, clue words, and info you can skip.",
+    title:"Word Problem: Field Day Pizza",
+    look:["The question","Numbers I need","Clue words","Extra info to skip"],
+    sentences:[
+      {t:"Ms. Rivera's class is planning a pizza party for Field Day.", k:null, w:"Sets the scene. Nice to know, but there is no math here yet."},
+      {t:"There are 24 students in the class, and each student will eat 3 slices of pizza.", k:"Numbers I need", w:"Two numbers you will use: 24 students and 3 slices each. \"Each\" is a clue for multiplying."},
+      {t:"The party starts at 1:30 in the afternoon.", k:null, w:"Extra information. The time does not help answer the question. Cross it out!"},
+      {t:"Every pizza is cut into 8 equal slices.", k:"Numbers I need", w:"8 slices per pizza. \"Equal\" groups tell you division may be needed."},
+      {t:"The pizzas cost $12 each, but the PTA is paying for them.", k:null, w:"Tricky! The cost is a number, but since the PTA pays, the question isn't about money. Skip it."},
+      {t:"How many pizzas does Ms. Rivera need to order?", k:"The question", w:"This is what you are solving for. Always underline the question first."},
+      {t:"Show your work and explain how you know your answer makes sense.", k:"Clue words", w:"Tells you how to answer: show steps and check your answer."}
+    ],
+    fields:[
+      ["The question","What am I solving for?"],
+      ["Numbers I need","Write each with its label"],
+      ["Extra info","What can I cross out?"],
+      ["Clue words → operation","each, total, equal groups, left…"],
+      ["My plan / strategy","Steps, model, or equation"],
+      ["Solve + check","Answer with a label. Does it make sense?"]],
+    model:[
+      ["The question","How many pizzas to order?"],
+      ["Numbers I need","24 students, 3 slices each, 8 slices/pizza"],
+      ["Extra info","1:30 time, $12 cost (PTA pays)"],
+      ["Clue words → operation","each → ×   equal slices → ÷"],
+      ["My plan / strategy","24 × 3 = total slices → ÷ 8 = pizzas"],
+      ["Solve + check","24 × 3 = 72 slices. 72 ÷ 8 = 9 pizzas. Check: 9 × 8 = 72 ✓"]]
+  }
+};
+
+/* vocabulary + fill-in-the-blank, per subject. In fib: [before, answer, after] */
+const VOC = {
+  book:{words:[
+    ["protagonist","the main character of the story"],["antagonist","the character or force that works against the main character"],
+    ["setting","where and when a story takes place"],["conflict","the problem or struggle in a story"],
+    ["plot","the events that happen in a story, in order"],["climax","the turning point; the most exciting part of the story"],
+    ["resolution","how the problem is solved at the end"],["theme","the lesson or message of the story"],
+    ["character trait","a word that describes how a character acts or thinks, like brave or impatient"],
+    ["inference","a smart guess using clues from the text plus what you already know"]],
+   fib:[
+    ["The ","protagonist"," is the main character the story is mostly about."],
+    ["The time and place of a story is called the ","setting","."],
+    ["The ","conflict"," is the problem the characters must face."],
+    ["The most exciting moment, when things start to change, is the ","climax","."],
+    ["The ","theme"," is the lesson the author wants readers to learn."],
+    ["When I use clues from the text to figure out something the author doesn't say, I make an ","inference","."]]},
+  ela:{words:[
+    ["main idea","what a text or paragraph is mostly about"],["supporting detail","a fact or example that proves the main idea"],
+    ["summary","a short retelling of the most important ideas in your own words"],["text structure","how an author organizes information (sequence, compare, cause/effect, problem/solution)"],
+    ["context clues","hints in nearby words that help you figure out a new word"],["author's purpose","why the author wrote: to persuade, inform, or entertain"],
+    ["point of view","who is telling the story or the author's opinion about a topic"],["cause and effect","why something happens (cause) and what happens because of it (effect)"],
+    ["heading","a title at the top of a section that tells what it's about"]],
+   fib:[
+    ["What a paragraph is mostly about is called the ","main idea","."],
+    ["A fact or example that proves the main idea is a ","supporting detail","."],
+    ["A ","summary"," tells only the most important ideas in my own words."],
+    ["When I use nearby words to figure out a new word, I use ","context clues","."],
+    ["Why an author writes (to inform, persuade, or entertain) is called the ","author's purpose","."],
+    ["A text that tells why something happened and what happened next uses ","cause and effect"," structure."]]},
+  ss:{words:[
+    ["primary source","something made by a person who was there, like a diary, photo, or letter"],
+    ["secondary source","something written later by someone who was not there, like a textbook"],
+    ["timeline","a line that shows events in the order they happened"],["invention","a new tool or machine that someone creates"],
+    ["region","an area with features in common, like the Coastal Plain of NC"],["economy","how people make, buy, sell, and trade goods and services"],
+    ["government","the group of people who make and enforce laws"],["culture","the way of life of a group: food, language, beliefs, traditions"],
+    ["citizen","a member of a community or country with rights and responsibilities"]],
+   fib:[
+    ["A photo the Wright brothers took on the day of their flight is a ","primary source","."],
+    ["Our social studies textbook is a ","secondary source"," because the writer wasn't there."],
+    ["A ","timeline"," shows events in the order they happened."],
+    ["The airplane was an important ","invention"," that changed travel."],
+    ["The Outer Banks are part of North Carolina's Coastal Plain ","region","."],
+    ["Food, language, and holidays are all parts of a group's ","culture","."]]},
+  sci:{words:[
+    ["weathering","the breaking down of rock into smaller pieces"],["erosion","the moving of rock and soil by water, wind, ice, or gravity"],
+    ["deposition","the dropping of sediment in a new place"],["sediment","small pieces of rock, sand, and soil"],
+    ["landform","a natural feature of Earth's surface, like a mountain or valley"],["hypothesis","a testable prediction about what will happen"],
+    ["observation","information you gather using your senses or tools"],["evidence","facts or data that support an idea"],
+    ["variable","the one thing you change in an experiment"]],
+   fib:[
+    ["Ice cracking a rock into pieces is an example of ","weathering","."],
+    ["A river carrying sand downstream is ","erosion","."],
+    ["When the river drops the sand at its mouth, it is called ","deposition","."],
+    ["Tiny pieces of rock, sand, and soil are called ","sediment","."],
+    ["Before an experiment, I write a ","hypothesis"," to predict what will happen."],
+    ["Data I collect that supports my idea is ","evidence","."]]},
+  math:{words:[
+    ["numerator","the top number of a fraction; how many parts you have"],["denominator","the bottom number of a fraction; how many equal parts in the whole"],
+    ["equivalent fractions","fractions that name the same amount, like 1/2 and 2/4"],["product","the answer to a multiplication problem"],
+    ["quotient","the answer to a division problem"],["factor","a number multiplied by another number to get a product"],
+    ["multiple","the product of a number and any whole number (multiples of 3: 3, 6, 9…)"],
+    ["area","the space inside a flat shape, measured in square units"],["perimeter","the distance around the outside of a shape"],
+    ["remainder","the amount left over after dividing"]],
+   fib:[
+    ["In the fraction 3/8, the 3 is the ","numerator","."],
+    ["In the fraction 3/8, the 8 is the ","denominator","."],
+    ["1/2 and 4/8 are ","equivalent fractions"," because they name the same amount."],
+    ["The answer to 24 × 3 is called the ","product","."],
+    ["The answer to 72 ÷ 8 is called the ","quotient","."],
+    ["The distance around a garden fence is its ","perimeter","."]]}
+};
+/* supporting detail sentence uses plural "s" outside the blank; accept singular */
+
+const $ = id => document.getElementById(id);
+const store = {
+  get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+};
+let cur = "book", picked = new Set(), checked = false;
+
+function paint(){
+  const s = S[cur], cs = getComputedStyle(document.documentElement);
+  const app = $("app");
+  app.style.setProperty("--subj", `var(${s.color[0]})`);
+  app.style.setProperty("--subj-bg", `var(${s.color[1]})`);
+  document.querySelectorAll(".book-only").forEach(el=>el.hidden = cur!=="book");
+  $("step3").textContent = s.step3;
+  $("ptag").textContent = s.label + " · practice passage";
+  $("ptitle").textContent = s.title;
+  $("lookfor").innerHTML = s.look.map(l=>`<li>${l}</li>`).join("");
+  picked = new Set(); checked = false;
+  $("passage").innerHTML = s.sentences.map((x,i)=>
+    `<span class="s" tabindex="0" role="button" aria-pressed="false" data-i="${i}">${x.t}</span>`).join(" ");
+  $("score").textContent = ""; $("why").hidden = true;
+  buildNotes();
+}
+
+function explain(i){
+  const x = S[cur].sentences[i], w = $("why");
+  w.hidden = false;
+  w.className = "why" + (x.k ? "" : " skip");
+  w.innerHTML = `<span class="k">${x.k ? "Note it: " + x.k : "Skip this one"}</span><p>${x.w}</p>`;
+}
+
+$("passage").addEventListener("click", e=>{
+  const el = e.target.closest(".s"); if(!el) return;
+  const i = +el.dataset.i;
+  if(checked){ explain(i); return; }
+  picked.has(i) ? picked.delete(i) : picked.add(i);
+  el.classList.toggle("picked"); el.setAttribute("aria-pressed", picked.has(i));
+});
+$("passage").addEventListener("keydown", e=>{
+  if((e.key==="Enter"||e.key===" ") && e.target.classList.contains("s")){e.preventDefault(); e.target.click();}
+});
+
+$("check").onclick = ()=>{
+  const sen = S[cur].sentences; let right=0, keys=0, extra=0;
+  document.querySelectorAll("#passage .s").forEach(el=>{
+    const i=+el.dataset.i, k=!!sen[i].k; el.classList.remove("picked","right","wrong","missed","key-shown");
+    if(k) keys++;
+    if(picked.has(i) && k){el.classList.add("right"); right++;}
+    else if(picked.has(i)){el.classList.add("wrong"); extra++;}
+    else if(k){el.classList.add("missed");}
+  });
+  checked = true;
+  $("score").innerHTML = `You found <span style="color:var(--ok)">${right} of ${keys}</span> important sentences` +
+    (extra ? ` and picked <span style="color:var(--miss)">${extra}</span> you could skip.` : ".") +
+    ` Click any sentence to see why.`;
+};
+$("show").onclick = ()=>{
+  document.querySelectorAll("#passage .s").forEach(el=>{
+    el.classList.remove("right","wrong","missed","picked");
+    if(S[cur].sentences[+el.dataset.i].k) el.classList.add("key-shown");
+  });
+  checked = true;
+  $("score").textContent = "Underlined sentences are worth noting. Click any sentence to see why.";
+};
+$("reset").onclick = paint;
+
+/* notes */
+let bookKey = null, studentKey = null;
+function key(){
+  if(bookKey===null) bookKey = $("title").value.trim().toLowerCase()||"untitled";
+  if(studentKey===null) studentKey = $("student").value.trim().toLowerCase();
+  return (studentKey ? "u:" + studentKey + ":" : "") + "notes-" + cur + (cur==="book" ? "-" + bookKey : "");
+}
+function buildNotes(){
+  const s = S[cur], saved = store.get(key()) || {};
+  $("notes").innerHTML = s.fields.map(([n,p],i)=>
+    `<div class="field"><label for="f${i}">${n}<span class="p">${p}</span></label>
+     <textarea id="f${i}" data-n="${n}">${(saved[n]||"").replace(/</g,"&lt;")}</textarea></div>`).join("");
+  $("modelbox").innerHTML = `<p class="hint">Model notes for the practice passage. Notice: short, key words, symbols.</p>` +
+    s.model.map(([n,v])=>`<dt>${n}</dt><dd>${v}</dd>`).join("");
+  $("modelbox").hidden = true; $("model").textContent = "See model notes"; $("saved").textContent="";
+  loadDeep(); loadWords(); loadBookmark();
+}
+
+/* word bank + worksheet */
+function wkey(){ return "ws-" + key(); }
+function loadWords(){
+  const v = VOC[cur];
+  $("wtag").textContent = S[cur].label + " · word bank";
+  $("bank").innerHTML = v.words.map(([w],i)=>`<button type="button" aria-pressed="false" data-i="${i}">${w}</button>`).join("");
+  $("defn").innerHTML = `<span class="hint">Tap a word to see its meaning.</span>`;
+  const saved = store.get(wkey()) || [];
+  $("ws").innerHTML = v.fib.map(([a,ans,b],i)=>
+    `<li>${a}<input id="ws${i}" aria-label="Blank ${i+1}" autocomplete="off" spellcheck="false">${b}<span class="ans" hidden></span></li>`).join("");
+  v.fib.forEach((_,i)=>$("ws"+i).value = saved[i]||"");
+  $("wsscore").textContent = "";
+}
+$("bank").addEventListener("click", e=>{
+  const b = e.target.closest("button"); if(!b) return;
+  $("bank").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed", x===b));
+  const [w,d] = VOC[cur].words[+b.dataset.i];
+  $("defn").innerHTML = `<b>${w}</b>: ${d}`;
+});
+const norm = s => s.toLowerCase().replace(/[’']/g,"'").replace(/[^a-z' ]/g,"").replace(/\s+/g," ").trim();
+$("ws").addEventListener("input", ()=>{
+  store.set(wkey(), VOC[cur].fib.map((_,i)=>$("ws"+i).value));
+  document.querySelectorAll("#ws input").forEach(x=>x.classList.remove("ok","no"));
+});
+$("wscheck").onclick = ()=>{
+  let right = 0; const f = VOC[cur].fib;
+  f.forEach(([,ans],i)=>{
+    const inp = $("ws"+i), tip = inp.parentElement.querySelector(".ans");
+    const good = norm(inp.value) === norm(ans) || norm(inp.value) === norm(ans).replace(/s$/,"");
+    inp.classList.toggle("ok", good); inp.classList.toggle("no", !good);
+    tip.hidden = good || !inp.value; tip.textContent = "Try again. Check the word bank.";
+    if(good) right++;
+  });
+  $("wsscore").innerHTML = right === f.length
+    ? `<span style="color:var(--ok)">All ${f.length} correct! Great work.</span>`
+    : `You got <span style="color:var(--ok)">${right} of ${f.length}</span>. Fix the red ones and check again.`;
+};
+$("wsclear").onclick = ()=>{
+  if($("wsclear").dataset.sure){ store.set(wkey(), []); loadWords(); $("wsclear").textContent="Clear answers"; delete $("wsclear").dataset.sure; }
+  else { $("wsclear").textContent="Tap again to clear"; $("wsclear").dataset.sure=1; setTimeout(()=>{$("wsclear").textContent="Clear answers"; delete $("wsclear").dataset.sure;},3000); }
+};
+
+/* where I left off */
+function bkey(){ return "bm-" + key(); }
+function loadBookmark(){
+  const o = store.get(bkey()) || {};
+  $("bm-page").value = o.page||""; $("bm-ch").value = o.ch||"";
+  const what = cur==="book" ? ($("title").value.trim() || "your book") : "your " + S[cur].label + " reading";
+  const first = $("student").value.trim().split(/\s+/)[0];
+  $("bmtitle").textContent = o.page || o.ch ? `Welcome back${first ? ", " + first : ""}!` : (first ? `${first}, where did you leave off?` : "Where I left off");
+  $("bmmsg").textContent = o.page || o.ch
+    ? `Last time in ${what} you stopped at ${[o.ch, o.page && "page " + o.page].filter(Boolean).join(", ")}.`
+    : `Write the page you stopped on in ${what} so you can find it next time.`;
+}
+["bm-page","bm-ch"].forEach(id=>$(id).addEventListener("input", ()=>{
+  store.set(bkey(), {page:$("bm-page").value.trim(), ch:$("bm-ch").value.trim(), at:Date.now()});
+}));
+let t;
+$("notes").addEventListener("input", ()=>{
+  const o={}; document.querySelectorAll("#notes textarea").forEach(x=>o[x.dataset.n]=x.value);
+  store.set(key(), o); clearTimeout(t); $("saved").textContent="Saved ✓"; t=setTimeout(()=>$("saved").textContent="",1500);
+});
+$("model").onclick = ()=>{ const m=$("modelbox"); m.hidden=!m.hidden; $("model").textContent = m.hidden?"See model notes":"Hide model notes"; };
+$("clear").onclick = ()=>{
+  if($("clear").dataset.sure){ store.set(key(),{}); buildNotes(); $("clear").textContent="Clear"; delete $("clear").dataset.sure; }
+  else { $("clear").textContent="Tap again to clear"; $("clear").dataset.sure=1; setTimeout(()=>{$("clear").textContent="Clear"; delete $("clear").dataset.sure;},3000); }
+};
+$("copy").onclick = ()=>{
+  const head = cur==="book" ? `Book Group: ${$("group").value||"-"}\nBook: ${$("title").value||"-"}\n` : `${S[cur].label} notes\n`;
+  const body = [...document.querySelectorAll("#notes textarea")].map(x=>`${x.dataset.n}: ${x.value}`).join("\n");
+  const txt = head + body;
+  const done = ()=>{$("saved").textContent="Copied! Paste into your doc."};
+  if(navigator.clipboard) navigator.clipboard.writeText(txt).then(done).catch(()=>{$("saved").textContent="Copy didn't work. Select your notes and press Ctrl+C."});
+};
+
+/* deep reading notes */
+function dkey(){ return "deep-" + key(); }
+function vrow(w={}){
+  const d=document.createElement("div"); d.className="vgrid vrow";
+  const n=document.querySelectorAll(".vrow").length+1;
+  d.innerHTML=`<input aria-label="Word ${n}" data-v="word" placeholder="word">
+    <input aria-label="Meaning ${n}" data-v="mean" placeholder="what it means">
+    <input aria-label="Clue ${n}" data-v="clue" placeholder="clue from the text">
+    <button type="button" class="x" aria-label="Remove word ${n}">✕</button>`;
+  ["word","mean","clue"].forEach(f=>d.querySelector(`[data-v="${f}"]`).value=w[f]||"");
+  d.querySelector(".x").onclick=()=>{d.remove(); saveDeep();};
+  $("vrows").appendChild(d);
+  return d;
+}
+function readDeep(){
+  const o={vocab:[...document.querySelectorAll(".vrow")].map(r=>({
+    word:r.querySelector('[data-v="word"]').value, mean:r.querySelector('[data-v="mean"]').value, clue:r.querySelector('[data-v="clue"]').value}))
+    .filter(x=>x.word||x.mean||x.clue)};
+  document.querySelectorAll(".deep [data-d]").forEach(el=>o[el.dataset.d]=el.value);
+  return o;
+}
+function stamp(ts){
+  if(!ts) return "Not saved yet";
+  const d=new Date(ts);
+  return "Last saved " + d.toLocaleDateString([], {month:"short",day:"numeric"}) + " at " + d.toLocaleTimeString([], {hour:"numeric",minute:"2-digit"});
+}
+function saveDeep(){
+  const o=readDeep(); o.savedAt=Date.now(); store.set(dkey(),o);
+  $("dsaved").textContent = stamp(o.savedAt);
+}
+function loadDeep(){
+  const o=store.get(dkey())||{};
+  $("vrows").innerHTML="";
+  (o.vocab&&o.vocab.length?o.vocab:[{},{},{}]).forEach(vrow);
+  document.querySelectorAll(".deep [data-d]").forEach(el=>el.value=o[el.dataset.d]||"");
+  $("dsaved").textContent = stamp(o.savedAt);
+  const title=$("title").value.trim();
+  $("dfor").textContent = "Notes for: " + (cur==="book" ? (title||"my book group book") : S[cur].label);
+  $("dtag").textContent = S[cur].label + " · deep reading notes";
+}
+let dt;
+document.querySelector(".deep").addEventListener("input", e=>{
+  if(e.target.matches("input,textarea,select")){ clearTimeout(dt); dt=setTimeout(saveDeep,400); }
+});
+document.querySelector(".deep").addEventListener("change", e=>{ if(e.target.matches("select")) saveDeep(); });
+$("d-themepick").addEventListener("change", e=>{
+  if(e.target.value==="own") $("d-themeown").focus();
+});
+$("addword").onclick=()=>vrow().querySelector("input").focus();
+$("saveall").onclick=()=>{
+  saveDeep();
+  const o={}; document.querySelectorAll("#notes textarea").forEach(x=>o[x.dataset.n]=x.value); store.set(key(),o);
+  $("dsaved").textContent = stamp(Date.now()) + " ✓";
+};
+/* tabs */
+const tabs=[...document.querySelectorAll('[role="tab"]')];
+tabs.forEach((t,i)=>{
+  t.onclick=()=>{
+    tabs.forEach(x=>{x.setAttribute("aria-selected", x===t); $(x.getAttribute("aria-controls")).hidden = x!==t;});
+    store.set("deep-tab", t.id);
+  };
+  t.onkeydown=e=>{
+    if(e.key==="ArrowRight"||e.key==="ArrowLeft"){
+      const n=tabs[(i+(e.key==="ArrowRight"?1:-1)+tabs.length)%tabs.length]; n.click(); n.focus();
+    }
+  };
+});
+const lt=store.get("deep-tab"); if(lt && $(lt)) $(lt).click();
+
+/* include deep notes when copying */
+const baseCopy=$("copy").onclick;
+$("copy").onclick=()=>{
+  const d=readDeep(), lines=[];
+  if(d.vocab.length) lines.push("Vocabulary: " + d.vocab.map(v=>`${v.word} = ${v.mean}${v.clue?` (${v.clue})`:""}`).join("; "));
+  const L={expo:"Exposition",rise:"Rising action",climax:"Climax",fall:"Falling action",res:"Resolution",topic:"Topic",mi:"Main idea",
+    k1:"Detail 1",k2:"Detail 2",k3:"Detail 3",themepick:"Theme",themeown:"Theme (my words)",tev:"Theme evidence",tlife:"Real-life connection",
+    narr:"Point of view",purpose:"Author's purpose",pov:"Author's view",povev:"POV evidence",agree:"Do I agree?",
+    infq:"Inference question",i1a:"It says",i1b:"I know",i1c:"So I infer",i2a:"It says",i2b:"I know",i2c:"So I infer",iwrite:"My inference"};
+  Object.keys(L).forEach(k=>{ if(d[k] && d[k]!=="own") lines.push(`${L[k]}: ${d[k]}`); });
+  const head = `Name: ${$("student").value||"-"}\n` + (cur==="book" ? `Book Group: ${$("group").value||"-"}\nBook: ${$("title").value||"-"}\n` : `${S[cur].label} notes\n`);
+  const body = [...document.querySelectorAll("#notes textarea")].filter(x=>x.value).map(x=>`${x.dataset.n}: ${x.value}`).join("\n");
+  const pg = [$("bm-ch").value, $("bm-page").value && "page " + $("bm-page").value].filter(Boolean).join(", ");
+  const txt = head + (pg ? `Left off at: ${pg}\n` : "") + body + (lines.length ? "\n\nDEEP READING NOTES\n" + lines.join("\n") : "");
+  if(navigator.clipboard) navigator.clipboard.writeText(txt).then(()=>$("saved").textContent="Copied! Paste into your doc.")
+    .catch(()=>{$("saved").textContent="Copy didn't work. Select your notes and press Ctrl+C."});
+};
+
+/* remember group/title & subject */
+$("student").addEventListener("change", ()=>{
+  studentKey = $("student").value.trim().toLowerCase(); bookKey = null;
+  const g = store.get("u:"+studentKey+":bg-group"), t = store.get("u:"+studentKey+":bg-title");
+  if(g!==null) $("group").value = g; if(t!==null) $("title").value = t;
+  buildNotes();
+});
+["group","title"].forEach(id=>$(id).addEventListener("input",()=>{
+  const sk = $("student").value.trim().toLowerCase(); if(sk) store.set("u:"+sk+":bg-"+id, $(id).value);
+}));
+["student","group","title"].forEach(id=>{
+  const v = store.get("bg-"+id); if(v) $(id).value=v;
+  $(id).addEventListener("input",()=>store.set("bg-"+id,$(id).value));
+});
+$("title").addEventListener("change", ()=>{ bookKey = $("title").value.trim().toLowerCase()||"untitled"; buildNotes(); });
+$("subject").addEventListener("change", e=>{ cur=e.target.value; store.set("subject",cur); paint(); });
+const last = store.get("subject"); if(last && S[last]){ cur=last; $("subject").value=last; }
+paint();
+</script>
+</body>
+</html>
