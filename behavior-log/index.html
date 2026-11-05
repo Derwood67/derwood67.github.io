@@ -1,0 +1,791 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Weekly Behavior Log</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap">
+<style>
+/* Layout: a classroom clipboard — sticky date bar, then a two-pane "tap student, tap behavior, log" panel beside the day's record. */
+:root{
+  --bg:#f3f5f4; --surface:#ffffff; --sunk:#e8ecea; --line:#d3dad7;
+  --ink:#17221f; --muted:#5b6964; --accent:#d9901a; --accent-ink:#3b2604; --accent-soft:#fbefd9;
+  --sel:#1f5e54; --sel-ink:#ffffff; --sel-soft:#dcebe7;
+  --minor:#b7791f; --minor-soft:#fdf2dc; --major:#b33a2e; --major-soft:#fbe4e1; --good:#2f7a4f; --good-soft:#e1f2e7; --exc:#2d6cb0; --exc-soft:#e0ebf7;
+  --ok:#2f7a4f;
+  --display:"Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --body:"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111816; --surface:#18211e; --sunk:#202b28; --line:#2e3b37;
+  --ink:#e6eeeb; --muted:#9aaba5; --accent:#f0a83a; --accent-ink:#2a1a02; --accent-soft:#3a2c14;
+  --sel:#6cc2b2; --sel-ink:#0b1b18; --sel-soft:#1d3632;
+  --minor:#f0b44f; --minor-soft:#3a2e17; --major:#f07a6c; --major-soft:#3d1f1b; --ok:#6fcf97; --good:#6fcf97; --good-soft:#173527; --exc:#86b8ef; --exc-soft:#18283c;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111816; --surface:#18211e; --sunk:#202b28; --line:#2e3b37;
+  --ink:#e6eeeb; --muted:#9aaba5; --accent:#f0a83a; --accent-ink:#2a1a02; --accent-soft:#3a2c14;
+  --sel:#6cc2b2; --sel-ink:#0b1b18; --sel-soft:#1d3632;
+  --minor:#f0b44f; --minor-soft:#3a2e17; --major:#f07a6c; --major-soft:#3d1f1b; --ok:#6fcf97; --good:#6fcf97; --good-soft:#173527; --exc:#86b8ef; --exc-soft:#18283c;
+  color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;padding-block:12px}
+h1{font-family:var(--display);font-weight:800;font-size:1.35rem;letter-spacing:-.01em;margin:0;flex:1 1 auto}
+h1 small{display:block;font-family:var(--body);font-weight:400;font-size:.8rem;color:var(--muted);letter-spacing:0}
+.datenav{display:flex;align-items:center;gap:6px}
+.iconbtn{border:1px solid var(--line);background:var(--surface);border-radius:8px;width:36px;height:36px;display:grid;place-items:center;font-size:1rem}
+.iconbtn:hover{background:var(--sunk)}
+#dateInput{border:1px solid var(--line);background:var(--surface);border-radius:8px;height:36px;padding:0 8px;font-variant-numeric:tabular-nums}
+.ghost{border:1px solid var(--line);background:transparent;border-radius:8px;height:36px;padding:0 12px}
+.ghost:hover{background:var(--sunk)}
+nav.tabs{display:flex;gap:4px;overflow-x:auto}
+nav.tabs button{border:0;background:transparent;padding:10px 14px 12px;border-bottom:3px solid transparent;color:var(--muted);font-weight:700;white-space:nowrap}
+nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+
+main{padding-block:20px 48px}
+.status{display:flex;gap:8px;align-items:center;font-size:.85rem;color:var(--muted);padding:8px 12px;border-radius:8px;background:var(--sunk);margin-bottom:16px}
+.status.warn{background:var(--minor-soft);color:var(--ink)}
+
+.grid2{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:880px){.grid2{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;min-width:0}
+.panel h2{font-family:var(--display);font-weight:600;font-size:1.1rem;margin:0 0 4px;text-wrap:balance}
+.step{display:flex;align-items:baseline;gap:8px;margin:18px 0 10px}
+.step:first-of-type{margin-top:8px}
+.step b{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.step span{font-size:.8rem;color:var(--muted)}
+.linkbtn{border:0;background:none;color:var(--sel);font-size:.8rem;text-decoration:underline;padding:0;margin-left:auto}
+
+.students{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:8px}
+.stu{position:relative;text-align:left;border:1.5px solid var(--line);background:var(--surface);border-radius:8px;padding:9px 10px;display:flex;flex-direction:column;gap:5px;align-items:flex-start;font-weight:700;min-height:46px;line-height:1.2;overflow-wrap:anywhere}
+.stu:hover{border-color:var(--sel)}
+.stu[aria-pressed="true"]{background:var(--sel);border-color:var(--sel);color:var(--sel-ink)}
+.stu .cts{display:flex;gap:4px}
+.stu .ct{min-width:20px;height:20px;border-radius:10px;font-size:.72rem;display:grid;place-items:center;padding:0 5px;background:var(--minor-soft);color:var(--ink);font-variant-numeric:tabular-nums}
+.stu .ct.major{background:var(--major-soft)}
+.stu .ct.good{background:var(--good-soft)}
+.stu[aria-pressed="true"] .ct{background:var(--sel-ink);color:var(--sel)}
+
+.types{display:flex;flex-wrap:wrap;gap:8px}
+.type{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 13px;display:inline-flex;align-items:center;gap:7px}
+.type::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--minor)}
+.type.major::before{background:var(--major)}
+.type.positive::before{background:var(--good)}
+.type.excellent::before{background:var(--exc)}
+.typegroup{display:flex;flex-direction:column;gap:6px}
+.typegroup + .typegroup{margin-top:12px}
+.glabel{font-size:.75rem;color:var(--muted)}
+.type:hover{border-color:var(--ink)}
+.type[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field label{font-size:.75rem;color:var(--muted)}
+.field input,.field select,textarea{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 10px;min-height:40px}
+.field.grow{flex:1 1 220px}
+textarea{width:100%;resize:vertical}
+.primary{border:0;background:var(--accent);color:var(--accent-ink);font-weight:700;border-radius:8px;padding:0 18px;min-height:44px}
+.primary:disabled{opacity:.45;cursor:not-allowed}
+.hint{font-size:.8rem;color:var(--muted);margin:8px 0 0}
+
+.sumline{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.85rem;color:var(--muted);margin:2px 0 14px;font-variant-numeric:tabular-nums}
+.sumline strong{color:var(--ink)}
+.entries{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.entry{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:10px;padding:10px 0;border-top:1px solid var(--line);align-items:start}
+.entry:first-child{border-top:0}
+.entry time{font-variant-numeric:tabular-nums;color:var(--muted);font-size:.85rem;padding-top:2px}
+.entry .who{font-weight:700}
+.tag{display:inline-block;font-size:.75rem;border-radius:4px;padding:1px 7px;margin-left:6px;background:var(--minor-soft);border-left:3px solid var(--minor)}
+.tag.major{background:var(--major-soft);border-left-color:var(--major)}
+.tag.positive{background:var(--good-soft);border-left-color:var(--good)}
+.tag.excellent{background:var(--exc-soft);border-left-color:var(--exc)}
+.entry .note{font-size:.85rem;color:var(--muted);margin-top:2px;overflow-wrap:anywhere}
+.del{border:1px solid transparent;background:none;color:var(--muted);font-size:.8rem;border-radius:6px;padding:4px 8px}
+.del:hover{border-color:var(--line)}
+.del.arm{background:var(--major);color:#fff}
+.empty{color:var(--muted);font-size:.9rem;padding:18px;text-align:center;border:1.5px dashed var(--line);border-radius:8px}
+
+.bars{display:flex;flex-direction:column;gap:7px;margin-top:6px}
+.barrow{display:grid;grid-template-columns:minmax(0,150px) minmax(0,1fr) 28px;gap:8px;align-items:center;font-size:.85rem}
+.barrow .lbl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.track{height:10px;background:var(--sunk);border-radius:5px;overflow:hidden}
+.fill{height:100%;background:var(--minor);border-radius:5px}
+.fill.major{background:var(--major)}
+.fill.stu{background:var(--sel)}
+.fill.positive{background:var(--good)}
+.fill.excellent{background:var(--exc)}
+.ratings{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:4px 20px}
+.rrow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);min-width:0}
+.rrow span{font-weight:700;overflow-wrap:anywhere;min-width:0}
+.rrow select{border:1.5px solid var(--line);background:var(--surface);border-radius:8px;min-height:36px;padding:0 8px;flex:0 0 auto}
+.rrow select[data-val="Good"]{border-color:var(--good);background:var(--good-soft)}
+.rrow select[data-val="Fair"]{border-color:var(--minor);background:var(--minor-soft)}
+.rrow select[data-val="Needs improvement"]{border-color:var(--major);background:var(--major-soft)}
+#typeSelect{border:1px solid var(--line);background:var(--surface);border-radius:8px;min-height:40px;padding:0 8px;width:100%}
+.plus{color:var(--good);font-weight:700;font-size:.8rem;margin-left:3px}
+.barrow .n{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+.sub{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:18px 0 6px}
+
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:.9rem}
+th,td{padding:8px 10px;text-align:center;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:.75rem;color:var(--muted);font-weight:700;background:var(--sunk)}
+th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:var(--surface)}
+th:first-child{background:var(--sunk)}
+td.z{color:var(--line)}
+td.h1{background:var(--minor-soft)}
+td.h2{background:var(--major-soft);font-weight:700}
+tr.click{cursor:pointer}
+tr.click:hover td{background:var(--sel-soft)}
+tr.on td{background:var(--sel-soft)}
+tfoot td{font-weight:700;border-bottom:0}
+
+.list{list-style:none;margin:0;padding:0}
+.list li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.list li:first-child{border-top:0}
+.list li.archived{color:var(--muted)}
+.pill{font-size:.72rem;border-radius:999px;padding:2px 8px;background:var(--sunk);color:var(--muted)}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:12px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--surface);padding:10px 16px;border-radius:8px;font-size:.9rem;z-index:20;max-width:calc(100% - 32px)}
+.ro .writes{display:none}
+@media (prefers-reduced-motion:no-preference){.stu,.type{transition:background .12s,border-color .12s,color .12s}}
+</style>
+
+<header>
+  <div class="wrap bar">
+    <h1>Weekly Behavior Log<small id="dateLong">—</small></h1>
+    <div class="datenav">
+      <button class="iconbtn" id="prevDay" aria-label="Previous school day">‹</button>
+      <input type="date" id="dateInput" aria-label="Date">
+      <button class="iconbtn" id="nextDay" aria-label="Next school day">›</button>
+      <button class="ghost" id="todayBtn">Today</button>
+    </div>
+  </div>
+  <div class="wrap">
+    <nav class="tabs" role="tablist">
+      <button role="tab" id="tab-log" aria-selected="true" data-tab="log">Daily log</button>
+      <button role="tab" id="tab-week" aria-selected="false" data-tab="week">Week &amp; students</button>
+      <button role="tab" id="tab-setup" aria-selected="false" data-tab="setup">Roster &amp; behaviors</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <div id="status" class="status">Loading your class…</div>
+
+  <!-- DAILY LOG -->
+  <section id="view-log">
+    <div class="grid2">
+      <div class="panel writes" id="logPanel">
+        <h2>Log a behavior</h2>
+        <div id="logForm">
+          <div class="step"><b>1 · Student</b><span>tap one or more</span><button class="linkbtn" id="clearSel" type="button">Clear</button></div>
+          <div class="students" id="studentGrid"></div>
+          <div class="step"><b>2 · Behavior</b></div>
+          <div class="field" style="max-width:360px;margin-bottom:12px"><label for="typeSelect">Choose from the list, or tap a button below</label><select id="typeSelect"></select></div>
+          <div id="typeChips"></div>
+          <div class="step"><b>3 · Details</b><span>optional</span></div>
+          <div class="row">
+            <div class="field"><label for="timeInput">Time</label><input type="time" id="timeInput"></div>
+            <div class="field grow"><label for="noteInput">Note (what happened, what you did)</label><input type="text" id="noteInput" maxlength="300" placeholder="e.g. Called out 3x during read-aloud, moved seat"></div>
+            <button class="primary" id="logBtn" disabled>Log behavior</button>
+          </div>
+          <p class="hint" id="logHint">Pick a student and a behavior.</p>
+        </div>
+        <div id="rosterEmpty" hidden>
+          <div class="empty" style="text-align:left">
+            <strong style="color:var(--ink)">Start by adding your class.</strong><br>
+            Paste student names below, one per line. You can edit the list anytime under Roster &amp; behaviors.
+          </div>
+          <div class="field" style="margin-top:12px"><label for="quickRoster">Student names</label>
+            <textarea id="quickRoster" rows="6" placeholder="Aaliyah M.&#10;Brandon T.&#10;Camila R."></textarea></div>
+          <div class="row" style="margin-top:10px"><button class="primary" id="quickRosterBtn">Add students</button></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="toolbar" style="margin-bottom:4px">
+          <h2 id="dayTitle" style="margin:0">Today’s record</h2>
+          <button class="ghost" id="pdfDay">Daily PDF</button>
+        </div>
+        <div class="sumline" id="daySum"></div>
+        <ul class="entries" id="dayList"></ul>
+        <div id="dayBars"></div>
+      </div>
+    </div>
+    <div class="panel" id="ratingPanel" style="margin-top:20px">
+      <div class="toolbar">
+        <div><h2>Daily ratings</h2><p class="hint" style="margin:0">One overall rating per student for this day. It prints on each student's PDF page.</p></div>
+        <span class="pill" id="ratingCount"></span>
+      </div>
+      <div class="ratings" id="ratingGrid"></div>
+    </div>
+  </section>
+
+  <!-- WEEK -->
+  <section id="view-week" hidden>
+    <div class="panel">
+      <div class="toolbar">
+        <div><h2 id="weekTitle">Week</h2><div class="sumline" id="weekSum" style="margin:0"></div></div>
+        <div class="row">
+          <button class="iconbtn" id="prevWeek" aria-label="Previous week">‹</button>
+          <button class="iconbtn" id="nextWeek" aria-label="Next week">›</button><button class="ghost" id="exportWeek">Export week (CSV)</button><button class="ghost" id="exportAll">Export all (CSV)</button></div>
+      </div>
+      <div class="tablewrap"><table id="weekTable"></table></div>
+      <p class="hint">Numbers are disruptive behaviors; green +numbers are good behaviors. Select a student row to see their full history.</p>
+    </div>
+    <div class="grid2" style="margin-top:20px">
+      <div class="panel">
+        <h2>Behaviors this week</h2>
+        <div id="weekBars"></div>
+      </div>
+      <div class="panel" id="studentPanel">
+        <div class="toolbar" style="margin-bottom:6px">
+          <h2 id="stuTitle">Student history</h2>
+          <div class="field"><label for="stuSelect" class="sr">Student</label><select id="stuSelect"></select></div>
+        </div>
+        <div class="sumline" id="stuSum"></div>
+        <div id="stuBars"></div>
+        <div class="sub">All entries</div>
+        <ul class="entries" id="stuList"></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- SETUP -->
+  <section id="view-setup" hidden>
+    <div class="grid2">
+      <div class="panel">
+        <h2>Class roster</h2>
+        <p class="hint" style="margin-top:0">Removing a student keeps their past entries. You can bring them back later.</p>
+        <div class="writes" style="margin:12px 0 16px">
+          <div class="field"><label for="rosterAdd">Add students (one per line)</label><textarea id="rosterAdd" rows="3"></textarea></div>
+          <div class="row" style="margin-top:8px"><button class="primary" id="rosterAddBtn">Add</button></div>
+        </div>
+        <ul class="list" id="rosterList"></ul>
+      </div>
+      <div class="panel">
+        <h2>Behavior types</h2>
+        <p class="hint" style="margin-top:0">Good behaviors are worth recognizing. Minor behaviors are handled in class. Major behaviors usually need an office referral or a family contact.</p>
+        <div class="writes row" style="margin:12px 0 16px">
+          <div class="field grow"><label for="typeName">New behavior</label><input id="typeName" maxlength="40" placeholder="e.g. Leaving class without permission"></div>
+          <div class="field"><label for="typeLevel">Level</label><select id="typeLevel"><option value="positive" selected>Good</option><option value="minor">Minor</option><option value="major">Major</option></select></div>
+          <button class="primary" id="typeAddBtn">Add</button>
+        </div>
+        <ul class="list" id="typeList"></ul>
+      </div>
+    </div>
+  </section>
+</main>
+<div class="toast" id="toast" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script>
+(() => {
+const DEFAULT_TYPES = [
+  {name:"Excellent", level:"positive"},
+  {name:"Great effort", level:"positive"},
+  {name:"On task", level:"positive"},
+  {name:"Following directions", level:"positive"},
+  {name:"Helping others", level:"positive"},
+  {name:"Kind words", level:"positive"},
+  {name:"Active participation", level:"positive"},
+  {name:"Leadership", level:"positive"},
+  {name:"Calling out", level:"minor"},
+  {name:"Out of seat", level:"minor"},
+  {name:"Off-task", level:"minor"},
+  {name:"Side talking", level:"minor"},
+  {name:"Not following directions", level:"minor"},
+  {name:"Unprepared", level:"minor"},
+  {name:"Device misuse", level:"minor"},
+  {name:"Disrespect / defiance", level:"major"},
+  {name:"Inappropriate language", level:"major"},
+  {name:"Unsafe behavior", level:"major"},
+  {name:"Physical aggression", level:"major"}
+];
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2,"0");
+const iso = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const parse = s => { const [y,m,d] = s.split("-").map(Number); return new Date(y,m-1,d); };
+const today = () => iso(new Date());
+const nowTime = () => { const d=new Date(); return pad(d.getHours())+":"+pad(d.getMinutes()); };
+const fmtLong = s => parse(s).toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric",year:"numeric"});
+const fmtShort = s => parse(s).toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"});
+const fmtTime = t => { if(!t) return ""; const [h,m]=t.split(":").map(Number); return ((h%12)||12)+":"+pad(m)+(h<12?"a":"p"); };
+const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const shiftSchoolDay = (s,dir) => { const d=parse(s); do{ d.setDate(d.getDate()+dir);}while(d.getDay()===0||d.getDay()===6); return iso(d); };
+const fmtRange = (a,b) => { const x=parse(a), y=parse(b), m=d=>d.toLocaleDateString(undefined,{month:"short"});
+  if(x.getFullYear()!==y.getFullYear()) return `${m(x)} ${x.getDate()}, ${x.getFullYear()} – ${m(y)} ${y.getDate()}, ${y.getFullYear()}`;
+  if(x.getMonth()!==y.getMonth()) return `${m(x)} ${x.getDate()} – ${m(y)} ${y.getDate()}, ${y.getFullYear()}`;
+  return `${m(x)} ${x.getDate()}–${y.getDate()}, ${y.getFullYear()}`; };
+const weekRange = s => { const d=weekDays(s); return fmtRange(d[0],d[4]); };
+const weekDays = s => { const d=parse(s); const dow=(d.getDay()+6)%7; d.setDate(d.getDate()-dow); return Array.from({length:5},(_,i)=>{const x=new Date(d); x.setDate(d.getDate()+i); return iso(x);}); };
+
+const S = { students:[], incidents:[], ratings:[], types:null, date:today(), tab:"log", sel:new Set(), selType:null, focus:null, readOnly:false };
+const LEVELS = ["positive","minor","major"];
+const RATINGS = ["Good","Fair","Needs improvement"];
+const LV = {positive:"Good", minor:"Minor", major:"Major"};
+const types = () => { const l = S.types || DEFAULT_TYPES; return LEVELS.flatMap(v=>l.filter(t=>t.level===v)); };
+const isGoodLv = lv => lv==="excellent"||lv==="positive";
+const isBad = x => !isGoodLv(levelOf(x.type));
+const levelOf = name => (types().find(t=>t.name===name)||{}).level || "minor";
+const nameOf = id => (S.students.find(s=>s.id===id)||{}).name || "(removed student)";
+const activeStudents = () => S.students.filter(s=>!s.archived).sort((a,b)=>a.name.localeCompare(b.name));
+
+let toastT;
+function toast(msg){ const t=$("toast"); t.textContent=msg; t.hidden=false; clearTimeout(toastT); toastT=setTimeout(()=>t.hidden=true,2600); }
+function setStatus(msg,warn){ const s=$("status"); if(!msg){s.hidden=true;return;} s.hidden=false; s.textContent=msg; s.classList.toggle("warn",!!warn); }
+
+/* ---------- storage ---------- */
+let db = null;
+const mem = { students:[], incidents:[] };
+let memId = 0;
+const LKEY = "weekly-behavior-log-v1";
+const newId = () => "m"+Date.now().toString(36)+(++memId);
+function persist(){ if(db) return; try{ localStorage.setItem(LKEY, JSON.stringify({students:mem.students, incidents:mem.incidents, ratings:S.ratings, types:S.types})); }catch(_){} }
+function loadLocal(){
+  try{ const d=JSON.parse(localStorage.getItem(LKEY)||"null"); if(d){
+    mem.students=d.students||[]; mem.incidents=d.incidents||[]; S.ratings=d.ratings||[];
+    S.types=Array.isArray(d.types)&&d.types.length?d.types.map(t=>t.level==="excellent"?{...t,level:"positive"}:t):null;
+    S.students=[...mem.students]; S.incidents=[...mem.incidents]; return true; } }catch(_){}
+  return false;
+}
+function localMode(){
+  loadLocal(); render();
+  let ok=true; try{ localStorage.setItem(LKEY+"-test","1"); localStorage.removeItem(LKEY+"-test"); }catch(_){ ok=false; }
+  setStatus(ok ? "Saved on this device only. Use the same computer and browser to keep your log, and export to CSV for a backup."
+               : "This browser is blocking storage, so entries won't be saved. Try a regular (not private) window.", true);
+}
+async function saveFile(filename, data, mime){
+  const dl = window.claude && window.claude.use ? await window.claude.use("downloads") : null;
+  if(dl){
+    try{ await dl.save({filename, data}); toast("Saved "+filename); }
+    catch(e){ if(e.code!=="declined") toast("Couldn't save the file. Try again in a moment."); }
+    return;
+  }
+  try{
+    const url=URL.createObjectURL(new Blob([data],{type:mime}));
+    const a=document.createElement("a"); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),4000); toast("Downloaded "+filename);
+  }catch(_){ toast("Couldn't download the file in this view."); }
+}
+function writeErr(e){
+  const code = e && e.code;
+  if(code==="quota_exceeded") toast("Storage is full. Export to CSV, then delete old entries.");
+  else if(code==="invalid_argument" && !S.readOnly){ toast("You can view this log but not change it."); }
+  else toast("Couldn't save. Check your connection and try again.");
+  console.error(e);
+}
+const store = {
+  async addStudent(name){
+    const body={name, archived:false, createdAt:Date.now()};
+    if(db) return db.collection("students").add(body);
+    mem.students.push({id:newId(),...body}); S.students=[...mem.students]; persist(); render();
+  },
+  async setRating(date,sid,rating){
+    const id=date+"_"+sid;
+    if(db) return rating ? db.doc("ratings/"+id).set({date,studentId:sid,rating,updatedAt:Date.now()}) : db.doc("ratings/"+id).delete();
+    S.ratings=S.ratings.filter(r=>r.id!==id); if(rating) S.ratings.push({id,date,studentId:sid,rating}); persist(); render();
+  },
+  async setArchived(id,archived){
+    if(db) return db.doc("students/"+id).update({archived});
+    const s=mem.students.find(x=>x.id===id); if(s) s.archived=archived; S.students=[...mem.students]; persist(); render();
+  },
+  async addIncident(body){
+    if(db) return db.collection("incidents").add(body);
+    mem.incidents.push({id:newId(),...body}); S.incidents=[...mem.incidents]; persist(); render();
+  },
+  async deleteIncident(id){
+    if(db) return db.doc("incidents/"+id).delete();
+    mem.incidents=mem.incidents.filter(x=>x.id!==id); S.incidents=[...mem.incidents]; persist(); render();
+  },
+  async saveTypes(list){
+    if(db) return db.doc("config/types").set({list, v:4});
+    S.types=list; persist(); render();
+  }
+};
+
+async function boot(){
+  render();
+  if(!window.claude || !window.claude.use){ localMode(); return; }
+  db = await window.claude.use("db");
+  const user = await window.claude.use("user");
+  if(!db){ localMode(); return; }
+  if(user){ try{ const can = await user.canEdit(); if(can===false){ S.readOnly=true; document.body.classList.add("ro"); } }catch(_){} }
+  let loaded={s:false,i:false};
+  const timer=setTimeout(()=>setStatus("Can't reach your saved log yet. What you see may be out of date.",true),10000);
+  const done=()=>{ if(loaded.s&&loaded.i){ clearTimeout(timer); setStatus(S.readOnly?"View only: you can read this log but not change it.":null); } };
+  const fail=e=>{ clearTimeout(timer); setStatus("Your saved log is unavailable right now. Reload the page to try again.",true); console.error(e); };
+  db.collection("students").onSnapshot(snap=>{
+    S.students=snap.docs.map(d=>({id:d.id,...d.data()}));
+    if(!snap.metadata.fromCache) loaded.s=true; done(); render();
+  },fail);
+  db.collection("incidents").onSnapshot(snap=>{
+    S.incidents=snap.docs.map(d=>({id:d.id,...d.data()}));
+    if(!snap.metadata.fromCache) loaded.i=true; done(); render();
+  },fail);
+  db.collection("ratings").onSnapshot(snap=>{
+    S.ratings=snap.docs.map(d=>({id:d.id,...d.data()})); render();
+  },fail);
+  db.doc("config/types").onSnapshot(snap=>{
+    const l = snap.exists && snap.data().list;
+    let list = Array.isArray(l) && l.length ? l : null;
+    if(list && !(snap.data().v>=2)) list = DEFAULT_TYPES.filter(t=>isGoodLv(t.level)).concat(list.filter(t=>!isGoodLv(t.level)));
+    if(list) list = list.map(t=>t.level==="excellent"?{...t,level:"positive"}:t);
+    S.types = list; render();
+  },fail);
+}
+
+/* ---------- render ---------- */
+function bars(container, rows, max, cls){
+  if(!rows.length){ container.innerHTML=""; return; }
+  container.innerHTML = '<div class="bars">'+rows.map(r=>
+    `<div class="barrow"><span class="lbl" title="${esc(r.label)}">${esc(r.label)}</span><div class="track"><div class="fill ${r.cls||cls||""}" style="width:${Math.max(4,r.n/max*100)}%"></div></div><span class="n">${r.n}</span></div>`).join("")+'</div>';
+}
+function countBy(list,key){ const m=new Map(); list.forEach(x=>{const k=key(x); m.set(k,(m.get(k)||0)+1);}); return m; }
+
+function entryHTML(x, showDate){
+  const lv=levelOf(x.type);
+  return `<li class="entry"><time>${showDate?esc(fmtShort(x.date).replace(/,.*$/,"")):""}${showDate?"<br>":""}${esc(fmtTime(x.time))}</time>
+    <div><span class="who">${showDate?"":esc(nameOf(x.studentId))}</span>${showDate?`<span class="tag ${lv}" style="margin-left:0">${esc(x.type)}</span>`:`<span class="tag ${lv}">${esc(x.type)}</span>`}
+    ${x.note?`<div class="note">${esc(x.note)}</div>`:""}</div>
+    <button class="del writes" data-del="${esc(x.id)}" aria-label="Delete entry">Delete</button></li>`;
+}
+
+function renderLog(){
+  const list = activeStudents();
+  $("rosterEmpty").hidden = S.students.length>0;
+  $("logForm").hidden = S.students.length===0;
+  const day = S.incidents.filter(x=>x.date===S.date).sort((a,b)=>(b.time||"").localeCompare(a.time||"")||b.createdAt-a.createdAt);
+  const perStu = countBy(day.filter(isBad),x=>x.studentId);
+  const goodStu = countBy(day.filter(x=>!isBad(x)),x=>x.studentId);
+  const majorStu = new Set(day.filter(x=>levelOf(x.type)==="major").map(x=>x.studentId));
+  [...S.sel].forEach(id=>{ if(!list.find(s=>s.id===id)) S.sel.delete(id); });
+  $("studentGrid").innerHTML = list.map(s=>{
+    const n=perStu.get(s.id)||0, g=goodStu.get(s.id)||0;
+    const b = (g?`<span class="ct good" aria-label="${g} good today">+${g}</span>`:"")+(n?`<span class="ct ${majorStu.has(s.id)?"major":""}" aria-label="${n} disruptive today">${n}</span>`:"");
+    return `<button class="stu" data-stu="${esc(s.id)}" aria-pressed="${S.sel.has(s.id)}"><span>${esc(s.name)}</span>${b?`<span class="cts">${b}</span>`:""}</button>`;
+  }).join("");
+  if(S.selType && !types().find(t=>t.name===S.selType)) S.selType=null;
+  const chip = t=>`<button class="type ${t.level}" data-type="${esc(t.name)}" aria-pressed="${S.selType===t.name}">${esc(t.name)}</button>`;
+  const good = types().filter(t=>isGoodLv(t.level)), bad = types().filter(t=>!isGoodLv(t.level));
+  $("typeSelect").innerHTML = '<option value="">Select a behavior…</option>' + LEVELS.map(lv=>{ const l=types().filter(t=>t.level===lv); return l.length?`<optgroup label="${LV[lv]}">${l.map(t=>`<option ${S.selType===t.name?"selected":""}>${esc(t.name)}</option>`).join("")}</optgroup>`:""; }).join("");
+  const rmap = new Map(S.ratings.filter(r=>r.date===S.date).map(r=>[r.studentId,r.rating]));
+  $("ratingPanel").hidden = !list.length;
+  $("ratingCount").textContent = `${list.filter(s=>rmap.has(s.id)).length} of ${list.length} rated`;
+  $("ratingGrid").innerHTML = list.map(s=>{ const v=rmap.get(s.id)||""; return `<div class="rrow"><span>${esc(s.name)}</span><select id="rate-${esc(s.id)}" data-rate="${esc(s.id)}" data-val="${esc(v)}" aria-label="Daily rating for ${esc(s.name)}" ${S.readOnly?"disabled":""}><option value="">Not rated</option>${RATINGS.map(r=>`<option ${r===v?"selected":""}>${r}</option>`).join("")}</select></div>`; }).join("");
+  $("typeChips").innerHTML = (good.length?`<div class="typegroup"><span class="glabel">Good behavior</span><div class="types">${good.map(chip).join("")}</div></div>`:"")
+    + (bad.length?`<div class="typegroup"><span class="glabel">Disruptive behavior</span><div class="types">${bad.map(chip).join("")}</div></div>`:"");
+  const ready = S.sel.size>0 && S.selType;
+  $("logBtn").disabled = !ready;
+  $("logBtn").textContent = S.sel.size>1 ? `Log for ${S.sel.size} students` : "Log behavior";
+  $("logHint").textContent = !S.sel.size ? "Pick a student and a behavior." : !S.selType ? "Now pick a behavior." :
+    `${[...S.sel].map(nameOf).join(", ")} · ${S.selType}`;
+
+  const isToday = S.date===today();
+  $("dayTitle").textContent = isToday ? "Today’s record" : fmtShort(S.date);
+  const cnt = lv => day.filter(x=>levelOf(x.type)===lv).length;
+  $("daySum").innerHTML = day.length ? `<span><strong>${day.length}</strong> entries</span><span><strong>${new Set(day.map(x=>x.studentId)).size}</strong> students</span><span><strong>${cnt("positive")}</strong> good · <strong>${cnt("minor")}</strong> minor · <strong>${cnt("major")}</strong> major</span>` : "";
+  $("dayList").innerHTML = day.length ? day.map(x=>entryHTML(x,false)).join("") : `<li class="empty">No behaviors logged for ${isToday?"today":"this day"}.</li>`;
+  const byType=[...countBy(day,x=>x.type)].sort((a,b)=>b[1]-a[1]);
+  const box=$("dayBars");
+  if(byType.length){ box.innerHTML='<div class="sub">By behavior</div><div id="dayBarsIn"></div>'; bars($("dayBarsIn"),byType.map(([k,n])=>({label:k,n,cls:levelOf(k)})),byType[0][1]); }
+  else box.innerHTML="";
+}
+
+function renderWeek(){
+  const days = weekDays(S.date);
+  const inWeek = S.incidents.filter(x=>days.includes(x.date));
+  $("weekTitle").textContent = "Week: "+weekRange(S.date);
+  const studs = new Set(inWeek.map(x=>x.studentId));
+  const wg = inWeek.filter(x=>!isBad(x)).length;
+  $("weekSum").innerHTML = `<span><strong>${wg}</strong> good</span><span><strong>${inWeek.length-wg}</strong> disruptive</span><span><strong>${studs.size}</strong> students</span>`;
+  const rows = [...activeStudents()];
+  inWeek.forEach(x=>{ if(!rows.find(s=>s.id===x.studentId)) rows.push({id:x.studentId,name:nameOf(x.studentId)}); });
+  const cell = (sid,d) => inWeek.filter(x=>x.studentId===sid&&x.date===d);
+  let h = "<thead><tr><th>Student</th>"+days.map(d=>`<th${d===S.date?' style="color:var(--ink)"':""}>${esc(fmtShort(d))}</th>`).join("")+"<th>Week</th></tr></thead><tbody>";
+  if(!rows.length) h+=`<tr><td colspan="7" style="text-align:center;color:var(--muted)">Add students to see the week.</td></tr>`;
+  rows.forEach(s=>{
+    let tot=0, gtot=0;
+    h+=`<tr class="click ${S.focus===s.id?"on":""}" data-focus="${esc(s.id)}"><td>${esc(s.name)}</td>`+days.map(d=>{
+      const all=cell(s.id,d), c=all.filter(isBad), g=all.length-c.length; tot+=c.length; gtot+=g;
+      const mj=c.some(x=>levelOf(x.type)==="major");
+      return `<td class="${!all.length?"z":mj?"h2":c.length>=3?"h1":""}" title="${esc(all.map(x=>x.type).join(", "))}">${c.length||(g?"":"·")}${g?`<span class="plus">+${g}</span>`:""}</td>`;
+    }).join("")+`<td><strong>${tot||""}</strong>${gtot?`<span class="plus">+${gtot}</span>`:""}</td></tr>`;
+  });
+  h+="</tbody><tfoot><tr><td>Total</td>"+days.map(d=>{const a=inWeek.filter(x=>x.date===d), b=a.filter(isBad).length, g=a.length-b; return `<td>${b}${g?`<span class="plus">+${g}</span>`:""}</td>`;}).join("")+`<td>${inWeek.length-wg}${wg?`<span class="plus">+${wg}</span>`:""}</td></tr></tfoot>`;
+  $("weekTable").innerHTML=h;
+  const bt=[...countBy(inWeek,x=>x.type)].sort((a,b)=>b[1]-a[1]);
+  if(bt.length) bars($("weekBars"),bt.map(([k,n])=>({label:k,n,cls:levelOf(k)})),bt[0][1]);
+  else $("weekBars").innerHTML='<div class="empty">No entries this week.</div>';
+
+  // student history
+  const all = [...S.students].sort((a,b)=>a.name.localeCompare(b.name));
+  if(!S.focus && all.length) S.focus = activeStudents()[0]?.id || all[0].id;
+  $("stuSelect").innerHTML = all.length ? all.map(s=>`<option value="${esc(s.id)}" ${s.id===S.focus?"selected":""}>${esc(s.name)}${s.archived?" (removed)":""}</option>`).join("") : "<option>No students yet</option>";
+  const mine = S.incidents.filter(x=>x.studentId===S.focus).sort((a,b)=>b.date.localeCompare(a.date)||(b.time||"").localeCompare(a.time||""));
+  $("stuTitle").textContent = S.focus ? nameOf(S.focus) : "Student history";
+  const mjr = mine.filter(x=>levelOf(x.type)==="major").length, gd = mine.filter(x=>!isBad(x)).length;
+  const dset = new Set(mine.map(x=>x.date));
+  $("stuSum").innerHTML = mine.length ? `<span><strong>${mine.length}</strong> entries on <strong>${dset.size}</strong> days</span><span><strong>${gd}</strong> good · <strong>${mine.length-mjr-gd}</strong> minor · <strong>${mjr}</strong> major</span><span>This week: <strong>${inWeek.filter(x=>x.studentId===S.focus).length}</strong></span>` : "";
+  const sb=[...countBy(mine,x=>x.type)].sort((a,b)=>b[1]-a[1]);
+  if(sb.length) bars($("stuBars"),sb.map(([k,n])=>({label:k,n,cls:levelOf(k)})),sb[0][1]); else $("stuBars").innerHTML="";
+  $("stuList").innerHTML = mine.length ? mine.map(x=>entryHTML(x,true)).join("") : '<li class="empty">No entries for this student.</li>';
+}
+
+function renderSetup(){
+  const all=[...S.students].sort((a,b)=>(a.archived-b.archived)||a.name.localeCompare(b.name));
+  $("rosterList").innerHTML = all.length ? all.map(s=>`<li class="${s.archived?"archived":""}"><span>${esc(s.name)} ${s.archived?'<span class="pill">removed</span>':""}</span>
+    <button class="ghost writes" data-arch="${esc(s.id)}" data-to="${!s.archived}">${s.archived?"Restore":"Remove"}</button></li>`).join("")
+    : '<li class="empty" style="display:block">No students yet.</li>';
+  $("rosterList").insertAdjacentHTML("afterbegin", all.length?`<li style="border:0;padding-top:0"><span class="pill">${activeStudents().length} active students</span></li>`:"");
+  $("typeList").innerHTML = types().map((t,i)=>`<li><span><span class="tag ${t.level}" style="margin-left:0">${LV[t.level]||"Minor"}</span> ${esc(t.name)}</span>
+    <button class="ghost writes" data-rmtype="${i}">Remove</button></li>`).join("");
+}
+
+function render(){
+  $("dateInput").value=S.date;
+  $("dateLong").textContent=fmtLong(S.date)+" · Week: "+weekRange(S.date);
+  ["log","week","setup"].forEach(t=>{ $("view-"+t).hidden = S.tab!==t; $("tab-"+t).setAttribute("aria-selected",S.tab===t); });
+  if(S.tab==="log") renderLog(); else if(S.tab==="week") renderWeek(); else renderSetup();
+}
+
+/* ---------- csv ---------- */
+async function exportCSV(list, filename){
+  if(!list.length){ toast("Nothing to export yet."); return; }
+  const q=v=>'"'+String(v??"").replace(/"/g,'""')+'"';
+  const rows=[["Date","Time","Student","Behavior","Level","Note"]].concat(
+    [...list].sort((a,b)=>a.date.localeCompare(b.date)||(a.time||"").localeCompare(b.time||""))
+    .map(x=>[x.date,x.time,nameOf(x.studentId),x.type,LV[levelOf(x.type)],x.note]));
+  const csv=rows.map(r=>r.map(q).join(",")).join("\r\n");
+  await saveFile(filename, csv, "text/csv");
+}
+
+/* ---------- daily pdf ---------- */
+async function dailyPDF(){
+  const J = window.jspdf && window.jspdf.jsPDF;
+  if(!J){ toast("The PDF tool didn't load. Reload the page and try again."); return; }
+  const studentsList = activeStudents();
+  if(!studentsList.length){ toast("Add students first."); return; }
+  const day = S.incidents.filter(x=>x.date===S.date).sort((a,b)=>(a.time||"").localeCompare(b.time||"")||a.createdAt-b.createdAt);
+  const days = weekDays(S.date), inWeek = S.incidents.filter(x=>days.includes(x.date));
+  const doc = new J({unit:"pt", format:"letter"});
+  const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight(), M = 48;
+  const ink=[23,34,31], muted=[91,105,100], line=[211,218,215], teal=[31,94,84];
+  const COL = {excellent:[45,108,176], positive:[47,122,79], minor:[183,121,31], major:[179,58,46]};
+  const TINT = {excellent:[224,235,247], positive:[225,242,231], minor:[253,242,220], major:[251,228,225]};
+  const cnt = (list,lv) => list.filter(x=>levelOf(x.type)===lv).length;
+
+  function header(title, sub){
+    doc.setFont("helvetica","bold"); doc.setFontSize(18); doc.setTextColor(...ink);
+    doc.text(title, M, 60);
+    doc.setFont("helvetica","normal"); doc.setFontSize(11); doc.setTextColor(...muted);
+    doc.text(sub || fmtLong(S.date), M, 80);
+    doc.text("Week: "+weekRange(S.date), M, 96);
+    if(sub) doc.text(fmtLong(S.date), W-M, 96, {align:"right"});
+    else { doc.text("Teacher: ______________________", W-M, 80, {align:"right"}); doc.text("Class: ________________________", W-M, 96, {align:"right"}); }
+    doc.setDrawColor(...teal); doc.setLineWidth(1.5); doc.line(M,108,W-M,108);
+  }
+  function sigLine(x, y, w, label){
+    doc.setDrawColor(...muted); doc.setLineWidth(.75); doc.line(x, y, x+w, y);
+    doc.setFontSize(9.5); doc.setTextColor(...muted); doc.text(label, x, y+13);
+  }
+
+  /* page 1: class summary */
+  header("Daily Behavior Log");
+  doc.setFontSize(10.5); doc.setTextColor(...ink);
+  doc.text(`${day.length} entries  ·  ${new Set(day.map(x=>x.studentId)).size} students  ·  ${cnt(day,"positive")} good  ·  ${cnt(day,"minor")} minor  ·  ${cnt(day,"major")} major`, M, 128);
+  doc.autoTable({
+    startY:142, margin:{left:M,right:M},
+    head:[["Time","Student","Behavior","Level","Note / action taken"]],
+    body: day.length ? day.map(x=>[fmtTime(x.time), nameOf(x.studentId), x.type, LV[levelOf(x.type)], x.note||""])
+                     : [[{content:"No behaviors logged for this day.", colSpan:5, styles:{halign:"center", textColor:muted}}]],
+    styles:{font:"helvetica", fontSize:9.5, cellPadding:5, textColor:ink, lineColor:line, lineWidth:.5, valign:"top"},
+    headStyles:{fillColor:teal, textColor:255, fontStyle:"bold"},
+    alternateRowStyles:{fillColor:[245,247,246]},
+    columnStyles:{0:{cellWidth:46},1:{cellWidth:96},2:{cellWidth:118},3:{cellWidth:44},4:{cellWidth:"auto"}},
+    didParseCell:d=>{ if(d.section==="body"&&d.column.index===3&&day.length){ const lv=Object.keys(LV).find(k=>LV[k]===d.cell.raw); d.cell.styles.textColor = COL[lv]||ink; d.cell.styles.fontStyle="bold"; } }
+  });
+  if(day.length){
+    const byType=[...countBy(day,x=>x.type)].sort((a,b)=>LEVELS.indexOf(levelOf(a[0]))-LEVELS.indexOf(levelOf(b[0]))||b[1]-a[1]);
+    doc.autoTable({startY:doc.lastAutoTable.finalY+20, margin:{left:M}, tableWidth:(W-2*M)/2, head:[["Behavior","Level","Count"]],
+      body:byType.map(([k,n])=>[k, LV[levelOf(k)], n]),
+      styles:{font:"helvetica", fontSize:9.5, cellPadding:4, textColor:ink, lineColor:line, lineWidth:.5},
+      headStyles:{fillColor:[232,236,234], textColor:ink}, columnStyles:{2:{halign:"center"}},
+      didParseCell:d=>{ if(d.section==="body"&&d.column.index===1){ const lv=Object.keys(LV).find(k=>LV[k]===d.cell.raw); d.cell.styles.textColor=COL[lv]; } }});
+  }
+
+  /* one page per student */
+  const good = types().filter(t=>t.level==="positive"), minor = types().filter(t=>t.level==="minor"), major = types().filter(t=>t.level==="major");
+  for(const s of studentsList){
+    doc.addPage();
+    const mine = day.filter(x=>x.studentId===s.id);
+    const wk = inWeek.filter(x=>x.studentId===s.id);
+    header(s.name, "Student Behavior Report");
+    // today chips
+    let cx = M, cy = 122;
+    const chip = (label, lv) => { doc.setFontSize(10); const w = doc.getTextWidth(label)+18;
+      doc.setFillColor(...(TINT[lv]||[232,236,234])); doc.roundedRect(cx, cy, w, 20, 4, 4, "F");
+      doc.setTextColor(...(COL[lv]||ink)); doc.setFont("helvetica","bold"); doc.text(label, cx+9, cy+13.5); doc.setFont("helvetica","normal"); cx += w+8; };
+    chip(`Today: ${cnt(mine,"positive")} good`, "positive");
+    chip(`${cnt(mine,"minor")} minor`, "minor");
+    chip(`${cnt(mine,"major")} major`, "major");
+    doc.setFontSize(9.5); doc.setTextColor(...muted);
+    doc.text(`This week: ${wk.length-wk.filter(isBad).length} good, ${wk.filter(isBad).length} disruptive`, W-M, cy+13.5, {align:"right"});
+
+    // daily rating row
+    const rating = (S.ratings.find(r=>r.date===S.date&&r.studentId===s.id)||{}).rating;
+    const RC = {"Good":"positive","Fair":"minor","Needs improvement":"major"};
+    let rx = M, ry = 168;
+    doc.setFont("helvetica","bold"); doc.setFontSize(10.5); doc.setTextColor(...ink); doc.text("Daily rating:", rx, ry); rx += 78;
+    for(const r of RATINGS){
+      const on = r===rating, lv = RC[r];
+      doc.setLineWidth(1); doc.setDrawColor(...(on?COL[lv]:muted));
+      if(on){ doc.setFillColor(...TINT[lv]); doc.rect(rx, ry-10, 12, 12, "FD"); doc.setLineWidth(1.8); doc.lines([[3,3.2],[5.5,-7.4]], rx+2.2, ry-4.2); }
+      else doc.rect(rx, ry-10, 12, 12);
+      doc.setFont("helvetica", on?"bold":"normal"); doc.setFontSize(10); doc.setTextColor(...(on?COL[lv]:ink));
+      doc.text(r, rx+18, ry); rx += 18 + doc.getTextWidth(r) + 22;
+    }
+    // checklist columns
+    const colW = (W-2*M-28)/2, top = 204;
+    const drawList = (x, y, title, groups) => {
+      doc.setFont("helvetica","bold"); doc.setFontSize(11.5); doc.setTextColor(...ink); doc.text(title, x, y);
+      doc.setDrawColor(...line); doc.setLineWidth(.75); doc.line(x, y+6, x+colW, y+6);
+      y += 24;
+      for(const [sub, list, lv] of groups){
+        if(!list.length) continue;
+        if(sub){ doc.setFont("helvetica","bold"); doc.setFontSize(8.5); doc.setTextColor(...COL[lv]); doc.text(sub.toUpperCase(), x, y); y += 16; }
+        for(const t of list){
+          const hits = mine.filter(e=>e.type===t.name);
+          const on = hits.length>0;
+          doc.setLineWidth(1); doc.setDrawColor(...(on?COL[lv]:muted));
+          if(on){ doc.setFillColor(...TINT[lv]); doc.rect(x, y-10, 12, 12, "FD");
+            doc.setDrawColor(...COL[lv]); doc.setLineWidth(1.8); doc.lines([[3,3.2],[5.5,-7.4]], x+2.2, y-4.2); }
+          else doc.rect(x, y-10, 12, 12);
+          doc.setFont("helvetica", on?"bold":"normal"); doc.setFontSize(10); doc.setTextColor(...ink);
+          const lbl = doc.splitTextToSize(t.name, colW-90);
+          doc.text(lbl, x+20, y);
+          if(on){ doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(...muted);
+            const when = (hits.length>1?`x${hits.length}  `:"")+hits.map(e=>fmtTime(e.time)).join(", ");
+            doc.text(doc.splitTextToSize(when, 84), x+colW, y, {align:"right"}); }
+          y += 12*lbl.length + 8;
+        }
+        y += 6;
+      }
+      return y;
+    };
+    const yL = drawList(M, top, "Good behavior", [[null, good, "positive"]]);
+    const yR = drawList(M+colW+28, top, "Disruptive behavior", [["Minor", minor, "minor"], ["Major", major, "major"]]);
+
+    // notes
+    let y = Math.max(yL, yR) + 10;
+    doc.setFont("helvetica","bold"); doc.setFontSize(11.5); doc.setTextColor(...ink); doc.text("Notes", M, y);
+    doc.setDrawColor(...line); doc.setLineWidth(.75); doc.line(M, y+6, W-M, y+6); y += 22;
+    doc.setFont("helvetica","normal"); doc.setFontSize(9.5);
+    const noted = mine.filter(e=>e.note);
+    for(const e of noted){
+      const txt = doc.splitTextToSize(`${fmtTime(e.time)}  ${e.type}: ${e.note}`, W-2*M);
+      if(y + txt.length*12 > H-150) break;
+      doc.setTextColor(...ink); doc.text(txt, M, y); y += txt.length*12 + 4;
+    }
+    const sigY = H-92;
+    doc.setDrawColor(...line); doc.setLineWidth(.5);
+    for(let ly = y+14; ly < sigY-28; ly += 22) doc.line(M, ly, W-M, ly);
+
+    sigLine(M, sigY, 200, "Teacher signature");
+    sigLine(M+222, sigY, 200, "Parent / guardian signature");
+    sigLine(W-M-90, sigY, 90, "Date");
+  }
+
+  const n = doc.internal.getNumberOfPages();
+  for(let i=1;i<=n;i++){ doc.setPage(i); doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(...muted);
+    doc.text(`Confidential student record · Page ${i} of ${n}`, W/2, H-24, {align:"center"}); }
+  const filename = `behavior-log-${S.date}.pdf`;
+  await saveFile(filename, doc.output("arraybuffer"), "application/pdf");
+}
+/* ---------- events ---------- */
+document.addEventListener("click", async e=>{
+  const t=e.target.closest("button,tr[data-focus]"); if(!t) return;
+  if(t.dataset.tab){ S.tab=t.dataset.tab; render(); return; }
+  if(t.dataset.stu){ const id=t.dataset.stu; S.sel.has(id)?S.sel.delete(id):S.sel.add(id); renderLog(); return; }
+  if(t.dataset.type!==undefined && t.classList.contains("type")){ S.selType = S.selType===t.dataset.type?null:t.dataset.type; renderLog(); return; }
+  if(t.dataset.focus){ S.focus=t.dataset.focus; renderWeek(); $("studentPanel").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"}); return; }
+  if(t.dataset.del){
+    if(!t.classList.contains("arm")){ t.classList.add("arm"); t.textContent="Confirm"; setTimeout(()=>{ if(t.isConnected){t.classList.remove("arm"); t.textContent="Delete";} },3000); return; }
+    try{ await store.deleteIncident(t.dataset.del); toast("Entry deleted"); }catch(err){ writeErr(err); } return;
+  }
+  if(t.dataset.arch){ try{ await store.setArchived(t.dataset.arch, t.dataset.to==="true"); }catch(err){ writeErr(err); } return; }
+  if(t.dataset.rmtype!==undefined){
+    if(!t.classList.contains("arm")){ t.classList.add("arm","del"); t.textContent="Confirm"; setTimeout(()=>{ if(t.isConnected){t.classList.remove("arm","del"); t.textContent="Remove";} },3000); return; }
+    const l=types().filter((_,i)=>i!==Number(t.dataset.rmtype));
+    try{ await store.saveTypes(l); }catch(err){ writeErr(err); } return;
+  }
+});
+
+$("typeSelect").onchange=e=>{ S.selType=e.target.value||null; renderLog(); };
+document.addEventListener("change", async e=>{
+  const sel=e.target.closest("select[data-rate]"); if(!sel) return;
+  sel.dataset.val=sel.value;
+  try{ await store.setRating(S.date, sel.dataset.rate, sel.value); toast(sel.value?`${nameOf(sel.dataset.rate)}: ${sel.value}`:"Rating cleared"); }catch(err){ writeErr(err); }
+});
+$("clearSel").onclick=()=>{ S.sel.clear(); S.selType=null; renderLog(); };
+$("logBtn").onclick=async()=>{
+  if(!S.sel.size||!S.selType) return;
+  const btn=$("logBtn"); btn.disabled=true;
+  const ids=[...S.sel], type=S.selType, time=$("timeInput").value||nowTime(), note=$("noteInput").value.trim();
+  try{
+    for(const id of ids) await store.addIncident({studentId:id, date:S.date, time, type, note, createdAt:Date.now()});
+    toast(`Logged ${type} for ${ids.length>1?ids.length+" students":nameOf(ids[0])}`);
+    S.sel.clear(); S.selType=null; $("noteInput").value=""; $("timeInput").value="";
+  }catch(err){ writeErr(err); }
+  renderLog();
+};
+$("timeInput").addEventListener("focus",()=>{ if(!$("timeInput").value) $("timeInput").value=nowTime(); });
+
+async function addNames(text){
+  const existing=new Set(S.students.map(s=>s.name.toLowerCase()));
+  const names=[...new Set(text.split(/\r?\n|,/).map(s=>s.trim()).filter(Boolean))].filter(n=>!existing.has(n.toLowerCase()));
+  if(!names.length){ toast("No new names to add."); return false; }
+  try{ for(const n of names) await store.addStudent(n.slice(0,60)); toast(`Added ${names.length} student${names.length>1?"s":""}`); return true; }
+  catch(err){ writeErr(err); return false; }
+}
+$("quickRosterBtn").onclick=async()=>{ if(await addNames($("quickRoster").value)) $("quickRoster").value=""; };
+$("rosterAddBtn").onclick=async()=>{ if(await addNames($("rosterAdd").value)) $("rosterAdd").value=""; };
+$("typeAddBtn").onclick=async()=>{
+  const name=$("typeName").value.trim(); if(!name) return;
+  if(types().some(t=>t.name.toLowerCase()===name.toLowerCase())){ toast("That behavior is already on the list."); return; }
+  try{ await store.saveTypes([...types(),{name,level:$("typeLevel").value}]); $("typeName").value=""; toast("Behavior added"); }catch(err){ writeErr(err); }
+};
+$("stuSelect").onchange=e=>{ S.focus=e.target.value; renderWeek(); };
+$("dateInput").onchange=e=>{ if(e.target.value){ S.date=e.target.value; render(); } };
+$("prevDay").onclick=()=>{ S.date=shiftSchoolDay(S.date,-1); render(); };
+$("nextDay").onclick=()=>{ S.date=shiftSchoolDay(S.date,1); render(); };
+$("todayBtn").onclick=()=>{ S.date=today(); render(); };
+$("exportWeek").onclick=()=>{ const d=weekDays(S.date); exportCSV(S.incidents.filter(x=>d.includes(x.date)),`behavior-log-week-${d[0]}-to-${d[4]}.csv`); };
+$("pdfDay").onclick=dailyPDF;
+$("prevWeek").onclick=()=>{ const d=parse(S.date); d.setDate(d.getDate()-7); S.date=iso(d); render(); };
+$("nextWeek").onclick=()=>{ const d=parse(S.date); d.setDate(d.getDate()+7); S.date=iso(d); render(); };
+$("exportAll").onclick=()=>exportCSV(S.incidents,`behavior-log-all-${today()}.csv`);
+
+boot();
+})();
+</script>
+
+</body>
+</html>
