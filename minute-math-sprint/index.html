@@ -42,7 +42,8 @@ h1 span{background:var(--pop);color:#14232d;padding:0 .2em;border-radius:6px}
 .mode small{color:var(--muted);font-size:13px;line-height:1.35}
 .mode[aria-pressed="true"]{border-color:var(--lane);box-shadow:inset 0 0 0 2px var(--lane)}
 .chip:focus-visible,.mode:focus-visible,.key:focus-visible,.btn:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--pop);outline-offset:2px}
-.row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:16px}
+@media (max-width:760px){.row{grid-template-columns:1fr 1fr}}
 @media (max-width:560px){.row{grid-template-columns:1fr}}
 select,.name{font:inherit;width:100%;padding:10px;border-radius:10px;border:2px solid var(--line);background:var(--surface);color:var(--ink);min-height:44px}
 select:disabled{opacity:.55}
@@ -136,6 +137,10 @@ select:disabled{opacity:.55}
           <option value="120">2 minutes</option>
         </select>
       </div>
+      <div>
+        <label class="label" for="count">Problems</label>
+        <select id="count"></select>
+      </div>
     </div>
     <button class="btn" id="start">Start sprint</button>
     <p class="note" id="note"></p>
@@ -181,7 +186,11 @@ select:disabled{opacity:.55}
 <script src="config.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const PRACTICE_COUNT=20;
+let COUNT=20;
+(()=>{const sel=$("count");for(let i=1;i<=50;i++)sel.add(new Option(i,i));
+  let v=20;try{v=+localStorage.getItem("problemCount")||20}catch(e){}
+  COUNT=v>=1&&v<=50?v:20;sel.value=COUNT;
+  sel.addEventListener("change",()=>{COUNT=+sel.value;try{localStorage.setItem("problemCount",COUNT)}catch(e){}});})();
 // Teacher's Google Sheet web app URL lives in config.js. Empty means scores stay on this device only.
 const SHEET_URL=(window.SPRINT_SHEET_URL||"").trim();
 let startedAt=0, pinger=null, running=false, recent=[];
@@ -189,7 +198,7 @@ function livePayload(status){
   return {type:"live", student:$("name").value.trim(), mode:mode[0].toUpperCase()+mode.slice(1),
     operation:opName[op], focus:mode==="baseline"?"all":$("focus").value, status,
     correct:score, tried:mode==="practice"?done:tries, timeLeft:mode==="practice"?"":left,
-    total:mode==="practice"?"":total, done:mode==="practice"?done:"", count:mode==="practice"?PRACTICE_COUNT:"",
+    total:mode==="practice"?"":total, done:mode==="practice"?done:"", count:mode==="practice"?COUNT:"",
     elapsed:Math.round((Date.now()-startedAt)/1000), current:cur?cur.t:"", recent:recent.slice(-4).join(" | ")};
 }
 function sendLive(status){
@@ -221,25 +230,26 @@ const r=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
 const who=()=>($("name").value.trim().toLowerCase()||"_");
 const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
 const baseKey=()=>`base:${who()}:${op}`;
-const bestKey=()=>`best:${who()}:${op}:${$("focus").value}:${$("len").value}`;
+const bestKey=()=>`best:${who()}:${op}:${$("focus").value}:${$("len").value}:${COUNT}`;
 const getBase=()=>{const v=store.get(baseKey());return v===null?null:+v};
 function refresh(){
   const isB=mode==="baseline", isP=mode==="practice";
   $("focus").disabled=isB; if(isB)$("focus").value="all";
   $("len").disabled=isB||isP; if(isB)$("len").value="60";
+  $("count").disabled=isB;
   $("start").textContent=isB?"Start baseline":isP?"Start practice":"Start sprint";
   const base=getBase(), who_=$("name").value.trim()||"this device";
   let n="";
   if(isB) n=base===null?`No baseline yet for ${who_} in ${opName[op]}.`:`Current ${opName[op]} baseline for ${who_}: ${base}. Taking it again replaces it.`;
-  else if(isP) n=`${PRACTICE_COUNT} facts, no clock. Miss twice and the answer is shown, then it moves on.`;
+  else if(isP) n=`${COUNT} facts, no clock. Miss twice and the answer is shown, then it moves on.`;
   else{const b=+store.get(bestKey())||0;
-    n=(base===null?`No ${opName[op]} baseline yet for ${who_}. Take one first to track growth.`:`Baseline: ${base}.`)+(b?` Best sprint with these settings: ${b}.`:"");}
+    n=(base===null?`No ${opName[op]} baseline yet for ${who_}. Take one first to track growth.`:`Baseline: ${base}.`)+` Sprint ends after ${COUNT} problem${COUNT===1?"":"s"} or when time runs out.`+(b?` Best sprint with these settings: ${b}.`:"");}
   $("note").textContent=n;
 }
 function press(group,attr,el){document.querySelectorAll(group).forEach(x=>x.setAttribute("aria-pressed","false"));el.setAttribute("aria-pressed","true");}
 document.querySelectorAll("#modes .mode").forEach(c=>c.onclick=()=>{press("#modes .mode",0,c);mode=c.dataset.mode;refresh();});
 document.querySelectorAll("#ops .chip").forEach(c=>c.onclick=()=>{press("#ops .chip",0,c);op=c.dataset.op;refresh();});
-["focus","len","name"].forEach(id=>$(id).addEventListener("input",refresh));
+["focus","len","name","count"].forEach(id=>$(id).addEventListener("input",refresh));
 function make(){
   const o=op==="mix"?["+","-","x","/"][r(0,3)]:op;
   const f=$("focus").value; let a=r(0,12), b=f==="all"?r(0,12):+f;
@@ -265,7 +275,9 @@ function submit(){
   if(mode!=="practice"){
     if(left<=0)return; tries++;
     if(ok)score++; else missed.push(`${cur.t} = <b>${cur.ans}</b>`);
-    $("score").textContent=score; flash(ok); next(); $("answer").focus(); return;
+    $("score").textContent=score; flash(ok);
+    if(mode==="sprint"&&tries>=COUNT){finish();return;}
+    next(); $("answer").focus(); return;
   }
   // practice: 2 tries per fact
   if(ok){
@@ -281,9 +293,9 @@ function submit(){
   }
 }
 function advance(wait){
-  done++; $("time").textContent=`${Math.min(done+1,PRACTICE_COUNT)} / ${PRACTICE_COUNT}`;
-  $("bar").style.transform=`scaleX(${1-done/PRACTICE_COUNT})`;
-  if(done>=PRACTICE_COUNT){setTimeout(finish,wait?0:400);return;}
+  done++; $("time").textContent=`${Math.min(done+1,COUNT)} / ${COUNT}`;
+  $("bar").style.transform=`scaleX(${1-done/COUNT})`;
+  if(done>=COUNT){setTimeout(finish,wait?0:400);return;}
   const go=()=>{next();$("answer").focus();};
   if(wait)go(); else{locked=true;setTimeout(()=>{locked=false;fb("");go();},500);}
 }
@@ -300,7 +312,7 @@ function start(){
   $("triesBox").hidden=!isP; $("track").classList.toggle("steps",isP);
   $("track").classList.remove("hurry"); $("bar").style.transform="scaleX(1)";
   clearInterval(t);
-  if(isP){$("leftLabel").textContent="Fact";$("time").textContent=`1 / ${PRACTICE_COUNT}`;}
+  if(isP){$("leftLabel").textContent="Fact";$("time").textContent=`1 / ${COUNT}`;}
   else{
     total=left=mode==="baseline"?60:+$("len").value;
     $("leftLabel").textContent="Time";$("time").textContent=left;
