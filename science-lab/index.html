@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Science Lab</title>
+<meta name="description" content="NC Grade 5 Science Lab for Grade 5 classes.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: field-notebook guide, single column on graph paper, numbered steps because order matters */
+:root{color-scheme:light;--bg:#f3f5f1;--grid:#e3e8e2;--surface:#fff;--surface-2:#eef1ec;--ink:#1b2830;--muted:#566670;--line:#d4dbd5;--life:#2c7a4b;--earth:#1f5f9e;--warn:#9a5b00;
+--display:"Bricolage Grotesque",ui-rounded,"Trebuchet MS",sans-serif;--body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;--mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace}
+@media (prefers-color-scheme:dark){:root{color-scheme:dark;--bg:#141a1e;--grid:#1c2429;--surface:#1b2328;--surface-2:#222c32;--ink:#e6ece8;--muted:#9db0b8;--line:#2f3b42;--life:#6cc893;--earth:#79b2ec;--warn:#f0b85a}}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 var(--body);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:28px 28px}
+.wrap{max-width:860px;margin:0 auto;padding-block:36px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.eyebrow{font:500 13px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--life)}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(30px,5vw,44px);line-height:1.05;margin:6px 0 10px;text-wrap:balance}
+h2{font-family:var(--display);font-weight:600;font-size:22px;margin:0 0 6px;text-wrap:balance}
+.lead{color:var(--muted);max-width:62ch;margin:0 0 24px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin-bottom:14px}
+ol.steps{list-style:none;counter-reset:s;padding:0;margin:0;display:grid;gap:14px}
+ol.steps>li{counter-increment:s;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 20px 18px 66px;position:relative}
+ol.steps>li::before{content:counter(s);position:absolute;left:18px;top:16px;width:32px;height:32px;border-radius:50%;background:var(--life);color:var(--surface);font:700 16px/32px var(--mono);text-align:center}
+ol.steps ul{margin:6px 0 0;padding-left:20px}ol.steps li li{margin:3px 0}
+b.ui{font-weight:700;background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:0 6px;white-space:nowrap}
+.code{margin-top:10px}
+.codehead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+pre{margin:0;max-height:260px;overflow:auto;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:12px;font:13px/1.45 var(--mono)}
+button,.btn{all:unset;cursor:pointer;background:var(--life);color:var(--surface);font-weight:700;padding:9px 16px;border-radius:10px;display:inline-block}
+button:focus-visible,a:focus-visible{outline:3px solid var(--earth);outline-offset:2px}
+.note{border-left:5px solid var(--warn);background:var(--surface);border-radius:10px;padding:12px 16px;margin-top:14px;font-size:15.5px}
+a{color:var(--earth)}
+.labs{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.lab{display:block;background:var(--surface);border:1px solid var(--line);border-top:5px solid var(--life);border-radius:12px;padding:16px;text-decoration:none;color:var(--ink)}
+.lab:hover{border-color:var(--life)}.lab b{font-family:var(--display);font-size:20px;display:block}.lab span{color:var(--muted);font-size:14.5px}
+.muted{color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="eyebrow">NC Grade 5 Science</div>
+<h1>Science Lab</h1>
+<p class="lead">Every 2023 NCDPI Grade 5 science standard with chapters, EOG-style practice passages, activities, games, and videos. Students: use the link your teacher posted in Google Classroom.</p>
+<div class="labs"><a class="lab" href="dickens/"><b>Dickens</b><span>Dickens Science Lab</span></a><a class="lab" href="harrison/"><b>Harrison</b><span>Harrison Science Lab</span></a><a class="lab" href="lamear/"><b>LaMear</b><span>LaMear Science Lab</span></a><a class="lab" href="echols/"><b>Echols</b><span>Echols Science Lab</span></a></div>
+<p class="muted" style="margin-top:22px">Teachers: <a href="setup.html">connect your class to a Google Sheet</a>.</p>
+</div>
+</body>
+</html>

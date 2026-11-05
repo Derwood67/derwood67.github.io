@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Science Lab Setup</title>
+<meta name="description" content="Teacher setup guide: connect the NC Grade 5 Science Lab to your own Google Sheet.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: field-notebook guide, single column on graph paper, numbered steps because order matters */
+:root{color-scheme:light;--bg:#f3f5f1;--grid:#e3e8e2;--surface:#fff;--surface-2:#eef1ec;--ink:#1b2830;--muted:#566670;--line:#d4dbd5;--life:#2c7a4b;--earth:#1f5f9e;--warn:#9a5b00;
+--display:"Bricolage Grotesque",ui-rounded,"Trebuchet MS",sans-serif;--body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;--mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace}
+@media (prefers-color-scheme:dark){:root{color-scheme:dark;--bg:#141a1e;--grid:#1c2429;--surface:#1b2328;--surface-2:#222c32;--ink:#e6ece8;--muted:#9db0b8;--line:#2f3b42;--life:#6cc893;--earth:#79b2ec;--warn:#f0b85a}}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 var(--body);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:28px 28px}
+.wrap{max-width:860px;margin:0 auto;padding-block:36px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.eyebrow{font:500 13px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--life)}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(30px,5vw,44px);line-height:1.05;margin:6px 0 10px;text-wrap:balance}
+h2{font-family:var(--display);font-weight:600;font-size:22px;margin:0 0 6px;text-wrap:balance}
+.lead{color:var(--muted);max-width:62ch;margin:0 0 24px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin-bottom:14px}
+ol.steps{list-style:none;counter-reset:s;padding:0;margin:0;display:grid;gap:14px}
+ol.steps>li{counter-increment:s;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 20px 18px 66px;position:relative}
+ol.steps>li::before{content:counter(s);position:absolute;left:18px;top:16px;width:32px;height:32px;border-radius:50%;background:var(--life);color:var(--surface);font:700 16px/32px var(--mono);text-align:center}
+ol.steps ul{margin:6px 0 0;padding-left:20px}ol.steps li li{margin:3px 0}
+b.ui{font-weight:700;background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:0 6px;white-space:nowrap}
+.code{margin-top:10px}
+.codehead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+pre{margin:0;max-height:260px;overflow:auto;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:12px;font:13px/1.45 var(--mono)}
+button,.btn{all:unset;cursor:pointer;background:var(--life);color:var(--surface);font-weight:700;padding:9px 16px;border-radius:10px;display:inline-block}
+button:focus-visible,a:focus-visible{outline:3px solid var(--earth);outline-offset:2px}
+.note{border-left:5px solid var(--warn);background:var(--surface);border-radius:10px;padding:12px 16px;margin-top:14px;font-size:15.5px}
+a{color:var(--earth)}
+.labs{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.lab{display:block;background:var(--surface);border:1px solid var(--line);border-top:5px solid var(--life);border-radius:12px;padding:16px;text-decoration:none;color:var(--ink)}
+.lab:hover{border-color:var(--life)}.lab b{font-family:var(--display);font-size:20px;display:block}.lab span{color:var(--muted);font-size:14.5px}
+.muted{color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="eyebrow">NC Grade 5 Science Lab · Teacher setup</div>
+<h1>Connect your class to a Google Sheet</h1>
+<p class="lead">Your students' scores save to a Google Sheet that only you own. This takes about five minutes, once. You need to be signed in to your school Google account.</p>
+<ol class="steps">
+<li><h2>Make a new Google Sheet</h2>Go to <a href="https://sheets.new" target="_blank" rel="noopener">sheets.new</a> to open a blank spreadsheet. Name it something like <i>Dickens Science Lab Scores</i>.</li>
+<li><h2>Add the class-records script</h2>In the sheet, open <b class="ui">Extensions</b> → <b class="ui">Apps Script</b>. Delete the few lines already there, then paste in the script below and click the <b class="ui">Save</b> icon.
+<div class="code"><div class="codehead"><span class="muted">Code.gs · 229 lines</span><button type="button" id="copy">Copy script</button></div>
+<pre id="src">/**
+ * NC Grade 5 Science Lab — class records
+ * Paste this into Extensions &gt; Apps Script in a NEW Google Sheet, then
+ * Deploy &gt; New deployment &gt; Web app (Execute as: Me, Who has access: Anyone).
+ * Student scores are stored only in this Google Sheet.
+ */
+const TABS = {
+  Students: [&quot;id&quot;, &quot;name&quot;, &quot;added&quot;],
+  Results:  [&quot;id&quot;, &quot;studentId&quot;, &quot;name&quot;, &quot;kind&quot;, &quot;topic&quot;, &quot;std&quot;, &quot;title&quot;, &quot;score&quot;, &quot;total&quot;, &quot;at&quot;, &quot;source&quot;],
+  Notes:    [&quot;id&quot;, &quot;studentId&quot;, &quot;text&quot;, &quot;at&quot;],
+  Settings: [&quot;setting&quot;, &quot;value&quot;]
+};
+
+/** Run once from the editor (optional): creates the four tabs. */
+function setup() { ensure_(); }
+
+let SS_ = null;
+function ensure_() {
+  if (SS_) return SS_;
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  Object.keys(TABS).forEach(function (n) {
+    let sh = ss.getSheetByName(n);
+    if (!sh) {
+      sh = ss.insertSheet(n);
+      sh.getRange(1, 1, 1, TABS[n].length).setValues([TABS[n]]).setFontWeight(&quot;bold&quot;);
+      sh.setFrozenRows(1);
+    }
+  });
+  const st = ss.getSheetByName(&quot;Settings&quot;);
+  if (st.getLastRow() &lt; 2) {
+    st.getRange(2, 1, 3, 2).setValues([[&quot;Teacher name&quot;, &quot;&quot;], [&quot;Class name&quot;, &quot;Grade 5 Science&quot;], [&quot;Teacher PIN&quot;, &quot;&quot;]]);
+    st.getRange(4, 2).setNumberFormat(&quot;@&quot;);
+  }
+  const d = ss.getSheetByName(&quot;Sheet1&quot;);
+  if (d &amp;&amp; ss.getSheets().length &gt; 4 &amp;&amp; d.getLastRow() === 0) ss.deleteSheet(d);
+  SS_ = ss;
+  return ss;
+}
+
+function rows_(name) {
+  const sh = ensure_().getSheetByName(name);
+  const v = sh.getDataRange().getValues();
+  const h = v.shift();
+  const out = [];
+  v.forEach(function (r, i) {
+    if (r[0] === &quot;&quot; || r[0] === null) return;
+    const o = { _row: i + 2 };
+    h.forEach(function (k, j) { o[k] = r[j]; });
+    out.push(o);
+  });
+  return out;
+}
+
+function settings_() {
+  const o = {};
+  rows_(&quot;Settings&quot;).forEach(function (r) { o[String(r.setting).trim()] = String(r.value).trim(); });
+  return { teacherName: o[&quot;Teacher name&quot;] || &quot;&quot;, className: o[&quot;Class name&quot;] || &quot;&quot;, pin: o[&quot;Teacher PIN&quot;] || &quot;&quot; };
+}
+
+function setSetting_(key, val) {
+  const sh = ensure_().getSheetByName(&quot;Settings&quot;);
+  const v = sh.getRange(1, 1, Math.max(sh.getLastRow(), 1), 1).getValues();
+  for (let i = 1; i &lt; v.length; i++) {
+    if (String(v[i][0]).trim() === key) { sh.getRange(i + 1, 2).setNumberFormat(&quot;@&quot;).setValue(val); return; }
+  }
+  sh.appendRow([key, val]);
+}
+
+function norm_(s) { return String(s || &quot;&quot;).toLowerCase().replace(/[^a-z0-9 &#x27;\-]/g, &quot;&quot;).replace(/\s+/g, &quot; &quot;).trim(); }
+function clean_(s, max) {
+  s = String(s == null ? &quot;&quot; : s).replace(/\s+/g, &quot; &quot;).trim().slice(0, max || 200);
+  return /^[=+\-@]/.test(s) ? &quot;&#x27;&quot; + s : s;
+}
+function cleanText_(s) {
+  s = String(s == null ? &quot;&quot; : s).trim().slice(0, 2000);
+  return /^[=+\-@]/.test(s) ? &quot;&#x27;&quot; + s : s;
+}
+function id_(p) { return p + Utilities.getUuid().replace(/-/g, &quot;&quot;).slice(0, 10); }
+function iso_(v) { return v instanceof Date ? v.toISOString() : String(v); }
+function num_(v) { const n = Number(v); return isFinite(n) ? n : 0; }
+function out_(o) { return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
+
+function result_(r) {
+  return { id: String(r.id), sid: String(r.studentId), name: String(r.name), kind: String(r.kind), topic: String(r.topic),
+    std: String(r.std), title: String(r.title), score: num_(r.score), total: num_(r.total), at: iso_(r.at), src: String(r.source) };
+}
+
+function findStudent_(typed) {
+  const n = norm_(typed);
+  const st = rows_(&quot;Students&quot;);
+  let m = st.filter(function (r) { return norm_(r.name) === n; });
+  if (!m.length) m = st.filter(function (r) { return norm_(r.name).split(&quot; &quot;)[0] === n; });
+  return m;
+}
+
+function deleteWhere_(name, test) {
+  const sh = ensure_().getSheetByName(name);
+  rows_(name).filter(test).map(function (r) { return r._row; }).sort(function (a, b) { return b - a; })
+    .forEach(function (row) { sh.deleteRow(row); });
+}
+
+function doGet(e) {
+  try {
+    const s = settings_();
+    return out_({ ok: true, teacherName: s.teacherName, className: s.className });
+  } catch (err) { return out_({ ok: false, error: &quot;server&quot;, message: String(err) }); }
+}
+
+function doPost(e) {
+  let body = {};
+  try { body = JSON.parse(e.postData.contents || &quot;{}&quot;); } catch (err) { return out_({ ok: false, error: &quot;bad_request&quot; }); }
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(20000);
+    return out_(handle_(body));
+  } catch (err) {
+    return out_({ ok: false, error: &quot;server&quot;, message: String(err) });
+  } finally {
+    try { lock.releaseLock(); } catch (err) {}
+  }
+}
+
+function handle_(b) {
+  const a = String(b.action || &quot;&quot;);
+  const ss = ensure_();
+
+  // ---- student actions ----
+  if (a === &quot;signin&quot;) {
+    const m = findStudent_(b.name);
+    if (!m.length) return { ok: false, error: &quot;notfound&quot; };
+    if (m.length &gt; 1) return { ok: false, error: &quot;ambiguous&quot; };
+    return { ok: true, id: String(m[0].id), name: String(m[0].name) };
+  }
+  if (a === &quot;mine&quot;) {
+    const sid = String(b.id || &quot;&quot;);
+    if (!rows_(&quot;Students&quot;).some(function (r) { return String(r.id) === sid; })) return { ok: false, error: &quot;notfound&quot; };
+    const res = rows_(&quot;Results&quot;).filter(function (r) { return String(r.studentId) === sid; }).map(result_);
+    return { ok: true, results: res };
+  }
+  if (a === &quot;save&quot;) {
+    const sid = String(b.id || &quot;&quot;);
+    const st = rows_(&quot;Students&quot;).filter(function (r) { return String(r.id) === sid; })[0];
+    if (!st) return { ok: false, error: &quot;notfound&quot; };
+    const score = num_(b.score), total = num_(b.total);
+    if (total &lt;= 0 || score &lt; 0 || score &gt; total) return { ok: false, error: &quot;bad_request&quot; };
+    const kind = b.kind === &quot;game&quot; ? &quot;game&quot; : &quot;eog&quot;;
+    ss.getSheetByName(&quot;Results&quot;).appendRow([id_(&quot;r&quot;), sid, st.name, kind, clean_(b.topic, 20), clean_(b.std, 20),
+      clean_(b.title, 120), score, total, new Date(), &quot;student&quot;]);
+    return { ok: true };
+  }
+
+  // ---- teacher actions (PIN required) ----
+  const s = settings_();
+  if (!s.pin) return { ok: false, error: &quot;nopin&quot; };
+  if (String(b.pin || &quot;&quot;) !== s.pin) { Utilities.sleep(800); return { ok: false, error: &quot;badpin&quot; }; }
+
+  if (a === &quot;dash&quot;) {
+    return { ok: true, teacherName: s.teacherName, className: s.className, sheetUrl: ss.getUrl(),
+      students: rows_(&quot;Students&quot;).map(function (r) { return { id: String(r.id), name: String(r.name) }; }),
+      results: rows_(&quot;Results&quot;).map(result_),
+      notes: rows_(&quot;Notes&quot;).map(function (r) { return { id: String(r.id), sid: String(r.studentId), text: String(r.text), at: iso_(r.at) }; }) };
+  }
+  if (a === &quot;addStudents&quot;) {
+    const have = {}; rows_(&quot;Students&quot;).forEach(function (r) { have[norm_(r.name)] = 1; });
+    const sh = ss.getSheetByName(&quot;Students&quot;); let added = 0, skipped = 0;
+    (b.names || []).slice(0, 200).forEach(function (n) {
+      n = clean_(n, 60); const k = norm_(n);
+      if (k.length &lt; 2) return;
+      if (have[k]) { skipped++; return; }
+      have[k] = 1; sh.appendRow([id_(&quot;s&quot;), n, new Date()]); added++;
+    });
+    return { ok: true, added: added, skipped: skipped };
+  }
+  if (a === &quot;renameStudent&quot;) {
+    const n = clean_(b.name, 60);
+    if (norm_(n).length &lt; 2) return { ok: false, error: &quot;bad_request&quot; };
+    const all = rows_(&quot;Students&quot;);
+    if (all.some(function (r) { return String(r.id) !== String(b.id) &amp;&amp; norm_(r.name) === norm_(n); })) return { ok: false, error: &quot;duplicate&quot; };
+    const r = all.filter(function (x) { return String(x.id) === String(b.id); })[0];
+    if (!r) return { ok: false, error: &quot;notfound&quot; };
+    ss.getSheetByName(&quot;Students&quot;).getRange(r._row, 2).setValue(n);
+    const rs = ss.getSheetByName(&quot;Results&quot;);
+    rows_(&quot;Results&quot;).forEach(function (x) { if (String(x.studentId) === String(b.id)) rs.getRange(x._row, 3).setValue(n); });
+    return { ok: true };
+  }
+  if (a === &quot;removeStudent&quot;) {
+    const id = String(b.id);
+    deleteWhere_(&quot;Results&quot;, function (r) { return String(r.studentId) === id; });
+    deleteWhere_(&quot;Notes&quot;, function (r) { return String(r.studentId) === id; });
+    deleteWhere_(&quot;Students&quot;, function (r) { return String(r.id) === id; });
+    return { ok: true };
+  }
+  if (a === &quot;addScore&quot;) {
+    const st = rows_(&quot;Students&quot;).filter(function (r) { return String(r.id) === String(b.sid); })[0];
+    if (!st) return { ok: false, error: &quot;notfound&quot; };
+    const score = num_(b.score), total = num_(b.total);
+    if (total &lt;= 0 || score &lt; 0 || score &gt; total) return { ok: false, error: &quot;bad_request&quot; };
+    const at = b.at ? new Date(b.at) : new Date();
+    ss.getSheetByName(&quot;Results&quot;).appendRow([id_(&quot;r&quot;), String(st.id), st.name, &quot;manual&quot;, clean_(b.topic, 20), clean_(b.std, 20),
+      clean_(b.title || &quot;Teacher entry&quot;, 120), score, total, isNaN(at) ? new Date() : at, &quot;teacher&quot;]);
+    return { ok: true };
+  }
+  if (a === &quot;editScore&quot;) {
+    const r = rows_(&quot;Results&quot;).filter(function (x) { return String(x.id) === String(b.id); })[0];
+    if (!r) return { ok: false, error: &quot;notfound&quot; };
+    const score = num_(b.score), total = num_(b.total);
+    if (total &lt;= 0 || score &lt; 0 || score &gt; total) return { ok: false, error: &quot;bad_request&quot; };
+    ss.getSheetByName(&quot;Results&quot;).getRange(r._row, 8, 1, 2).setValues([[score, total]]);
+    return { ok: true };
+  }
+  if (a === &quot;deleteScore&quot;) { deleteWhere_(&quot;Results&quot;, function (r) { return String(r.id) === String(b.id); }); return { ok: true }; }
+  if (a === &quot;addNote&quot;) {
+    if (!rows_(&quot;Students&quot;).some(function (r) { return String(r.id) === String(b.sid); })) return { ok: false, error: &quot;notfound&quot; };
+    const t = cleanText_(b.text); if (!t) return { ok: false, error: &quot;bad_request&quot; };
+    ss.getSheetByName(&quot;Notes&quot;).appendRow([id_(&quot;n&quot;), String(b.sid), t, new Date()]);
+    return { ok: true };
+  }
+  if (a === &quot;deleteNote&quot;) { deleteWhere_(&quot;Notes&quot;, function (r) { return String(r.id) === String(b.id); }); return { ok: true }; }
+  if (a === &quot;saveSettings&quot;) {
+    setSetting_(&quot;Teacher name&quot;, clean_(b.teacherName, 60));
+    setSetting_(&quot;Class name&quot;, clean_(b.className, 60));
+    if (b.newPin) {
+      if (!/^\d{4,8}$/.test(String(b.newPin))) return { ok: false, error: &quot;bad_pin_format&quot; };
+      setSetting_(&quot;Teacher PIN&quot;, String(b.newPin));
+    }
+    return { ok: true };
+  }
+  return { ok: false, error: &quot;bad_request&quot; };
+}
+</pre></div></li>
+<li><h2>Create the tabs</h2>In the Apps Script toolbar, choose <b class="ui">setup</b> in the function menu and click <b class="ui">Run</b>. Google asks you to approve access to your sheet:
+<ul><li>Click <b class="ui">Review permissions</b> and choose your account.</li>
+<li>If you see “Google hasn't verified this app,” click <b class="ui">Advanced</b>, then <b class="ui">Go to … (unsafe)</b>. This is your own script, running in your own account.</li>
+<li>Click <b class="ui">Allow</b>. Your sheet now has four tabs: Students, Results, Notes, and Settings.</li></ul></li>
+<li><h2>Set your name and teacher PIN</h2>In the sheet's <b class="ui">Settings</b> tab, type your name next to <i>Teacher name</i> and a 4 to 8 digit PIN next to <i>Teacher PIN</i>. The PIN opens your dashboard, so keep it private.</li>
+<li><h2>Publish the script as a web app</h2>Back in Apps Script, click <b class="ui">Deploy</b> → <b class="ui">New deployment</b>. Click the gear next to <i>Select type</i> and choose <b class="ui">Web app</b>. Set:
+<ul><li><b>Execute as:</b> Me</li><li><b>Who has access:</b> Anyone</li></ul>
+Click <b class="ui">Deploy</b>, then copy the <b>Web app URL</b>. It starts with <code>https://script.google.com/macros/s/</code> and ends with <code>/exec</code>.</li>
+<li><h2>Connect your lab</h2>Open your lab below, click <b class="ui">Teacher dashboard</b> at the bottom of the sign-in screen, paste the web app URL, and click <b class="ui">Make my class link</b>.
+<div class="labs" style="margin-top:12px"><a class="lab" href="dickens/#teacher"><b>Dickens</b><span>Open the teacher dashboard</span></a><a class="lab" href="harrison/#teacher"><b>Harrison</b><span>Open the teacher dashboard</span></a><a class="lab" href="lamear/#teacher"><b>LaMear</b><span>Open the teacher dashboard</span></a><a class="lab" href="echols/#teacher"><b>Echols</b><span>Open the teacher dashboard</span></a></div></li>
+<li><h2>Add students and post the link</h2>Enter your PIN, add your class list on the <b class="ui">Students</b> tab, then open <b class="ui">Settings &amp; class link</b> and copy your class link. Post that link in Google Classroom. Students type their name each time they open it.</li>
+</ol>
+<div class="note"><b>If “Anyone” isn't offered in step 5,</b> your district limits who can use web apps. Ask your technology team to allow Apps Script web apps with “Anyone” access for this sheet. Students' scores still stay in your sheet.</div>
+<div class="note"><b>Updating the script later:</b> use <b class="ui">Deploy</b> → <b class="ui">Manage deployments</b> → edit (pencil) → <b class="ui">New version</b> → <b class="ui">Deploy</b>. That keeps the same URL, so your class link keeps working.</div>
+<script>
+document.getElementById("copy").onclick=async function(){
+  const b=this,t=document.getElementById("src").textContent;
+  try{await navigator.clipboard.writeText(t);b.textContent="Copied";}
+  catch(e){const r=document.createRange();r.selectNodeContents(document.getElementById("src"));const s=getSelection();s.removeAllRanges();s.addRange(r);b.textContent="Press Ctrl+C to copy";}
+  setTimeout(()=>b.textContent="Copy script",2500);
+};
+</script>
+</div>
+</body>
+</html>
