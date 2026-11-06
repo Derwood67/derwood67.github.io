@@ -164,6 +164,12 @@ button:hover{filter:brightness(1.05)}
 .plot li{display:grid;gap:4px;padding-left:44px;position:relative;counter-increment:pl}
 .plot li::before{content:counter(pl);position:absolute;left:0;top:2px;width:30px;height:30px;border-radius:50%;
   background:var(--subj-bg);color:var(--subj);font-family:var(--display);font-weight:800;display:grid;place-items:center}
+/* my own reading */
+.mydoc{display:grid;gap:10px;border:2px dashed var(--subj);border-radius:12px;padding:12px 14px;background:var(--subj-bg)}
+.mydoc .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.mydoc textarea{min-height:140px;resize:vertical;line-height:1.45}
+.mydoc .err{color:var(--miss);font-weight:700;min-height:1.2em;margin:0}
+.paper .pbr{display:block;height:34px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -228,11 +234,28 @@ button:hover{filter:brightness(1.05)}
         <span class="lbl">Look for:</span>
         <ul class="lookfor" id="lookfor"></ul>
       </div>
-      <p class="hint">Click the sentences you think are worth putting in your notes. Then press <b>Check my picks</b>.</p>
+      <div class="mydoc" aria-label="Use my own reading">
+        <span class="lbl">Use my own reading</span>
+        <span class="hint">Open a Word (.docx), PDF, or text file from your computer or Google Drive, or paste the text. For a Google Doc, use File → Download → Microsoft Word (.docx), or copy and paste it.</span>
+        <div class="row">
+          <button id="up">Upload a file</button>
+          <button id="pastebtn">Paste text</button>
+          <button id="practice" hidden>Back to practice passage</button>
+          <input type="file" id="file" accept=".docx,.pdf,.txt,.md,.rtf,application/pdf,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden>
+        </div>
+        <div id="pastebox" hidden class="nf">
+          <label for="ptitlein">Title<input id="ptitlein" type="text" placeholder="Example: Chapter 3 – Food Webs" autocomplete="off"></label>
+          <label for="ptext">Reading text<textarea id="ptext" placeholder="Paste the reading here"></textarea></label>
+          <div class="row"><button class="primary" id="pasteuse">Use this reading</button><button id="pastecancel">Cancel</button></div>
+        </div>
+        <p class="err" id="uperr" aria-live="polite"></p>
+      </div>
+      <p class="hint" id="phint">Click the sentences you think are worth putting in your notes. Then press <b>Check my picks</b>.</p>
       <div class="paper" id="passage"></div>
       <div class="toolbar">
         <button class="primary" id="check">Check my picks</button>
         <button id="show">Show what to note</button>
+        <button id="copypicks" hidden>Copy my picks</button>
         <button id="reset">Start over</button>
       </div>
       <p class="score" id="score" aria-live="polite"></p>
@@ -705,12 +728,26 @@ function paint(){
   app.style.setProperty("--subj-bg", `var(${s.color[1]})`);
   document.querySelectorAll(".book-only").forEach(el=>el.hidden = cur!=="book");
   $("step3").textContent = s.step3;
-  $("ptag").textContent = s.label + " · practice passage";
-  $("ptitle").textContent = s.title;
   $("lookfor").innerHTML = s.look.map(l=>`<li>${l}</li>`).join("");
   picked = new Set(); checked = false;
-  $("passage").innerHTML = s.sentences.map((x,i)=>
-    `<span class="s" tabindex="0" role="button" aria-pressed="false" data-i="${i}">${x.t}</span>`).join(" ");
+  const d = myDoc();
+  $("practice").hidden = !d; $("check").hidden = !!d; $("show").hidden = !!d; $("copypicks").hidden = !d; $("model").hidden = !!d;
+  $("phint").innerHTML = d ? "Click the sentences you think are worth putting in your notes. Your own reading has no answer key, so compare your picks with a partner or your teacher."
+                           : "Click the sentences you think are worth putting in your notes. Then press <b>Check my picks</b>.";
+  if(d){
+    $("ptag").textContent = s.label + " · my reading";
+    $("ptitle").textContent = d.title;
+    const saved = new Set(store.get(pkey()) || []);
+    let n = 0;
+    $("passage").innerHTML = d.paras.map(p=>p.map(t=>{ const i=n++; const on=saved.has(i);
+      if(on) picked.add(i);
+      return `<span class="s${on?" picked":""}" tabindex="0" role="button" aria-pressed="${on}" data-i="${i}">${escH(t)}</span>`; }).join(" ")).join('<span class="pbr"></span>');
+  } else {
+    $("ptag").textContent = s.label + " · practice passage";
+    $("ptitle").textContent = s.title;
+    $("passage").innerHTML = s.sentences.map((x,i)=>
+      `<span class="s" tabindex="0" role="button" aria-pressed="false" data-i="${i}">${x.t}</span>`).join(" ");
+  }
   $("score").textContent = ""; $("why").hidden = true;
   buildNotes();
 }
@@ -728,6 +765,7 @@ $("passage").addEventListener("click", e=>{
   if(checked){ explain(i); return; }
   picked.has(i) ? picked.delete(i) : picked.add(i);
   el.classList.toggle("picked"); el.setAttribute("aria-pressed", picked.has(i));
+  if(myDoc()) store.set(pkey(), [...picked]);
 });
 $("passage").addEventListener("keydown", e=>{
   if((e.key==="Enter"||e.key===" ") && e.target.classList.contains("s")){e.preventDefault(); e.target.click();}
@@ -755,14 +793,86 @@ $("show").onclick = ()=>{
   checked = true;
   $("score").textContent = "Underlined sentences are worth noting. Click any sentence to see why.";
 };
-$("reset").onclick = paint;
+$("reset").onclick = ()=>{ if(myDoc()) store.set(pkey(), []); paint(); };
+
+/* ---------- my own reading: upload or paste ---------- */
+const escH = t => String(t).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const dkeyFor = () => "mydoc-" + cur;
+function myDoc(){ const d = store.get(dkeyFor()); return d && d.paras && d.paras.length ? d : null; }
+function docId(){ const d = myDoc(); if(!d) return ""; let h=0; const t=d.title+"|"+d.paras.length+"|"+(d.paras[0]||[]).join(" ");
+  for(let i=0;i<t.length;i++) h=(h*31+t.charCodeAt(i))|0; return (h>>>0).toString(36); }
+function pkey(){ return "picks-" + key(); }
+function toParas(text){
+  const paras = text.replace(/\r/g,"").split(/\n\s*\n|\n(?=\s*[•\-–*\d]+[.)]?\s)/).map(p=>p.replace(/\s+/g," ").trim()).filter(Boolean);
+  let count = 0;
+  return paras.map(p=>{
+    const parts = p.match(/[^.!?]+(?:[.!?]+["'”’)\]]*|$)\s*/g) || [p];
+    return parts.map(x=>x.trim()).filter(Boolean);
+  }).filter(p=>p.length).map(p=>{ const keep = p.slice(0, Math.max(0, 600-count)); count += keep.length; return keep; }).filter(p=>p.length);
+}
+function useDoc(title, text){
+  const paras = toParas(text||"");
+  if(!paras.length){ $("uperr").textContent = "I couldn't find any text in that. Try a different file, or paste the text."; return; }
+  store.set(dkeyFor(), {title: title || "My reading", paras});
+  $("uperr").textContent = ""; $("pastebox").hidden = true;
+  bookKey = null; paint();
+  $("passage").scrollIntoView({behavior:"smooth", block:"start"});
+}
+const loaded = {};
+function loadScript(src){ return loaded[src] || (loaded[src] = new Promise((ok,bad)=>{ const s=document.createElement("script"); s.src=src; s.onload=ok; s.onerror=()=>{delete loaded[src]; bad(new Error("load"))}; document.head.appendChild(s); })); }
+const CDN = "https://cdnjs.cloudflare.com/ajax/libs/";
+async function readFile(f){
+  const name = f.name.toLowerCase();
+  if(name.endsWith(".docx")){
+    await loadScript(CDN+"mammoth/1.6.0/mammoth.browser.min.js");
+    const r = await window.mammoth.extractRawText({arrayBuffer: await f.arrayBuffer()}); return r.value;
+  }
+  if(name.endsWith(".pdf") || f.type==="application/pdf"){
+    await loadScript(CDN+"pdf.js/3.11.174/pdf.min.js");
+    const lib = window.pdfjsLib; lib.GlobalWorkerOptions.workerSrc = CDN+"pdf.js/3.11.174/pdf.worker.min.js";
+    const pdf = await lib.getDocument({data: new Uint8Array(await f.arrayBuffer())}).promise;
+    let out = "";
+    for(let p=1; p<=Math.min(pdf.numPages, 40); p++){
+      const c = await (await pdf.getPage(p)).getTextContent(); let lastY = null;
+      c.items.forEach(it=>{ const y = it.transform[5];
+        if(lastY!==null && Math.abs(y-lastY) > 16) out += "\n\n"; else if(lastY!==null && Math.abs(y-lastY) > 1) out += " ";
+        out += it.str; lastY = y; });
+      out += "\n\n";
+    }
+    return out;
+  }
+  if(name.endsWith(".rtf")) return (await f.text()).replace(/\\par[d]?/g,"\n").replace(/\{\*?\\[^{}]+}|[{}]|\\[a-z]+-?\d* ?/gi,"");
+  if(name.endsWith(".doc")) throw new Error("olddoc");
+  return await f.text();
+}
+$("up").onclick = ()=>$("file").click();
+$("file").onchange = async e=>{
+  const f = e.target.files[0]; e.target.value = ""; if(!f) return;
+  if(f.size > 15*1024*1024){ $("uperr").textContent = "That file is too big. Try one under 15 MB."; return; }
+  $("uperr").textContent = "Opening " + f.name + "…";
+  try{ const text = await readFile(f); useDoc(f.name.replace(/\.[^.]+$/,""), text); }
+  catch(err){ $("uperr").textContent = err.message==="olddoc" ? "Older .doc files can't be opened here. Save it as .docx or PDF, or paste the text."
+    : err.message==="load" ? "The file reader didn't load. Check your internet connection, or paste the text instead."
+    : "I couldn't read that file. Try saving it as .docx or PDF, or paste the text."; }
+};
+$("pastebtn").onclick = ()=>{ $("pastebox").hidden = !$("pastebox").hidden; if(!$("pastebox").hidden) $("ptext").focus(); };
+$("pastecancel").onclick = ()=>{ $("pastebox").hidden = true; };
+$("pasteuse").onclick = ()=>useDoc($("ptitlein").value.trim(), $("ptext").value);
+$("practice").onclick = ()=>{ try{localStorage.removeItem(dkeyFor())}catch(e){} bookKey = null; paint(); };
+$("copypicks").onclick = ()=>{
+  const all = [...document.querySelectorAll("#passage .s")];
+  const txt = all.filter(el=>picked.has(+el.dataset.i)).map(el=>"• "+el.textContent).join("\n");
+  if(!txt){ $("score").textContent = "Pick some sentences first."; return; }
+  if(navigator.clipboard) navigator.clipboard.writeText(txt).then(()=>$("score").textContent="Copied your picks. Now write them short, in your own words, in your notes.")
+    .catch(()=>$("score").textContent="Copy didn't work. Select the text and press Ctrl+C.");
+};
 
 /* notes */
 let bookKey = null, studentKey = null;
 function key(){
   if(bookKey===null) bookKey = $("title").value.trim().toLowerCase()||"untitled";
   if(studentKey===null) studentKey = $("student").value.trim().toLowerCase();
-  return (studentKey ? "u:" + studentKey + ":" : "") + "notes-" + cur + (cur==="book" ? "-" + bookKey : "");
+  return (studentKey ? "u:" + studentKey + ":" : "") + "notes-" + cur + (cur==="book" ? "-" + bookKey : "") + (myDoc() ? "-doc-" + docId() : "");
 }
 function buildNotes(){
   const s = S[cur], saved = store.get(key()) || {};
