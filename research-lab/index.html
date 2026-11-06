@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>body{margin:0}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Capital Research Lab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap">
+<style>
+/* Layout: a research notebook. Sources on the left like a card catalog, the student's notebook on the right. */
+:root{
+  --paper:#f6f7f4; --card:#ffffff; --ink:#1d2a33; --muted:#5b6872; --line:#d9dfe0;
+  --dome:#24507a; --dome-soft:#e3ecf4; --blossom:#c24b6a; --blossom-soft:#f7e3e9;
+  --ok:#2f7a4f; --ok-soft:#e1f1e7; --warn:#9a5b00; --warn-soft:#fbefd9;
+  --display:"Zilla Slab", Rockwell, "Roboto Slab", Georgia, serif;
+  --body:"Atkinson Hyperlegible", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#131a20; --card:#1b242c; --ink:#e7ecef; --muted:#9aa8b2; --line:#2e3a44;
+  --dome:#8fb6dd; --dome-soft:#1f3346; --blossom:#ee8ca5; --blossom-soft:#3a2129;
+  --ok:#7fcf9f; --ok-soft:#1c3226; --warn:#f0bb66; --warn-soft:#3a2c14; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#131a20; --card:#1b242c; --ink:#e7ecef; --muted:#9aa8b2; --line:#2e3a44;
+  --dome:#8fb6dd; --dome-soft:#1f3346; --blossom:#ee8ca5; --blossom-soft:#3a2129;
+  --ok:#7fcf9f; --ok-soft:#1c3226; --warn:#f0bb66; --warn-soft:#3a2c14; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:clamp(1.8rem,4vw,2.5rem);font-weight:700}
+h2{font-size:1.35rem;font-weight:700}
+h3{font-size:1.08rem;font-weight:700}
+p{margin:0}
+a{color:var(--dome)}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--blossom);outline-offset:2px}
+.label{font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.btn{border:1px solid var(--dome);background:var(--dome);color:var(--paper);padding:.55rem 1rem;border-radius:999px;font-weight:700}
+.btn.ghost{background:transparent;color:var(--dome)}
+.btn.small{padding:.3rem .75rem;font-size:.88rem}
+.btn.danger{border-color:var(--blossom);background:transparent;color:var(--blossom)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+input[type=text],input[type=password],input[type=url],textarea,select{width:100%;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:.6rem .75rem}
+textarea{resize:vertical;min-height:90px}
+.muted{color:var(--muted)}
+.row{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:1rem;flex-wrap:wrap;padding-bottom:14px;border-bottom:2px solid var(--ink);margin-bottom:20px}
+.brand .label{color:var(--blossom)}
+.notice{background:var(--dome-soft);border-radius:var(--r);padding:.7rem .9rem;font-size:.92rem}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--paper);padding:.55rem 1rem;border-radius:999px;font-weight:700;z-index:20;max-width:90vw}
+
+/* login */
+.login{display:grid;grid-template-columns:1.1fr .9fr;gap:28px;align-items:start}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px;display:grid;gap:14px}
+.namechips{display:flex;flex-wrap:wrap;gap:.5rem}
+.chip{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:.35rem .85rem;font-weight:700}
+.hero p{max-width:60ch;margin-top:10px;font-size:1.05rem}
+.rules{display:grid;gap:8px;margin:16px 0 0;padding:0;list-style:none}
+.rules li{display:flex;gap:.6rem;align-items:flex-start}
+.rules b{font-family:var(--display);color:var(--dome);min-width:1.4rem}
+
+/* student */
+.searchbar{display:flex;gap:.5rem;align-items:center;margin-bottom:12px}
+.searchbar input{font-size:1.05rem;padding:.75rem 1rem;border:2px solid var(--dome);border-radius:999px;background:var(--card);width:100%}
+.tabs{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:16px}
+.tab{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:.4rem .9rem;font-weight:700}
+.tab[aria-selected=true]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.layout{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:24px;align-items:start}
+.sources{display:grid;gap:10px}
+.src{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 14px;align-items:center}
+.src .who{font-size:.85rem;color:var(--muted)}
+.src .what{font-size:.95rem;grid-column:1/-1}
+.badge{display:inline-block;font-size:.72rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:.12rem .5rem;border-radius:5px;margin-right:.35rem;vertical-align:2px}
+.b-web{background:var(--dome-soft);color:var(--dome)}
+.b-vid{background:var(--blossom-soft);color:var(--blossom)}
+.b-doc{background:var(--warn-soft);color:var(--warn)}
+.b-seen{background:var(--ok-soft);color:var(--ok)}
+.b-flag{background:var(--warn-soft);color:var(--warn)}
+.open{white-space:nowrap;text-decoration:none}
+.questions{background:var(--card);border:1px dashed var(--dome);border-radius:var(--r);padding:14px 16px;margin-bottom:14px}
+.questions ul{margin:.4rem 0 0;padding-left:1.2rem}
+.notebook{position:sticky;top:12px;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px;display:grid;gap:14px;background-image:repeating-linear-gradient(to bottom,transparent 0 31px,var(--line) 31px 32px);background-position:0 70px}
+.notebook > *{background:var(--card)}
+.note{border-left:3px solid var(--dome);padding:.35rem .7rem;display:grid;gap:3px}
+.note .src-line{font-size:.82rem;color:var(--muted)}
+.notes{display:grid;gap:10px;max-height:340px;overflow:auto}
+.linkbtn{border:0;background:none;color:var(--blossom);padding:0;font-size:.82rem;font-weight:700;justify-self:start}
+details summary{cursor:pointer;font-weight:700;color:var(--dome)}
+details > div{margin-top:10px;display:grid;gap:8px}
+
+/* teacher */
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:18px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px}
+.stat strong{display:block;font-family:var(--display);font-size:1.7rem;font-variant-numeric:tabular-nums}
+.tablebox{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+table{border-collapse:collapse;width:100%;font-size:.92rem;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:.55rem .75rem;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.74rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);background:var(--paper);position:sticky;top:0}
+tr.pick{cursor:pointer}
+tr.pick:hover td{background:var(--dome-soft)}
+tr.sel td{background:var(--dome-soft)}
+.tgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;margin-top:20px}
+.section{display:grid;gap:10px;margin-top:22px}
+.code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.78rem;word-break:break-all}
+
+@media (max-width:860px){
+  .login,.layout,.tgrid{grid-template-columns:1fr}
+  .notebook{position:static}
+  .stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media (max-width:480px){.stats{grid-template-columns:1fr}.src{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap" id="app"></div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+/* ---------- Teacher-checked sources ---------- */
+const TOPICS = [
+  {id:"dc",      name:"Washington, DC"},
+  {id:"gov",     name:"U.S. Government"},
+  {id:"history", name:"American History"},
+  {id:"science", name:"Science & Nature"},
+  {id:"space",   name:"Space"},
+  {id:"world",   name:"Geography & World"},
+  {id:"people",  name:"Famous People"},
+  {id:"arts",    name:"Art & Culture"},
+  {id:"all",     name:"All sources"}
+];
+const QUESTIONS = {
+  dc:["Why is Washington, DC not part of any state?","Who planned the layout of the city, and what makes it special?","What memorials are on the National Mall, and who do they honor?","What happens inside the U.S. Capitol and the White House?"],
+  gov:["What are the three branches of government, and what does each one do?","How does a bill become a law?","How are the President, Senators, and Representatives chosen?"],
+  history:["Why did the United States move its capital to Washington, DC?","What do the Declaration of Independence and the Constitution say?","Pick a person honored with a memorial. What did they do?"],
+  science:["Pick an animal at the National Zoo. Where does it live in the wild, and what does it eat?","How do fossils form?","What is a habitat, and how do animals adapt to theirs?"],
+  space:["What was the first airplane, and who flew it?","How did astronauts get to the Moon?","What would you need to live on Mars?"],
+  world:["Where is Washington, DC on a map of the United States?","What rivers run through or near Washington, DC?","Compare the capital of the U.S. with the capital of another country."],
+  people:["Choose a president, inventor, or leader. What problem did they work to solve?","Who is honored with a statue or memorial in Washington, DC, and why?","How did this person's early life shape what they did later?"],
+  arts:["What kinds of art can you see at the National Gallery of Art?","What story does a museum object tell about the people who made it?","How do music and theater help people remember history?"],
+  all:["Use the search box above to look for anything, or write your own research question in your notebook."]
+};
+const SOURCES = [
+  {id:"bens",t:"Ben's Guide to the U.S. Government",u:"https://bensguide.gpo.gov/",who:"U.S. Government Publishing Office",k:"web",tp:["gov","dc","history"],d:"Kid-friendly lessons on the branches of government, elections, and how laws are made."},
+  {id:"capitol",t:"U.S. Capitol Visitor Center",u:"https://www.visitthecapitol.gov/",who:"U.S. Capitol (official)",k:"web",tp:["dc","gov"],d:"History of the Capitol building and how Congress works inside it."},
+  {id:"whha",t:"White House Historical Association",u:"https://www.whitehousehistory.org/",who:"Nonprofit founded by First Lady Jacqueline Kennedy",k:"web",tp:["dc","history"],d:"The history of the White House, the presidents, and the people who lived and worked there."},
+  {id:"nama",t:"National Mall and Memorial Parks",u:"https://www.nps.gov/nama/",who:"National Park Service",k:"web",tp:["dc","history"],d:"Facts about the Lincoln, Washington, Jefferson, MLK, and other memorials."},
+  {id:"si",t:"Smithsonian Institution",u:"https://www.si.edu/",who:"Smithsonian (U.S. national museums)",k:"web",tp:["dc","history","science"],d:"The group of free national museums and the zoo in Washington, DC."},
+  {id:"nasm",t:"National Air and Space Museum",u:"https://airandspace.si.edu/",who:"Smithsonian",k:"web",tp:["dc","space","history"],d:"Airplanes, rockets, the Wright Flyer, and the story of flight and space travel."},
+  {id:"nmnh",t:"National Museum of Natural History",u:"https://naturalhistory.si.edu/",who:"Smithsonian",k:"web",tp:["dc","science"],d:"Dinosaurs, fossils, gems, oceans, and human origins."},
+  {id:"zoo",t:"Smithsonian's National Zoo",u:"https://nationalzoo.si.edu/",who:"Smithsonian",k:"web",tp:["dc","science"],d:"Animal facts and live animal cams from the zoo in Washington, DC."},
+  {id:"loc",t:"Library of Congress",u:"https://www.loc.gov/",who:"Library of Congress (U.S. national library)",k:"doc",tp:["dc","history","gov"],d:"Real photos, maps, letters, and newspapers from American history."},
+  {id:"founding",t:"America's Founding Documents",u:"https://www.archives.gov/founding-docs",who:"National Archives",k:"doc",tp:["history","gov","dc"],d:"The Declaration of Independence, Constitution, and Bill of Rights, with explanations."},
+  {id:"docsteach",t:"DocsTeach",u:"https://www.docsteach.org/",who:"National Archives",k:"doc",tp:["history","gov"],d:"Primary source activities built from National Archives documents."},
+  {id:"mtv",t:"George Washington's Mount Vernon",u:"https://www.mountvernon.org/",who:"Mount Vernon Ladies' Association",k:"web",tp:["history","dc","people"],d:"The life of George Washington, who chose the site for the capital city."},
+  {id:"ngk",t:"National Geographic Kids",u:"https://kids.nationalgeographic.com/",who:"National Geographic",k:"web",tp:["science","world","history","space"],d:"Animals, countries, history, and science written for kids."},
+  {id:"space",t:"NASA Space Place",u:"https://spaceplace.nasa.gov/",who:"NASA",k:"web",tp:["space","science"],d:"Space and Earth science explained for kids, with games and activities."},
+  {id:"wonder",t:"Wonderopolis",u:"https://www.wonderopolis.org/",who:"National Center for Families Learning",k:"web",tp:["dc","gov","history","science","space","world","people","arts"],d:"Short articles that answer a new \"wonder\" question every day."},
+  {id:"kiddle",t:"Kiddle Encyclopedia",u:"https://kids.kiddle.co/",who:"Kid-safe encyclopedia",k:"web",tp:["dc","gov","history","science","space","world","people","arts"],d:"Encyclopedia articles rewritten and filtered for kids."},
+  {id:"ducksters",t:"Ducksters",u:"https://www.ducksters.com/",who:"Technological Solutions, Inc.",k:"web",tp:["history","gov","world","science","people"],d:"Easy-to-read history, geography, and science pages. This site shows ads."},
+  {id:"nmaahc",t:"National Museum of African American History and Culture",u:"https://nmaahc.si.edu/",who:"Smithsonian",k:"web",tp:["dc","history","people","arts"],d:"Stories of African American history, leaders, music, and culture."},
+  {id:"nmai",t:"National Museum of the American Indian",u:"https://americanindian.si.edu/",who:"Smithsonian",k:"web",tp:["dc","history","arts","world"],d:"The history and cultures of Native peoples across the Americas."},
+  {id:"nga",t:"National Gallery of Art",u:"https://www.nga.gov/",who:"National Gallery of Art (U.S. national museum)",k:"web",tp:["dc","arts"],d:"Paintings, sculpture, and art activities from the national art museum on the Mall."},
+  {id:"kennedy",t:"The Kennedy Center",u:"https://www.kennedy-center.org/",who:"John F. Kennedy Center for the Performing Arts",k:"web",tp:["dc","arts"],d:"The national center for music, theater, and dance in Washington, DC."},
+  {id:"npg",t:"National Portrait Gallery",u:"https://npg.si.edu/",who:"Smithsonian",k:"web",tp:["dc","people","history","arts"],d:"Portraits and life stories of presidents and famous Americans."},
+  {id:"yt-nps",t:"National Park Service on YouTube",u:"https://www.youtube.com/@NationalParkService",who:"National Park Service",k:"vid",tp:["dc","history"],d:"Videos from park rangers about national parks and memorials."},
+  {id:"yt-loc",t:"Library of Congress on YouTube",u:"https://www.youtube.com/@LibraryOfCongress",who:"Library of Congress",k:"vid",tp:["dc","history","gov","people","arts"],d:"Talks and short videos about American history and collections."},
+  {id:"yt-hsp",t:"Homeschool Pop",u:"https://www.youtube.com/@HomeschoolPop",who:"Educational channel for kids",k:"vid",tp:["history","gov","science","world","people"],d:"Short lessons on presidents, government, U.S. history, and science."},
+  {id:"yt-cck",t:"Crash Course Kids",u:"https://www.youtube.com/@crashcoursekids",who:"Complexly (makers of Crash Course)",k:"vid",tp:["science","world","space"],d:"Science and engineering lessons built for elementary students."},
+  {id:"yt-sci",t:"SciShow Kids",u:"https://www.youtube.com/@SciShowKids",who:"Complexly (makers of SciShow)",k:"vid",tp:["science","space"],d:"Fun science explanations for curious kids."},
+  {id:"yt-ngk",t:"Nat Geo Kids on YouTube",u:"https://www.youtube.com/user/NatGeoKids",who:"National Geographic",k:"vid",tp:["science","world"],d:"Animal and nature videos for kids."},
+  {id:"yt-nasa",t:"NASA on YouTube",u:"https://www.youtube.com/@NASA",who:"NASA",k:"vid",tp:["space"],d:"Launches, astronauts, and missions straight from NASA."}
+];
+const SRC = Object.fromEntries(SOURCES.map(s=>[s.id,s]));
+/* Kid-safe search: Kiddle is a kid-filtered search engine; YouTube searches stay inside approved channels. */
+const SAFE_SEARCH = [
+  {id:"kiddle",t:"Kiddle (kid-safe search)",who:"Kid-filtered web, image, and video search",url:q=>"https://www.kiddle.co/s.php?q="+encodeURIComponent(q)},
+  {id:"kiddle-img",t:"Kiddle images",who:"Kid-filtered picture search",url:q=>"https://www.kiddle.co/i.php?q="+encodeURIComponent(q)},
+  {id:"locsearch",t:"Library of Congress",who:"Photos, maps, letters, and newspapers",url:q=>"https://www.loc.gov/search/?q="+encodeURIComponent(q)}
+];
+const BLOCK = /\b(sex|sexy|porn|nude|naked|xxx|boob|drug|drugs|weed|gore|kill|murder|suicide|gun|guns|beer|vodka|vape|casino|gambl\w*)\b/i;
+const KIND = {web:["Website","b-web"],vid:["Video","b-vid"],doc:["Primary sources","b-doc"]};
+
+/* ---------- Storage: this device, or the teacher's cloud sheet ---------- */
+const LKEY="capitalResearchLab.v1";
+let data = {students:{}, pin:null};
+let cloud = null;            // db namespace when the teacher (owner) is signed in
+try{ const raw=localStorage.getItem(LKEY); if(raw) data=Object.assign(data,JSON.parse(raw)); }catch(e){}
+function saveLocal(){ try{ localStorage.setItem(LKEY,JSON.stringify(data)); }catch(e){} }
+const pending={}; let timers={};
+function persist(slug){
+  saveLocal();
+  if(!cloud||!slug) return;
+  clearTimeout(timers[slug]);
+  timers[slug]=setTimeout(()=>{
+    const s=data.students[slug]; if(!s) return;
+    cloud.collection("students").doc(slug).set(JSON.parse(JSON.stringify(s))).catch(()=>toast("Could not save to the class sheet. Saved on this device."));
+  },700);
+}
+(async()=>{
+  try{
+    if(!window.claude) return;
+    const user=await claude.use("user");
+    if(!(await (user?.isOwner?.() ?? false))) return;
+    const db=await claude.use("db"); if(!db) return;
+    cloud=db;
+    // upload anything already on this device, then listen
+    for(const slug of Object.keys(data.students)) persist(slug);
+    db.collection("students").onSnapshot(snap=>{
+      snap.docs.forEach(d=>{ if(d.exists){ const v=d.data(); const mine=data.students[d.id]; data.students[d.id]=mergeStudent(mine,v);} });
+      saveLocal(); render();
+    },()=>{});
+    render();
+  }catch(e){}
+})();
+
+/* ---------- Helpers ---------- */
+const $=s=>document.querySelector(s);
+function h(tag,attrs={},...kids){const el=document.createElement(tag);for(const[k,v]of Object.entries(attrs||{})){if(v==null||v===false)continue;if(k.startsWith("on"))el.addEventListener(k.slice(2),v);else if(k==="cls")el.className=v;else if(k==="text")el.textContent=v;else el.setAttribute(k,v===true?"":v);}for(const c of kids.flat()){if(c==null||c===false)continue;el.append(c.nodeType?c:document.createTextNode(String(c)));}return el;}
+function slugOf(n){return n.trim().toLowerCase().replace(/[^a-z\-' ]/g,"").replace(/\s+/g,"-");}
+function cleanName(n){n=n.trim().replace(/[^A-Za-z\-' ]/g,"").replace(/\s+/g," ").slice(0,20);return n.charAt(0).toUpperCase()+n.slice(1);}
+function fmt(ts){const d=new Date(ts);return d.toLocaleDateString(undefined,{month:"short",day:"numeric"})+" "+d.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"});}
+function toast(msg){const t=$("#toast");t.textContent=msg;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>t.hidden=true,2600);}
+async function copy(text,ok){try{await navigator.clipboard.writeText(text);toast(ok);return true;}catch(e){toast("Select the text and copy it with Ctrl+C.");return false;}}
+function safeUrl(u){try{const x=new URL(u.trim());return /^https?:$/.test(x.protocol)?x.href:null;}catch(e){return null;}}
+function mergeStudent(a,b){
+  if(!a) return JSON.parse(JSON.stringify(b));
+  if(!b) return a;
+  const vk=v=>v.at+"|"+v.id, nk=n=>n.at+"|"+n.text;
+  const visits=[...new Map([...(a.visits||[]),...(b.visits||[])].map(v=>[vk(v),v])).values()].sort((x,y)=>x.at-y.at);
+  const notes=[...new Map([...(a.notes||[]),...(b.notes||[])].map(n=>[nk(n),n])).values()].filter(n=>!(a.deleted||[]).concat(b.deleted||[]).includes(nk(n))).sort((x,y)=>x.at-y.at);
+  return {name:a.name||b.name,question:(b.updated||0)>(a.updated||0)?(b.question||""):(a.question||""),visits,notes,deleted:[...new Set([...(a.deleted||[]),...(b.deleted||[])])],updated:Math.max(a.updated||0,b.updated||0)};
+}
+
+/* ---------- State ---------- */
+let query="";
+let view="login", me=null, topic="dc", teacherOK=false, pickStudent=null, confirmClear=false;
+
+function render(){
+  const app=$("#app"); app.innerHTML="";
+  if(view==="student"&&me&&data.students[me]) app.append(studentView());
+  else if(view==="teacher") app.append(teacherOK?teacherView():pinView());
+  else app.append(loginView());
+}
+
+/* ---------- Login ---------- */
+function loginView(){
+  const names=Object.values(data.students).map(s=>s.name).sort();
+  const input=h("input",{type:"text",id:"firstname",autocomplete:"off",maxlength:"20",placeholder:"Your first name"});
+  const go=()=>{const n=cleanName(input.value);if(n.length<2){toast("Type your first name to log in.");return;}login(n);};
+  input.addEventListener("keydown",e=>{if(e.key==="Enter")go();});
+  return h("div",{},
+    h("header",{cls:"top"},h("div",{cls:"brand"},h("div",{cls:"label",text:"Upper elementary & middle school"}),h("h1",{text:"Capital Research Lab"})),
+      h("button",{cls:"btn ghost small",onclick:()=>{view="teacher";render();}},"Teacher master sheet")),
+    h("div",{cls:"login"},
+      h("section",{cls:"hero"},
+        h("h2",{text:"Research Washington, DC and beyond"}),
+        h("p",{text:"Every site and video in this lab comes from a museum, a government agency, or a trusted kids' publisher. Pick a topic, open a source, and write what you learn in your own notebook."}),
+        h("ul",{cls:"rules"},
+          h("li",{},h("b",{text:"1"}),h("span",{text:"Log in with your first name only. Never type your last name, address, or password."})),
+          h("li",{},h("b",{text:"2"}),h("span",{text:"Open sources from this page so your teacher can see where you researched."})),
+          h("li",{},h("b",{text:"3"}),h("span",{text:"Write facts in your own words and pick the source you found them in."})),
+          h("li",{},h("b",{text:"4"}),h("span",{text:"If anything online makes you uncomfortable, close it and tell your teacher."}))
+        )),
+      h("section",{cls:"panel"},
+        h("label",{for:"firstname"},h("h3",{text:"Log in"})),
+        input,
+        h("button",{cls:"btn",onclick:go},"Start researching"),
+        names.length?h("div",{},h("div",{cls:"label",text:"Welcome back"}),h("div",{cls:"namechips",style:"margin-top:8px"},names.map(n=>h("button",{cls:"chip",onclick:()=>login(n)},n)))):null
+      )));
+}
+function login(name){
+  const slug=slugOf(name);
+  if(!data.students[slug]) data.students[slug]={name,question:"",notes:[],visits:[],deleted:[],updated:Date.now()};
+  me=slug; view="student"; persist(slug); render(); window.scrollTo(0,0);
+}
+
+/* ---------- Student ---------- */
+function studentView(){
+  const s=data.students[me];
+  const seen=new Set(s.visits.map(v=>v.id));
+  const open=(src)=>{s.visits.push({id:src.id,t:src.t,u:src.u,topic,at:Date.now()});s.updated=Date.now();persist(me);setTimeout(render,50);};
+
+  const card=(src)=>{
+    const [kl,kc]=KIND[src.k];
+    return h("article",{cls:"src"},
+      h("div",{},h("span",{cls:"badge "+kc,text:kl}),seen.has(src.id)?h("span",{cls:"badge b-seen",text:"Visited"}):null,h("h3",{text:src.t,style:"margin-top:4px"}),h("div",{cls:"who",text:"From: "+src.who})),
+      h("a",{cls:"btn small open",href:src.u,target:"_blank",rel:"noopener noreferrer",onclick:()=>open(src)},src.k==="vid"?"Watch":"Open"),
+      h("p",{cls:"what",text:src.d}));
+  };
+  const logSearch=(entry)=>{s.visits.push(Object.assign({topic,at:Date.now(),search:true},entry));s.updated=Date.now();persist(me);};
+  const results=h("div",{cls:"sources",id:"results"});
+  const fill=()=>{
+    results.innerHTML="";
+    const q=query.trim();
+    if(!q){
+      results.append(h("div",{cls:"questions"},h("div",{cls:"label",text:"Questions to explore"}),h("ul",{},(QUESTIONS[topic]||QUESTIONS.all).map(x=>h("li",{text:x})))));
+      SOURCES.filter(x=>topic==="all"||x.tp.includes(topic)).forEach(x=>results.append(card(x)));
+      return;
+    }
+    if(BLOCK.test(q)){
+      results.append(h("div",{cls:"notice",text:"That search is not allowed in the Research Lab. Try a different word, or ask your teacher for help."}));
+      return;
+    }
+    const words=q.toLowerCase().split(/\s+/);
+    const hay=x=>(x.t+" "+x.d+" "+x.who+" "+x.tp.map(id=>TOPICS.find(t=>t.id===id)?.name||"").join(" ")).toLowerCase();
+    const hits=SOURCES.filter(x=>words.some(w=>w.length>2&&hay(x).includes(w)));
+    results.append(h("div",{cls:"questions"},
+      h("div",{cls:"label",text:"Search safe places for \u201c"+q+"\u201d"}),
+      h("div",{cls:"row",style:"margin-top:8px"},SAFE_SEARCH.map(e=>h("a",{cls:"btn small open",href:e.url(q),target:"_blank",rel:"noopener noreferrer",title:e.who,onclick:()=>logSearch({id:"search:"+e.id,t:e.t+" search: \u201c"+q+"\u201d",u:e.url(q)})},e.t))),
+      h("div",{cls:"label",text:"Search approved YouTube channels",style:"margin-top:12px"}),
+      h("div",{cls:"row",style:"margin-top:8px"},SOURCES.filter(x=>x.k==="vid").map(v=>{const u=v.u.replace(/\/$/,"")+"/search?query="+encodeURIComponent(q);
+        return h("a",{cls:"btn ghost small open",href:u,target:"_blank",rel:"noopener noreferrer",onclick:()=>logSearch({id:"search:"+v.id,t:v.t.replace(" on YouTube","")+" video search: \u201c"+q+"\u201d",u})},v.t.replace(" on YouTube",""));}))));
+    results.append(h("div",{cls:"label",text:hits.length?`Lab sources that match (${hits.length})`:"No lab sources match. Try the safe search buttons above."}));
+    hits.forEach(x=>results.append(card(x)));
+  };
+  const box=h("input",{type:"search",id:"search",autocomplete:"off",maxlength:"60",placeholder:"Search any subject: cherry blossoms, volcanoes, Harriet Tubman…","aria-label":"Search any subject"});
+  box.value=query;
+  box.addEventListener("input",()=>{query=box.value.slice(0,60);fill();});
+  fill();
+
+  return h("div",{},
+    h("header",{cls:"top"},
+      h("div",{cls:"brand"},h("div",{cls:"label",text:"Capital Research Lab"}),h("h1",{text:s.name+"'s research"})),
+      h("div",{cls:"row"},h("button",{cls:"btn ghost small",onclick:()=>{me=null;query="";view="login";render();}},"Log out"))),
+    h("div",{cls:"searchbar"},box,query?h("button",{cls:"btn ghost small",onclick:()=>{query="";render();}},"Clear"):null),
+    h("nav",{cls:"tabs",role:"tablist"},TOPICS.map(t=>h("button",{cls:"tab",role:"tab","aria-selected":String(!query&&t.id===topic),onclick:()=>{topic=t.id;query="";render();}},t.name))),
+    h("div",{cls:"layout"},
+      h("section",{},results,otherSiteForm(s)),
+      notebook(s)));
+}
+function otherSiteForm(s){
+  const t=h("input",{type:"text",id:"other-title",placeholder:"Name of the site or video",maxlength:"80"});
+  const u=h("input",{type:"url",id:"other-url",placeholder:"https://…"});
+  return h("details",{style:"margin-top:16px"},
+    h("summary",{},"I used a site that is not on this list"),
+    h("div",{},
+      h("p",{cls:"muted",text:"Your teacher will check this site. Only use sites your teacher allows."}),
+      t,u,
+      h("button",{cls:"btn small",onclick:()=>{const url=safeUrl(u.value);if(!url||!t.value.trim()){toast("Add the site name and a web address that starts with https://");return;}
+        s.visits.push({id:"other",t:t.value.trim().slice(0,80),u:url,topic,at:Date.now(),other:true});s.updated=Date.now();persist(me);toast("Added. Your teacher will review it.");render();}},"Add to my sources")));
+}
+function notebook(s){
+  const visited=[...new Map(s.visits.map(v=>[v.id==="other"?v.u:v.id,v])).values()];
+  const q=h("textarea",{id:"question",rows:"2",placeholder:"What do you want to find out?",style:"min-height:60px"});q.value=s.question||"";
+  q.addEventListener("change",()=>{s.question=q.value.slice(0,400);s.updated=Date.now();persist(me);toast("Question saved");});
+  const fact=h("textarea",{id:"fact",placeholder:"Write a fact in your own words…",maxlength:"1000"});
+  const sel=h("select",{id:"fact-source"},h("option",{value:"",text:visited.length?"Where did you find it?":"Open a source first"}),visited.filter(v=>!v.search).map(v=>h("option",{value:v.id==="other"?v.u:v.id,text:v.t})));
+  const add=()=>{
+    const txt=fact.value.trim(); if(!txt){toast("Write your fact first.");return;}
+    if(!sel.value){toast("Pick the source where you found this fact.");return;}
+    const v=visited.find(x=>(x.id==="other"?x.u:x.id)===sel.value);
+    s.notes.push({text:txt,src:v?v.t:"",url:v?v.u:"",topic,at:Date.now()});s.updated=Date.now();persist(me);toast("Fact saved");render();
+  };
+  const notes=[...s.notes].reverse();
+  return h("aside",{cls:"notebook"},
+    h("div",{},h("div",{cls:"label",text:"My notebook"}),h("h2",{text:"Notes & sources"})),
+    h("label",{for:"question",cls:"label",text:"My research question"}),q,
+    h("label",{for:"fact",cls:"label",text:"Add a fact"}),fact,sel,
+    h("button",{cls:"btn",onclick:add},"Save fact"),
+    h("div",{cls:"label",text:`My facts (${s.notes.length})`}),
+    notes.length?h("div",{cls:"notes"},notes.map(n=>h("div",{cls:"note"},h("p",{text:n.text}),h("div",{cls:"src-line",text:"Source: "+(n.src||"none")+" · "+(TOPICS.find(t=>t.id===n.topic)?.name||"")}),
+      h("button",{cls:"linkbtn",onclick:()=>{const k=n.at+"|"+n.text;s.notes=s.notes.filter(x=>x!==n);s.deleted=[...(s.deleted||[]),k];s.updated=Date.now();persist(me);render();}},"Delete")))):h("p",{cls:"muted",text:"Your facts will show up here."}),
+    h("div",{cls:"label",text:`Places I researched (${visited.length})`}),
+    visited.length?h("ul",{style:"margin:0;padding-left:1.1rem"},visited.map(v=>h("li",{},h("a",{href:v.u,target:"_blank",rel:"noopener noreferrer",text:v.t}),v.other?h("span",{cls:"badge b-flag",text:"Needs check",style:"margin-left:.4rem"}):v.search?h("span",{cls:"badge b-web",text:"Search",style:"margin-left:.4rem"}):null))):h("p",{cls:"muted",text:"Open a source to start your list."}),
+    handIn(s));
+}
+function handIn(s){
+  const code=()=>"CRL1:"+btoa(unescape(encodeURIComponent(JSON.stringify({name:s.name,question:s.question,notes:s.notes,visits:s.visits,deleted:s.deleted||[],updated:s.updated}))));
+  const box=h("textarea",{id:"handin",cls:"code",readonly:true,rows:"3",hidden:true});
+  return h("details",{},
+    h("summary",{},"Turn in my research"),
+    h("div",{},
+      h("p",{cls:"muted",text:"Copy your research code and paste it where your teacher asks (Google Classroom, a form, or email)."}),
+      h("button",{cls:"btn small",onclick:async()=>{box.value=code();box.hidden=false;box.select();await copy(box.value,"Research code copied");}},"Copy my research code"),
+      box));
+}
+
+/* ---------- Teacher ---------- */
+function pinView(){
+  const first=!data.pin && !cloud;
+  const p=h("input",{type:"password",id:"pin",inputmode:"numeric",maxlength:"12",placeholder:first?"Create a teacher PIN":"Teacher PIN"});
+  const go=()=>{const v=p.value.trim();if(v.length<4){toast("Use at least 4 characters.");return;}
+    if(first){data.pin=v;saveLocal();teacherOK=true;render();}
+    else if(v===data.pin){teacherOK=true;render();} else toast("That PIN does not match.");};
+  p.addEventListener("keydown",e=>{if(e.key==="Enter")go();});
+  if(cloud){teacherOK=true;setTimeout(render);}
+  return h("div",{},
+    h("header",{cls:"top"},h("div",{cls:"brand"},h("div",{cls:"label",text:"Capital Research Lab"}),h("h1",{text:"Teacher master sheet"})),
+      h("button",{cls:"btn ghost small",onclick:()=>{view="login";render();}},"Back to student login")),
+    h("section",{cls:"panel",style:"max-width:420px"},
+      h("label",{for:"pin"},h("h3",{text:first?"Set your teacher PIN":"Enter your teacher PIN"})),
+      first?h("p",{cls:"muted",text:"This keeps students out of the master sheet on this device."}):null,
+      p,h("button",{cls:"btn",onclick:go},first?"Save PIN and open":"Open master sheet")));
+}
+function teacherView(){
+  const studs=Object.entries(data.students).map(([slug,s])=>({slug,...s})).sort((a,b)=>a.name.localeCompare(b.name));
+  const allVisits=studs.flatMap(s=>s.visits.map(v=>({...v,student:s.name,slug:s.slug}))).sort((a,b)=>b.at-a.at);
+  const flagged=allVisits.filter(v=>v.other).length;
+  const shown=pickStudent?allVisits.filter(v=>v.slug===pickStudent):allVisits;
+  const sel=pickStudent?data.students[pickStudent]:null;
+
+  const csv=()=>{const rows=[["Student","Date & time","Source","Publisher","Topic","Link","On approved list"]];
+    allVisits.slice().reverse().forEach(v=>rows.push([v.student,new Date(v.at).toLocaleString(),v.t,SRC[v.id]?.who||(v.search?"Search":"Student added"),TOPICS.find(t=>t.id===v.topic)?.name||"",v.u,v.other?"No":v.search?"Safe search":"Yes"]));
+    return rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");};
+  const exportCsv=async()=>{const text=csv();try{const dl=window.claude?await claude.use("downloads"):null;if(dl){await dl.save({filename:"research-master-sheet.csv",data:new Blob([text],{type:"text/csv"})});return;}}catch(e){if(e&&e.code==="declined")return;}copy(text,"Master sheet copied. Paste it into Google Sheets or Excel.");};
+
+  const imp=h("textarea",{id:"import",cls:"code",rows:"4",placeholder:"Paste one or more student research codes (they start with CRL1:)"});
+  const doImport=()=>{const codes=imp.value.match(/CRL1:[A-Za-z0-9+/=]+/g)||[];let n=0;
+    codes.forEach(c=>{try{const o=JSON.parse(decodeURIComponent(escape(atob(c.slice(5)))));const name=cleanName(o.name||"");if(!name)return;const slug=slugOf(name);
+      const clean={name,question:String(o.question||"").slice(0,400),notes:(o.notes||[]).slice(0,500).map(x=>({text:String(x.text||"").slice(0,1000),src:String(x.src||"").slice(0,80),url:safeUrl(String(x.url||""))||"",topic:String(x.topic||""),at:+x.at||0})),
+        visits:(o.visits||[]).slice(0,2000).map(v=>({id:String(v.id||"other"),t:String(v.t||"").slice(0,80),u:safeUrl(String(v.u||""))||"",topic:String(v.topic||""),at:+v.at||0,search:String(v.id||"").startsWith("search:"),other:!!v.other||(!SRC[v.id]&&!String(v.id||"").startsWith("search:"))})),deleted:(o.deleted||[]).map(String).slice(0,500),updated:+o.updated||0};
+      data.students[slug]=mergeStudent(data.students[slug],clean);persist(slug);n++;}catch(e){}});
+    toast(n?`Added research from ${n} student${n>1?"s":""}.`:"No research codes found. Codes start with CRL1:");imp.value="";render();};
+
+  return h("div",{},
+    h("header",{cls:"top"},
+      h("div",{cls:"brand"},h("div",{cls:"label",text:"Capital Research Lab"}),h("h1",{text:"Teacher master sheet"})),
+      h("div",{cls:"row"},h("button",{cls:"btn small",onclick:exportCsv},"Download for Sheets"),h("button",{cls:"btn ghost small",onclick:()=>{teacherOK=false;view="login";pickStudent=null;render();}},"Lock & exit"))),
+    h("p",{cls:"notice",style:"margin-bottom:16px",text:cloud?"Signed in as the owner: this sheet saves to your account, and student codes you add stay here on any device.":"This sheet shows students who logged in on this device. For students on other devices, paste their research codes below."}),
+    h("div",{cls:"stats"},
+      h("div",{cls:"stat"},h("span",{cls:"label",text:"Students"}),h("strong",{text:studs.length})),
+      h("div",{cls:"stat"},h("span",{cls:"label",text:"Sources opened"}),h("strong",{text:allVisits.length})),
+      h("div",{cls:"stat"},h("span",{cls:"label",text:"Sites to check"}),h("strong",{text:flagged,style:flagged?"color:var(--warn)":""}))),
+    h("h2",{text:"Students",style:"margin-bottom:10px"}),
+    h("div",{cls:"tablebox"},h("table",{},
+      h("thead",{},h("tr",{},["Student","Sources opened","Searches","Facts","Not on list","Last active"].map(x=>h("th",{text:x})))),
+      h("tbody",{},studs.length?studs.map(s=>{const last=Math.max(0,...s.visits.map(v=>v.at),...s.notes.map(n=>n.at));
+        return h("tr",{cls:"pick"+(pickStudent===s.slug?" sel":""),tabindex:"0",onclick:()=>{pickStudent=pickStudent===s.slug?null:s.slug;render();},onkeydown:e=>{if(e.key==="Enter"){pickStudent=pickStudent===s.slug?null:s.slug;render();}}},
+          h("td",{},h("strong",{text:s.name})),h("td",{text:s.visits.length}),h("td",{text:s.visits.filter(v=>v.search).length}),h("td",{text:s.notes.length}),
+          h("td",{},s.visits.some(v=>v.other)?h("span",{cls:"badge b-flag",text:s.visits.filter(v=>v.other).length+" to check"}):"—"),h("td",{text:last?fmt(last):"—"}));})
+        :h("tr",{},h("td",{colspan:"6",cls:"muted",text:"No students yet. When students log in and open sources, they appear here."}))))),
+    h("div",{cls:"tgrid"},
+      h("section",{},
+        h("div",{cls:"row",style:"justify-content:space-between;margin-bottom:10px"},h("h2",{text:sel?`Where ${sel.name} researched`:"Research log: every student"}),sel?h("button",{cls:"btn ghost small",onclick:()=>{pickStudent=null;render();}},"Show everyone"):null),
+        h("div",{cls:"tablebox",style:"max-height:520px;overflow:auto"},h("table",{},
+          h("thead",{},h("tr",{},["When","Student","Source","Topic"].map(x=>h("th",{text:x})))),
+          h("tbody",{},shown.length?shown.map(v=>h("tr",{},h("td",{text:fmt(v.at)}),h("td",{text:v.student}),
+            h("td",{},h("a",{href:v.u,target:"_blank",rel:"noopener noreferrer",text:v.t}),v.other?h("span",{cls:"badge b-flag",text:"Not on list",style:"margin-left:.4rem"}):v.search?h("span",{cls:"badge b-web",text:"Safe search",style:"margin-left:.4rem"}):h("div",{cls:"muted",style:"font-size:.8rem",text:SRC[v.id]?.who||""})),
+            h("td",{text:TOPICS.find(t=>t.id===v.topic)?.name||""}))):h("tr",{},h("td",{colspan:"4",cls:"muted",text:"No sources opened yet."})))))),
+      h("section",{},
+        h("h2",{text:sel?`${sel.name}'s notebook`:"Student notebooks",style:"margin-bottom:10px"}),
+        sel?h("div",{cls:"panel"},h("div",{},h("div",{cls:"label",text:"Research question"}),h("p",{text:sel.question||"Not written yet."})),
+          h("div",{cls:"label",text:`Facts (${sel.notes.length})`}),
+          sel.notes.length?sel.notes.map(n=>h("div",{cls:"note"},h("p",{text:n.text}),h("div",{cls:"src-line",text:"Source: "+(n.src||"none")}))):h("p",{cls:"muted",text:"No facts saved yet."}))
+          :h("p",{cls:"muted",text:"Click a student in the table to read their question and facts."}))),
+    h("section",{cls:"section"},
+      h("h2",{text:"Add research from other devices"}),
+      h("p",{cls:"muted",text:"Students press \"Turn in my research\" in their notebook and send you the code. Paste as many codes as you like at once."}),
+      imp,h("div",{},h("button",{cls:"btn small",onclick:doImport},"Add to master sheet"))),
+    h("section",{cls:"section"},
+      h("h2",{text:"Start fresh"}),
+      confirmClear?h("div",{cls:"row"},h("span",{text:"Erase every student on this device? This cannot be undone."}),
+        h("button",{cls:"btn danger small",onclick:()=>{data.students={};saveLocal();confirmClear=false;pickStudent=null;toast(cloud?"Cleared on this device. Class sheet copies remain in your account.":"All student research erased");render();}},"Yes, erase"),
+        h("button",{cls:"btn ghost small",onclick:()=>{confirmClear=false;render();}},"Cancel"))
+      :h("div",{},h("button",{cls:"btn danger small",onclick:()=>{confirmClear=true;render();}},"Erase all student research on this device"))));
+}
+
+render();
+</script>
+
+</body>
+</html>
