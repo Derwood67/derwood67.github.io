@@ -99,7 +99,17 @@ details summary{cursor:pointer;font-weight:700;color:var(--dome)}
 details > div{margin-top:10px;display:grid;gap:8px}
 
 /* teacher */
-.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:18px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:18px}
+.qcell{max-width:28ch;color:var(--muted)}
+.printonly{display:none}
+@media print{
+  body{background:#fff;color:#000}
+  #app > div > *:not(.printonly), #toast{display:none!important}
+  .printonly{display:block}
+  .printpage{page-break-after:always;font-size:12pt}
+  .printpage h1{margin:.2rem 0 .6rem}.printpage h3{margin:1rem 0 .3rem}
+  .printpage li{margin-bottom:.5rem}
+}
 .stat{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px}
 .stat strong{display:block;font-family:var(--display);font-size:1.7rem;font-variant-numeric:tabular-nums}
 .tablebox{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
@@ -116,9 +126,8 @@ tr.sel td{background:var(--dome-soft)}
 @media (max-width:860px){
   .login,.layout,.tgrid{grid-template-columns:1fr}
   .notebook{position:static}
-  .stats{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
-@media (max-width:480px){.stats{grid-template-columns:1fr}.src{grid-template-columns:1fr}}
+@media (max-width:480px){.src{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 
@@ -181,10 +190,10 @@ const SOURCES = [
   {id:"yt-nasa",t:"NASA on YouTube",u:"https://www.youtube.com/@NASA",who:"NASA",k:"vid",tp:["space"],d:"Launches, astronauts, and missions straight from NASA."}
 ];
 const SRC = Object.fromEntries(SOURCES.map(s=>[s.id,s]));
-/* Kid-safe search: Kiddle is a kid-filtered search engine; YouTube searches stay inside approved channels. */
+/* Google with SafeSearch on (safe=active); YouTube searches stay inside approved channels. */
 const SAFE_SEARCH = [
-  {id:"kiddle",t:"Kiddle (kid-safe search)",who:"Kid-filtered web, image, and video search",url:q=>"https://www.kiddle.co/s.php?q="+encodeURIComponent(q)},
-  {id:"kiddle-img",t:"Kiddle images",who:"Kid-filtered picture search",url:q=>"https://www.kiddle.co/i.php?q="+encodeURIComponent(q)},
+  {id:"google",t:"Google",who:"Google web search with SafeSearch on",url:q=>"https://www.google.com/search?safe=active&q="+encodeURIComponent(q),main:true},
+  {id:"google-img",t:"Google Images",who:"Google picture search with SafeSearch on",url:q=>"https://www.google.com/search?safe=active&tbm=isch&q="+encodeURIComponent(q)},
   {id:"locsearch",t:"Library of Congress",who:"Photos, maps, letters, and newspapers",url:q=>"https://www.loc.gov/search/?q="+encodeURIComponent(q)}
 ];
 const BLOCK = /\b(sex|sexy|porn|nude|naked|xxx|boob|drug|drugs|weed|gore|kill|murder|suicide|gun|guns|beer|vodka|vape|casino|gambl\w*)\b/i;
@@ -197,6 +206,29 @@ let cloud = null;            // db namespace when the teacher (owner) is signed 
 try{ const raw=localStorage.getItem(LKEY); if(raw) data=Object.assign(data,JSON.parse(raw)); }catch(e){}
 function saveLocal(){ try{ localStorage.setItem(LKEY,JSON.stringify(data)); }catch(e){} }
 const pending={}; let timers={};
+/* ---------- Google Sheet connection (GitHub Pages) ---------- */
+function sheetId(){let id="";try{id=new URLSearchParams(location.search).get("sheet")||"";}catch(e){}
+  if(id){try{localStorage.setItem("crl.sheet",id);}catch(e){}} else {try{id=localStorage.getItem("crl.sheet")||"";}catch(e){}}
+  return /^[A-Za-z0-9_-]{20,120}$/.test(id)?id:"";}
+let SHEET=sheetId();
+const apiUrl=()=>SHEET?"https://script.google.com/macros/s/"+SHEET+"/exec":"";
+async function api(action,body){
+  if(!SHEET) return {ok:false,error:"nosheet"};
+  const ctl=new AbortController(); const tm=setTimeout(()=>ctl.abort(),20000);
+  try{const r=await fetch(apiUrl(),{method:"POST",body:JSON.stringify(Object.assign({action},body||{})),redirect:"follow",signal:ctl.signal});return await r.json();}
+  catch(e){return {ok:false,error:"offline"};} finally{clearTimeout(tm);}
+}
+/* Student events go to the class sheet; if a send fails they wait in a queue on this device. */
+function queueSend(action,body,after){
+  if(!SHEET) return;
+  data.queue=data.queue||[]; const item={action,body,at:Date.now()}; data.queue.push(item); saveLocal();
+  api(action,body).then(j=>{ if(j&&j.ok){data.queue=data.queue.filter(x=>x!==item);saveLocal();after&&after(j);} });
+}
+async function flushQueue(){
+  if(!SHEET||!data.queue||!data.queue.length) return;
+  for(const item of [...data.queue]){const j=await api(item.action,item.body);
+    if(j&&(j.ok||j.error!=="offline")){data.queue=data.queue.filter(x=>x!==item);saveLocal();} else break;}
+}
 function persist(slug){
   saveLocal();
   if(!cloud||!slug) return;
@@ -260,7 +292,7 @@ function loginView(){
   input.addEventListener("keydown",e=>{if(e.key==="Enter")go();});
   return h("div",{},
     h("header",{cls:"top"},h("div",{cls:"brand"},h("div",{cls:"label",text:"Upper elementary & middle school"}),h("h1",{text:"Capital Research Lab"})),
-      h("button",{cls:"btn ghost small",onclick:()=>{view="teacher";render();}},"Teacher master sheet")),
+      h("button",{cls:"btn ghost small",onclick:()=>{view="teacher";render();}},"Teacher dashboard")),
     h("div",{cls:"login"},
       h("section",{cls:"hero"},
         h("h2",{text:"Research Washington, DC and beyond"}),
@@ -282,13 +314,19 @@ function login(name){
   const slug=slugOf(name);
   if(!data.students[slug]) data.students[slug]={name,question:"",notes:[],visits:[],deleted:[],updated:Date.now()};
   me=slug; view="student"; persist(slug); render(); window.scrollTo(0,0);
+  if(SHEET){(async()=>{await flushQueue();const j=await api("signin",{name});if(!j.ok||me!==slug)return;
+    const s=data.students[slug];
+    s.question=j.question||s.question||"";
+    s.visits=(j.visits||[]).map(v=>({id:v.kind==="search"?"search:"+v.src:v.kind==="other"?"other":v.src,t:v.t,u:v.u,topic:v.topic,at:Date.parse(v.at)||0,search:v.kind==="search",other:v.kind==="other"}));
+    s.notes=(j.notes||[]).map(n=>({sid:n.id,text:n.text,src:n.src,url:n.url,topic:n.topic,at:Date.parse(n.at)||0}));
+    saveLocal(); if(view==="student"&&me===slug) render();})();}
 }
 
 /* ---------- Student ---------- */
 function studentView(){
   const s=data.students[me];
   const seen=new Set(s.visits.map(v=>v.id));
-  const open=(src)=>{s.visits.push({id:src.id,t:src.t,u:src.u,topic,at:Date.now()});s.updated=Date.now();persist(me);setTimeout(render,50);};
+  const open=(src)=>{s.visits.push({id:src.id,t:src.t,u:src.u,topic,at:Date.now()});s.updated=Date.now();persist(me);queueSend("visit",{name:s.name,kind:"site",sourceId:src.id,title:src.t,url:src.u,topic});setTimeout(render,50);};
 
   const card=(src)=>{
     const [kl,kc]=KIND[src.k];
@@ -297,7 +335,7 @@ function studentView(){
       h("a",{cls:"btn small open",href:src.u,target:"_blank",rel:"noopener noreferrer",onclick:()=>open(src)},src.k==="vid"?"Watch":"Open"),
       h("p",{cls:"what",text:src.d}));
   };
-  const logSearch=(entry)=>{s.visits.push(Object.assign({topic,at:Date.now(),search:true},entry));s.updated=Date.now();persist(me);};
+  const logSearch=(entry)=>{s.visits.push(Object.assign({topic,at:Date.now(),search:true},entry));s.updated=Date.now();persist(me);queueSend("visit",{name:s.name,kind:"search",sourceId:entry.id.replace("search:",""),title:entry.t,url:entry.u,topic});};
   const results=h("div",{cls:"sources",id:"results"});
   const fill=()=>{
     results.innerHTML="";
@@ -315,8 +353,8 @@ function studentView(){
     const hay=x=>(x.t+" "+x.d+" "+x.who+" "+x.tp.map(id=>TOPICS.find(t=>t.id===id)?.name||"").join(" ")).toLowerCase();
     const hits=SOURCES.filter(x=>words.some(w=>w.length>2&&hay(x).includes(w)));
     results.append(h("div",{cls:"questions"},
-      h("div",{cls:"label",text:"Search safe places for \u201c"+q+"\u201d"}),
-      h("div",{cls:"row",style:"margin-top:8px"},SAFE_SEARCH.map(e=>h("a",{cls:"btn small open",href:e.url(q),target:"_blank",rel:"noopener noreferrer",title:e.who,onclick:()=>logSearch({id:"search:"+e.id,t:e.t+" search: \u201c"+q+"\u201d",u:e.url(q)})},e.t))),
+      h("div",{cls:"label",text:"Search Google (SafeSearch on) and other safe places for \u201c"+q+"\u201d"}),
+      h("div",{cls:"row",style:"margin-top:8px"},SAFE_SEARCH.map(e=>h("a",{cls:e.main?"btn open gobtn":"btn small open",href:e.url(q),target:"_blank",rel:"noopener noreferrer",title:e.who,onclick:()=>logSearch({id:"search:"+e.id,t:e.t+" search: \u201c"+q+"\u201d",u:e.url(q)})},e.main?"Search Google":e.t))),
       h("div",{cls:"label",text:"Search approved YouTube channels",style:"margin-top:12px"}),
       h("div",{cls:"row",style:"margin-top:8px"},SOURCES.filter(x=>x.k==="vid").map(v=>{const u=v.u.replace(/\/$/,"")+"/search?query="+encodeURIComponent(q);
         return h("a",{cls:"btn ghost small open",href:u,target:"_blank",rel:"noopener noreferrer",onclick:()=>logSearch({id:"search:"+v.id,t:v.t.replace(" on YouTube","")+" video search: \u201c"+q+"\u201d",u})},v.t.replace(" on YouTube",""));}))));
@@ -328,12 +366,14 @@ function studentView(){
   const go=h("button",{cls:"btn gobtn",type:"submit",hidden:true});
   const showGo=()=>{const q=box.value.trim();go.hidden=!q||q===query;go.textContent="Search for \u201c"+q.slice(0,40)+"\u201d";};
   box.addEventListener("input",showGo);
-  const submit=(e)=>{e.preventDefault();const q=box.value.trim().slice(0,60);if(!q){toast("Type what you want to research, then press Search.");box.focus();return;}query=q;render();setTimeout(()=>{const r=document.getElementById("results");if(r)r.scrollIntoView({behavior:"smooth",block:"start"});},30);};
+  const submit=(e)=>{e.preventDefault();const q=box.value.trim().slice(0,60);if(!q){toast("Type what you want to research, then press Search.");box.focus();return;}query=q;
+    if(!BLOCK.test(q)){const g=SAFE_SEARCH[0];const u=g.url(q);logSearch({id:"search:"+g.id,t:"Google search: \u201c"+q+"\u201d",u});try{window.open(u,"_blank","noopener");}catch(err){}}
+    render();setTimeout(()=>{const r=document.getElementById("results");if(r)r.scrollIntoView({behavior:"smooth",block:"start"});},30);};
   fill();
 
   return h("div",{},
     h("header",{cls:"top"},
-      h("div",{cls:"brand"},h("div",{cls:"label",text:"Capital Research Lab"}),h("h1",{text:s.name+"'s research"})),
+      h("div",{cls:"brand"},h("div",{cls:"label",text:SHEET?"Capital Research Lab \u00b7 saving to your class":"Capital Research Lab"}),h("h1",{text:s.name+"'s research"})),
       h("div",{cls:"row"},h("button",{cls:"btn ghost small",onclick:()=>{me=null;query="";view="login";render();}},"Log out"))),
     h("form",{cls:"searchform",role:"search",onsubmit:submit},
       h("div",{cls:"searchbar"},box,h("button",{cls:"btn",type:"submit"},"Search"),query?h("button",{cls:"btn ghost small",type:"button",onclick:()=>{query="";render();}},"Clear"):null),
@@ -352,19 +392,20 @@ function otherSiteForm(s){
       h("p",{cls:"muted",text:"Your teacher will check this site. Only use sites your teacher allows."}),
       t,u,
       h("button",{cls:"btn small",onclick:()=>{const url=safeUrl(u.value);if(!url||!t.value.trim()){toast("Add the site name and a web address that starts with https://");return;}
-        s.visits.push({id:"other",t:t.value.trim().slice(0,80),u:url,topic,at:Date.now(),other:true});s.updated=Date.now();persist(me);toast("Added. Your teacher will review it.");render();}},"Add to my sources")));
+        s.visits.push({id:"other",t:t.value.trim().slice(0,80),u:url,topic,at:Date.now(),other:true});s.updated=Date.now();persist(me);queueSend("visit",{name:s.name,kind:"other",sourceId:"other",title:t.value.trim().slice(0,80),url,topic});toast("Added. Your teacher will review it.");render();}},"Add to my sources")));
 }
 function notebook(s){
   const visited=[...new Map(s.visits.map(v=>[v.id==="other"?v.u:v.id,v])).values()];
   const q=h("textarea",{id:"question",rows:"2",placeholder:"What do you want to find out?",style:"min-height:60px"});q.value=s.question||"";
-  q.addEventListener("change",()=>{s.question=q.value.slice(0,400);s.updated=Date.now();persist(me);toast("Question saved");});
+  q.addEventListener("change",()=>{s.question=q.value.slice(0,400);s.updated=Date.now();persist(me);queueSend("question",{name:s.name,text:s.question});toast("Question saved");});
   const fact=h("textarea",{id:"fact",placeholder:"Write a fact in your own words…",maxlength:"1000"});
   const sel=h("select",{id:"fact-source"},h("option",{value:"",text:visited.length?"Where did you find it?":"Open a source first"}),visited.filter(v=>!v.search).map(v=>h("option",{value:v.id==="other"?v.u:v.id,text:v.t})));
   const add=()=>{
     const txt=fact.value.trim(); if(!txt){toast("Write your fact first.");return;}
     if(!sel.value){toast("Pick the source where you found this fact.");return;}
     const v=visited.find(x=>(x.id==="other"?x.u:x.id)===sel.value);
-    s.notes.push({text:txt,src:v?v.t:"",url:v?v.u:"",topic,at:Date.now()});s.updated=Date.now();persist(me);toast("Fact saved");render();
+    const note={text:txt,src:v?v.t:"",url:v?v.u:"",topic,at:Date.now()};
+    s.notes.push(note);s.updated=Date.now();persist(me);queueSend("note",{name:s.name,text:txt,source:note.src,url:note.url,topic},j=>{note.sid=j.id;saveLocal();});toast("Fact saved");render();
   };
   const notes=[...s.notes].reverse();
   return h("aside",{cls:"notebook"},
@@ -374,7 +415,7 @@ function notebook(s){
     h("button",{cls:"btn",onclick:add},"Save fact"),
     h("div",{cls:"label",text:`My facts (${s.notes.length})`}),
     notes.length?h("div",{cls:"notes"},notes.map(n=>h("div",{cls:"note"},h("p",{text:n.text}),h("div",{cls:"src-line",text:"Source: "+(n.src||"none")+" · "+(TOPICS.find(t=>t.id===n.topic)?.name||"")}),
-      h("button",{cls:"linkbtn",onclick:()=>{const k=n.at+"|"+n.text;s.notes=s.notes.filter(x=>x!==n);s.deleted=[...(s.deleted||[]),k];s.updated=Date.now();persist(me);render();}},"Delete")))):h("p",{cls:"muted",text:"Your facts will show up here."}),
+      h("button",{cls:"linkbtn",onclick:()=>{const k=n.at+"|"+n.text;if(n.sid)queueSend("deleteNote",{name:s.name,id:n.sid});s.notes=s.notes.filter(x=>x!==n);s.deleted=[...(s.deleted||[]),k];s.updated=Date.now();persist(me);render();}},"Delete")))):h("p",{cls:"muted",text:"Your facts will show up here."}),
     h("div",{cls:"label",text:`Places I researched (${visited.length})`}),
     visited.length?h("ul",{style:"margin:0;padding-left:1.1rem"},visited.map(v=>h("li",{},h("a",{href:v.u,target:"_blank",rel:"noopener noreferrer",text:v.t}),v.other?h("span",{cls:"badge b-flag",text:"Needs check",style:"margin-left:.4rem"}):v.search?h("span",{cls:"badge b-web",text:"Search",style:"margin-left:.4rem"}):null))):h("p",{cls:"muted",text:"Open a source to start your list."}),
     handIn(s));
@@ -390,84 +431,185 @@ function handIn(s){
       box));
 }
 
-/* ---------- Teacher ---------- */
+/* ---------- Teacher dashboard ---------- */
+const IN_CLAUDE = /claude\.ai|claudeusercontent|anthropic/.test(location.hostname);
+let T=null, tPin="", tMsg="", tBusy=false, logFilter="", confirmRemove=false;
+try{tPin=sessionStorage.getItem("crl.pin")||"";}catch(e){}
+
+function localModel(){
+  return {sheetUrl:"",students:Object.entries(data.students).map(([key,s])=>({key,name:s.name,question:s.question||"",
+    visits:(s.visits||[]).map(v=>({t:v.t,u:v.u,topic:v.topic,at:v.at,kind:v.search?"search":v.other?"other":"site",src:v.id})),
+    notes:(s.notes||[]).map(n=>({text:n.text,src:n.src,url:n.url,topic:n.topic,at:n.at})),last:0}))};
+}
+function serverModel(j){
+  const by={};
+  (j.students||[]).forEach(s=>by[s.id]={key:s.id,name:s.name,question:s.question,visits:[],notes:[],last:Date.parse(s.last)||0});
+  (j.visits||[]).forEach(v=>{const s=by[v.sid];if(s)s.visits.push({t:v.t,u:v.u,topic:v.topic,at:Date.parse(v.at)||0,kind:v.kind,src:v.src});});
+  (j.notes||[]).forEach(n=>{const s=by[n.sid];if(s)s.notes.push({id:n.id,text:n.text,src:n.src,url:n.url,topic:n.topic,at:Date.parse(n.at)||0});});
+  return {sheetUrl:j.sheetUrl||"",className:j.className||"",students:Object.values(by)};
+}
+async function loadDash(pin){
+  tBusy=true;tMsg="";render();
+  const j=await api("dash",{pin});
+  tBusy=false;
+  if(j.ok){tPin=pin;try{sessionStorage.setItem("crl.pin",pin);}catch(e){}T=serverModel(j);teacherOK=true;}
+  else{teacherOK=false;T=null;tPin="";try{sessionStorage.removeItem("crl.pin");}catch(e){}
+    tMsg=j.error==="badpin"?"That PIN does not match the one in your Google Sheet.":j.error==="nopin"?"Add a PIN in the Settings tab of your Google Sheet (row “Teacher PIN”), then try again.":j.error==="offline"?"Could not reach your Google Sheet. Check the internet connection and try again.":"Your Google Sheet answered with an error. Check that the web app is deployed with access for Anyone.";}
+  render();
+}
+const topicName=id=>TOPICS.find(t=>t.id===id)?.name||"";
+const lastOf=s=>Math.max(s.last||0,0,...s.visits.map(v=>v.at),...s.notes.map(n=>n.at));
+
+function teacherHeader(extra){
+  return h("header",{cls:"top"},
+    h("div",{cls:"brand"},h("div",{cls:"label",text:"Capital Research Lab"}),h("h1",{text:"Teacher dashboard"})),
+    h("div",{cls:"row"},extra||null,h("button",{cls:"btn ghost small",onclick:()=>{teacherOK=false;T=null;tPin="";try{sessionStorage.removeItem("crl.pin");}catch(e){}view="login";pickStudent=null;render();}},teacherOK?"Lock & exit":"Back to student login")));
+}
+
+function connectPanel(){
+  const u=h("input",{type:"url",id:"webapp",placeholder:"https://script.google.com/macros/s/…/exec"});
+  const code=new URL("Code.gs",location.href).href;
+  return h("details",{cls:"panel",open:!SHEET&&!IN_CLAUDE?true:null},
+    h("summary",{},SHEET?"Google Sheet connected · change it":"Connect a Google Sheet so every student's research comes to you"),
+    h("div",{},
+      IN_CLAUDE?h("p",{cls:"muted",text:"Google Sheet saving works on the GitHub version of the lab: derwood67.github.io/research-lab/"}):null,
+      h("ol",{style:"margin:0;padding-left:1.2rem;display:grid;gap:6px"},
+        h("li",{},"Make a new Google Sheet. Open ",h("b",{text:"Extensions › Apps Script"}),"."),
+        h("li",{},"Delete what is there and paste in ",h("a",{href:"https://github.com/Derwood67/derwood67.github.io/blob/main/research-lab/Code.gs",target:"_blank",rel:"noopener noreferrer",text:"this script (Code.gs)"}),". Save."),
+        h("li",{},"Click ",h("b",{text:"Deploy › New deployment › Web app"}),". Execute as ",h("b",{text:"Me"}),", access ",h("b",{text:"Anyone"}),". Approve the permissions."),
+        h("li",{},"In the Sheet's ",h("b",{text:"Settings"})," tab, type your PIN next to “Teacher PIN”."),
+        h("li",{},"Paste the Web app URL below.")),
+      u,
+      h("div",{},h("button",{cls:"btn small",onclick:()=>{const m=(u.value||"").match(/\/macros\/s\/([A-Za-z0-9_-]{20,120})\//);
+        if(!m){toast("Paste the full Web app URL. It ends in /exec.");return;}
+        SHEET=m[1];try{localStorage.setItem("crl.sheet",SHEET);}catch(e){}teacherOK=false;T=null;tPin="";toast("Sheet connected. Enter your PIN.");render();}},"Connect sheet"))));
+}
+
 function pinView(){
-  const first=!data.pin && !cloud;
-  const p=h("input",{type:"password",id:"pin",inputmode:"numeric",maxlength:"12",placeholder:first?"Create a teacher PIN":"Teacher PIN"});
-  const go=()=>{const v=p.value.trim();if(v.length<4){toast("Use at least 4 characters.");return;}
+  const first=!SHEET&&!data.pin;
+  const p=h("input",{type:"password",id:"pin",inputmode:"numeric",maxlength:"12",autocomplete:"off",placeholder:first?"Create a teacher PIN":"Teacher PIN"});
+  const go=()=>{const v=p.value.trim();if(v.length<4){toast("Your PIN has at least 4 characters.");return;}
+    if(SHEET){loadDash(v);return;}
     if(first){data.pin=v;saveLocal();teacherOK=true;render();}
     else if(v===data.pin){teacherOK=true;render();} else toast("That PIN does not match.");};
   p.addEventListener("keydown",e=>{if(e.key==="Enter")go();});
-  if(cloud){teacherOK=true;setTimeout(render);}
-  return h("div",{},
-    h("header",{cls:"top"},h("div",{cls:"brand"},h("div",{cls:"label",text:"Capital Research Lab"}),h("h1",{text:"Teacher master sheet"})),
-      h("button",{cls:"btn ghost small",onclick:()=>{view="login";render();}},"Back to student login")),
-    h("section",{cls:"panel",style:"max-width:420px"},
-      h("label",{for:"pin"},h("h3",{text:first?"Set your teacher PIN":"Enter your teacher PIN"})),
-      first?h("p",{cls:"muted",text:"This keeps students out of the master sheet on this device."}):null,
-      p,h("button",{cls:"btn",onclick:go},first?"Save PIN and open":"Open master sheet")));
+  if(SHEET&&tPin&&!tBusy&&!tMsg) setTimeout(()=>loadDash(tPin));
+  if(!SHEET&&cloud){teacherOK=true;setTimeout(render);}
+  return h("div",{},teacherHeader(),
+    h("div",{cls:"login"},
+      h("section",{cls:"panel",style:"max-width:440px"},
+        h("label",{for:"pin"},h("h3",{text:first?"Set your teacher PIN":"Enter your teacher PIN"})),
+        h("p",{cls:"muted",text:SHEET?"Your PIN is checked against the Settings tab of your Google Sheet.":first?"This PIN keeps students out of the dashboard on this device.":"Students cannot open the dashboard without it."}),
+        p,h("button",{cls:"btn",disabled:tBusy?true:null,onclick:go},tBusy?"Checking…":"Open dashboard"),
+        tMsg?h("p",{cls:"notice",text:tMsg}):null),
+      connectPanel()));
 }
+
 function teacherView(){
-  const studs=Object.entries(data.students).map(([slug,s])=>({slug,...s})).sort((a,b)=>a.name.localeCompare(b.name));
-  const allVisits=studs.flatMap(s=>s.visits.map(v=>({...v,student:s.name,slug:s.slug}))).sort((a,b)=>b.at-a.at);
-  const flagged=allVisits.filter(v=>v.other).length;
-  const shown=pickStudent?allVisits.filter(v=>v.slug===pickStudent):allVisits;
-  const sel=pickStudent?data.students[pickStudent]:null;
+  if(!SHEET) T=localModel();
+  if(!T) return pinView();
+  const studs=[...T.students].sort((a,b)=>a.name.localeCompare(b.name));
+  const all=studs.flatMap(s=>s.visits.map(v=>({...v,student:s.name,key:s.key}))).sort((a,b)=>b.at-a.at);
+  const nVisits=all.filter(v=>v.kind==="site").length, nSearch=all.filter(v=>v.kind==="search").length, nOther=all.filter(v=>v.kind==="other").length;
+  const nNotes=studs.reduce((n,s)=>n+s.notes.length,0);
+  const sel=pickStudent?studs.find(s=>s.key===pickStudent):null;
+  const f=logFilter.trim().toLowerCase();
+  const shown=all.filter(v=>(!sel||v.key===sel.key)&&(!f||(v.student+" "+v.t+" "+topicName(v.topic)).toLowerCase().includes(f)));
 
-  const csv=()=>{const rows=[["Student","Date & time","Source","Publisher","Topic","Link","On approved list"]];
-    allVisits.slice().reverse().forEach(v=>rows.push([v.student,new Date(v.at).toLocaleString(),v.t,SRC[v.id]?.who||(v.search?"Search":"Student added"),TOPICS.find(t=>t.id===v.topic)?.name||"",v.u,v.other?"No":v.search?"Safe search":"Yes"]));
+  const csvText=()=>{const rows=[["Student","Date & time","What","Source / search","Publisher","Topic","Link"]];
+    all.slice().reverse().forEach(v=>rows.push([v.student,new Date(v.at).toLocaleString(),v.kind==="search"?"Search":v.kind==="other"?"Site not on list":"Approved source",v.t,SRC[v.src]?.who||"",topicName(v.topic),v.u]));
+    rows.push([]);rows.push(["Student","Date & time","Fact","Source","Topic","Link"]);
+    studs.forEach(s=>s.notes.forEach(n=>rows.push([s.name,new Date(n.at).toLocaleString(),n.text,n.src,topicName(n.topic),n.url])));
     return rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");};
-  const exportCsv=async()=>{const text=csv();try{const dl=window.claude?await claude.use("downloads"):null;if(dl){await dl.save({filename:"research-master-sheet.csv",data:new Blob([text],{type:"text/csv"})});return;}}catch(e){if(e&&e.code==="declined")return;}copy(text,"Master sheet copied. Paste it into Google Sheets or Excel.");};
+  const exportCsv=async()=>{const text=csvText();
+    if(!IN_CLAUDE){const a=h("a",{href:URL.createObjectURL(new Blob([text],{type:"text/csv"})),download:"research-master-sheet.csv"});document.body.append(a);a.click();a.remove();return;}
+    try{const dl=window.claude?await claude.use("downloads"):null;if(dl){await dl.save({filename:"research-master-sheet.csv",data:new Blob([text],{type:"text/csv"})});return;}}catch(e){if(e&&e.code==="declined")return;}
+    copy(text,"Master sheet copied. Paste it into Google Sheets.");};
+  const studentLink=SHEET?location.origin+location.pathname+"?sheet="+SHEET:"";
 
+  const removeStudent=async()=>{if(!sel)return;
+    if(SHEET){const j=await api("removeStudent",{pin:tPin,id:sel.key});if(!j.ok){toast("Could not remove. Try again.");return;}await loadDash(tPin);}
+    else{delete data.students[sel.key];saveLocal();}
+    toast(sel.name+" removed");pickStudent=null;confirmRemove=false;render();};
+
+  return h("div",{},
+    teacherHeader(h("div",{cls:"row"},
+      SHEET?h("button",{cls:"btn small",onclick:()=>loadDash(tPin)},tBusy?"Refreshing…":"Refresh"):null,
+      h("button",{cls:"btn small",onclick:exportCsv},"Download CSV"),
+      !IN_CLAUDE?h("button",{cls:"btn small",onclick:()=>window.print()},"Print notebooks / PDF"):null,
+      T.sheetUrl?h("a",{cls:"btn ghost small",href:T.sheetUrl,target:"_blank",rel:"noopener noreferrer"},"Open Google Sheet"):null)),
+    SHEET?h("div",{cls:"notice",style:"margin-bottom:16px;display:grid;gap:6px"},
+        h("span",{text:"Every student's research saves to your Google Sheet. Post this student link in Google Classroom:"}),
+        h("div",{cls:"row"},h("code",{cls:"code",text:studentLink}),h("button",{cls:"btn ghost small",onclick:()=>copy(studentLink,"Student link copied")},"Copy link")))
+      :h("p",{cls:"notice",style:"margin-bottom:16px",text:cloud?"Signed in as the owner: this dashboard saves to your Claude account.":"Right now this dashboard only shows students who used this device. Connect a Google Sheet below to collect every student's research in one place."}),
+    h("div",{cls:"stats"},
+      [["Students",studs.length],["Sources opened",nVisits],["Searches",nSearch],["Facts written",nNotes],["Sites to check",nOther]].map(([l,n])=>
+        h("div",{cls:"stat"},h("span",{cls:"label",text:l}),h("strong",{text:n,style:l==="Sites to check"&&n?"color:var(--warn)":""})))),
+    h("h2",{text:"Students",style:"margin-bottom:10px"}),
+    h("div",{cls:"tablebox"},h("table",{},
+      h("thead",{},h("tr",{},["Student","Research question","Sources","Searches","Facts","Not on list","Last active"].map(x=>h("th",{text:x})))),
+      h("tbody",{},studs.length?studs.map(s=>{const pick=()=>{pickStudent=pickStudent===s.key?null:s.key;confirmRemove=false;render();};const other=s.visits.filter(v=>v.kind==="other").length;const last=lastOf(s);
+        return h("tr",{cls:"pick"+(pickStudent===s.key?" sel":""),tabindex:"0",onclick:pick,onkeydown:e=>{if(e.key==="Enter")pick();}},
+          h("td",{},h("strong",{text:s.name})),h("td",{cls:"qcell",text:s.question||"—"}),
+          h("td",{text:s.visits.filter(v=>v.kind==="site").length}),h("td",{text:s.visits.filter(v=>v.kind==="search").length}),h("td",{text:s.notes.length}),
+          h("td",{},other?h("span",{cls:"badge b-flag",text:other+" to check"}):"—"),h("td",{text:last?fmt(last):"—"}));})
+        :h("tr",{},h("td",{colspan:"7",cls:"muted",text:"No students yet. Students appear here as soon as they log in."}))))),
+    h("div",{cls:"tgrid"},
+      h("section",{},
+        h("div",{cls:"row",style:"justify-content:space-between;margin-bottom:10px"},h("h2",{text:sel?`Where ${sel.name} researched`:"Research log: every student"}),sel?h("button",{cls:"btn ghost small",onclick:()=>{pickStudent=null;render();}},"Show everyone"):null),
+        (()=>{const i=h("input",{type:"search",id:"logfilter",placeholder:"Filter by student, source, or topic",style:"margin-bottom:10px"});i.value=logFilter;
+          i.addEventListener("change",()=>{logFilter=i.value;render();});return i;})(),
+        h("div",{cls:"tablebox",style:"max-height:540px;overflow:auto"},h("table",{},
+          h("thead",{},h("tr",{},["When","Student","Source or search","Topic"].map(x=>h("th",{text:x})))),
+          h("tbody",{},shown.length?shown.map(v=>h("tr",{},h("td",{text:fmt(v.at)}),h("td",{text:v.student}),
+            h("td",{},h("a",{href:v.u,target:"_blank",rel:"noopener noreferrer",text:v.t}),
+              v.kind==="other"?h("span",{cls:"badge b-flag",text:"Not on list",style:"margin-left:.4rem"}):v.kind==="search"?h("span",{cls:"badge b-web",text:"Search",style:"margin-left:.4rem"}):h("div",{cls:"muted",style:"font-size:.8rem",text:SRC[v.src]?.who||""})),
+            h("td",{text:topicName(v.topic)}))):h("tr",{},h("td",{colspan:"4",cls:"muted",text:"Nothing here yet."})))))),
+      h("section",{},
+        h("h2",{text:sel?`${sel.name}'s notebook`:"Student notebooks",style:"margin-bottom:10px"}),
+        sel?h("div",{cls:"panel"},
+          h("div",{},h("div",{cls:"label",text:"Research question"}),h("p",{text:sel.question||"Not written yet."})),
+          h("div",{cls:"label",text:`Facts (${sel.notes.length})`}),
+          sel.notes.length?sel.notes.map(n=>h("div",{cls:"note"},h("p",{text:n.text}),h("div",{cls:"src-line",text:"Source: "+(n.src||"none")+" · "+fmt(n.at)}))):h("p",{cls:"muted",text:"No facts saved yet."}),
+          confirmRemove?h("div",{cls:"row"},h("span",{text:`Remove ${sel.name} and all of their research?`}),h("button",{cls:"btn danger small",onclick:removeStudent},"Yes, remove"),h("button",{cls:"btn ghost small",onclick:()=>{confirmRemove=false;render();}},"Cancel"))
+            :h("div",{},h("button",{cls:"btn danger small",onclick:()=>{confirmRemove=true;render();}},"Remove student")))
+          :h("p",{cls:"muted",text:"Click a student in the table to read their question and facts."}))),
+    !SHEET?importSection():null,
+    SHEET?pinSettings():null,
+    h("section",{cls:"section"},connectPanel()),
+    printArea(studs));
+}
+
+function importSection(){
   const imp=h("textarea",{id:"import",cls:"code",rows:"4",placeholder:"Paste one or more student research codes (they start with CRL1:)"});
   const doImport=()=>{const codes=imp.value.match(/CRL1:[A-Za-z0-9+/=]+/g)||[];let n=0;
     codes.forEach(c=>{try{const o=JSON.parse(decodeURIComponent(escape(atob(c.slice(5)))));const name=cleanName(o.name||"");if(!name)return;const slug=slugOf(name);
       const clean={name,question:String(o.question||"").slice(0,400),notes:(o.notes||[]).slice(0,500).map(x=>({text:String(x.text||"").slice(0,1000),src:String(x.src||"").slice(0,80),url:safeUrl(String(x.url||""))||"",topic:String(x.topic||""),at:+x.at||0})),
-        visits:(o.visits||[]).slice(0,2000).map(v=>({id:String(v.id||"other"),t:String(v.t||"").slice(0,80),u:safeUrl(String(v.u||""))||"",topic:String(v.topic||""),at:+v.at||0,search:String(v.id||"").startsWith("search:"),other:!!v.other||(!SRC[v.id]&&!String(v.id||"").startsWith("search:"))})),deleted:(o.deleted||[]).map(String).slice(0,500),updated:+o.updated||0};
+        visits:(o.visits||[]).slice(0,2000).map(v=>({id:String(v.id||"other"),t:String(v.t||"").slice(0,120),u:safeUrl(String(v.u||""))||"",topic:String(v.topic||""),at:+v.at||0,search:String(v.id||"").startsWith("search:"),other:!!v.other||(!SRC[v.id]&&!String(v.id||"").startsWith("search:"))})),deleted:(o.deleted||[]).map(String).slice(0,500),updated:+o.updated||0};
       data.students[slug]=mergeStudent(data.students[slug],clean);persist(slug);n++;}catch(e){}});
     toast(n?`Added research from ${n} student${n>1?"s":""}.`:"No research codes found. Codes start with CRL1:");imp.value="";render();};
-
-  return h("div",{},
-    h("header",{cls:"top"},
-      h("div",{cls:"brand"},h("div",{cls:"label",text:"Capital Research Lab"}),h("h1",{text:"Teacher master sheet"})),
-      h("div",{cls:"row"},h("button",{cls:"btn small",onclick:exportCsv},"Download for Sheets"),h("button",{cls:"btn ghost small",onclick:()=>{teacherOK=false;view="login";pickStudent=null;render();}},"Lock & exit"))),
-    h("p",{cls:"notice",style:"margin-bottom:16px",text:cloud?"Signed in as the owner: this sheet saves to your account, and student codes you add stay here on any device.":"This sheet shows students who logged in on this device. For students on other devices, paste their research codes below."}),
-    h("div",{cls:"stats"},
-      h("div",{cls:"stat"},h("span",{cls:"label",text:"Students"}),h("strong",{text:studs.length})),
-      h("div",{cls:"stat"},h("span",{cls:"label",text:"Sources opened"}),h("strong",{text:allVisits.length})),
-      h("div",{cls:"stat"},h("span",{cls:"label",text:"Sites to check"}),h("strong",{text:flagged,style:flagged?"color:var(--warn)":""}))),
-    h("h2",{text:"Students",style:"margin-bottom:10px"}),
-    h("div",{cls:"tablebox"},h("table",{},
-      h("thead",{},h("tr",{},["Student","Sources opened","Searches","Facts","Not on list","Last active"].map(x=>h("th",{text:x})))),
-      h("tbody",{},studs.length?studs.map(s=>{const last=Math.max(0,...s.visits.map(v=>v.at),...s.notes.map(n=>n.at));
-        return h("tr",{cls:"pick"+(pickStudent===s.slug?" sel":""),tabindex:"0",onclick:()=>{pickStudent=pickStudent===s.slug?null:s.slug;render();},onkeydown:e=>{if(e.key==="Enter"){pickStudent=pickStudent===s.slug?null:s.slug;render();}}},
-          h("td",{},h("strong",{text:s.name})),h("td",{text:s.visits.length}),h("td",{text:s.visits.filter(v=>v.search).length}),h("td",{text:s.notes.length}),
-          h("td",{},s.visits.some(v=>v.other)?h("span",{cls:"badge b-flag",text:s.visits.filter(v=>v.other).length+" to check"}):"—"),h("td",{text:last?fmt(last):"—"}));})
-        :h("tr",{},h("td",{colspan:"6",cls:"muted",text:"No students yet. When students log in and open sources, they appear here."}))))),
-    h("div",{cls:"tgrid"},
-      h("section",{},
-        h("div",{cls:"row",style:"justify-content:space-between;margin-bottom:10px"},h("h2",{text:sel?`Where ${sel.name} researched`:"Research log: every student"}),sel?h("button",{cls:"btn ghost small",onclick:()=>{pickStudent=null;render();}},"Show everyone"):null),
-        h("div",{cls:"tablebox",style:"max-height:520px;overflow:auto"},h("table",{},
-          h("thead",{},h("tr",{},["When","Student","Source","Topic"].map(x=>h("th",{text:x})))),
-          h("tbody",{},shown.length?shown.map(v=>h("tr",{},h("td",{text:fmt(v.at)}),h("td",{text:v.student}),
-            h("td",{},h("a",{href:v.u,target:"_blank",rel:"noopener noreferrer",text:v.t}),v.other?h("span",{cls:"badge b-flag",text:"Not on list",style:"margin-left:.4rem"}):v.search?h("span",{cls:"badge b-web",text:"Safe search",style:"margin-left:.4rem"}):h("div",{cls:"muted",style:"font-size:.8rem",text:SRC[v.id]?.who||""})),
-            h("td",{text:TOPICS.find(t=>t.id===v.topic)?.name||""}))):h("tr",{},h("td",{colspan:"4",cls:"muted",text:"No sources opened yet."})))))),
-      h("section",{},
-        h("h2",{text:sel?`${sel.name}'s notebook`:"Student notebooks",style:"margin-bottom:10px"}),
-        sel?h("div",{cls:"panel"},h("div",{},h("div",{cls:"label",text:"Research question"}),h("p",{text:sel.question||"Not written yet."})),
-          h("div",{cls:"label",text:`Facts (${sel.notes.length})`}),
-          sel.notes.length?sel.notes.map(n=>h("div",{cls:"note"},h("p",{text:n.text}),h("div",{cls:"src-line",text:"Source: "+(n.src||"none")}))):h("p",{cls:"muted",text:"No facts saved yet."}))
-          :h("p",{cls:"muted",text:"Click a student in the table to read their question and facts."}))),
-    h("section",{cls:"section"},
-      h("h2",{text:"Add research from other devices"}),
-      h("p",{cls:"muted",text:"Students press \"Turn in my research\" in their notebook and send you the code. Paste as many codes as you like at once."}),
-      imp,h("div",{},h("button",{cls:"btn small",onclick:doImport},"Add to master sheet"))),
-    h("section",{cls:"section"},
-      h("h2",{text:"Start fresh"}),
-      confirmClear?h("div",{cls:"row"},h("span",{text:"Erase every student on this device? This cannot be undone."}),
-        h("button",{cls:"btn danger small",onclick:()=>{data.students={};saveLocal();confirmClear=false;pickStudent=null;toast(cloud?"Cleared on this device. Class sheet copies remain in your account.":"All student research erased");render();}},"Yes, erase"),
-        h("button",{cls:"btn ghost small",onclick:()=>{confirmClear=false;render();}},"Cancel"))
-      :h("div",{},h("button",{cls:"btn danger small",onclick:()=>{confirmClear=true;render();}},"Erase all student research on this device"))));
+  return h("section",{cls:"section"},
+    h("h2",{text:"Add research from other devices"}),
+    h("p",{cls:"muted",text:"Students press “Turn in my research” in their notebook and send you the code. Paste as many codes as you like at once."}),
+    imp,h("div",{},h("button",{cls:"btn small",onclick:doImport},"Add to dashboard")));
+}
+function pinSettings(){
+  const np=h("input",{type:"password",id:"newpin",inputmode:"numeric",maxlength:"12",autocomplete:"off",placeholder:"New PIN (4 to 12 characters)"});
+  return h("section",{cls:"section"},
+    h("h2",{text:"Change your PIN"}),
+    h("div",{cls:"row",style:"max-width:520px;flex-wrap:nowrap"},np,h("button",{cls:"btn small",onclick:async()=>{const v=np.value.trim();if(v.length<4){toast("Use 4 to 12 characters.");return;}
+      const j=await api("saveSettings",{pin:tPin,newPin:v,className:T.className||"Capital Research Lab"});
+      if(j.ok){tPin=v;try{sessionStorage.setItem("crl.pin",v);}catch(e){}np.value="";toast("PIN changed");}else toast("Could not change the PIN. Try again.");}},"Save PIN")));
+}
+function printArea(studs){
+  return h("div",{cls:"printonly"},studs.map(s=>h("article",{cls:"printpage"},
+    h("div",{cls:"label",text:"Capital Research Lab · Research notebook"}),
+    h("h1",{text:s.name}),
+    h("h3",{text:"Research question"}),h("p",{text:s.question||"Not written yet."}),
+    h("h3",{text:`Facts (${s.notes.length})`}),
+    s.notes.length?h("ol",{},s.notes.map(n=>h("li",{},h("p",{text:n.text}),h("div",{cls:"src-line",text:"Source: "+(n.src||"none")+(n.url?" ("+n.url+")":"")})))):h("p",{text:"No facts saved yet."}),
+    h("h3",{text:"Places researched"}),
+    s.visits.length?h("ul",{},[...new Map(s.visits.map(v=>[v.u,v])).values()].map(v=>h("li",{text:v.t+(v.kind==="search"?" (search)":v.kind==="other"?" (not on approved list)":"")}))):h("p",{text:"None yet."}))));
 }
 
 render();
