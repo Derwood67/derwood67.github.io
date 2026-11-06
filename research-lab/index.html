@@ -194,6 +194,7 @@ const SRC = Object.fromEntries(SOURCES.map(s=>[s.id,s]));
 const SAFE_SEARCH = [
   {id:"google",t:"Google",who:"Google web search with SafeSearch on",url:q=>"https://www.google.com/search?safe=active&q="+encodeURIComponent(q),main:true},
   {id:"google-img",t:"Google Images",who:"Google picture search with SafeSearch on",url:q=>"https://www.google.com/search?safe=active&tbm=isch&q="+encodeURIComponent(q)},
+  {id:"ddg",t:"DuckDuckGo",who:"DuckDuckGo search with Safe Search set to strict",url:q=>"https://duckduckgo.com/?kp=1&q="+encodeURIComponent(q)},
   {id:"locsearch",t:"Library of Congress",who:"Photos, maps, letters, and newspapers",url:q=>"https://www.loc.gov/search/?q="+encodeURIComponent(q)}
 ];
 const BLOCK = /\b(sex|sexy|porn|nude|naked|xxx|boob|drug|drugs|weed|gore|kill|murder|suicide|gun|guns|beer|vodka|vape|casino|gambl\w*)\b/i;
@@ -353,7 +354,7 @@ function studentView(){
     const hay=x=>(x.t+" "+x.d+" "+x.who+" "+x.tp.map(id=>TOPICS.find(t=>t.id===id)?.name||"").join(" ")).toLowerCase();
     const hits=SOURCES.filter(x=>words.some(w=>w.length>2&&hay(x).includes(w)));
     results.append(h("div",{cls:"questions"},
-      h("div",{cls:"label",text:"Search Google (SafeSearch on) and other safe places for \u201c"+q+"\u201d"}),
+      h("div",{cls:"label",text:"Search Google, DuckDuckGo, and other safe places for \u201c"+q+"\u201d"}),
       h("div",{cls:"row",style:"margin-top:8px"},SAFE_SEARCH.map(e=>h("a",{cls:e.main?"btn open gobtn":"btn small open",href:e.url(q),target:"_blank",rel:"noopener noreferrer",title:e.who,onclick:()=>logSearch({id:"search:"+e.id,t:e.t+" search: \u201c"+q+"\u201d",u:e.url(q)})},e.main?"Search Google":e.t))),
       h("div",{cls:"label",text:"Search approved YouTube channels",style:"margin-top:12px"}),
       h("div",{cls:"row",style:"margin-top:8px"},SOURCES.filter(x=>x.k==="vid").map(v=>{const u=v.u.replace(/\/$/,"")+"/search?query="+encodeURIComponent(q);
@@ -364,8 +365,9 @@ function studentView(){
   const box=h("input",{type:"search",id:"search",autocomplete:"off",maxlength:"60",placeholder:"Search any subject: cherry blossoms, volcanoes, Harriet Tubman…","aria-label":"Search any subject"});
   box.value=query;
   const go=h("button",{cls:"btn gobtn",type:"submit",hidden:true});
-  const showGo=()=>{const q=box.value.trim();go.hidden=!q||q===query;go.textContent="Search for \u201c"+q.slice(0,40)+"\u201d";};
+  const showGo=()=>{const q=box.value.trim();go.hidden=!q;go.textContent="Search for \u201c"+q.slice(0,40)+"\u201d";};
   box.addEventListener("input",showGo);
+  showGo();
   const submit=(e)=>{e.preventDefault();const q=box.value.trim().slice(0,60);if(!q){toast("Type what you want to research, then press Search.");box.focus();return;}query=q;
     if(!BLOCK.test(q)){const g=SAFE_SEARCH[0];const u=g.url(q);logSearch({id:"search:"+g.id,t:"Google search: \u201c"+q+"\u201d",u});try{window.open(u,"_blank","noopener");}catch(err){}}
     render();setTimeout(()=>{const r=document.getElementById("results");if(r)r.scrollIntoView({behavior:"smooth",block:"start"});},30);};
@@ -376,7 +378,7 @@ function studentView(){
       h("div",{cls:"brand"},h("div",{cls:"label",text:SHEET?"Capital Research Lab \u00b7 saving to your class":"Capital Research Lab"}),h("h1",{text:s.name+"'s research"})),
       h("div",{cls:"row"},h("button",{cls:"btn ghost small",onclick:()=>{me=null;query="";view="login";render();}},"Log out"))),
     h("form",{cls:"searchform",role:"search",onsubmit:submit},
-      h("div",{cls:"searchbar"},box,h("button",{cls:"btn",type:"submit"},"Search"),query?h("button",{cls:"btn ghost small",type:"button",onclick:()=>{query="";render();}},"Clear"):null),
+      h("div",{cls:"searchbar"},box,query?h("button",{cls:"btn ghost small",type:"button",onclick:()=>{query="";render();}},"Clear"):null),
       go),
     h("nav",{cls:"tabs",role:"tablist"},TOPICS.map(t=>h("button",{cls:"tab",role:"tab","aria-selected":String(!query&&t.id===topic),onclick:()=>{topic=t.id;query="";render();}},t.name))),
     h("div",{cls:"layout"},
