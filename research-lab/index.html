@@ -68,6 +68,9 @@ textarea{resize:vertical;min-height:90px}
 /* student */
 .searchbar{display:flex;gap:.5rem;align-items:center;margin-bottom:12px}
 .searchbar .btn{flex:none}
+.searchform{display:grid;gap:8px;margin-bottom:12px}
+.searchform .searchbar{margin-bottom:0}
+.gobtn{background:var(--blossom);border-color:var(--blossom);font-size:1.05rem;padding:.7rem 1.2rem;justify-self:start;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .searchbar input{font-size:1.05rem;padding:.75rem 1rem;border:2px solid var(--dome);border-radius:999px;background:var(--card);width:100%}
 .tabs{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:16px}
 .tab{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:.4rem .9rem;font-weight:700}
@@ -322,6 +325,9 @@ function studentView(){
   };
   const box=h("input",{type:"search",id:"search",autocomplete:"off",maxlength:"60",placeholder:"Search any subject: cherry blossoms, volcanoes, Harriet Tubman…","aria-label":"Search any subject"});
   box.value=query;
+  const go=h("button",{cls:"btn gobtn",type:"submit",hidden:true});
+  const showGo=()=>{const q=box.value.trim();go.hidden=!q||q===query;go.textContent="Search for \u201c"+q.slice(0,40)+"\u201d";};
+  box.addEventListener("input",showGo);
   const submit=(e)=>{e.preventDefault();const q=box.value.trim().slice(0,60);if(!q){toast("Type what you want to research, then press Search.");box.focus();return;}query=q;render();setTimeout(()=>{const r=document.getElementById("results");if(r)r.scrollIntoView({behavior:"smooth",block:"start"});},30);};
   fill();
 
@@ -329,7 +335,9 @@ function studentView(){
     h("header",{cls:"top"},
       h("div",{cls:"brand"},h("div",{cls:"label",text:"Capital Research Lab"}),h("h1",{text:s.name+"'s research"})),
       h("div",{cls:"row"},h("button",{cls:"btn ghost small",onclick:()=>{me=null;query="";view="login";render();}},"Log out"))),
-    h("form",{cls:"searchbar",role:"search",onsubmit:submit},box,h("button",{cls:"btn",type:"submit"},"Search"),query?h("button",{cls:"btn ghost small",type:"button",onclick:()=>{query="";render();}},"Clear"):null),
+    h("form",{cls:"searchform",role:"search",onsubmit:submit},
+      h("div",{cls:"searchbar"},box,h("button",{cls:"btn",type:"submit"},"Search"),query?h("button",{cls:"btn ghost small",type:"button",onclick:()=>{query="";render();}},"Clear"):null),
+      go),
     h("nav",{cls:"tabs",role:"tablist"},TOPICS.map(t=>h("button",{cls:"tab",role:"tab","aria-selected":String(!query&&t.id===topic),onclick:()=>{topic=t.id;query="";render();}},t.name))),
     h("div",{cls:"layout"},
       h("section",{},results,otherSiteForm(s)),
