@@ -72,6 +72,9 @@ textarea{resize:vertical;min-height:90px}
 .searchform .searchbar{margin-bottom:0}
 .gobtn{background:var(--blossom);border-color:var(--blossom);font-size:1.05rem;padding:.7rem 1.2rem;justify-self:start;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .searchbar input{font-size:1.05rem;padding:.75rem 1rem;border:2px solid var(--dome);border-radius:999px;background:var(--card);width:100%}
+.engines{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:grid;gap:8px;margin-bottom:14px}
+.engines .waiting{opacity:.6}
+.listhead{font-size:1.15rem;margin-top:6px}
 .tabs{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:16px}
 .tab{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:.4rem .9rem;font-weight:700}
 .tab[aria-selected=true]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
@@ -338,39 +341,52 @@ function studentView(){
   };
   const logSearch=(entry)=>{s.visits.push(Object.assign({topic,at:Date.now(),search:true},entry));s.updated=Date.now();persist(me);queueSend("visit",{name:s.name,kind:"search",sourceId:entry.id.replace("search:",""),title:entry.t,url:entry.u,topic});};
   const results=h("div",{cls:"sources",id:"results"});
+  const topicList=()=>{
+    const tn=TOPICS.find(t=>t.id===topic)?.name||"All sources";
+    results.append(h("div",{cls:"questions"},h("div",{cls:"label",text:"Questions to explore: "+tn}),h("ul",{},(QUESTIONS[topic]||QUESTIONS.all).map(x=>h("li",{text:x})))));
+    results.append(h("h2",{cls:"listhead",text:"Research sites: "+tn}));
+    SOURCES.filter(x=>topic==="all"||x.tp.includes(topic)).forEach(x=>results.append(card(x)));
+  };
   const fill=()=>{
     results.innerHTML="";
     const q=query.trim();
-    if(!q){
-      results.append(h("div",{cls:"questions"},h("div",{cls:"label",text:"Questions to explore"}),h("ul",{},(QUESTIONS[topic]||QUESTIONS.all).map(x=>h("li",{text:x})))));
-      SOURCES.filter(x=>topic==="all"||x.tp.includes(topic)).forEach(x=>results.append(card(x)));
-      return;
-    }
-    if(BLOCK.test(q)){
+    if(q&&BLOCK.test(q)){
       results.append(h("div",{cls:"notice",text:"That search is not allowed in the Research Lab. Try a different word, or ask your teacher for help."}));
-      return;
+    } else if(q){
+      const words=q.toLowerCase().split(/\s+/);
+      const hay=x=>(x.t+" "+x.d+" "+x.who+" "+x.tp.map(id=>TOPICS.find(t=>t.id===id)?.name||"").join(" ")).toLowerCase();
+      const hits=SOURCES.filter(x=>words.some(w=>w.length>2&&hay(x).includes(w)));
+      results.append(h("h2",{cls:"listhead",text:hits.length?`Lab sites that match “${q}” (${hits.length})`:`No lab sites match “${q}”. Use the search engines above.`}));
+      hits.forEach(x=>results.append(card(x)));
     }
-    const words=q.toLowerCase().split(/\s+/);
-    const hay=x=>(x.t+" "+x.d+" "+x.who+" "+x.tp.map(id=>TOPICS.find(t=>t.id===id)?.name||"").join(" ")).toLowerCase();
-    const hits=SOURCES.filter(x=>words.some(w=>w.length>2&&hay(x).includes(w)));
-    results.append(h("div",{cls:"questions"},
-      h("div",{cls:"label",text:"Search Google, DuckDuckGo, and other safe places for \u201c"+q+"\u201d"}),
-      h("div",{cls:"row",style:"margin-top:8px"},SAFE_SEARCH.map(e=>h("a",{cls:e.main?"btn open gobtn":"btn small open",href:e.url(q),target:"_blank",rel:"noopener noreferrer",title:e.who,onclick:()=>logSearch({id:"search:"+e.id,t:e.t+" search: \u201c"+q+"\u201d",u:e.url(q)})},e.main?"Search Google":e.t))),
-      h("div",{cls:"label",text:"Search approved YouTube channels",style:"margin-top:12px"}),
-      h("div",{cls:"row",style:"margin-top:8px"},SOURCES.filter(x=>x.k==="vid").map(v=>{const u=v.u.replace(/\/$/,"")+"/search?query="+encodeURIComponent(q);
-        return h("a",{cls:"btn ghost small open",href:u,target:"_blank",rel:"noopener noreferrer",onclick:()=>logSearch({id:"search:"+v.id,t:v.t.replace(" on YouTube","")+" video search: \u201c"+q+"\u201d",u})},v.t.replace(" on YouTube",""));}))));
-    results.append(h("div",{cls:"label",text:hits.length?`Lab sources that match (${hits.length})`:"No lab sources match. Try the safe search buttons above."}));
-    hits.forEach(x=>results.append(card(x)));
+    topicList();
   };
+
+  /* Search engines: always on screen; their links follow whatever is typed in the box. */
   const box=h("input",{type:"search",id:"search",autocomplete:"off",maxlength:"60",placeholder:"Search any subject: cherry blossoms, volcanoes, Harriet Tubman…","aria-label":"Search any subject"});
   box.value=query;
+  const engines=[];
+  const engineLink=(label,cls,title,urlFor,logName,id)=>{
+    const a=h("a",{cls,target:"_blank",rel:"noopener noreferrer",title,href:"#"},label);
+    a.addEventListener("click",e=>{const q=box.value.trim().slice(0,60);
+      if(!q){e.preventDefault();toast("Type what you want to research first.");box.focus();return;}
+      if(BLOCK.test(q)){e.preventDefault();query=q;render();return;}
+      a.href=urlFor(q);logSearch({id:"search:"+id,t:logName+": “"+q+"”",u:a.href});});
+    engines.push(()=>{const q=box.value.trim();a.href=q?urlFor(q):"#";a.classList.toggle("waiting",!q);});
+    return a;
+  };
+  const enginePanel=h("div",{cls:"engines"},
+    h("div",{cls:"label",text:"Search engines (safe search on)"}),
+    h("div",{cls:"row"},SAFE_SEARCH.map(e=>engineLink(e.t,e.main?"btn open gobtn":"btn small open",e.who,e.url,e.t+" search",e.id))),
+    h("div",{cls:"label",text:"Search approved YouTube channels"}),
+    h("div",{cls:"row"},SOURCES.filter(x=>x.k==="vid").map(v=>{const nm=v.t.replace(" on YouTube","");
+      return engineLink(nm,"btn ghost small open",v.who,q=>v.u.replace(/\/$/,"")+"/search?query="+encodeURIComponent(q),nm+" video search",v.id);})));
   const go=h("button",{cls:"btn gobtn",type:"submit",hidden:true});
-  const showGo=()=>{const q=box.value.trim();go.hidden=!q;go.textContent="Search for \u201c"+q.slice(0,40)+"\u201d";};
+  const showGo=()=>{const q=box.value.trim();go.hidden=!q;go.textContent="Find lab sites for “"+q.slice(0,40)+"”";engines.forEach(f=>f());};
   box.addEventListener("input",showGo);
   showGo();
-  const submit=(e)=>{e.preventDefault();const q=box.value.trim().slice(0,60);if(!q){toast("Type what you want to research, then press Search.");box.focus();return;}query=q;
-    if(!BLOCK.test(q)){const g=SAFE_SEARCH[0];const u=g.url(q);logSearch({id:"search:"+g.id,t:"Google search: \u201c"+q+"\u201d",u});try{window.open(u,"_blank","noopener");}catch(err){}}
-    render();setTimeout(()=>{const r=document.getElementById("results");if(r)r.scrollIntoView({behavior:"smooth",block:"start"});},30);};
+  const submit=(e)=>{e.preventDefault();const q=box.value.trim().slice(0,60);if(!q){toast("Type what you want to research first.");box.focus();return;}
+    query=q;render();setTimeout(()=>{const r=document.getElementById("results");if(r&&r.scrollIntoView)r.scrollIntoView({behavior:"smooth",block:"start"});},30);};
   fill();
 
   return h("div",{},
@@ -380,6 +396,7 @@ function studentView(){
     h("form",{cls:"searchform",role:"search",onsubmit:submit},
       h("div",{cls:"searchbar"},box,query?h("button",{cls:"btn ghost small",type:"button",onclick:()=>{query="";render();}},"Clear"):null),
       go),
+    enginePanel,
     h("nav",{cls:"tabs",role:"tablist"},TOPICS.map(t=>h("button",{cls:"tab",role:"tab","aria-selected":String(!query&&t.id===topic),onclick:()=>{topic=t.id;query="";render();}},t.name))),
     h("div",{cls:"layout"},
       h("section",{},results,otherSiteForm(s)),
