@@ -901,7 +901,7 @@ const FIGS = {
 };
 
 /* All EOG practice sets (including multi-select and tap-to-place items) are in the EOG object above. */
-const TABS = [["standards","Standards"],["read","Chapter"],["eog","EOG Practice"],["activities","Activities"],["games","Games"],["videos","Videos"]];
+const TABS = [["standards","Standards"],["read","Chapter"],["eog","EOG Practice"],["activities","Activities"],["games","Games"],["videos","Videos"],["notes","Notes"]];
 let ei = 0;
 let cur = TOPICS[0], tab = "standards", gi = 0, G = null;
 const $ = (h) => { const t=document.createElement("template"); t.innerHTML=h.trim(); return t.content.firstElementChild; };
@@ -926,7 +926,7 @@ function renderPanel(){
   p.style.setProperty("--c", `var(${cur.c})`);
   const counts = {read:(READ[cur.id]||{secs:[]}).secs.length, eog:(EOG[cur.id]||[]).reduce((n,s)=>n+s.qs.length,0), standards:cur.objs.length, activities:cur.acts.length, games:cur.games.length, videos:cur.vids.length};
   p.innerHTML = `<div class="phead"><div class="eyebrow">${cur.strand} · ${cur.code}</div><h2>${cur.name}</h2><p class="big">${esc(cur.std)}</p>
-    <div class="tabs" role="tablist">${TABS.map(([k,l])=>`<button class="tab" role="tab" data-k="${k}" aria-selected="${tab===k}">${l}<span class="n">${counts[k]}</span></button>`).join("")}</div></div>
+    <div class="tabs" role="tablist">${TABS.map(([k,l])=>`<button class="tab" role="tab" data-k="${k}" aria-selected="${tab===k}">${l}<span class="n">${counts[k]??""}</span></button>`).join("")}</div></div>
     <div class="pbody" id="pbody"></div>`;
   p.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{tab=b.dataset.k; try{localStorage.setItem("sci5tab",tab)}catch(e){} renderPanel();});
   const body = document.getElementById("pbody");
@@ -939,6 +939,19 @@ function renderPanel(){
     const pr=body.querySelector("#prch"); if(pr) pr.onclick=()=>{try{window.print()}catch(e){}};
     body.querySelectorAll(".toc a").forEach(a=>a.onclick=(e)=>{e.preventDefault(); const t=body.querySelector("#sec-"+a.dataset.sec); if(t) t.scrollIntoView({behavior:"smooth",block:"start"});}); }
   if(tab==="eog") renderEOG(body);
+  if(tab==="notes") renderNotes(body);
+}
+function renderNotes(body){
+  const nm = (typeof ME!=="undefined" && ME && ME.name) ? ME.name : "";
+  const src = "notes.html?subject=sci&topic=" + encodeURIComponent(cur.code+" "+cur.name) + (nm ? "&name="+encodeURIComponent(nm) : "");
+  body.innerHTML = `<p class="note" style="margin-top:0">Practice taking notes while you study <b>${esc(cur.code)} ${esc(cur.name)}</b>. Pick the important sentences, fill in your notes organizer, and use the word bank. Your notes save on this computer.</p>
+    <iframe id="notesframe" title="Note-Taking Lab" src="${src}" style="width:100%;height:1400px;border:1px solid var(--line);border-radius:12px;background:var(--surface);display:block"></iframe>`;
+  const f = body.querySelector("#notesframe");
+  f.onload = () => { try{
+    const d = f.contentDocument; if(!d) return;
+    const fit = () => { f.style.height = Math.max(600, d.documentElement.scrollHeight + 4) + "px"; };
+    fit(); if(window.ResizeObserver) new ResizeObserver(fit).observe(d.body);
+  }catch(e){} };
 }
 
 
