@@ -1,0 +1,610 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
+<title>Word Parts Workshop</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Fredoka:wght@500;600&display=swap">
+<style>
+/* Layout: one centered column. Word parts are colored tiles that snap together; color always means the kind of part. */
+:root{
+  --bg:#F3F5FA; --surface:#FFFFFF; --ink:#1A2238; --muted:#566080; --line:#D3D9E8;
+  --accent:#2B3A8C; --on-accent:#FFFFFF; --star:#B97A00;
+  --good:#1B7446; --good-bg:#DDF2E5; --bad:#B3261E; --bad-bg:#FBE3E1;
+  --pre:#1F5FBF; --pre-bg:#DCE9FB;
+  --suf:#1B7446; --suf-bg:#D9F0E2;
+  --grk:#6A3FB8; --grk-bg:#E9E0F9;
+  --lat:#B4500F; --lat-bg:#FBE5D3;
+  --base:#566080; --base-bg:#E9ECF3;
+  --display:"Fredoka","Trebuchet MS",system-ui,sans-serif;
+  --body:"Atkinson Hyperlegible",Verdana,system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121625; --surface:#1B2135; --ink:#EEF1F8; --muted:#A5AEC6; --line:#343C57;
+    --accent:#A9B7FF; --on-accent:#121625; --star:#F2C14E;
+    --good:#7FD3A2; --good-bg:#163424; --bad:#F2938C; --bad-bg:#421C1A;
+    --pre:#8DB8F5; --pre-bg:#1B2E4D;
+    --suf:#7FD3A2; --suf-bg:#173524;
+    --grk:#C2A8F4; --grk-bg:#2D2249;
+    --lat:#F2AC78; --lat-bg:#432712;
+    --base:#A5AEC6; --base-bg:#2A3148;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121625; --surface:#1B2135; --ink:#EEF1F8; --muted:#A5AEC6; --line:#343C57;
+  --accent:#A9B7FF; --on-accent:#121625; --star:#F2C14E;
+  --good:#7FD3A2; --good-bg:#163424; --bad:#F2938C; --bad-bg:#421C1A;
+  --pre:#8DB8F5; --pre-bg:#1B2E4D;
+  --suf:#7FD3A2; --suf-bg:#173524;
+  --grk:#C2A8F4; --grk-bg:#2D2249;
+  --lat:#F2AC78; --lat-bg:#432712;
+  --base:#A5AEC6; --base-bg:#2A3148;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.5}
+.wrap{max-width:960px;margin:0 auto;padding-block:24px 56px;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));
+  display:flex;flex-direction:column;gap:20px}
+h1,h2,h3{font-family:var(--display);font-weight:600;margin:0;text-wrap:balance;line-height:1.15}
+h1{font-size:clamp(1.8rem,5vw,2.6rem)}
+h2{font-size:1.35rem}
+p{margin:0}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+.k-prefix{--k:var(--pre);--k-bg:var(--pre-bg)}
+.k-suffix{--k:var(--suf);--k-bg:var(--suf-bg)}
+.k-greek{--k:var(--grk);--k-bg:var(--grk-bg)}
+.k-latin{--k:var(--lat);--k-bg:var(--lat-bg)}
+.k-base{--k:var(--base);--k-bg:var(--base-bg)}
+
+/* header */
+.top{display:flex;flex-wrap:wrap;gap:16px 24px;align-items:flex-end;justify-content:space-between}
+.top .intro{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1 1 300px}
+.top .intro p{color:var(--muted)}
+.stars{font-family:var(--display);font-size:1.15rem;background:var(--surface);border:2px solid var(--line);border-radius:999px;padding:6px 16px;white-space:nowrap}
+.stars b{color:var(--star)}
+.equation{display:flex;flex-wrap:wrap;align-items:flex-start;gap:8px 10px;background:var(--surface);border:2px solid var(--line);border-radius:16px;padding:16px}
+.equation .op{font-family:var(--display);font-size:1.5rem;color:var(--muted);padding-top:6px}
+.piece{display:flex;flex-direction:column;align-items:center;gap:4px}
+.piece small{color:var(--muted);font-size:.85rem;text-align:center}
+.equation .result{display:flex;flex-direction:column;gap:2px;padding-top:4px}
+.equation .result strong{font-family:var(--display);font-size:1.5rem;font-weight:600}
+.equation .result span{color:var(--muted);font-size:.95rem}
+
+.tile{display:inline-block;font-family:var(--display);font-weight:600;font-size:1.35rem;line-height:1;
+  background:var(--k-bg);color:var(--ink);border:2px solid var(--k);border-radius:10px;padding:10px 14px}
+button.tile:hover{filter:brightness(1.05)}
+button.tile:disabled{opacity:.3;cursor:default}
+
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.9rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:14px;height:14px;border-radius:4px;background:var(--k-bg);border:2px solid var(--k)}
+
+/* tabs */
+.tabs{display:flex;gap:8px;flex-wrap:wrap;border-bottom:2px solid var(--line);padding-bottom:10px}
+.tabs button{font-family:var(--display);font-size:1.1rem;font-weight:500;background:transparent;border:2px solid transparent;border-radius:999px;padding:8px 18px;color:var(--muted)}
+.tabs button[aria-selected="true"]{background:var(--accent);color:var(--on-accent)}
+.tabs button:not([aria-selected="true"]):hover{border-color:var(--line);color:var(--ink)}
+
+.panel{display:flex;flex-direction:column;gap:16px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chip{background:var(--surface);border:2px solid var(--line);border-radius:999px;padding:6px 14px;font-size:.95rem}
+.chip[aria-pressed="true"]{border-color:var(--k,var(--accent));background:var(--k-bg,var(--surface));font-weight:700}
+.search{flex:1 1 180px;min-width:0;background:var(--surface);border:2px solid var(--line);border-radius:999px;padding:7px 16px}
+.help{color:var(--muted);font-size:.95rem}
+
+/* explore cards */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:12px;align-items:start}
+.card{display:flex;flex-direction:column;gap:4px;text-align:left;background:var(--k-bg);border:2px solid var(--k);border-radius:14px;padding:12px 14px;min-width:0}
+.card .kind{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--k);font-weight:700}
+.card .part{font-family:var(--display);font-size:1.5rem;font-weight:600;line-height:1.1;overflow-wrap:anywhere}
+.card .mean{font-size:.98rem}
+.card .more{display:flex;flex-direction:column;gap:3px;margin-top:8px;padding-top:8px;border-top:2px dashed var(--k);font-size:.98rem}
+.card .more em{font-style:normal;color:var(--muted);font-size:.9rem;margin-top:4px}
+mark{background:transparent;color:var(--k);font-weight:700;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px}
+.empty{color:var(--muted);padding:24px 0}
+
+/* build + quiz */
+.stage{background:var(--surface);border:2px solid var(--line);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:18px}
+.eyebrow{font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.clue{font-family:var(--display);font-size:clamp(1.3rem,4vw,1.8rem);font-weight:500;line-height:1.2;text-wrap:balance}
+.slots,.tray{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.slot{min-width:84px;height:52px;border:2px dashed var(--line);border-radius:10px;display:flex;align-items:center;justify-content:center;background:transparent;padding:0}
+.slot .tile{border-radius:8px}
+.slot.filled{border-color:transparent}
+.btn{font-family:var(--display);font-weight:500;font-size:1.05rem;border-radius:999px;padding:9px 20px;border:2px solid var(--accent);background:var(--accent);color:var(--on-accent)}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.msg{min-height:1.5em;font-weight:700}
+.msg.good{color:var(--good)} .msg.bad{color:var(--bad)}
+.breakdown{display:flex;flex-wrap:wrap;gap:12px}
+.seg{display:inline-flex;background:var(--bg);border-radius:999px;padding:4px;gap:4px;flex-wrap:wrap}
+.seg button{border:0;background:transparent;border-radius:999px;padding:6px 14px;font-size:.95rem;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);font-weight:700;box-shadow:0 0 0 2px var(--line)}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
+.opt{text-align:left;background:var(--bg);border:2px solid var(--line);border-radius:12px;padding:12px 14px;min-width:0}
+.opt:not(:disabled):hover{border-color:var(--accent)}
+.opt.right{background:var(--good-bg);border-color:var(--good)}
+.opt.wrong{background:var(--bad-bg);border-color:var(--bad)}
+.opt:disabled{cursor:default}
+.tally{color:var(--muted);font-size:.95rem}
+@media (prefers-reduced-motion: no-preference){
+  .shake{animation:shake .4s}
+  @keyframes shake{25%{transform:translateX(-6px)}50%{transform:translateX(6px)}75%{transform:translateX(-4px)}}
+  .pop{animation:pop .3s}
+  @keyframes pop{from{transform:scale(.9)}to{transform:scale(1)}}
+}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="intro">
+      <h1>Word Parts Workshop</h1>
+      <p>Prefixes, suffixes, and Greek and Latin roots. Learn the parts, then use them to figure out big words.</p>
+    </div>
+    <div class="stars" aria-live="polite"><b>★</b> <span id="stars">0</span> stars</div>
+  </header>
+
+  <section class="equation" aria-label="Example: how word parts add up">
+    <div class="piece"><span class="tile k-prefix">in</span><small>not</small></div>
+    <span class="op">+</span>
+    <div class="piece"><span class="tile k-latin">vis</span><small>see</small></div>
+    <span class="op">+</span>
+    <div class="piece"><span class="tile k-suffix">ible</span><small>able to be</small></div>
+    <span class="op">=</span>
+    <div class="result"><strong>invisible</strong><span>not able to be seen</span></div>
+  </section>
+  <div class="legend">
+    <span class="k-prefix"><i></i>Prefix (front of a word)</span>
+    <span class="k-suffix"><i></i>Suffix (end of a word)</span>
+    <span class="k-greek"><i></i>Greek root</span>
+    <span class="k-latin"><i></i>Latin root</span>
+  </div>
+
+  <nav class="tabs" role="tablist">
+    <button role="tab" id="tab-explore" data-view="explore" aria-selected="true">Explore</button>
+    <button role="tab" id="tab-build" data-view="build" aria-selected="false">Build a Word</button>
+    <button role="tab" id="tab-quiz" data-view="quiz" aria-selected="false">Quiz</button>
+  </nav>
+
+  <!-- EXPLORE -->
+  <section class="panel" id="view-explore" role="tabpanel" aria-labelledby="tab-explore">
+    <div class="row" id="ex-filters">
+      <button class="chip" data-kind="all" aria-pressed="true">All</button>
+      <button class="chip k-prefix" data-kind="prefix" aria-pressed="false">Prefixes</button>
+      <button class="chip k-suffix" data-kind="suffix" aria-pressed="false">Suffixes</button>
+      <button class="chip k-greek" data-kind="greek" aria-pressed="false">Greek roots</button>
+      <button class="chip k-latin" data-kind="latin" aria-pressed="false">Latin roots</button>
+      <input class="search" id="ex-search" type="search" placeholder="Search a part or a meaning" aria-label="Search word parts">
+    </div>
+    <p class="help">Tap a card to see words that use that part.</p>
+    <div class="grid" id="ex-grid"></div>
+  </section>
+
+  <!-- BUILD -->
+  <section class="panel" id="view-build" role="tabpanel" aria-labelledby="tab-build" hidden>
+    <div class="row">
+      <div class="seg" id="b-level">
+        <button data-level="affix" aria-pressed="true">Prefixes &amp; suffixes</button>
+        <button data-level="root" aria-pressed="false">Greek &amp; Latin roots</button>
+        <button data-level="mix" aria-pressed="false">Mix</button>
+      </div>
+    </div>
+    <div class="stage">
+      <div>
+        <div class="eyebrow">Build the word that means</div>
+        <div class="clue" id="b-clue"></div>
+      </div>
+      <div class="slots" id="b-slots" aria-label="Your word"></div>
+      <div>
+        <div class="eyebrow" style="margin-bottom:8px">Tap the parts in order</div>
+        <div class="tray" id="b-tray"></div>
+      </div>
+      <div class="msg" id="b-msg" aria-live="polite"></div>
+      <div class="breakdown" id="b-break" hidden></div>
+      <div class="row">
+        <button class="btn" id="b-next" hidden>Next word</button>
+        <button class="btn ghost" id="b-hint">Hint</button>
+        <button class="btn ghost" id="b-skip">Skip</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- QUIZ -->
+  <section class="panel" id="view-quiz" role="tabpanel" aria-labelledby="tab-quiz" hidden>
+    <div class="row" id="q-filters">
+      <span class="help">Quiz me on:</span>
+      <button class="chip k-prefix" data-kind="prefix" aria-pressed="true">Prefixes</button>
+      <button class="chip k-suffix" data-kind="suffix" aria-pressed="true">Suffixes</button>
+      <button class="chip k-greek" data-kind="greek" aria-pressed="true">Greek roots</button>
+      <button class="chip k-latin" data-kind="latin" aria-pressed="true">Latin roots</button>
+    </div>
+    <div class="stage">
+      <div>
+        <div class="eyebrow" id="q-eyebrow"></div>
+        <div class="clue" id="q-prompt"></div>
+        <p class="help" id="q-sub" style="margin-top:6px"></p>
+      </div>
+      <div class="opts" id="q-opts"></div>
+      <div class="msg" id="q-msg" aria-live="polite"></div>
+      <div class="breakdown" id="q-break" hidden></div>
+      <div class="row">
+        <button class="btn" id="q-next" hidden>Next question</button>
+        <span class="tally" id="q-tally"></span>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+const KIND={prefix:'Prefix',suffix:'Suffix',greek:'Greek root',latin:'Latin root'};
+const PARTS=[
+// prefixes
+['un','prefix','un-','not; opposite of',['[un]happy','[un]lock','[un]fair'],'unhappy = not happy','not'],
+['re','prefix','re-','again; back',['[re]write','[re]build','[re]turn'],'rewrite = write again'],
+['pre','prefix','pre-','before',['[pre]view','[pre]heat','[pre]test'],'preview = view before','before'],
+['dis','prefix','dis-','not; opposite of',['[dis]agree','[dis]appear','[dis]honest'],'disagree = not agree','not'],
+['mis','prefix','mis-','wrongly; badly',['[mis]spell','[mis]place','[mis]behave'],'misspell = spell wrongly'],
+['non','prefix','non-','not; without',['[non]fiction','[non]stop','[non]sense'],'nonfiction = not fiction','not'],
+['in','prefix','in- / im-','not',['[in]correct','[im]possible','[in]visible'],'incorrect = not correct','not'],
+['over','prefix','over-','too much; above',['[over]cook','[over]sleep','[over]flow'],'overcook = cook too much'],
+['under','prefix','under-','below; too little',['[under]water','[under]ground','[under]cook'],'underwater = below the water','under'],
+['sub','prefix','sub-','under; below',['[sub]marine','[sub]way','[sub]tract'],'submarine = a ship that goes under the sea','under'],
+['inter','prefix','inter-','between; among',['[inter]national','[inter]rupt','[inter]act'],'international = between nations'],
+['trans','prefix','trans-','across; change',['[trans]port','[trans]form','[trans]fer'],'transport = carry across'],
+['super','prefix','super-','above; beyond',['[super]human','[super]hero','[super]market'],'superhuman = beyond human'],
+['semi','prefix','semi-','half; partly',['[semi]circle','[semi]final','[semi]colon'],'semicircle = half a circle'],
+['anti','prefix','anti-','against',['[anti]freeze','[anti]biotic','[anti]social'],'antifreeze = works against freezing'],
+['mid','prefix','mid-','middle',['[mid]night','[mid]day','[mid]field'],'midnight = the middle of the night'],
+['fore','prefix','fore-','before; in front',['[fore]cast','[fore]head','[fore]see'],'forecast = tell about it before it happens','before'],
+['de','prefix','de-','down; away; undo',['[de]frost','[de]code','[de]part'],'defrost = undo the frost'],
+['en','prefix','en- / em-','to cause; to put into',['[en]able','[en]joy','[em]power'],'enable = cause to be able'],
+['uni','prefix','uni-','one',['[uni]form','[uni]cycle','[uni]corn'],'uniform = one form for everyone'],
+['bi','prefix','bi-','two',['[bi]cycle','[bi]weekly','[bi]plane'],'bicycle = two wheels'],
+['tri','prefix','tri-','three',['[tri]angle','[tri]cycle','[tri]pod'],'triangle = three angles'],
+['multi','prefix','multi-','many',['[multi]color','[multi]ply','[multi]media'],'multicolor = many colors'],
+// suffixes
+['ful','suffix','-ful','full of',['help[ful]','care[ful]','joy[ful]'],'helpful = full of help','fullof'],
+['less','suffix','-less','without',['care[less]','fear[less]','end[less]'],'careless = without care'],
+['able','suffix','-able / -ible','can be done; able to be',['break[able]','port[able]','vis[ible]'],'breakable = can be broken'],
+['er','suffix','-er / -or','a person or thing that does',['teach[er]','act[or]','tract[or]'],'teacher = a person who teaches','onewho'],
+['ist','suffix','-ist','a person who does or studies',['art[ist]','scient[ist]','biolog[ist]'],'artist = a person who makes art','onewho'],
+['ness','suffix','-ness','the state of being',['kind[ness]','dark[ness]','happi[ness]'],'kindness = the state of being kind','state'],
+['ment','suffix','-ment','an action or its result',['enjoy[ment]','move[ment]','agree[ment]'],'agreement = the result of agreeing','state'],
+['ion','suffix','-ion / -tion','the act or result of',['mot[ion]','act[ion]','construct[ion]'],'motion = the act of moving','state'],
+['ly','suffix','-ly','in a way that is',['quick[ly]','quiet[ly]','brave[ly]'],'quickly = in a quick way'],
+['ous','suffix','-ous','full of; having',['danger[ous]','fam[ous]','joy[ous]'],'dangerous = full of danger','fullof'],
+['al','suffix','-al','related to',['music[al]','manu[al]','nation[al]'],'musical = related to music','relating'],
+['ic','suffix','-ic','related to; like',['hero[ic]','artist[ic]','athlet[ic]'],'heroic = like a hero','relating'],
+['y','suffix','-y','having; full of',['rain[y]','dust[y]','luck[y]'],'rainy = having rain','fullof'],
+['en_s','suffix','-en','made of; to make',['wood[en]','gold[en]','dark[en]'],'wooden = made of wood'],
+['ive','suffix','-ive','tending to; doing',['act[ive]','creat[ive]','attract[ive]'],'active = tending to act'],
+['ity','suffix','-ity','the quality of being',['activ[ity]','abil[ity]','electric[ity]'],'ability = the quality of being able','state'],
+['ship','suffix','-ship','the condition of being',['friend[ship]','leader[ship]','citizen[ship]'],'friendship = the condition of being friends','state'],
+// greek roots
+['graph','greek','graph','write; draw',['auto[graph]','photo[graph]','para[graph]'],'autograph = your name, written by yourself','write'],
+['tele','greek','tele','far; distant',['[tele]scope','[tele]phone','[tele]vision'],'telescope = a tool for seeing far away'],
+['photo','greek','photo','light',['[photo]graph','[photo]synthesis','[photo]copy'],'photograph = a picture made with light'],
+['auto','greek','auto','self',['[auto]matic','[auto]graph','[auto]mobile'],'automatic = works by itself'],
+['bio','greek','bio','life',['[bio]logy','[bio]graphy','anti[bio]tic'],'biology = the study of life','life'],
+['geo','greek','geo','earth',['[geo]logy','[geo]graphy','[geo]metry'],'geology = the study of the earth','earth'],
+['therm','greek','therm','heat',['[therm]os','[therm]ometer','[therm]al'],'thermos = a bottle that keeps heat in'],
+['meter','greek','meter / metr','measure',['thermo[meter]','centi[meter]','geo[metr]y'],'thermometer = a tool that measures heat'],
+['phon','greek','phon','sound',['tele[phon]e','micro[phon]e','[phon]ics'],'telephone = sends sound far away'],
+['scope','greek','scope','look at; see',['micro[scope]','tele[scope]','peri[scope]'],'microscope = a tool for looking at small things','see'],
+['micro','greek','micro','small',['[micro]phone','[micro]scope','[micro]wave'],'microphone = makes a small sound louder'],
+['astro','greek','astro / aster','star',['[astro]naut','[astro]nomy','[aster]oid'],'astronaut = a star sailor'],
+['chron','greek','chron','time',['[chron]ological','syn[chron]ize','[chron]icle'],'chronological = in time order'],
+['hydr','greek','hydr','water',['[hydr]ant','de[hydr]ate','[hydr]ogen'],'hydrant = a pipe that gives water','water'],
+['logy','greek','logy','the study of',['zoo[logy]','bio[logy]','geo[logy]'],'zoology = the study of animals'],
+['cycl','greek','cycl','circle; wheel',['bi[cycl]e','re[cycl]e','[cycl]one'],'bicycle = two wheels'],
+// latin roots
+['port','latin','port','carry',['trans[port]','[port]able','im[port]'],'transport = carry across'],
+['rupt','latin','rupt','break; burst',['e[rupt]','inter[rupt]','dis[rupt]'],'erupt = burst out','break'],
+['struct','latin','struct','build',['con[struct]','[struct]ure','de[struct]ion'],'construct = build together'],
+['spect','latin','spect','look; watch',['in[spect]','[spect]ator','[spect]acles'],'inspect = look into something closely','see'],
+['dict','latin','dict','say; speak',['pre[dict]','[dict]ionary','contra[dict]'],'predict = say it before it happens'],
+['scrib','latin','scrib / script','write',['[scrib]ble','de[scrib]e','manu[script]'],'scribble = write quickly and messily','write'],
+['ject','latin','ject','throw',['re[ject]','pro[ject]','e[ject]'],'reject = throw back'],
+['tract','latin','tract','pull; drag',['[tract]or','at[tract]','sub[tract]'],'tractor = a machine that pulls'],
+['aud','latin','aud','hear',['[aud]ience','[aud]io','[aud]ible'],'audience = the people who hear a show'],
+['vis','latin','vis / vid','see',['[vis]ible','[vis]ion','[vid]eo'],'visible = able to be seen','see'],
+['form','latin','form','shape',['uni[form]','trans[form]','[form]ula'],'transform = change shape'],
+['aqua','latin','aqua','water',['[aqua]rium','[aqua]tic','[aqua]marine'],'aquarium = a water home for fish','water'],
+['terr','latin','terr','earth; land',['[terr]itory','[terr]ain','[terr]arium'],'territory = an area of land','earth'],
+['ped','latin','ped','foot',['[ped]al','[ped]estrian','centi[ped]e'],'pedal = pushed with the foot'],
+['manu','latin','man / manu','hand',['[manu]al','[manu]script','[man]icure'],'manual = done by hand'],
+['mit','latin','mit / miss','send',['trans[mit]','[miss]ion','dis[miss]'],'transmit = send across'],
+['flex','latin','flex / flect','bend',['[flex]ible','re[flect]','[flex]'],'flexible = able to bend'],
+['cred','latin','cred','believe',['in[cred]ible','[cred]it','[cred]ible'],'incredible = hard to believe'],
+['fract','latin','fract / frag','break',['[fract]ion','[fract]ure','[frag]ile'],'fraction = a broken piece of a whole','break'],
+['voc','latin','voc','voice; call',['[voc]al','[voc]abulary','[voc]alist'],'vocal = related to the voice'],
+['mot','latin','mot / mov','move',['[mot]ion','[mot]or','re[mov]e'],'motor = a machine that makes things move']
+].map(a=>({id:a[0],kind:a[1],label:a[2],meaning:a[3],ex:a[4],gloss:a[5],group:a[6]||a[0]}));
+
+// [word, meaning, level, parts[[text, partId?]]] — a part with no id is a base word
+const WORDS=[
+['unhelpful','not full of help','affix',[['un','un'],['help'],['ful','ful']]],
+['carelessness','the state of being without care','affix',[['care'],['less','less'],['ness','ness']]],
+['disagreement','the result of not agreeing','affix',[['dis','dis'],['agree'],['ment','ment']]],
+['unbreakable','not able to be broken','affix',[['un','un'],['break'],['able','able']]],
+['preview','to look at something before','affix',[['pre','pre'],['view']]],
+['misplace','to put something in the wrong place','affix',[['mis','mis'],['place']]],
+['nonstop','without stopping','affix',[['non','non'],['stop']]],
+['rebuild','to build again','affix',[['re','re'],['build']]],
+['underwater','below the water','affix',[['under','under'],['water']]],
+['midnight','the middle of the night','affix',[['mid','mid'],['night']]],
+['semicircle','half of a circle','affix',[['semi','semi'],['circle']]],
+['superhuman','beyond what a human can do','affix',[['super','super'],['human']]],
+['international','related to things between nations','affix',[['inter','inter'],['nation'],['al','al']]],
+['triangle','a shape with three angles','affix',[['tri','tri'],['angle']]],
+['dangerous','full of danger','affix',[['danger'],['ous','ous']]],
+['artist','a person who makes art','affix',[['art'],['ist','ist']]],
+['wooden','made of wood','affix',[['wood'],['en','en_s']]],
+['heroic','like a hero','affix',[['hero'],['ic','ic']]],
+['friendship','the condition of being friends','affix',[['friend'],['ship','ship']]],
+['enjoyment','the result of finding joy in something','affix',[['en','en'],['joy'],['ment','ment']]],
+['teacher','a person who teaches','affix',[['teach'],['er','er']]],
+['quickly','in a quick way','affix',[['quick'],['ly','ly']]],
+['defrost','to remove the frost or ice','affix',[['de','de'],['frost']]],
+['overcook','to cook too much','affix',[['over','over'],['cook']]],
+['fearless','without fear','affix',[['fear'],['less','less']]],
+['multicolor','having many colors','affix',[['multi','multi'],['color']]],
+['foresee','to see something before it happens','affix',[['fore','fore'],['see']]],
+['antifreeze','a liquid that works against freezing','affix',[['anti','anti'],['freeze']]],
+['rainy','having a lot of rain','affix',[['rain'],['y','y']]],
+['kindness','the state of being kind','affix',[['kind'],['ness','ness']]],
+
+['transport','to carry across from one place to another','root',[['trans','trans'],['port','port']]],
+['portable','able to be carried','root',[['port','port'],['able','able']]],
+['interrupt','to break in between','root',[['inter','inter'],['rupt','rupt']]],
+['destruction','the act of tearing down something that was built','root',[['de','de'],['struct','struct'],['ion','ion']]],
+['predict','to say what will happen before it happens','root',[['pre','pre'],['dict','dict']]],
+['manuscript','something written by hand','root',[['manu','manu'],['script','scrib']]],
+['reject','to throw back; to refuse','root',[['re','re'],['ject','ject']]],
+['tractor','a machine that pulls','root',[['tract','tract'],['or','er']]],
+['subtract','to pull away from; to take away','root',[['sub','sub'],['tract','tract']]],
+['inaudible','not able to be heard','root',[['in','in'],['aud','aud'],['ible','able']]],
+['invisible','not able to be seen','root',[['in','in'],['vis','vis'],['ible','able']]],
+['uniform','one shape or style for everyone','root',[['uni','uni'],['form','form']]],
+['transform','to change into a new shape','root',[['trans','trans'],['form','form']]],
+['bicycle','a vehicle with two wheels','root',[['bi','bi'],['cycle','cycl']]],
+['tricycle','a vehicle with three wheels','root',[['tri','tri'],['cycle','cycl']]],
+['telephone','a tool that sends sound far away','root',[['tele','tele'],['phone','phon']]],
+['telescope','a tool for seeing things far away','root',[['tele','tele'],['scope','scope']]],
+['microscope','a tool for looking at very small things','root',[['micro','micro'],['scope','scope']]],
+['microphone','a tool that makes a small sound louder','root',[['micro','micro'],['phone','phon']]],
+['autograph','your name, written by yourself','root',[['auto','auto'],['graph','graph']]],
+['photograph','a picture made with light','root',[['photo','photo'],['graph','graph']]],
+['biology','the study of life','root',[['bio','bio'],['logy','logy']]],
+['geology','the study of the earth','root',[['geo','geo'],['logy','logy']]],
+['biography','the written story of a person’s life','root',[['bio','bio'],['graphy','graph']]],
+['autobiography','the story of a life, written by the person who lived it','root',[['auto','auto'],['bio','bio'],['graphy','graph']]],
+['thermometer','a tool that measures heat','root',[['thermo','therm'],['meter','meter']]],
+['geometry','math that began as measuring the earth','root',[['geo','geo'],['metry','meter']]],
+['pedal','a lever you push with your foot','root',[['ped','ped'],['al','al']]],
+['manual','done by hand','root',[['manu','manu'],['al','al']]],
+['transmit','to send across','root',[['trans','trans'],['mit','mit']]],
+['flexible','able to bend','root',[['flex','flex'],['ible','able']]],
+['incredible','not able to be believed','root',[['in','in'],['cred','cred'],['ible','able']]],
+['fraction','a broken part of a whole','root',[['fract','fract'],['ion','ion']]],
+['vocal','related to the voice','root',[['voc','voc'],['al','al']]],
+['motion','the act of moving','root',[['mot','mot'],['ion','ion']]]
+].map(a=>({w:a[0],def:a[1],level:a[2],parts:a[3].map(p=>({text:p[0],id:p[1]||null}))}));
+//--END DATA--
+
+const BY_ID=Object.fromEntries(PARTS.map(p=>[p.id,p]));
+const $=s=>document.querySelector(s);
+const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const hl=s=>esc(s).replace(/\[(.+?)\]/g,'<mark>$1</mark>');
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const kindOf=p=>p.id?BY_ID[p.id].kind:'base';
+let stars=0;
+function addStar(){stars++;$('#stars').textContent=stars}
+
+function breakdownHTML(word){
+  return word.parts.map(p=>{
+    const part=p.id&&BY_ID[p.id];
+    return `<div class="piece"><span class="tile k-${kindOf(p)}">${esc(p.text)}</span><small>${part?esc(part.meaning):'base word'}</small></div>`;
+  }).join('');
+}
+
+/* ---------- tabs ---------- */
+const VIEWS=['explore','build','quiz'];
+function show(view){
+  if(!VIEWS.includes(view))view='explore';
+  VIEWS.forEach(v=>{
+    $('#view-'+v).hidden=v!==view;
+    $('#tab-'+v).setAttribute('aria-selected',v===view);
+  });
+}
+document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>{
+  show(b.dataset.view);
+  try{history.replaceState(null,'','#'+b.dataset.view)}catch(e){location.hash=b.dataset.view}
+}));
+addEventListener('hashchange',()=>show(location.hash.slice(1)));
+
+/* ---------- explore ---------- */
+const EX={kind:'all',q:'',open:new Set()};
+function renderExplore(){
+  const q=EX.q.trim().toLowerCase();
+  const list=PARTS.filter(p=>(EX.kind==='all'||p.kind===EX.kind)&&
+    (!q||p.label.toLowerCase().includes(q)||p.meaning.toLowerCase().includes(q)||p.ex.join(' ').replace(/[\[\]]/g,'').includes(q)));
+  $('#ex-grid').innerHTML=list.length?list.map(p=>{
+    const open=EX.open.has(p.id);
+    return `<button class="card k-${p.kind}" data-id="${p.id}" aria-expanded="${open}">
+      <span class="kind">${KIND[p.kind]}</span>
+      <span class="part">${esc(p.label)}</span>
+      <span class="mean">${esc(p.meaning)}</span>
+      <span class="more"${open?'':' hidden'}>${p.ex.map(e=>`<span>${hl(e)}</span>`).join('')}<em>${esc(p.gloss)}</em></span>
+    </button>`}).join(''):'<p class="empty">No word parts match that search. Try a shorter word.</p>';
+}
+$('#ex-grid').addEventListener('click',e=>{
+  const c=e.target.closest('.card');if(!c)return;
+  const id=c.dataset.id,open=!EX.open.has(id);
+  open?EX.open.add(id):EX.open.delete(id);
+  c.setAttribute('aria-expanded',open);
+  c.querySelector('.more').hidden=!open;
+});
+$('#ex-filters').addEventListener('click',e=>{
+  const b=e.target.closest('.chip');if(!b)return;
+  EX.kind=b.dataset.kind;
+  document.querySelectorAll('#ex-filters .chip').forEach(x=>x.setAttribute('aria-pressed',x===b));
+  renderExplore();
+});
+$('#ex-search').addEventListener('input',e=>{EX.q=e.target.value;renderExplore()});
+
+/* ---------- build ---------- */
+const B={level:'affix',queue:[],word:null,tiles:[],slots:[],solved:false,busy:false};
+function buildPool(){return WORDS.filter(w=>B.level==='mix'||w.level===B.level)}
+function newBuild(){
+  if(!B.queue.length)B.queue=shuffle(buildPool()).filter(w=>w!==B.word);
+  B.word=B.queue.pop();
+  const own=new Set(B.word.parts.map(p=>p.text));
+  const seen=new Set(),extra=[];
+  shuffle(buildPool()).forEach(w=>w.parts.forEach(p=>{
+    if(!own.has(p.text)&&!seen.has(p.text)){seen.add(p.text);extra.push({text:p.text,kind:kindOf(p)})}
+  }));
+  B.tiles=shuffle(B.word.parts.map(p=>({text:p.text,kind:kindOf(p)})).concat(shuffle(extra).slice(0,3)));
+  B.slots=B.word.parts.map(()=>null);
+  B.solved=false;B.busy=false;
+  $('#b-clue').textContent=B.word.def;
+  setMsg('#b-msg','');
+  $('#b-break').hidden=true;$('#b-next').hidden=true;
+  $('#b-hint').hidden=false;$('#b-skip').hidden=false;
+  renderBuild();
+}
+function setMsg(sel,text,cls){const m=$(sel);m.textContent=text;m.className='msg'+(cls?' '+cls:'')}
+function renderBuild(){
+  $('#b-slots').innerHTML=B.slots.map((t,i)=>t===null
+    ?`<span class="slot" aria-label="Empty spot ${i+1}"></span>`
+    :`<button class="slot filled" data-slot="${i}" ${B.solved?'disabled':''} aria-label="Remove ${esc(B.tiles[t].text)}"><span class="tile k-${B.tiles[t].kind}">${esc(B.tiles[t].text)}</span></button>`).join('');
+  $('#b-tray').innerHTML=B.tiles.map((t,i)=>
+    `<button class="tile k-${t.kind}" data-tile="${i}" ${B.slots.includes(i)||B.solved?'disabled':''}>${esc(t.text)}</button>`).join('');
+}
+function checkBuild(){
+  if(B.slots.includes(null))return;
+  const made=B.slots.map(i=>B.tiles[i].text).join('');
+  if(made===B.word.w){
+    B.solved=true;addStar();
+    setMsg('#b-msg','Yes! You built "'+B.word.w+'."','good');
+    const bd=$('#b-break');bd.innerHTML=breakdownHTML(B.word);bd.hidden=false;
+    $('#b-next').hidden=false;$('#b-hint').hidden=true;$('#b-skip').hidden=true;
+    renderBuild();$('#b-slots').classList.add('pop');
+    setTimeout(()=>$('#b-slots').classList.remove('pop'),350);
+    $('#b-next').focus();
+  }else{
+    B.busy=true;
+    setMsg('#b-msg','"'+made+'" is not the word. Read the meaning again and try other parts.','bad');
+    $('#b-slots').classList.add('shake');
+    setTimeout(()=>{$('#b-slots').classList.remove('shake');B.slots=B.slots.map(()=>null);B.busy=false;renderBuild()},900);
+  }
+}
+$('#b-tray').addEventListener('click',e=>{
+  const b=e.target.closest('[data-tile]');if(!b||B.solved||B.busy)return;
+  const i=B.slots.indexOf(null);if(i<0)return;
+  B.slots[i]=+b.dataset.tile;renderBuild();checkBuild();
+});
+$('#b-slots').addEventListener('click',e=>{
+  const b=e.target.closest('[data-slot]');if(!b||B.solved||B.busy)return;
+  B.slots[+b.dataset.slot]=null;renderBuild();
+});
+$('#b-hint').addEventListener('click',()=>{
+  if(B.solved||B.busy)return;
+  // find the first spot that is empty or wrong, and place the right part there
+  for(let i=0;i<B.word.parts.length;i++){
+    const want=B.word.parts[i].text,cur=B.slots[i];
+    if(cur!==null&&B.tiles[cur].text===want)continue;
+    B.slots[i]=null;
+    let t=B.tiles.findIndex((x,ti)=>x.text===want&&!B.slots.includes(ti));
+    if(t<0){t=B.tiles.findIndex(x=>x.text===want);B.slots[B.slots.indexOf(t)]=null}
+    B.slots[i]=t;
+    const part=B.word.parts[i].id&&BY_ID[B.word.parts[i].id];
+    setMsg('#b-msg','Hint: part '+(i+1)+' is "'+want+'"'+(part?' ('+part.meaning+').':'.'));
+    break;
+  }
+  renderBuild();checkBuild();
+});
+$('#b-skip').addEventListener('click',newBuild);
+$('#b-next').addEventListener('click',newBuild);
+$('#b-level').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  B.level=b.dataset.level;B.queue=[];
+  document.querySelectorAll('#b-level button').forEach(x=>x.setAttribute('aria-pressed',x===b));
+  newBuild();
+});
+
+/* ---------- quiz ---------- */
+const Q={kinds:new Set(['prefix','suffix','greek','latin']),queue:[],cur:null,right:0,tried:0,streak:0};
+function quizQueue(){
+  const parts=PARTS.filter(p=>Q.kinds.has(p.kind)).map(p=>({type:'part',p}));
+  const words=WORDS.filter(w=>w.parts.some(p=>p.id&&Q.kinds.has(BY_ID[p.id].kind))).map(w=>({type:'word',w}));
+  return shuffle(parts.concat(shuffle(words).slice(0,Math.ceil(parts.length*.6))));
+}
+function newQuestion(){
+  if(!Q.queue.length)Q.queue=quizQueue();
+  const q=Q.cur=Q.queue.pop();
+  let opts;
+  if(q.type==='part'){
+    const p=q.p;
+    $('#q-eyebrow').textContent=KIND[p.kind];
+    $('#q-prompt').innerHTML=`What does <span class="tile k-${p.kind}">${esc(p.label)}</span> mean?`;
+    $('#q-sub').innerHTML='You see it in: '+p.ex.map(e=>`<span class="k-${p.kind}">${hl(e)}</span>`).join(', ');
+    const seen=new Set([p.meaning]),wrong=[];
+    shuffle(PARTS.filter(o=>o.kind===p.kind&&o.group!==p.group)).forEach(o=>{
+      if(wrong.length<3&&!seen.has(o.meaning)){seen.add(o.meaning);wrong.push(o.meaning)}
+    });
+    q.answer=p.meaning;opts=shuffle(wrong.concat(p.meaning));
+  }else{
+    const w=q.w;
+    $('#q-eyebrow').textContent='Use the parts to find the meaning';
+    $('#q-prompt').innerHTML='What does <strong>'+esc(w.w)+'</strong> mean?';
+    $('#q-sub').textContent='Look for parts you know inside the word.';
+    const wrong=shuffle(WORDS.filter(o=>o!==w&&o.level===w.level)).slice(0,3).map(o=>o.def);
+    q.answer=w.def;opts=shuffle(wrong.concat(w.def));
+  }
+  $('#q-opts').innerHTML=opts.map(o=>`<button class="opt" data-a="${esc(o)}">${esc(o)}</button>`).join('');
+  setMsg('#q-msg','');$('#q-break').hidden=true;$('#q-next').hidden=true;
+}
+function tally(){
+  $('#q-tally').textContent=Q.tried?`${Q.right} of ${Q.tried} correct`+(Q.streak>1?` · ${Q.streak} in a row`:''):'';
+}
+$('#q-opts').addEventListener('click',e=>{
+  const b=e.target.closest('.opt');if(!b||b.disabled)return;
+  const q=Q.cur,ok=b.textContent===q.answer;
+  Q.tried++;
+  if(ok){Q.right++;Q.streak++;addStar()}else Q.streak=0;
+  document.querySelectorAll('#q-opts .opt').forEach(o=>{
+    o.disabled=true;
+    if(o.textContent===q.answer){o.classList.add('right');o.textContent='✓ '+o.textContent}
+    else if(o===b){o.classList.add('wrong');o.textContent='✗ '+o.textContent}
+  });
+  if(q.type==='part'){
+    setMsg('#q-msg',(ok?'Correct! ':'Not quite. ')+q.p.label+' means "'+q.p.meaning+'." Example: '+q.p.gloss+'.',ok?'good':'bad');
+  }else{
+    setMsg('#q-msg',ok?'Correct! Here is how the parts add up:':'Not quite. Here is how the parts add up:',ok?'good':'bad');
+    const bd=$('#q-break');bd.innerHTML=breakdownHTML(q.w);bd.hidden=false;
+  }
+  tally();$('#q-next').hidden=false;$('#q-next').focus();
+});
+$('#q-next').addEventListener('click',newQuestion);
+$('#q-filters').addEventListener('click',e=>{
+  const b=e.target.closest('.chip');if(!b)return;
+  const k=b.dataset.kind;
+  if(Q.kinds.has(k)){if(Q.kinds.size===1)return;Q.kinds.delete(k)}else Q.kinds.add(k);
+  b.setAttribute('aria-pressed',Q.kinds.has(k));
+  Q.queue=[];newQuestion();
+});
+
+renderExplore();newBuild();newQuestion();tally();
+show(location.hash.slice(1));
+</script>
+</body>
+</html>
