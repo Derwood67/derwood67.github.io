@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Murphy to Manteo EOG Road Trip</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@600;800;900&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: one green highway sign carries the identity; everything else is a quiet
+   single column (max 720px) with the road strip as the progress bar. */
+:root{
+  --sign:#0b6b4a; --sign-ink:#ffffff; --road:#33373d; --line:#f2c230;
+  --paper:#eef1ec; --card:#ffffff; --ink:#1b2420; --muted:#55625b; --rule:#cfd6d0;
+  --good:#17703f; --good-bg:#dff3e6; --bad:#a83226; --bad-bg:#fbe3df; --mid:#7a5400; --mid-bg:#fbefc9;
+  --display:"Overpass","Arial Narrow",Arial,sans-serif;
+  --body:"Atkinson Hyperlegible",Verdana,system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --sign:#0e7a55; --road:#0c0e10; --paper:#151a1b; --card:#1f2628; --ink:#e8eeea; --muted:#9daba3; --rule:#364044;
+    --good:#6fd6a0; --good-bg:#173626; --bad:#f39486; --bad-bg:#43201c; --mid:#ecc35a; --mid-bg:#3d3212;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --sign:#0e7a55; --road:#0c0e10; --paper:#151a1b; --card:#1f2628; --ink:#e8eeea; --muted:#9daba3; --rule:#364044;
+  --good:#6fd6a0; --good-bg:#173626; --bad:#f39486; --bad-bg:#43201c; --mid:#ecc35a; --mid-bg:#3d3212;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:18px;line-height:1.5}
+main{max-width:720px;margin:0 auto;padding:20px 16px 48px;display:flex;flex-direction:column;gap:20px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.1}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--line);outline-offset:2px}
+[hidden]{display:none!important}
+
+/* the highway sign */
+.sign{background:var(--sign);color:var(--sign-ink);border-radius:14px;padding:6px}
+.sign-in{border:3px solid var(--sign-ink);border-radius:10px;padding:16px 18px;display:flex;flex-wrap:wrap;gap:8px 20px;align-items:flex-end;justify-content:space-between}
+.sign h1{font-weight:900;font-size:clamp(1.7rem,6.5vw,2.7rem);letter-spacing:.01em;text-transform:uppercase}
+.sign h1 .arrow{display:inline-block;transform:translateY(-.06em)}
+.sign p{margin:0;font-family:var(--display);font-weight:600;font-size:1rem}
+.sign .exit{font-family:var(--display);font-weight:800;background:var(--line);color:#1b1b1b;border-radius:6px;padding:2px 10px;font-size:.95rem;white-space:nowrap}
+
+.card{background:var(--card);border:1px solid var(--rule);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:16px}
+.muted{color:var(--muted)}
+.small{font-size:.9rem}
+label.field{display:flex;flex-direction:column;gap:6px;font-weight:700}
+input[type=text]{padding:12px;border:2px solid var(--rule);border-radius:8px;background:var(--paper);font-size:1.1rem}
+.seg{display:flex;flex-wrap:wrap;gap:8px}
+.seg button{flex:1 1 130px;padding:12px;border:2px solid var(--rule);background:var(--paper);border-radius:8px;font-family:var(--display);font-weight:800;font-size:1.05rem;cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--sign);border-color:var(--sign);color:var(--sign-ink)}
+.go{background:var(--line);color:#1b1b1b;border:0;border-radius:10px;padding:14px 22px;font-family:var(--display);font-weight:900;font-size:1.2rem;text-transform:uppercase;cursor:pointer;box-shadow:0 3px 0 #a9850f}
+.go:active{transform:translateY(2px);box-shadow:0 1px 0 #a9850f}
+.go:disabled{opacity:.5;cursor:not-allowed}
+.plain{background:none;border:2px solid var(--rule);border-radius:8px;padding:10px 14px;font-weight:700;cursor:pointer}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+a{color:inherit}
+
+/* road */
+.trip{display:flex;flex-direction:column;gap:8px}
+.trip-top{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 16px;font-family:var(--display);font-weight:800}
+.road{position:relative;background:var(--road);border-radius:10px;height:54px;padding:0 22px}
+.road::before{content:"";position:absolute;left:14px;right:14px;top:50%;border-top:3px dashed var(--line);opacity:.85}
+.stops{position:relative;height:100%;display:flex;justify-content:space-between;align-items:center}
+.stop{width:16px;height:16px;border-radius:50%;background:var(--road);border:3px solid #9aa3a8;position:relative;z-index:1;font-size:0}
+.stop.hit{background:#6fd6a0;border-color:#6fd6a0}
+.stop.miss{background:#f39486;border-color:#f39486;border-radius:3px}
+.car{position:absolute;top:50%;left:0;width:44px;height:24px;margin:-20px 0 0 -22px;z-index:2;transition:left .7s cubic-bezier(.4,1.3,.5,1)}
+@media (prefers-reduced-motion: reduce){.car{transition:none}}
+.ends{display:flex;justify-content:space-between;font-family:var(--display);font-weight:600;font-size:.85rem;color:var(--muted);text-transform:uppercase}
+
+/* question */
+.std{font-family:var(--display);font-weight:800;font-size:.85rem;letter-spacing:.04em;color:var(--muted);text-transform:uppercase}
+.passage{background:var(--paper);border-left:5px solid var(--sign);border-radius:6px;padding:14px 16px;max-height:260px;overflow:auto}
+.passage h3{font-size:1.1rem;margin-bottom:6px}
+.passage p{margin:0;max-width:62ch}
+.q{font-size:1.25rem;font-weight:700;margin:0;max-width:60ch}
+.choices{display:grid;gap:10px}
+.choice{display:flex;gap:12px;align-items:flex-start;text-align:left;width:100%;padding:12px 14px;background:var(--card);border:2px solid var(--rule);border-radius:10px;cursor:pointer}
+.choice:hover:not(:disabled){border-color:var(--sign)}
+.choice .ltr{font-family:var(--display);font-weight:900;flex:none;width:30px;height:30px;border-radius:50%;border:2px solid currentColor;display:grid;place-items:center;line-height:1;padding-top:2px}
+.choice:disabled{cursor:default}
+.choice.right{border-color:var(--good);background:var(--good-bg);color:var(--good)}
+.choice.wrong{border-color:var(--bad);background:var(--bad-bg);color:var(--bad)}
+.fb{border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+.fb.ok{background:var(--good-bg);color:var(--good)}
+.fb.no{background:var(--bad-bg);color:var(--bad)}
+.fb strong{font-family:var(--display);font-weight:900;font-size:1.15rem;text-transform:uppercase}
+.fb span{color:var(--ink)}
+
+/* report */
+.score{font-family:var(--display);font-weight:900;font-size:3rem;line-height:1;font-variant-numeric:tabular-nums}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-family:var(--display);font-weight:800;font-size:.85rem;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);white-space:nowrap}
+td.code{font-family:var(--display);font-weight:800;white-space:nowrap}
+.pill{display:inline-block;border-radius:99px;padding:2px 10px;font-weight:700;font-size:.85rem;white-space:nowrap}
+.pill.g{background:var(--good-bg);color:var(--good)}
+.pill.m{background:var(--mid-bg);color:var(--mid)}
+.pill.b{background:var(--bad-bg);color:var(--bad)}
+.pill.n{color:var(--muted)}
+</style>
+</head>
+<body>
+<main>
+  <header class="sign"><div class="sign-in">
+    <div>
+      <h1>Murphy <span class="arrow">&rarr;</span> Manteo</h1>
+      <p>EOG practice road trip across North Carolina</p>
+    </div>
+    <span class="exit">Grades 4&ndash;5 &middot; Math &amp; Reading</span>
+  </div></header>
+
+  <!-- START -->
+  <section id="v-start" class="card">
+    <h2>Plan your trip</h2>
+    <p class="muted" style="margin:0">Ten questions, ten stops. Answer correctly to earn a green light at each town. At Manteo you get a report of the standards you have down and the ones to practice.</p>
+    <label class="field" for="name">Your first name
+      <input type="text" id="name" maxlength="20" autocomplete="off" placeholder="Type your first name">
+    </label>
+    <div><div style="font-weight:700;margin-bottom:6px">Grade</div>
+      <div class="seg" id="seg-grade"><button type="button" data-v="4" aria-pressed="true">4th grade</button><button type="button" data-v="5" aria-pressed="false">5th grade</button></div></div>
+    <div><div style="font-weight:700;margin-bottom:6px">Subject</div>
+      <div class="seg" id="seg-subj"><button type="button" data-v="math" aria-pressed="true">Math</button><button type="button" data-v="ela" aria-pressed="false">Reading</button></div></div>
+    <div class="row"><button class="go" id="start" type="button">Start driving</button>
+      <a href="#class-report" class="small">Teacher: class report</a></div>
+  </section>
+
+  <!-- GAME -->
+  <section id="v-game" hidden style="display:flex;flex-direction:column;gap:20px">
+    <div class="trip">
+      <div class="trip-top"><span id="leg"></span><span id="lights"></span></div>
+      <div class="road"><div class="stops" id="stops">
+        <svg class="car" id="car" viewBox="0 0 44 24" aria-hidden="true"><path d="M3 16v-4l5-1 5-7h14l7 7 6 1v4z" fill="#f2c230"/><path d="M14 6h6v5h-9zM22 6h4l5 5h-9z" fill="#33373d"/><circle cx="11" cy="18" r="5" fill="#111"/><circle cx="33" cy="18" r="5" fill="#111"/><circle cx="11" cy="18" r="2" fill="#bbb"/><circle cx="33" cy="18" r="2" fill="#bbb"/></svg>
+      </div></div>
+      <div class="ends"><span>Murphy</span><span>Manteo</span></div>
+    </div>
+    <div class="card">
+      <div class="std" id="q-std"></div>
+      <div class="passage" id="q-passage" tabindex="0" hidden></div>
+      <p class="q" id="q-text"></p>
+      <div class="choices" id="q-choices"></div>
+      <div id="q-fb" hidden></div>
+      <div class="row"><button class="go" id="next" type="button" hidden>Drive on</button></div>
+    </div>
+  </section>
+
+  <!-- REPORT -->
+  <section id="v-report" class="card" hidden>
+    <div class="std">Trip report</div>
+    <h2 id="r-title"></h2>
+    <div class="row" style="align-items:flex-end;gap:14px"><span class="score" id="r-score"></span><span class="muted" id="r-msg"></span></div>
+    <div class="scroll"><table><thead><tr><th>Standard</th><th>Skill</th><th>Correct</th><th>Status</th></tr></thead><tbody id="r-body"></tbody></table></div>
+    <p class="muted small" id="r-next" style="margin:0"></p>
+    <div class="row"><button class="go" id="again" type="button">New trip</button><button class="plain" id="copy" type="button">Copy report</button></div>
+  </section>
+
+  <!-- CLASS REPORT -->
+  <section id="v-class" class="card" hidden>
+    <div class="std">For the teacher</div>
+    <h2>Class report by standard</h2>
+    <p class="muted small" style="margin:0">Every trip finished in this browser, added up per student. Trips taken on other devices are not included here.</p>
+    <div class="row">
+      <label class="small" for="c-grade">Grade <select id="c-grade"><option value="4">4</option><option value="5">5</option></select></label>
+      <label class="small" for="c-subj">Subject <select id="c-subj"><option value="math">Math</option><option value="ela">Reading</option></select></label>
+    </div>
+    <div class="scroll" id="c-table"></div>
+    <div class="row"><a class="plain" href="#play" style="text-decoration:none">Back to the game</a><button class="plain" id="c-copy" type="button">Copy as text</button><button class="plain" id="c-clear" type="button">Erase saved trips</button></div>
+  </section>
+</main>
+
+<script id="bank">
+/* ---------- question bank: no DOM in this block ---------- */
+const STOPS=["Murphy","Asheville","Boone","Hickory","Charlotte","Greensboro","Durham","Raleigh","Greenville","New Bern","Manteo"];
+const STD={
+ "NC.4.OA.3":"Multistep word problems","NC.4.NBT.5":"Multiply multi-digit numbers","NC.4.NBT.6":"Divide with remainders","NC.4.NF.1":"Equivalent fractions","NC.4.MD.3":"Area and perimeter",
+ "NC.5.NBT.5":"Multiply multi-digit numbers","NC.5.NBT.7":"Decimal operations","NC.5.NF.1":"Add and subtract fractions","NC.5.NF.4":"Multiply fractions","NC.5.MD.5":"Volume",
+ "RL.4.1":"Details from a story","RL.4.2":"Theme","RL.4.3":"Describe a character","RL.4.4":"Word meaning in a story","L.4.5":"Figurative language",
+ "RI.4.1":"Details from a text","RI.4.2":"Main idea","RI.4.3":"Explain why events happen","RI.4.4":"Word meaning in a text","RI.4.8":"Reasons and evidence",
+ "RL.5.1":"Details from a story","RL.5.2":"Theme","RL.5.3":"Compare characters","RL.5.4":"Word meaning in a story","L.5.5":"Figurative language",
+ "RI.5.1":"Details from a text","RI.5.2":"Main idea","RI.5.3":"How ideas are related","RI.5.4":"Word meaning in a text","RI.5.8":"Reasons and evidence"
+};
+const ORDER={math4:["NC.4.OA.3","NC.4.NBT.5","NC.4.NBT.6","NC.4.NF.1","NC.4.MD.3"],math5:["NC.5.NBT.5","NC.5.NBT.7","NC.5.NF.1","NC.5.NF.4","NC.5.MD.5"],
+ ela4:["RL.4.1","RL.4.2","RL.4.3","RL.4.4","L.4.5","RI.4.1","RI.4.2","RI.4.3","RI.4.4","RI.4.8"],ela5:["RL.5.1","RL.5.2","RL.5.3","RL.5.4","L.5.5","RI.5.1","RI.5.2","RI.5.3","RI.5.4","RI.5.8"]};
+
+const R=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const pick=a=>a[R(0,a.length-1)];
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=R(0,i);[a[i],a[j]]=[a[j],a[i]]}return a}
+const fmt=n=>n.toLocaleString("en-US");
+const dec=h=>String(parseFloat((h/100).toFixed(2)));           // h = hundredths
+const gcd=(a,b)=>b?gcd(b,a%b):a;
+function frac(n,d){const g=gcd(n,d);n/=g;d/=g;if(d===1)return String(n);if(n>d)return Math.floor(n/d)+" "+(n%d)+"/"+d;return n+"/"+d}
+
+function build(std,q,correct,cands,why){
+  const seen=new Set([correct]),d=[];
+  for(const c of cands){if(!seen.has(c)&&d.length<3){seen.add(c);d.push(c)}}
+  const choices=shuffle([correct,...d]);
+  return {std,q,choices,answer:choices.indexOf(correct),why};
+}
+function numQ(std,q,correct,cands,why,f=fmt,unit=""){
+  const c=cands.filter(x=>x>0&&x!==correct);
+  for(let k=1;k<6;k++)c.push(correct+k*10,correct>k*10?correct-k*10:correct+k*7);
+  return build(std,q,f(correct)+unit,c.filter(x=>x>0&&x!==correct).map(x=>f(x)+unit),why);
+}
+function fracQ(std,q,n,d,cands,why){
+  const ok=cands.filter(([a,b])=>a>0&&b>0&&a*d!==n*b);
+  for(let k=1;k<5;k++)ok.push([n+k,d],[n,d+k]);
+  return build(std,q,frac(n,d),ok.filter(([a,b])=>a*d!==n*b).map(([a,b])=>frac(a,b)),why);
+}
+
+const GEN={
+"NC.4.OA.3":()=>{
+  if(R(0,1)){const a=R(4,9),b=R(12,25),c=R(10,40);
+    return numQ("NC.4.OA.3",`A class picks ${a} baskets of apples. Each basket holds ${b} apples. The class gives away ${c} apples. How many apples are left?`,a*b-c,[a*b+c,a*b,a+b+c,(a*b-c)+a],`${a} × ${b} = ${a*b} apples. Then ${a*b} − ${c} = ${a*b-c}.`)}
+  const a=R(6,12),b=R(3,6),c=R(5,15);
+  return numQ("NC.4.OA.3",`Tickets to the science museum cost $${a} each. A family buys ${b} tickets and one $${c} parking pass. How much does the family spend in all?`,a*b+c,[a*b,a*b-c,a+b+c,(a+c)*b],`${b} × $${a} = $${a*b}. Then $${a*b} + $${c} = $${a*b+c}.`,n=>"$"+fmt(n))},
+"NC.4.NBT.5":()=>{
+  if(R(0,1)){const a=R(112,789),b=R(3,9);
+    return numQ("NC.4.NBT.5",`What is ${a} × ${b}?`,a*b,[a*b+b*10,a*b-100,a*b+100,(a-a%10)*b],`Break ${a} apart by place value, multiply each part by ${b}, and add: ${a} × ${b} = ${fmt(a*b)}.`)}
+  const a=R(12,48),b=R(12,39);
+  return numQ("NC.4.NBT.5",`What is ${a} × ${b}?`,a*b,[a*(b%10)+a*Math.floor(b/10),a*b+10*a,a*b-b,a*b+100],`${a} × ${b-b%10} = ${fmt(a*(b-b%10))} and ${a} × ${b%10} = ${a*(b%10)}. Together that is ${fmt(a*b)}.`)},
+"NC.4.NBT.6":()=>{
+  const d=R(3,9),qt=R(21,98),r=R(1,d-1),n=d*qt+r,r2=r+1<d?r+1:r-1||d-2;
+  return build("NC.4.NBT.6",`${n} markers are packed into boxes of ${d}. How many full boxes are there, and how many markers are left over?`,`${qt} boxes, ${r} left over`,
+    [`${qt+1} boxes, ${r} left over`,`${qt-1} boxes, ${r} left over`,`${qt} boxes, ${r2} left over`,`${qt+10} boxes, ${r} left over`].filter(s=>!/ 0 left|, -/.test(s)),
+    `${d} × ${qt} = ${d*qt}, and ${n} − ${d*qt} = ${r}. So ${n} ÷ ${d} = ${qt} R ${r}.`)},
+"NC.4.NF.1":()=>{
+  const [a,b]=pick([[1,2],[1,3],[2,3],[1,4],[3,4],[2,5],[3,5],[1,6],[5,6],[3,8]]),k=R(2,4);
+  return build("NC.4.NF.1",`Which fraction is equivalent to ${a}/${b}?`,`${a*k}/${b*k}`,
+    [`${a+k}/${b+k}`,`${a*k}/${b*(k+1)}`,`${a}/${b*k}`,`${a*k+1}/${b*k}`],
+    `Multiply the numerator and the denominator by the same number: ${a} × ${k} = ${a*k} and ${b} × ${k} = ${b*k}.`)},
+"NC.4.MD.3":()=>{
+  const l=R(7,15),w=R(3,l-1),t=R(0,2);
+  if(t===0)return numQ("NC.4.MD.3",`A rectangular garden is ${l} feet long and ${w} feet wide. What is its area?`,l*w,[2*(l+w),l+w,2*l*w],`Area = length × width = ${l} × ${w} = ${l*w} square feet.`,fmt," square feet");
+  if(t===1)return numQ("NC.4.MD.3",`A rectangular garden is ${l} feet long and ${w} feet wide. How much fence is needed to go all the way around it?`,2*(l+w),[l*w,l+w,2*l+w],`Perimeter = ${l} + ${w} + ${l} + ${w} = ${2*(l+w)} feet.`,fmt," feet");
+  return numQ("NC.4.MD.3",`A rectangular rug has an area of ${l*w} square feet. It is ${l} feet long. How wide is the rug?`,w,[l*w-l,w+2,w+1,l-w===w?w+3:l-w],`Area ÷ length = width, so ${l*w} ÷ ${l} = ${w} feet.`,fmt," feet")},
+
+"NC.5.NBT.5":()=>{
+  const a=R(123,689),b=R(12,48);
+  return numQ("NC.5.NBT.5",`What is ${a} × ${b}?`,a*b,[a*(b%10)+a*Math.floor(b/10),a*b+10*a,a*b-a,a*b+1000,a*b-100],`${a} × ${b-b%10} = ${fmt(a*(b-b%10))} and ${a} × ${b%10} = ${fmt(a*(b%10))}. Together that is ${fmt(a*b)}.`)},
+"NC.5.NBT.7":()=>{
+  const t=R(0,2);
+  if(t===0){let a=R(125,975);if(a%10===0)a+=3;const b=R(11,89)*10;
+    return numQ("NC.5.NBT.7",`What is ${dec(a)} + ${dec(b)}?`,a+b,[a+b/10,a+b+100,a+b-100,a+b+10],`Line up the decimal points: ${dec(a)} + ${dec(b)}0 = ${dec(a+b)}.`.replace(/(\d)0 =/,(m,x)=>dec(b).includes(".")?m:x+" ="),dec)}
+  if(t===1){const A=R(50,99)*10;let B=R(125,475);if(B%10===0)B+=4;
+    return numQ("NC.5.NBT.7",`What is ${dec(A)} − ${dec(B)}?`,A-B,[A-B+2*(B%10),A-B+100,A-B+10,A-B-10],`Line up the decimal points and write a zero in the hundredths place, then subtract. The difference is ${dec(A-B)}.`,dec)}
+  const x=R(2,9),w=R(3,9);
+  return numQ("NC.5.NBT.7",`What is 0.${x} × ${w}?`,x*w*10,[x*w*100,x*w,(x+w)*10,x*w*10+100],`${x} tenths × ${w} = ${x*w} tenths, which is ${dec(x*w*10)}.`,dec)},
+"NC.5.NF.1":()=>{
+  const [b,d]=pick([[2,3],[2,5],[3,4],[4,5],[2,6],[3,6],[4,8],[3,5],[4,6]]),a=R(1,b-1),c=R(1,d-1),L=b*d/gcd(b,d);
+  if(R(0,1)||a*d<=c*b){const n=a*(L/b)+c*(L/d);
+    return fracQ("NC.5.NF.1",`What is ${a}/${b} + ${c}/${d}?`,n,L,[[a+c,b+d],[a+c,L],[a+c,b*d],[n+1,L],[n,L*2]],`Rewrite both with a denominator of ${L}: ${a*(L/b)}/${L} + ${c*(L/d)}/${L} = ${n}/${L}${frac(n,L)!==n+"/"+L?", which is "+frac(n,L):""}.`)}
+  const n=a*(L/b)-c*(L/d);
+  return fracQ("NC.5.NF.1",`What is ${a}/${b} − ${c}/${d}?`,n,L,[[Math.abs(a-c)||1,Math.abs(b-d)||1],[Math.abs(a-c)||1,L],[n+1,L],[a*(L/b)+c*(L/d),L],[n,L*2]],`Rewrite both with a denominator of ${L}: ${a*(L/b)}/${L} − ${c*(L/d)}/${L} = ${n}/${L}${frac(n,L)!==n+"/"+L?", which is "+frac(n,L):""}.`)},
+"NC.5.NF.4":()=>{
+  if(R(0,1)){const b=R(3,6),a=R(1,b-1),d=R(2,5),c=R(1,d-1);
+    return fracQ("NC.5.NF.4",`What is ${a}/${b} × ${c}/${d}?`,a*c,b*d,[[a+c,b+d],[a*d,b*c],[a*c,b+d],[a*d+c*b,b*d],[a+c,b*d]],`Multiply numerators and multiply denominators: ${a*c}/${b*d}${frac(a*c,b*d)!==a*c+"/"+b*d?", which simplifies to "+frac(a*c,b*d):""}.`)}
+  const [a,b]=pick([[2,3],[3,4],[2,5],[3,5],[4,5],[3,8],[5,8]]),w=R(4,10);
+  return fracQ("NC.5.NF.4",`A recipe uses ${a}/${b} cup of flour for one batch. How many cups of flour are needed for ${w} batches?`,a*w,b,[[a,b*w],[a+w,b],[a*w,b*w],[a*w+1,b],[w*b,a]],`${w} × ${a}/${b} = ${a*w}/${b}${frac(a*w,b)!==a*w+"/"+b?", which is "+frac(a*w,b):""}.`)},
+"NC.5.MD.5":()=>{
+  const l=R(4,10),w=R(2,6),h=R(3,8);
+  if(R(0,1))return numQ("NC.5.MD.5",`A storage box is ${l} inches long, ${w} inches wide, and ${h} inches tall. What is the volume of the box?`,l*w*h,[l+w+h,l*w,2*(l*w+l*h+w*h),l*w+h],`Volume = length × width × height = ${l} × ${w} × ${h} = ${l*w*h} cubic inches.`,fmt," cubic inches");
+  return numQ("NC.5.MD.5",`A fish tank has a base with an area of ${l*w} square inches. The water is ${h} inches deep. What is the volume of the water?`,l*w*h,[l*w+h,l*w,l*w*h*2,l*w*(h+1)],`Volume = area of the base × height = ${l*w} × ${h} = ${l*w*h} cubic inches.`,fmt," cubic inches")}
+};
+
+const P={
+kite:{title:"The Kite on the Ridge",text:"Nadia had carried her kite up the tallest dune at Jockey's Ridge three times that morning, and three times it had nosedived into the sand. Her cousin Theo flew his on the first try. \"Maybe kites just don't like me,\" she muttered, brushing sand from the tail. An older woman nearby was untangling her own line. \"Mine crashed for a whole summer,\" she said. \"Then I learned to wait for the wind instead of running from it.\" Nadia stood still. She felt the breeze press steady against her cheek, then let the string slide through her fingers. The kite wobbled, tilted, and climbed. Theo said that kite was as stubborn as a mule. Nadia grinned. So was she."},
+light:{title:"Moving a Lighthouse",text:"The Cape Hatteras Lighthouse has warned ships away from dangerous sandbars since 1870. When it was built, it stood about 1,500 feet from the ocean. Over the years, waves wore away the beach. By the 1990s, the water was close enough to threaten the tower's base. In 1999, workers did something that sounded impossible. They lifted the lighthouse onto steel beams and rolled it slowly along a track. The trip covered 2,900 feet and took 23 days. Moving the lighthouse was the right choice. The tower is now far from the surf again, and visitors can still climb its 257 steps."},
+bowl:{title:"The Wobbly Bowl",text:"Marcus pressed his thumbs into the spinning clay, and for the fourth time the walls of his bowl folded like a tired tent. Across the Seagrove studio, his sister Dee lifted a perfect vase from her wheel. She had been throwing pots for six years. \"You're squeezing it,\" Dee said. \"Clay remembers every push.\" Marcus scowled. He wanted a bowl by Saturday, when Grandpa's birthday came. Dee wanted nothing by any day at all; she simply liked the hum of the wheel. He wet his hands and tried again, slower. The bowl rose crooked, one side taller than the other. It was not perfect. Marcus decided Grandpa would like it better that way."},
+trap:{title:"A Plant That Counts",text:"The Venus flytrap grows wild in only one small part of the world: the boggy coastal plain of North and South Carolina. The soil there is poor in nutrients, so the plant gets extra food by catching insects. Each trap has tiny trigger hairs inside. If a bug touches one hair, nothing happens. If a second touch comes within about twenty seconds, the trap snaps shut. This counting keeps the plant from wasting energy on raindrops or blowing sand. Wild flytraps need protection. People have dug up thousands of them to sell, and in North Carolina taking one from the wild is now a serious crime."}
+};
+// [standard, passage, question, correct, wrong, wrong, wrong, why]
+const ELA={
+4:[
+["RL.4.1","kite","Which detail from the story shows that Nadia had trouble flying her kite?","Three times it had nosedived into the sand.","Her cousin Theo flew his on the first try.","She felt the breeze press steady against her cheek.","An older woman nearby was untangling her own line.","The kite crashing three times is the detail that shows her trouble."],
+["RL.4.4","kite","What does the word \"nosedived\" mean in the story?","dropped quickly with the front pointing down","floated gently in a circle","got tangled in its own string","flew higher than the dune","The kite ends up in the sand, so it fell fast, front end first."],
+["RL.4.3","kite","How does Nadia change after she talks with the woman?","She stops rushing and waits for the wind.","She gives her kite to Theo.","She decides to go home.","She runs faster down the dune.","The woman says to wait for the wind, and then Nadia \"stood still\" and felt the breeze."],
+["L.4.5","kite","Theo says the kite is \"as stubborn as a mule.\" What does he mean?","The kite is hard to get to do what you want.","The kite is shaped like an animal.","The kite is very heavy.","The kite is old and worn out.","This simile compares the kite to a mule, an animal known for refusing to move."],
+["RL.4.2","kite","Which sentence best states the theme of the story?","Being patient and not giving up can lead to success.","Windy days are the best days for the beach.","Cousins should always share their toys.","It is better to play alone than with others.","Nadia keeps trying, learns to wait, and her kite finally climbs."],
+["RI.4.1","light","According to the text, how long did it take to move the lighthouse?","23 days","257 days","1 day","29 days","The text says the trip \"took 23 days.\""],
+["RI.4.3","light","Why did the lighthouse need to be moved?","Waves wore away the beach until the ocean was too close.","Ships could no longer see its light.","Visitors wanted a shorter climb.","The steel beams under it were rusting.","The beach wore away, which brought the water near the tower's base."],
+["RI.4.4","light","What does the word \"threaten\" mean in this text?","put in danger","make brighter","clean off","hold up","Water close to the base could damage the tower, so it put the tower in danger."],
+["RI.4.8","light","The author says moving the lighthouse \"was the right choice.\" Which sentence gives evidence for that point?","The tower is now far from the surf again.","When it was built, it stood about 1,500 feet from the ocean.","They lifted the lighthouse onto steel beams.","The Cape Hatteras Lighthouse has warned ships since 1870.","Being safely away from the surf is the result that supports the author's point."],
+["RI.4.2","light","What is the main idea of this text?","The lighthouse was moved to save it from the ocean.","Lighthouses are no longer needed by ships.","Steel beams are stronger than sand.","The lighthouse has 257 steps.","Most of the details explain the danger from the ocean and the move that fixed it."]
+],
+5:[
+["RL.5.1","bowl","Which detail best supports the idea that Dee is an experienced potter?","She had been throwing pots for six years.","She simply liked the hum of the wheel.","Marcus scowled.","He wanted a bowl by Saturday.","Six years of practice is direct evidence of her experience."],
+["L.5.5","bowl","The walls of the bowl \"folded like a tired tent.\" What does this comparison show?","The walls sagged and collapsed inward.","The walls were made of cloth.","The bowl was very large.","The bowl was finished and ready.","A tired tent droops and falls in, which is what the clay walls did."],
+["RL.5.4","bowl","What does the word \"scowled\" mean in the story?","frowned in an annoyed way","laughed out loud","spoke very quietly","looked away shyly","Marcus is frustrated after his fourth collapse, so he frowns."],
+["RL.5.3","bowl","How are Marcus and Dee different in this story?","Marcus is rushing toward a deadline, while Dee enjoys the work itself.","Marcus has more experience than Dee.","Dee wants to make a gift, while Marcus does not.","Marcus works slowly, while Dee squeezes the clay.","Marcus wants a bowl by Saturday. Dee \"wanted nothing by any day at all.\""],
+["RL.5.2","bowl","Which sentence best states a theme of the story?","Something made with care does not have to be perfect to be valuable.","Older siblings are always better at art.","Gifts should be bought, not made.","Practice is a waste of time.","Marcus decides Grandpa will like the crooked bowl even more."],
+["RI.5.1","trap","According to the text, why does the Venus flytrap catch insects?","The soil where it grows is poor in nutrients.","Insects damage its leaves.","It cannot get enough sunlight.","It needs insects to spread its seeds.","The text says the soil is poor, \"so the plant gets extra food by catching insects.\""],
+["RI.5.3","trap","What causes a trap to snap shut?","two touches on the trigger hairs within about twenty seconds","one touch on a trigger hair","a raindrop landing on the trap","twenty seconds passing with no touch","One touch does nothing. A second touch soon after closes the trap."],
+["RI.5.4","trap","What are \"nutrients\" in this text?","substances a living thing needs to grow","small insects","trigger hairs","wet, boggy places","Poor soil lacks what the plant needs to grow, so it gets that food from insects."],
+["RI.5.8","trap","Which evidence does the author give to support the point that wild flytraps need protection?","People have dug up thousands of them to sell.","Each trap has tiny trigger hairs inside.","If a bug touches one hair, nothing happens.","The soil there is poor in nutrients.","Thousands of plants being taken is the reason the author gives."],
+["RI.5.2","trap","Which statement is a main idea of this text?","The Venus flytrap is a rare plant with a clever way of catching food.","Raindrops are dangerous to plants.","Most plants in the Carolinas eat insects.","Bogs are the best places to grow a garden.","The text is about where this rare plant lives and how its counting trap works."]
+]};
+
+function makeTrip(grade,subj){
+  if(subj==="math"){
+    const qs=[];for(const s of ORDER["math"+grade]){let a=GEN[s](),b,n=0;do{b=GEN[s]()}while(b.q===a.q&&++n<20);qs.push(a,b)}
+    return shuffle(qs);
+  }
+  return ELA[grade].map(([std,p,q,c,w1,w2,w3,why])=>{const o=build(std,q,c,[w1,w2,w3],why);o.passage=p;return o});
+}
+if(typeof module!=="undefined")module.exports={makeTrip,ORDER,STD,GEN};
+</script>
+
+<script>
+/* ---------- game ---------- */
+const $=id=>document.getElementById(id);
+const KEY="m2m-trips-v1";
+const SUBJ={math:"Math",ela:"Reading"};
+let S={view:"start",name:"",grade:"4",subj:"math",qs:[],i:0,res:[],picked:null};
+
+function loadTrips(){try{return JSON.parse(localStorage.getItem(KEY))||[]}catch(e){return[]}}
+function saveTrips(t){try{localStorage.setItem(KEY,JSON.stringify(t))}catch(e){}}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+
+function show(){
+  const v=location.hash==="#class-report"?"class":S.view;
+  $("v-start").hidden=v!=="start";$("v-game").hidden=v!=="game";$("v-report").hidden=v!=="report";$("v-class").hidden=v!=="class";
+  if(v==="start")renderStart();if(v==="game")renderGame();if(v==="report")renderReport();if(v==="class")renderClass();
+}
+function seg(id,key){
+  $(id).querySelectorAll("button").forEach(b=>{b.setAttribute("aria-pressed",String(b.dataset.v===S[key]));
+    b.onclick=()=>{S[key]=b.dataset.v;renderStart()}});
+}
+function renderStart(){seg("seg-grade","grade");seg("seg-subj","subj");if($("name").value!==S.name)$("name").value=S.name}
+$("name").oninput=e=>{S.name=e.target.value};
+$("start").onclick=()=>{
+  S.name=$("name").value.trim();
+  if(!S.name){$("name").focus();$("name").placeholder="Type your first name to start";return}
+  S.qs=makeTrip(S.grade,S.subj);S.i=0;S.res=[];S.picked=null;S.view="game";show();
+};
+
+function renderGame(){
+  const q=S.qs[S.i],done=S.picked!==null;
+  // road
+  const st=$("stops");st.querySelectorAll(".stop").forEach(n=>n.remove());
+  STOPS.forEach((t,k)=>{const d=document.createElement("span");d.className="stop"+(k>0&&k<=S.res.length?(S.res[k-1]?" hit":" miss"):k===0?" hit":"");d.textContent=t;st.insertBefore(d,$("car"))});
+  const pos=S.i+(done?1:0);
+  $("car").style.left=(pos/10*100)+"%";
+  $("leg").textContent=done?`Arrived in ${STOPS[S.i+1]}`:`${STOPS[S.i]} to ${STOPS[S.i+1]} · Question ${S.i+1} of 10`;
+  $("lights").textContent=`Green lights: ${S.res.filter(Boolean).length}`;
+  // question
+  $("q-std").textContent=`${q.std} · ${STD[q.std]}`;
+  const pb=$("q-passage");
+  if(q.passage){const p=P[q.passage];if(pb.dataset.p!==q.passage){pb.innerHTML=`<h3>${esc(p.title)}</h3><p>${esc(p.text)}</p>`;pb.dataset.p=q.passage;pb.scrollTop=0}pb.hidden=false}else{pb.hidden=true;pb.dataset.p=""}
+  $("q-text").textContent=q.q;
+  const box=$("q-choices");box.innerHTML="";
+  q.choices.forEach((c,k)=>{const b=document.createElement("button");b.type="button";b.className="choice";b.id="choice-"+k;
+    b.innerHTML=`<span class="ltr">${"ABCD"[k]}</span><span>${esc(c)}</span>`;
+    if(done){b.disabled=true;if(k===q.answer)b.classList.add("right");else if(k===S.picked)b.classList.add("wrong")}
+    else b.onclick=()=>answer(k);
+    box.appendChild(b)});
+  const fb=$("q-fb");
+  if(done){const ok=S.picked===q.answer;fb.hidden=false;fb.className="fb "+(ok?"ok":"no");
+    fb.innerHTML=`<strong>${ok?"Green light":"Flat tire"}</strong><span>${ok?"":`The answer is ${"ABCD"[q.answer]}. `}${esc(q.why)}</span>`;
+    $("next").hidden=false;$("next").textContent=S.i===9?"See my trip report":"Drive on";}
+  else{fb.hidden=true;$("next").hidden=true}
+}
+function answer(k){S.picked=k;S.res.push(k===S.qs[S.i].answer);renderGame();$("next").focus()}
+$("next").onclick=()=>{
+  if(S.i<9){S.i++;S.picked=null;renderGame();$("q-text").scrollIntoView({block:"nearest"});return}
+  const by=tally();const trips=loadTrips();
+  trips.push({name:S.name,grade:S.grade,subj:S.subj,when:new Date().toISOString().slice(0,10),by});saveTrips(trips);
+  S.view="report";show();
+};
+function tally(){const by={};S.qs.forEach((q,k)=>{by[q.std]=by[q.std]||[0,0];by[q.std][1]++;if(S.res[k])by[q.std][0]++});return by}
+function status(c,t){if(!t)return["n","Not tried"];if(c===t)return["g","✓ Got it"];if(c===0)return["b","✗ Needs practice"];return["m","~ Almost there"]}
+
+function reportText(){
+  const by=tally(),n=S.res.filter(Boolean).length;
+  return [`Murphy to Manteo trip report`,`${S.name} · Grade ${S.grade} ${SUBJ[S.subj]} · ${n}/10`,
+    ...ORDER[S.subj+S.grade].map(s=>{const[c,t]=by[s]||[0,0];return `${s} ${STD[s]}: ${c}/${t} ${status(c,t)[1]}`})].join("\n");
+}
+function renderReport(){
+  const by=tally(),n=S.res.filter(Boolean).length;
+  $("r-title").textContent=`${S.name} made it to Manteo`;
+  $("r-score").textContent=`${n}/10`;
+  $("r-msg").textContent=`green lights · Grade ${S.grade} ${SUBJ[S.subj]}`;
+  const miss=[];
+  $("r-body").innerHTML=ORDER[S.subj+S.grade].map(s=>{const[c,t]=by[s]||[0,0],[cls,lab]=status(c,t);if(c<t)miss.push(s);
+    return `<tr><td class="code">${s}</td><td>${STD[s]}</td><td>${c} of ${t}</td><td><span class="pill ${cls}">${lab}</span></td></tr>`}).join("");
+  $("r-next").textContent=miss.length?`Practice next: ${miss.join(", ")}. Show this screen to your teacher.`:"Every standard on this trip is a green light. Show this screen to your teacher.";
+}
+$("again").onclick=()=>{S.view="start";S.qs=[];S.res=[];S.i=0;S.picked=null;show()};
+function copyBtn(btn,text){const old=btn.textContent;
+  (navigator.clipboard?navigator.clipboard.writeText(text):Promise.reject()).then(()=>{btn.textContent="Copied"},()=>{btn.textContent="Copy not allowed here"}).finally(()=>setTimeout(()=>{btn.textContent=old},1800))}
+$("copy").onclick=e=>copyBtn(e.currentTarget,reportText());
+
+/* class report */
+function classData(){
+  const g=$("c-grade").value,sj=$("c-subj").value,stds=ORDER[sj+g],rows={};
+  loadTrips().filter(t=>t.grade===g&&t.subj===sj).forEach(t=>{const k=t.name.trim().toLowerCase();
+    rows[k]=rows[k]||{name:t.name,trips:0,by:{}};rows[k].trips++;
+    for(const s in t.by){rows[k].by[s]=rows[k].by[s]||[0,0];rows[k].by[s][0]+=t.by[s][0];rows[k].by[s][1]+=t.by[s][1]}});
+  return {stds,rows:Object.values(rows).sort((a,b)=>a.name.localeCompare(b.name))};
+}
+function renderClass(){
+  const {stds,rows}=classData();
+  if(!rows.length){$("c-table").innerHTML=`<p class="muted">No finished trips for this grade and subject yet. Reports appear here after a student reaches Manteo on this device.</p>`;return}
+  $("c-table").innerHTML=`<table><thead><tr><th>Student</th><th>Trips</th>${stds.map(s=>`<th title="${STD[s]}">${s}</th>`).join("")}</tr></thead><tbody>${
+    rows.map(r=>`<tr><td class="code">${esc(r.name)}</td><td>${r.trips}</td>${stds.map(s=>{const[c,t]=r.by[s]||[0,0],[cls,lab]=status(c,t);
+      return `<td><span class="pill ${cls}" title="${lab}">${t?lab[0]+" "+c+"/"+t:"–"}</span></td>`}).join("")}</tr>`).join("")}</tbody></table>
+    <p class="muted small">✓ all correct · ~ some correct · ✗ none correct. Skills: ${stds.map(s=>`${s} ${STD[s]}`).join("; ")}.</p>`;
+}
+$("c-grade").onchange=$("c-subj").onchange=renderClass;
+$("c-copy").onclick=e=>{const {stds,rows}=classData();
+  copyBtn(e.currentTarget,[`Class report · Grade ${$("c-grade").value} ${SUBJ[$("c-subj").value]}`,
+    ...rows.map(r=>`${r.name} (${r.trips} trips): `+stds.map(s=>{const[c,t]=r.by[s]||[0,0];return `${s} ${c}/${t}`}).join(", "))].join("\n"))};
+let armed=false;
+$("c-clear").onclick=e=>{const b=e.currentTarget;
+  if(!armed){armed=true;b.textContent="Click again to erase all trips";setTimeout(()=>{armed=false;b.textContent="Erase saved trips"},4000);return}
+  armed=false;saveTrips([]);b.textContent="Erase saved trips";renderClass()};
+
+window.addEventListener("hashchange",show);
+function start(data){if(data&&data.view)S=Object.assign(S,data);show()}
+window.claude?.hot?.snapshot?.(()=>S);
+window.claude?.hot?.ready?window.claude.hot.ready(start):start(window.claude?.hot?.data??{});
+</script>
+</body>
+</html>
