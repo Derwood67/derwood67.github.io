@@ -53,7 +53,7 @@ h1,h2,h3{font-family:var(--display);font-weight:600;margin:0;text-wrap:balance;l
 h1{font-size:clamp(1.8rem,5vw,2.6rem)}
 h2{font-size:1.35rem}
 p{margin:0}
-button,input{font:inherit;color:inherit}
+button,input,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 
@@ -133,6 +133,21 @@ mark{background:transparent;color:var(--k);font-weight:700;text-decoration:under
 .opt.wrong{background:var(--bad-bg);border-color:var(--bad)}
 .opt:disabled{cursor:default}
 .tally{color:var(--muted);font-size:.95rem}
+/* write */
+.bar{height:10px;background:var(--base-bg);border-radius:999px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--good);transition:width .3s}
+.wlist{display:flex;flex-direction:column;gap:14px}
+.witem{gap:12px}
+.witem.done{border-color:var(--good)}
+.witem .tile{font-size:1.1rem;padding:7px 11px}
+.witem textarea{width:100%;min-height:76px;resize:vertical;background:var(--bg);border:2px solid var(--line);border-radius:12px;padding:10px 12px;line-height:1.4}
+.witem textarea[readonly]{background:var(--good-bg);border-color:var(--good)}
+.okmark{color:var(--good);font-weight:700}
+.issues{margin:0;padding-left:22px;color:var(--bad);font-weight:700;display:flex;flex-direction:column;gap:4px}
+.final{margin:0;padding-left:26px;display:flex;flex-direction:column;gap:8px}
+.final small{color:var(--muted)}
+.copybox{width:100%;min-height:180px;background:var(--bg);border:2px solid var(--line);border-radius:12px;padding:10px 12px}
+label.help{font-weight:700}
 @media (prefers-reduced-motion: no-preference){
   .shake{animation:shake .4s}
   @keyframes shake{25%{transform:translateX(-6px)}50%{transform:translateX(6px)}75%{transform:translateX(-4px)}}
@@ -172,6 +187,7 @@ mark{background:transparent;color:var(--k);font-weight:700;text-decoration:under
     <button role="tab" id="tab-explore" data-view="explore" aria-selected="true">Explore</button>
     <button role="tab" id="tab-build" data-view="build" aria-selected="false">Build a Word</button>
     <button role="tab" id="tab-quiz" data-view="quiz" aria-selected="false">Quiz</button>
+    <button role="tab" id="tab-write" data-view="write" aria-selected="false">Write Sentences</button>
   </nav>
 
   <!-- EXPLORE -->
@@ -249,6 +265,40 @@ mark{background:transparent;color:var(--k);font-weight:700;text-decoration:under
         <button class="btn" id="q-next" hidden>Next question</button>
         <span class="tally" id="q-tally"></span>
       </div>
+    </div>
+  </section>
+
+  <!-- WRITE -->
+  <section class="panel" id="view-write" role="tabpanel" aria-labelledby="tab-write" hidden>
+    <div class="stage">
+      <div>
+        <div class="eyebrow">Your assignment</div>
+        <div class="clue">Write 10 sentences. Use a root word in each one.</div>
+        <p class="help" style="margin-top:6px">Pick a word from the word bank for each root. Endings like -s, -ed, and -ing are fine. Write one complete sentence, then tap Check. Fix anything in red until your sentence passes.</p>
+      </div>
+      <div class="row">
+        <label class="help" for="w-name">Name</label>
+        <input class="search" id="w-name" type="text" autocomplete="off" placeholder="Type your first name">
+        <span class="tally" id="w-progress" aria-live="polite"></span>
+      </div>
+      <div class="bar"><i id="w-bar"></i></div>
+    </div>
+    <div class="wlist" id="w-list"></div>
+    <div class="stage" id="w-done" hidden>
+      <div>
+        <div class="eyebrow">Assignment complete</div>
+        <div class="clue">All 10 sentences passed the check.</div>
+        <p class="help" id="w-who" style="margin-top:6px"></p>
+      </div>
+      <ol class="final" id="w-final"></ol>
+      <div class="row">
+        <button class="btn" id="w-copy">Copy my sentences</button>
+        <span class="msg" id="w-copymsg" aria-live="polite"></span>
+      </div>
+      <textarea class="copybox" id="w-copybox" readonly hidden aria-label="Your sentences"></textarea>
+    </div>
+    <div class="row">
+      <button class="btn ghost" id="w-reset">Start over with new roots</button>
     </div>
   </section>
 </div>
@@ -427,7 +477,7 @@ function breakdownHTML(word){
 }
 
 /* ---------- tabs ---------- */
-const VIEWS=['explore','build','quiz'];
+const VIEWS=['explore','build','quiz','write'];
 function show(view){
   if(!VIEWS.includes(view))view='explore';
   VIEWS.forEach(v=>{
@@ -645,6 +695,229 @@ $('#q-filters').addEventListener('click',e=>{
   b.setAttribute('aria-pressed',Q.kinds.has(k));
   startQuiz();
 });
+
+/* ---------- write sentences ---------- */
+//--CHECK START--
+const USE={
+graph:['autograph','photograph','paragraph','biography','graphic','telegraph','geography'],
+tele:['telescope','telephone','television','telegraph','teleport'],
+photo:['photograph','photosynthesis','photocopy','photo'],
+auto:['automatic','autograph','automobile','autobiography','autopilot'],
+bio:['biology','biography','antibiotic','biome','biosphere','autobiography'],
+geo:['geology','geography','geometry','geode','geothermal'],
+therm:['thermos','thermometer','thermal','thermostat','geothermal'],
+meter:['thermometer','centimeter','kilometer','millimeter','geometry','diameter','perimeter','metric'],
+phon:['telephone','microphone','phonics','headphone','saxophone','megaphone','xylophone','symphony'],
+scope:['microscope','telescope','periscope','stethoscope','kaleidoscope'],
+micro:['microphone','microscope','microwave','microchip','microbe'],
+astro:['astronaut','astronomy','asteroid','astronomer','asterisk'],
+chron:['chronological','synchronize','chronicle','chronic'],
+hydr:['hydrant','dehydrate','hydrate','hydrogen','hydration','hydroelectric'],
+logy:['zoology','biology','geology','ecology','technology','mythology'],
+cycl:['bicycle','recycle','cyclone','tricycle','unicycle','motorcycle','cycle','cyclist'],
+port:['transport','portable','import','export','report','support','porter'],
+rupt:['erupt','interrupt','disrupt','rupture','bankrupt','abrupt'],
+struct:['construct','structure','destruction','instruct','destructive','obstruct'],
+spect:['inspect','spectator','spectacles','respect','spectacular','suspect','expect','perspective'],
+dict:['predict','dictionary','contradict','dictate','verdict','dictator'],
+scrib:['scribble','describe','description','manuscript','script','subscribe','prescribe'],
+ject:['reject','project','eject','inject','object','subject'],
+tract:['tractor','attract','subtract','distract','extract','contract','traction'],
+aud:['audience','audio','audible','auditorium','audition'],
+vis:['visible','vision','video','visit','visor','visual','television','supervise','revise'],
+form:['uniform','transform','formula','format','reform','inform','perform','form'],
+aqua:['aquarium','aquatic','aquamarine'],
+terr:['territory','terrain','terrarium','terrace','terrier','subterranean'],
+ped:['pedal','pedestrian','centipede','millipede','pedicure','pedestal','biped','pedometer'],
+manu:['manual','manuscript','manicure','manufacture','manage','manipulate'],
+mit:['transmit','mission','dismiss','submit','permit','admit','emit','missile','permission','admission'],
+flex:['flexible','reflect','deflect','flex'],
+cred:['incredible','credit','credible','credential'],
+fract:['fraction','fracture','fragile','fragment','refract'],
+voc:['vocal','vocabulary','vocalist','advocate','vocation'],
+mot:['motion','motor','remove','move','movie','promote','remote','emotion']
+};
+function stem(w){w=w.toLowerCase();if(/[^s]s$/.test(w))w=w.slice(0,-1);if(/[ey]$/.test(w)&&w.length>3)w=w.slice(0,-1);return w}
+const TO_PL={is:'are',was:'were',has:'have',does:'do',"doesn't":"don't","isn't":"aren't","wasn't":"weren't","hasn't":"haven't"};
+const TO_SG={are:'is',were:'was',have:'has',do:'does',"don't":"doesn't","aren't":"isn't","weren't":"wasn't","haven't":"hasn't"};
+const I_FIX={is:'am',are:'am',has:'have',does:'do',"doesn't":"don't","isn't":'am not',"aren't":'am not',"hasn't":"haven't"};
+const AUX=/^(did|does|do|can|could|will|would|should|must|may|might|let|lets|make|makes|made|help|helps|helped|watch|watched|saw|see|heard|hear|didn't|doesn't|don't|can't|won't|couldn't|wouldn't|shouldn't)$/;
+const OBJ=/^(of|to|for|with|gave|give|gives|told|tell|tells|show|shows|help|helps|see|saw|near|by|from|about|like|than|at|on|in|behind|beside|between|around|under|over|into|onto|toward|call|calls)$|ed$/;
+const COUNT=/^(many|several|few|two|three|four|five|six|seven|eight|nine|ten)$/;
+const S_EXC=/(ss|us|is|os|ics)$|^(lens|gas|news|series|species|states|always|sometimes|perhaps|besides|across|afterwards)$/;
+const NOT_SG=/s$|^(children|people|men|women|mice|teeth|feet|geese|fish|sheep|deer|police|cattle|oxen|data|i|you|we|they|who|that|which|and|or|both|all|rest|lot|couple|few|many|most|some|several|two|three|four|five|six|seven|eight|nine|ten)$/;
+const CONTR={dont:"don't",cant:"can't",wont:"won't",didnt:"didn't",doesnt:"doesn't",isnt:"isn't",wasnt:"wasn't",arent:"aren't",werent:"weren't",hasnt:"hasn't",havent:"haven't",couldnt:"couldn't",wouldnt:"wouldn't",shouldnt:"shouldn't",im:"I'm",ive:"I've",thats:"that's",youre:"you're",theyre:"they're"};
+const SLANG={alot:'a lot',gonna:'going to',wanna:'want to',gotta:'have to',kinda:'kind of',cuz:'because'};
+
+function agreement(low){
+  const out=[],say=(a,v,fix)=>out.push('Check your subject and verb. "'+a+' '+v+'" should be "'+a+' '+fix+'."');
+  for(let i=1;i<low.length;i++){
+    const sub=low[i-1],v=low[i],prev=low[i-2]||'',before=low.slice(0,i-1);
+    if(sub==='i'){ if(I_FIX[v]&&prev!=='and'&&prev!=='or')say('I',v,I_FIX[v]); }
+    else if(sub==='he'||sub==='she'||sub==='it'){
+      if(!TO_SG[v]||prev==='and'||prev==='or')continue;
+      if(sub==='it'&&OBJ.test(prev))continue;
+      if(/^(were|weren't)$/.test(v)&&before.some(w=>/^(if|wish|wishes|wished|though)$/.test(w)))continue;
+      if(/^(have|do)$/.test(v)&&before.some(w=>AUX.test(w)))continue;
+      say(sub,v,TO_SG[v]);
+    }
+    else if(sub==='we'||sub==='they'){ if(TO_PL[v])say(sub,v,TO_PL[v]); }
+    else if(sub==='you'){ if(TO_PL[v]&&!OBJ.test(prev))say(sub,v,TO_PL[v]); }
+    else if(sub==='these'||sub==='those'){ if(TO_PL[v])say(sub,v,TO_PL[v]); }
+    else if(sub==='this'){ if(v==='are'||v==='were')say(sub,v,TO_SG[v]); }
+    else if(sub==='there'){ if((v==='is'||v==='was')&&COUNT.test(low[i+1]||''))say(sub,v,TO_PL[v]); }
+    if(sub==="there's"&&COUNT.test(v))out.push('Check your subject and verb. "There\'s '+v+'" should be "There are '+v+'."');
+  }
+  const L=low.join(' ');
+  let m=L.match(/^(?:the|my|our|your|his|her|their|these|those|some|many|most|all|two|three|four|five|both|several) (?:[a-z'-]+ )?([a-z-]+s) (is|was|has|does|doesn't|isn't|wasn't|hasn't)(?: |$)/);
+  if(m&&!S_EXC.test(m[1]))say(m[1],m[2],TO_PL[m[2]]);
+  m=L.match(/^(?:the|my|a|an|this|that|our|his|her|your|their|each|every|one) (?:([a-z'-]+) )?([a-z'-]+) (are|were|have|don't|aren't|weren't|haven't)(?: |$)/);
+  if(m&&!NOT_SG.test(m[2])&&!(m[1]&&/[^s]s$/.test(m[1]))&&!/^(and|or)$/.test(m[1]||''))say(m[2],m[3],TO_SG[m[3]]);
+  return out;
+}
+
+function checkSentence(raw,rootId,label,others){
+  const t=raw.trim().replace(/[‘’]/g,"'").replace(/[“”]/g,'"');
+  if(!t)return ['Write a sentence first.'];
+  const issues=[];
+  const words=(t.match(/[A-Za-z][A-Za-z'-]*/g)||[]).map(w=>w.replace(/['-]+$/,''));
+  const low=words.map(w=>w.toLowerCase());
+  const stems=USE[rootId].map(stem);
+  if(!low.some(w=>stems.some(st=>w.replace(/[^a-z]/g,'').includes(st))))
+    issues.push('Use a word from the word bank for the root "'+label+'."');
+  if(words.length<5)issues.push('Add more detail. A sentence here needs at least 5 words.');
+  if(words.length>35)issues.push('This sentence is very long. It may be a run-on. Try to say it in fewer words.');
+  if(!/^["'(]?[A-Z]/.test(t))issues.push('Start your sentence with a capital letter.');
+  if(!/[.?!]["')]?$/.test(t))issues.push('End your sentence with a period, question mark, or exclamation point.');
+  else if(/[.?!]{2,}["')]?$/.test(t))issues.push('Use only one punctuation mark at the end.');
+  if(/[.?!]["')]*\s+["'(]*[A-Za-z]/.test(t.replace(/\b(Mr|Mrs|Ms|Dr|St|Jr)\./g,'$1')))issues.push('Write just one sentence in each box.');
+  const letters=t.replace(/[^A-Za-z]/g,'');
+  if(letters.length>3&&letters===letters.toUpperCase())issues.push('Do not write in all capital letters.');
+  if(/^(Does|Did|Can|Could|Would|Should|Is|Are|Was|Were|Why|Who|Where)\b/.test(t)&&/\.["')]?$/.test(t)&&!t.includes(','))
+    issues.push('This looks like a question. End it with a question mark.');
+  if(/(^|[^A-Za-z'])i(?:'(?:m|ll|ve|d))?(?![A-Za-z'])/.test(t))issues.push('Always capitalize the word "I."');
+  if(/\s[,.?!;:]/.test(t))issues.push('Do not put a space before a punctuation mark.');
+  if(/,[A-Za-z]/.test(t))issues.push('Put a space after each comma.');
+  if(/\S {2,}\S/.test(t))issues.push('Use only one space between words.');
+  for(let i=1;i<low.length;i++)if(low[i]===low[i-1]&&!/^(that|had)$/.test(low[i])){issues.push('You wrote "'+low[i]+'" twice in a row.');break}
+  const day=words.find(w=>/^(monday|tuesday|wednesday|thursday|friday|saturday|sunday|january|february|april|june|july|august|september|october|november|december)$/.test(w));
+  if(day)issues.push('Capitalize "'+day+'." Days and months start with a capital letter.');
+  low.forEach(w=>{
+    if(CONTR[w])issues.push('"'+w+'" needs an apostrophe. Write "'+CONTR[w]+'."');
+    if(SLANG[w])issues.push('Write "'+SLANG[w]+'" instead of "'+w+'."');
+  });
+  const L=' '+low.join(' ')+' ';
+  let m=L.match(/ (could|should|would|must|might) of /);
+  if(m)issues.push('Write "'+m[1]+' have," not "'+m[1]+' of."');
+  if(/^me and /.test(low.join(' ')))issues.push('Do not start with "Me and." Put the other person first and use "I," like "My friend and I."');
+  for(let i=0;i<low.length-1;i++){
+    const n=low[i+1];
+    if(low[i]==='a'&&((/^[aeio]/.test(n)&&!/^(one|once|eu)/.test(n))||/^(um|ug|up|ul|ur|un(?!i)|hour|honest|honor)/.test(n)))issues.push('Use "an" before "'+n+'."');
+    if(low[i]==='an'&&(/^[bcdfgjklmnpqrstvwxyz]/.test(n)||/^(uni|use|usu|eu|one)/.test(n))&&words[i+1]!==words[i+1].toUpperCase())issues.push('Use "a" before "'+n+'."');
+  }
+  agreement(low).forEach(x=>issues.push(x));
+  m=t.match(/^(Because|Although|Unless|If)\b/);
+  if(m&&!t.includes(',')&&!/\?["')]?$/.test(t))issues.push('A sentence that starts with "'+m[1]+'" needs two parts joined by a comma. Example: "Because it rained, we stayed inside."');
+  const norm=x=>x.toLowerCase().replace(/[^a-z]/g,'');
+  if((others||[]).some(o=>o&&norm(o)===norm(t)))issues.push('You already wrote this sentence. Write a new one.');
+  return issues;
+}
+//--CHECK END--
+
+const W={name:'',items:[]},W_KEY='wpw-write-v1';
+function wSave(){try{localStorage.setItem(W_KEY,JSON.stringify(W))}catch(e){}}
+function wLoad(){
+  try{
+    const d=JSON.parse(localStorage.getItem(W_KEY));
+    if(d&&Array.isArray(d.items)&&d.items.length===10&&d.items.every(x=>USE[x.id]&&BY_ID[x.id])){W.name=d.name||'';W.items=d.items;return true}
+  }catch(e){}
+  return false;
+}
+function wNew(){
+  const roots=shuffle(PARTS.filter(p=>USE[p.id])).slice(0,10);
+  W.items=roots.map(p=>({id:p.id,text:'',done:false,star:false}));
+}
+function wRender(){
+  $('#w-name').value=W.name;
+  $('#w-list').innerHTML=W.items.map((it,i)=>{
+    const p=BY_ID[it.id];
+    return `<div class="stage witem k-${p.kind}${it.done?' done':''}" data-i="${i}">
+      <div class="row"><span class="eyebrow">Sentence ${i+1}</span><span class="tile k-${p.kind}">${esc(p.label)}</span><span>means <b>${esc(p.meaning)}</b></span><span class="okmark"${it.done?'':' hidden'}>✓ Passed</span></div>
+      <p class="help">Word bank: ${USE[it.id].map(esc).join(', ')}</p>
+      <textarea id="w-s-${i}" rows="2" aria-label="Sentence ${i+1}" placeholder="Write your sentence here."${it.done?' readonly':''}>${esc(it.text)}</textarea>
+      <ul class="issues" aria-live="polite" hidden></ul>
+      <div class="row"><button class="btn" data-act="check"${it.done?' hidden':''}>Check my sentence</button><button class="btn ghost" data-act="edit"${it.done?'':' hidden'}>Edit</button></div>
+    </div>`}).join('');
+  wProgress();
+}
+function wText(){
+  const d=new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  return 'Root Word Sentences\nName: '+(W.name.trim()||'(no name)')+'\nDate: '+d+'\n\n'+
+    W.items.map((it,i)=>(i+1)+'. ['+BY_ID[it.id].label+'] '+it.text.trim()).join('\n');
+}
+function wProgress(){
+  const n=W.items.filter(x=>x.done).length;
+  $('#w-progress').textContent=n+' of 10 sentences done';
+  $('#w-bar').style.width=(n*10)+'%';
+  const fin=n===10;
+  $('#w-done').hidden=!fin;
+  if(fin){
+    $('#w-who').textContent=(W.name.trim()?'Great work, '+W.name.trim()+'. ':'Type your name at the top. ')+'Copy your sentences and turn them in to your teacher.';
+    $('#w-final').innerHTML=W.items.map(it=>`<li>${esc(it.text.trim())} <small>(${esc(BY_ID[it.id].label)})</small></li>`).join('');
+    $('#w-copybox').hidden=true;setMsg('#w-copymsg','');
+  }
+}
+function wCheck(i){
+  const it=W.items[i],card=$('#w-list').children[i],ta=card.querySelector('textarea'),ul=card.querySelector('.issues');
+  it.text=ta.value;
+  const issues=checkSentence(it.text,it.id,BY_ID[it.id].label,W.items.filter((x,j)=>j!==i).map(x=>x.text));
+  if(issues.length){
+    ul.innerHTML=issues.map(x=>'<li>'+esc(x)+'</li>').join('');ul.hidden=false;
+  }else{
+    it.done=true;if(!it.star){it.star=true;addStar()}
+    ul.hidden=true;ta.readOnly=true;card.classList.add('done');
+    card.querySelector('.okmark').hidden=false;
+    card.querySelector('[data-act=check]').hidden=true;card.querySelector('[data-act=edit]').hidden=false;
+  }
+  wSave();wProgress();
+  if(W.items.every(x=>x.done))$('#w-done').scrollIntoView({block:'nearest'});
+}
+$('#w-list').addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]');if(!b)return;
+  const card=b.closest('.witem'),i=+card.dataset.i;
+  if(b.dataset.act==='check')wCheck(i);
+  else{
+    W.items[i].done=false;card.classList.remove('done');
+    const ta=card.querySelector('textarea');ta.readOnly=false;ta.focus();
+    card.querySelector('.okmark').hidden=true;
+    card.querySelector('[data-act=check]').hidden=false;b.hidden=true;
+    wSave();wProgress();
+  }
+});
+$('#w-list').addEventListener('input',e=>{
+  const card=e.target.closest('.witem');if(!card)return;
+  W.items[+card.dataset.i].text=e.target.value;wSave();
+});
+$('#w-list').addEventListener('keydown',e=>{
+  if(e.key!=='Enter'||e.target.tagName!=='TEXTAREA')return;
+  e.preventDefault();
+  if(!e.target.readOnly)wCheck(+e.target.closest('.witem').dataset.i);
+});
+$('#w-name').addEventListener('input',e=>{W.name=e.target.value;wSave();wProgress()});
+$('#w-copy').addEventListener('click',()=>{
+  const text=wText(),box=$('#w-copybox');
+  const fallback=()=>{box.value=text;box.hidden=false;box.focus();box.select();setMsg('#w-copymsg','Select all the text in the box and copy it.')};
+  try{navigator.clipboard.writeText(text).then(()=>setMsg('#w-copymsg','Copied. Paste it into your assignment.','good'),fallback)}catch(e){fallback()}
+});
+let wArmed=false;
+$('#w-reset').addEventListener('click',e=>{
+  if(!wArmed){wArmed=true;e.target.textContent='Tap again to erase your sentences and start over';
+    setTimeout(()=>{wArmed=false;e.target.textContent='Start over with new roots'},4000);return}
+  wArmed=false;e.target.textContent='Start over with new roots';
+  wNew();wSave();wRender();
+});
+if(!wLoad())wNew();
+wRender();
 
 renderExplore();newBuild();startQuiz();
 show(location.hash.slice(1));
