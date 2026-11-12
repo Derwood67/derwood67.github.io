@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fraction Summit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* layout idea: one dusk-sky world, a single snow-white work card, a lantern-lit trail of 15 camps */
+  --sky:#17233f; --sky2:#2c4272; --snow:#f7f4ec; --ink:#1a2236; --lantern:#f2a33a;
+  --pine:#1f8a68; --ember:#cf4a3a; --mist:#a9b8d6; --rule:#d8d2c2; --ice:#dbe7f6;
+  --display:"Fredoka","Trebuchet MS",sans-serif; --body:"Atkinson Hyperlegible",Verdana,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{font-family:var(--body);color:var(--ink);background:linear-gradient(180deg,var(--sky) 0%,var(--sky2) 70%,#48608f 100%) fixed;font-size:18px;line-height:1.5}
+.peaks{position:fixed;left:0;right:0;bottom:0;height:34vh;z-index:0;pointer-events:none;opacity:.5}
+.top,main,footer{position:relative;z-index:1}
+.top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:14px 20px;color:var(--snow)}
+.brand{font-family:var(--display);font-weight:700;font-size:1.5rem;letter-spacing:.01em}
+.brand span{color:var(--lantern)}
+#who{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-size:.95rem}
+.chip{background:rgba(255,255,255,.12);border-radius:999px;padding:4px 12px;font-variant-numeric:tabular-nums}
+main{max-width:860px;margin:0 auto;padding:8px 16px 40px}
+.card{background:var(--snow);border-radius:18px;padding:24px;box-shadow:0 10px 30px rgba(8,14,30,.35)}
+h1,h2,h3{font-family:var(--display);line-height:1.15;margin:0 0 .4em;text-wrap:balance}
+h1{font-size:2rem} h2{font-size:1.5rem} h3{font-size:1.15rem}
+p{margin:.4em 0 .8em;max-width:65ch}
+.tiny{font-size:.85rem;color:#5a6378;margin:.3em 0}
+.code{font-family:var(--display);font-size:.85rem;letter-spacing:.06em;color:#7a5410;background:#fbe6c2;border-radius:6px;padding:2px 8px;display:inline-block}
+button{font:inherit;cursor:pointer}
+.btn{font-family:var(--display);font-weight:600;font-size:1.1rem;border:0;border-radius:12px;padding:12px 22px;background:var(--lantern);color:#2a1c00;box-shadow:0 4px 0 #b5741b}
+.btn:active{transform:translateY(2px);box-shadow:0 2px 0 #b5741b}
+.btn.alt{background:var(--ice);color:var(--ink);box-shadow:0 4px 0 #a9bcd8}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.link{background:none;border:0;color:inherit;text-decoration:underline;padding:4px}
+:focus-visible{outline:3px solid #3b7ddd;outline-offset:2px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px}
+input.name{font:inherit;font-size:1.2rem;padding:12px 14px;border:2px solid var(--rule);border-radius:12px;width:100%;max-width:340px;background:#fff}
+/* trail */
+.trail{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:10px 0 16px}
+.trail i{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:.72rem;font-weight:700;background:#e6e0d0;color:#6d6654}
+.trail i.done{background:var(--lantern);color:#2a1c00}
+.trail i.now{background:#fff;box-shadow:0 0 0 3px var(--lantern)}
+.trail .gate{font-family:var(--display);font-size:.8rem;padding:3px 10px;border-radius:8px;background:#e6e0d0;color:#6d6654}
+.trail .gate.done{background:var(--pine);color:#fff}
+.seccard{border:2px solid var(--rule);border-radius:16px;padding:18px;background:#fff;display:flex;flex-direction:column;gap:6px}
+.seccard.locked{opacity:.6}
+.pill{display:inline-block;border-radius:999px;padding:2px 12px;font-size:.85rem;font-weight:700;white-space:nowrap}
+.pill.good{background:#d3efe4;color:#0e5d44}.pill.warn{background:#fde9c4;color:#7a5410}.pill.bad{background:#f8d5cf;color:#8a2114}.pill.idle{background:#e8e6de;color:#5c5a52}
+/* question */
+.prompt{font-size:1.15rem;font-weight:700;max-width:60ch}
+.eq{font-size:1.7rem;margin:14px 0;display:flex;flex-wrap:wrap;align-items:center;gap:.25em;font-variant-numeric:tabular-nums}
+.fr{display:inline-flex;flex-direction:column;text-align:center;vertical-align:middle;margin:0 .15em;font-weight:700;line-height:1.15}
+.fr>b{padding:1px .3em;font-weight:700}
+.fr>b:first-child{border-bottom:.11em solid currentColor}
+.wh{font-weight:700}
+.ai{font:inherit;font-weight:700;width:2.7em;text-align:center;border:2px solid #8fa3c7;border-radius:8px;padding:2px;background:#fff;color:var(--ink)}
+.ai::placeholder{font-size:.5em;font-weight:400;color:#8b93a5}
+.mixin{display:inline-flex;align-items:center;gap:.15em}
+.model{margin:12px 0;display:flex;flex-direction:column;gap:8px}
+.mrow{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.mrow .lab{min-width:3.2em;font-size:1.1rem}
+.barwrap{display:flex;flex-direction:column;gap:4px;flex:1;min-width:220px;max-width:520px}
+.bar{display:flex;height:40px;border:2px solid var(--ink);border-radius:6px;overflow:hidden;background:#fff}
+.bar i{flex:1;border-left:1px solid #7c869c}
+.bar i:first-child{border-left:0}
+.bar i.gb{border-left:3px solid var(--ink)}
+.bar i.on{background:var(--lantern)}
+.bar.b2 i.on{background:#5aa7d8}
+.bar.pick i{cursor:pointer}
+.bar.pick i:hover{background:#fbe6c2}.bar.pick i.on:hover{background:var(--lantern)}
+.hgrid{display:grid;grid-template-columns:repeat(10,1fr);width:200px;height:200px;border:2px solid var(--ink);background:#fff}
+.hgrid i{border:1px solid #c5c9d3}.hgrid i.on{background:var(--lantern)}
+.ks{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:.95rem}
+.kbtn{border:2px solid #8fa3c7;background:#fff;border-radius:8px;padding:4px 12px;font-weight:700}
+.kbtn.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.opts{display:grid;gap:10px;margin:12px 0}
+.opt{text-align:left;border:2px solid #8fa3c7;background:#fff;border-radius:12px;padding:10px 14px;font-size:1.05rem;color:var(--ink)}
+.opt.sel{border-color:var(--ink);background:var(--ice);box-shadow:inset 0 0 0 2px var(--ink)}
+.opt:disabled{cursor:default}
+svg.nl{width:100%;max-width:660px;height:auto}
+.nl .ax{stroke:var(--ink);stroke-width:2}
+.nl .nt{font:700 15px var(--body);fill:var(--ink)}
+.nl .tk{fill:transparent;cursor:pointer}
+.nl .tk:hover{fill:rgba(242,163,58,.35)}
+.nl .tk.sel{fill:var(--lantern);stroke:var(--ink);stroke-width:2}
+.nl .flag{fill:#5aa7d8;stroke:var(--ink);stroke-width:2}
+.nl .mk{fill:var(--lantern);stroke:var(--ink);stroke-width:2}
+.fb{border-radius:12px;padding:12px 16px;margin:14px 0}
+.fb.good{background:#d3efe4;border-left:6px solid var(--pine)}
+.fb.bad{background:#f8d5cf;border-left:6px solid var(--ember)}
+.fb.hint{background:#fde9c4;border-left:6px solid var(--lantern)}
+.fb .fr{font-size:1.05rem}
+.shake{animation:shake .3s}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.pop{animation:pop .35s}
+@keyframes pop{0%{transform:scale(.96)}60%{transform:scale(1.02)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.shake,.pop{animation:none}}
+.big{font-family:var(--display);font-size:3.2rem;font-weight:700;line-height:1}
+.stars{color:#c9811a;letter-spacing:.1em}
+.qbar{height:10px;background:#e6e0d0;border-radius:99px;overflow:hidden;margin:6px 0 16px}
+.qbar b{display:block;height:100%;background:var(--pine)}
+/* dashboard */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:14px 0}
+.tile{background:#fff;border:2px solid var(--rule);border-radius:14px;padding:12px 14px}
+.tile b{font-family:var(--display);font-size:1.9rem;display:block;line-height:1.1}
+.tw{overflow-x:auto;border:2px solid var(--rule);border-radius:14px;background:#fff}
+table{border-collapse:collapse;width:100%;font-size:.92rem;font-variant-numeric:tabular-nums}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--rule);white-space:nowrap}
+thead th{background:#efeadc;font-family:var(--display);font-weight:600}
+th.grp{text-align:center;border-left:2px solid var(--rule)}
+td.s,th.s{border-left:2px solid var(--rule)}
+.pbar{position:relative;z-index:1;max-width:860px;margin:0 auto 12px;padding:0 16px}
+.pbar>div{background:rgba(255,255,255,.12);color:var(--snow);border-radius:14px;padding:10px 16px;display:flex;flex-direction:column;gap:6px}
+.pbar .tiny{color:var(--ice);margin:0}
+.prow{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center}
+.prow .pn{font-weight:700;min-width:9em}
+.ptrack{flex:1;min-width:120px;height:12px;background:rgba(255,255,255,.2);border-radius:99px;overflow:hidden}
+.ptrack b{display:block;height:100%;background:var(--lantern)}
+.dsb{background:var(--ice);border-radius:12px;padding:10px 14px;margin:12px 0;display:flex;flex-direction:column;gap:6px}
+.dsb .ptrack{background:#b9c9e2}.dsb .ptrack b{background:var(--pine)}
+.pbtn{font:inherit;font-weight:700;border:0;border-radius:99px;padding:4px 14px;background:var(--lantern);color:#2a1c00}
+footer{color:var(--mist);text-align:center;padding:10px 16px 28px;font-size:.88rem;display:flex;flex-wrap:wrap;gap:8px 18px;justify-content:center;align-items:center}
+textarea{width:100%;min-height:120px;font:13px monospace}
+</style>
+</head>
+<body>
+<svg class="peaks" viewBox="0 0 1200 300" preserveAspectRatio="none" aria-hidden="true"><path d="M0 300V190l150-110 120 90 170-150 160 140 130-80 180 120 140-90 150 110V300z" fill="#101a31"/><path d="M440 20l40 36-34-10-22 22-24-12z M150 80l34 26-30-6-20 14z" fill="#e9eef8"/></svg>
+<header class="top"><div class="brand">Fraction <span>Summit</span></div><div id="who"></div></header>
+<div class="pbar" id="pbar" hidden></div>
+<main id="app"><div class="card"><p>Loading…</p></div></main>
+<footer><button class="link" id="tbtn" type="button">Teacher dashboard</button><span id="sync"></span></footer>
+<script>
+'use strict';
+const PASS=8,NSTEP=15;
+/* ---------- helpers ---------- */
+let rnd=Math.random;const R=(a,b)=>a+Math.floor(rnd()*(b-a+1));
+const pick=a=>a[R(0,a.length-1)];
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=R(0,i);[a[i],a[j]]=[a[j],a[i]]}return a};
+const gcd=(a,b)=>b?gcd(b,a%b):a;
+const NTH={2:'halves',3:'thirds',4:'fourths',5:'fifths',6:'sixths',8:'eighths',10:'tenths',12:'twelfths',100:'hundredths'};
+const F=(n,d)=>`<span class="fr"><b>${n}</b><b>${d}</b></span>`;
+const MXr=(w,f)=>(w?`<span class="wh">${w}</span>`:'')+(f[0]?F(f[0],f[1]):(w?'':'<span class="wh">0</span>'));
+const MX=(n,d)=>{const g=gcd(n,d)||1;n/=g;d/=g;return MXr(Math.floor(n/d),[n%d,d])};
+const MXD=(v,D)=>{const n=v[0]*D/v[1];return MXr(Math.floor(n/D),[n%D,D])};
+const simp=([n,d])=>{const g=gcd(n,d)||1;return[n/g,d/g]};
+const addR=(x,y)=>simp([x[0]*y[1]+y[0]*x[1],x[1]*y[1]]);
+const subR=(x,y)=>simp([x[0]*y[1]-y[0]*x[1],x[1]*y[1]]);
+const cmpR=(x,y)=>x[0]*y[1]-y[0]*x[1];
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const INP=(id,ph)=>`<input id="${id}" class="ai" inputmode="numeric" autocomplete="off" maxlength="4" placeholder="${ph||''}" aria-label="${ph||'answer'}">`;
+function mkQ(o){o.sig=(o.prompt+'|'+(o.eq||'')+'|'+(o.ansText||'')).replace(/<[^>]+>/g,' ').replace(/\s+/g,' ');return o}
+function mc(prompt,right,wrongs,extra){return mkQ(Object.assign({kind:'mc',prompt,opts:shuffle([{h:right,ok:true}].concat(wrongs.map(h=>({h,ok:false})))),ansText:right},extra))}
+
+/* ---------- Section 1 generators: NC.4.NF.1 ---------- */
+const EASY=[[2,4],[2,6],[2,8],[3,6],[4,8],[5,10],[2,10]],MID=[[2,12],[3,12],[4,12],[6,12],[4,8],[5,10],[3,6],[2,8]],HUN=[[2,100],[4,100],[5,100],[10,100]];
+function eqp(l){const[b,D]=pick(l);let a;do a=R(1,b-1);while(gcd(a,b)!==1);return{a,b,D,k:D/b}}
+const G1={
+ split(){const{a,b,D,k}=eqp(EASY);return mkQ({kind:'num',prompt:`Slice every part of the bar into ${k} equal pieces. How many ${NTH[D]} are shaded now?`,eq:`${F(a,b)} = ${F('@@',D)}`,model:{t:'split',n:a,d:b,ks:[1,2,3,4,5,6].filter(x=>b*x<=12)},ans:a*k,ansText:F(a*k,D),hint:`Tap ${k} under the bar, then count the shaded pieces.`,explain:`Each of the ${b} parts became ${k} smaller pieces, so ${a} shaded became ${a} × ${k} = ${a*k}. ${F(a,b)} = ${F(a*k,D)}.`})},
+ shade(){const{a,b,D,k}=eqp(EASY.concat([[3,12],[4,12],[6,12]]));return mkQ({kind:'shade',prompt:`Shade the ${NTH[D]} bar so it covers the same amount as ${F(a,b)}.`,refN:a,refD:b,D,ans:a*k,ansText:`${a*k} ${NTH[D]} shaded, ${F(a*k,D)}`,hint:`Line the bars up. Each part of the top bar is as long as ${k} parts of the bottom bar.`,explain:`Each ${NTH[b].replace(/s$/,'').replace('halve','half')} matches ${k} ${NTH[D]}, so shade ${a} × ${k} = ${a*k}. ${F(a,b)} = ${F(a*k,D)}.`})},
+ missNum(l){const{a,b,D,k}=eqp(l||EASY);return mkQ({kind:'num',prompt:'Find the missing numerator.',eq:`${F(a,b)} = ${F('@@',D)}`,model:D<=12?{t:'split',n:a,d:b,ks:[1,2,3,4,5,6].filter(x=>b*x<=12)}:null,ans:a*k,ansText:F(a*k,D),hint:`How many pieces must each part be sliced into to turn ${NTH[b]} into ${NTH[D]}?`,explain:`${b} × ${k} = ${D}, so every part is sliced into ${k}. ${a} × ${k} = ${a*k}. ${F(a,b)} = ${F(a*k,D)}.`})},
+ missDen(l){const{a,b,D,k}=eqp(l||MID.concat(HUN));return mkQ({kind:'num',prompt:'Find the missing denominator.',eq:`${F(a,b)} = ${F(a*k,'@@')}`,ans:D,ansText:F(a*k,D),hint:`The shaded count went from ${a} to ${a*k}. What happened to every part?`,explain:`${a} × ${k} = ${a*k}, so every part was sliced into ${k}. The whole now has ${b} × ${k} = ${D} parts.`})},
+ simplify(l){const{a,b,D,k}=eqp(l||MID.concat(HUN));return mkQ({kind:'num',prompt:`Merge the small parts into bigger ones. Find the missing numerator.`,eq:`${F(a*k,D)} = ${F('@@',b)}`,ans:a,ansText:F(a,b),hint:`${D} parts become ${b} parts when you merge them in groups of ${k}.`,explain:`Merge every ${k} pieces into 1. ${a*k} ÷ ${k} = ${a} and ${D} ÷ ${k} = ${b}. ${F(a*k,D)} = ${F(a,b)}.`})},
+ whichEq(){const{a,b,D,k}=eqp(MID);return mc(`Which fraction names the same amount as ${F(a,b)}?`,F(a*k,D),[F(a+D-b,D),F(a,D),F(a*k,b)],{hint:`Slice every part into the same number of pieces. Multiply the top and the bottom by that number.`,explain:`${b} × ${k} = ${D} and ${a} × ${k} = ${a*k}, so ${F(a,b)} = ${F(a*k,D)}.`})},
+ notEq(){const fam=pick([[[1,2],[2,4],[3,6],[4,8],[5,10],[6,12],[50,100]],[[1,4],[2,8],[3,12],[25,100]],[[3,4],[6,8],[9,12],[75,100]]]);const m=shuffle(fam).slice(0,4),t=m[0],src=pick(fam.filter(x=>x[1]>=6)),bad=[src[0]+1,src[1]];
+  return mc(`Three of these fractions equal ${F(t[0],t[1])}. Tap the one that does not.`,F(bad[0],bad[1]),m.slice(1).map(x=>F(x[0],x[1])),{hint:`Rename each choice with the same denominator as its neighbor, or merge parts to simplify it.`,explain:`${F(bad[0],bad[1])} is one piece more than ${F(src[0],src[1])}, which is the fraction that equals ${F(t[0],t[1])}.`})},
+ explain(){const{a,b,D,k}=eqp(MID);return mc(`${F(a,b)} = ${F(a*k,D)}. What is true about the parts?`,`${F(a*k,D)} has ${k} times as many parts, and each part is smaller, so the amount is the same.`,[`${F(a*k,D)} is a bigger amount because its numbers are bigger.`,`${F(a*k,D)} has ${k} times as many parts and each part is the same size as before.`,`The parts in ${F(a*k,D)} are larger, so fewer of them are needed.`],{hint:`Picture slicing each part of ${F(a,b)}. What happens to the number of parts? What happens to their size?`,explain:`Slicing each part into ${k} gives ${k} times as many parts, each one smaller. The shaded amount does not change.`})},
+ errorJo(){const{a,b}=eqp(EASY.concat(MID)),c=R(1,3),nm=pick(['Jo','Malik','Priya','Dante']);return mc(`${nm} says ${F(a,b)} = ${F(a+c,b+c)} because ${c} was added to the top and the bottom. Which reply is correct?`,`Not equal. Adding changes the amount. Slice every part equally instead, which multiplies the top and bottom by the same number.`,[`Equal. Doing the same thing to the top and bottom always keeps a fraction the same.`,`Equal, because both numbers got bigger by the same amount.`,`Not equal, because two different fractions can never name the same amount.`],{hint:`Draw both fractions as bars of the same length. Do they cover the same amount?`,explain:`${F(a+c,b+c)} covers a different amount than ${F(a,b)}. Equivalent fractions come from slicing (multiply both) or merging (divide both), never from adding.`})},
+ linePlace(){const{a,b,D,k}=eqp(EASY.concat(MID));return mkQ({kind:'line',prompt:`This number line is marked in ${NTH[D]}. Tap the point that is the same as ${F(a,b)}.`,d:D,max:1,ans:a*k,ansText:`tick ${a*k}, which is ${F(a*k,D)}`,hint:`Split the line into ${b} equal jumps first. Each jump covers ${k} tick marks.`,explain:`Each ${F(1,b)} jump covers ${k} ticks, so ${F(a,b)} lands on tick ${a} × ${k} = ${a*k}. ${F(a,b)} = ${F(a*k,D)}.`})},
+ chain(){const[b1,b2,b3]=pick([[2,4,8],[2,6,12],[3,6,12],[5,10,100],[2,10,100],[2,4,12]]);let a;do a=R(1,b1-1);while(gcd(a,b1)!==1);return mkQ({kind:'num',prompt:'Complete the chain of equal fractions.',eq:`${F(a,b1)} = ${F(a*b2/b1,b2)} = ${F('@@',b3)}`,ans:a*b3/b1,ansText:F(a*b3/b1,b3),hint:`Go straight from ${NTH[b1]} to ${NTH[b3]}: ${b1} × ? = ${b3}.`,explain:`${b1} × ${b3/b1} = ${b3}, so ${a} × ${b3/b1} = ${a*b3/b1}. All three fractions cover the same amount.`})},
+ cross(){let[n1,d1,n2,d2]=pick([[6,8,9,12],[2,4,3,6],[2,4,5,10],[4,8,3,6],[2,8,3,12],[4,8,6,12],[3,6,5,10],[25,100,3,12],[75,100,6,8],[5,10,4,8],[50,100,6,12],[20,100,2,10]]);if(R(0,1))[n1,d1,n2,d2]=[n2,d2,n1,d1];const s=simp([n1,d1]);return mkQ({kind:'num',prompt:'Tricky one. You cannot get there in a single slice.',eq:`${F(n1,d1)} = ${F('@@',d2)}`,ans:n2,ansText:F(n2,d2),hint:`Merge parts first to make a simpler fraction, then slice that one.`,explain:`${F(n1,d1)} = ${F(s[0],s[1])} (merge). Then ${F(s[0],s[1])} = ${F(n2,d2)} (slice each part into ${d2/s[1]}).`})},
+ compare(){for(;;){const{a,b,D,k}=eqp(MID),x=a*k+pick([-1,0,1]);if(x<1||x>=D)continue;const A=pick(['Ana','Luis','Mei']),B=pick(['Ben','Zora','Kofi']);const r=x>a*k?`${B} is higher.`:x<a*k?`${A} is higher.`:'They are at the same height.';const all=[`${A} is higher.`,`${B} is higher.`,'They are at the same height.'];
+  return mc(`${A} has climbed ${F(a,b)} of the wall. ${B} has climbed ${F(x,D)} of the same wall. Who is higher?`,r,all.filter(o=>o!==r),{hint:`Rename ${F(a,b)} in ${NTH[D]} so both fractions use same-size parts.`,explain:`${F(a,b)} = ${F(a*k,D)}. Compare ${F(a*k,D)} with ${F(x,D)}.`})}},
+ hund(){const{a,b,D,k}=eqp(HUN);return mkQ({kind:'num',prompt:`Rename as hundredths.`,eq:`${F(a,b)} = ${F('@@',100)}`,ans:a*k,ansText:F(a*k,100),hint:`${b} × ? = 100. Slice every part into that many pieces.`,explain:`${b} × ${k} = 100, so ${a} × ${k} = ${a*k}. ${F(a,b)} = ${F(a*k,100)}.`})},
+ hundBack(){const{a,b,k}=eqp(HUN);return mkQ({kind:'num',prompt:`The grid shows ${a*k} hundredths. Name the same amount in ${NTH[b]}.`,eq:`${F('@@',b)} = ${F(a*k,100)}`,model:{t:'grid',n:a*k},ans:a,ansText:F(a,b),hint:`100 ÷ ${b} = ${k}. Merge the small squares in groups of ${k}.`,explain:`Merge every ${k} hundredths into one part. ${a*k} ÷ ${k} = ${a}. ${F(a*k,100)} = ${F(a,b)}.`})}
+};
+
+/* ---------- Section 2 generators: NC.5.NF.1 ---------- */
+const FAM=[[2,4,8],[3,6,12],[5,10,100]];
+const rn=d=>d===100?R(3,95):R(1,d-1);
+function twoFr(fis,cond){for(;;){const fam=FAM[pick(fis)],i=R(0,2),j=R(0,2);if(i===j)continue;const x=[rn(fam[i]),fam[i]],y=[rn(fam[j]),fam[j]];if(cond(x,y))return{x,y,D:Math.max(x[1],y[1])}}}
+function exOp(x,y,D,op){const a=x[0]*D/x[1],b=y[0]*D/y[1],r=op==='+'?a+b:a-b;let s='';if(x[1]!==D)s+=`${F(x[0],x[1])} = ${F(a,D)}. `;if(y[1]!==D)s+=`${F(y[0],y[1])} = ${F(b,D)}. `;s+=`${F(a,D)} ${op==='+'?'+':'−'} ${F(b,D)} = ${F(r,D)}`;const m=MX(r,D);if(m!==F(r,D))s+=` = ${m}`;return s+'.'}
+const barsModel=(x,y,D)=>D<=12?{t:'bars',rows:[x,y]}:null;
+const valQ=(o,v)=>mkQ(Object.assign(o,{kind:'val',ans:v,ansText:MX(v[0],v[1])}));
+const G2={
+ add(fis,mode){const{x,y,D}=twoFr(fis,(x,y)=>{const c=cmpR(addR(x,y),[1,1]);return mode==='lt1'?c<0:mode==='gt1'?c>0:true});const v=addR(x,y);
+  return valQ({prompt:'Add. Rename so the parts are the same size first.',eq:`${F(x[0],x[1])} + ${F(y[0],y[1])} = @@`,model:barsModel(x,y,D),hint:`Both fractions can be written in ${NTH[D]}. Rename, then add the numerators.`,explain:exOp(x,y,D,'+')},v)},
+ sub(fis){const{x,y,D}=twoFr(fis,(x,y)=>cmpR(x,y)>0);const v=subR(x,y);
+  return valQ({prompt:'Subtract. Rename so the parts are the same size first.',eq:`${F(x[0],x[1])} − ${F(y[0],y[1])} = @@`,model:barsModel(x,y,D),hint:`Write both fractions in ${NTH[D]}, then subtract the numerators.`,explain:exOp(x,y,D,'−')},v)},
+ est(){const Z=[[1,8],[1,10],[1,12]],H=[[3,8],[5,8],[5,12],[7,12],[4,10],[6,10]],O=[[7,8],[11,12],[9,10]],pools=[[Z,0,'0'],[H,1,'½'],[O,2,'1']];let p,q;do{p=pick(pools);q=pick(pools)}while(p[1]+q[1]===0);const x=pick(p[0]);let y;do y=pick(q[0]);while(y===x);const names=['','about ½','about 1','about 1½','about 2'],t=p[1]+q[1];
+  return mc(`No computing. Use benchmarks 0, ½ and 1. About how much is ${F(x[0],x[1])} + ${F(y[0],y[1])}?`,names[t],names.slice(1).filter((_,i)=>i+1!==t),{hint:`Is each fraction closest to 0, to ½, or to 1?`,explain:`${F(x[0],x[1])} is close to ${p[2]} and ${F(y[0],y[1])} is close to ${q[2]}, so the sum is ${names[t]}.`})},
+ errReason(){const[x,y]=pick([[[1,2],[3,4]],[[3,4],[5,8]],[[2,3],[5,6]],[[1,2],[5,8]],[[1,2],[7,8]],[[2,3],[7,12]],[[3,5],[7,10]],[[5,6],[7,12]]]),nm=pick(['Sam','Tia','Omar','Lena']);
+  return mc(`${nm} wrote ${F(x[0],x[1])} + ${F(y[0],y[1])} = ${F(x[0]+y[0],x[1]+y[1])}. Which reply is correct?`,`Not reasonable. Each addend is at least ½, so the sum must be at least 1. ${nm} added tops and bottoms instead of renaming.`,[`Correct. Add the numerators, then add the denominators.`,`Not reasonable. A sum of two fractions is always smaller than each addend.`,`Correct, because the answer lands between the two fractions.`],{hint:`Estimate first. Is each addend more or less than ½?`,explain:`Both addends are ½ or more, so the sum is 1 or more. ${F(x[0]+y[0],x[1]+y[1])} is less than 1. Correct work: ${exOp(x,y,Math.max(x[1],y[1]),'+')}`})},
+ hop(){for(;;){const fam=FAM[R(0,1)],i=R(0,1),j=R(i+1,2),d1=fam[i],d2=fam[j],k=d2/d1,s=R(1,d1),jmp=R(1,d2-1),back=R(0,2)===0&&s*k-jmp>0,t=back?s*k-jmp:s*k+jmp;if(jmp%k===0)continue;
+  return mkQ({kind:'line',prompt:`The flag marks ${MX(s,d1)} mile. The climber hikes ${F(jmp,d2)} mile ${back?'back down':'farther'}. Tap where she stops.`,d:d2,max:2,flag:s*k,ans:t,ansText:`${MX(t,d2)} mile`,hint:`Each tick is ${F(1,d2)}. Count ${jmp} ticks ${back?'left':'right'} from the flag.`,explain:`${MX(s,d1)} = ${F(s*k,d2)}. ${F(s*k,d2)} ${back?'−':'+'} ${F(jmp,d2)} = ${F(t,d2)}${MX(t,d2)!==F(t,d2)?' = '+MX(t,d2):''}.`})}},
+ mixedAdd(reg){const{x,y,D}=twoFr([0,1],(x,y)=>{const c=cmpR(addR(x,y),[1,1]);return reg?c>0:c<0}),w1=R(1,3),w2=R(1,3),v=addR([w1*x[1]+x[0],x[1]],[w2*y[1]+y[0],y[1]]);
+  return valQ({prompt:reg?'Add. Watch for a new whole hiding in the fractions.':'Add the mixed numbers.',eq:`${MXr(w1,x)} + ${MXr(w2,y)} = @@`,hint:`Add the fractions in ${NTH[D]}, then the wholes.${reg?' If the fractions make more than 1, trade for a whole.':''}`,explain:`Fractions: ${exOp(x,y,D,'+')} Wholes: ${w1} + ${w2} = ${w1+w2}. Total: ${MX(v[0],v[1])}.`},v)},
+ mixedSub(reg){const{x,y,D}=twoFr([0,1],(x,y)=>reg?cmpR(x,y)<0:cmpR(x,y)>0),w1=R(2,5),w2=R(1,w1-1),v=subR([w1*x[1]+x[0],x[1]],[w2*y[1]+y[0],y[1]]),a=x[0]*D/x[1],b=y[0]*D/y[1];
+  return valQ({prompt:reg?'Subtract. You will need to trade a whole.':'Subtract the mixed numbers.',eq:`${MXr(w1,x)} − ${MXr(w2,y)} = @@`,hint:reg?`${F(a,D)} is less than ${F(b,D)}. Trade 1 whole for ${F(D,D)} first.`:`Subtract the fractions in ${NTH[D]}, then the wholes.`,explain:reg?`${MXr(w1,x)} = ${MXr(w1,[a,D])} = ${MXr(w1-1,[a+D,D])}. Then ${MXr(w1-1,[a+D,D])} − ${MXr(w2,[b,D])} = ${MX(v[0],v[1])}.`:`Fractions: ${exOp(x,y,D,'−')} Wholes: ${w1} − ${w2} = ${w1-w2}. Answer: ${MX(v[0],v[1])}.`},v)},
+ missing(){const{x,y,D}=twoFr([0,1],()=>true),c=addR(x,y);return valQ({prompt:'What number makes the equation true?',eq:`${F(x[0],x[1])} + @@ = ${MXD(c,D)}`,hint:`Think: ${MXD(c,D)} − ${F(x[0],x[1])}. Rename in ${NTH[D]}.`,explain:`${MXD(c,D)} − ${F(x[0],x[1])}: in ${NTH[D]} that is ${F(c[0]*D/c[1],D)} − ${F(x[0]*D/x[1],D)} = ${F(y[0]*D/y[1],D)}${MX(y[0],y[1])!==F(y[0]*D/y[1],D)?' = '+MX(y[0],y[1]):''}.`},y)},
+ word1(){if(R(0,1)){const{x,y,D}=twoFr([0,1],(x,y)=>cmpR(x,y)>0),w1=R(2,5),w2=R(1,w1-1),v=subR([w1*x[1]+x[0],x[1]],[w2*y[1]+y[0],y[1]]);const t=pick([[`The trail to High Camp is`,`miles long. The team has hiked`,`miles. How many miles are left?`],[`A climbing rope is`,`meters long. The guide cuts off`,`meters. How long is the rope now?`]]);
+   return valQ({prompt:`${t[0]} ${MXr(w1,x)} ${t[1]} ${MXr(w2,y)} ${t[2]}`,eq:`${MXr(w1,x)} − ${MXr(w2,y)} = @@`,hint:`Rename the fractions in ${NTH[D]}, then subtract fractions and wholes.`,explain:`Fractions: ${exOp(x,y,D,'−')} Wholes: ${w1} − ${w2} = ${w1-w2}. Answer: ${MX(v[0],v[1])}.`},v)}
+  const{x,y,D}=twoFr([0,1],()=>true),w1=R(1,3),w2=R(1,2),v=addR([w1*x[1]+x[0],x[1]],[w2*y[1]+y[0],y[1]]),nm=pick(['Rosa','Eli','Nia']);
+  return valQ({prompt:`${nm} hiked ${MXr(w1,x)} miles before lunch and ${MXr(w2,y)} miles after lunch. How far did ${nm} hike in all?`,eq:`${MXr(w1,x)} + ${MXr(w2,y)} = @@`,hint:`Rename the fractions in ${NTH[D]}, add them, then add the wholes.`,explain:`Fractions: ${exOp(x,y,D,'+')} Wholes: ${w1} + ${w2} = ${w1+w2}. Total: ${MX(v[0],v[1])}.`},v)},
+ word2(){const fam=FAM[R(0,1)],D=fam[2],i=R(0,2);let j;do j=R(0,2);while(j===i);const B=[fam[i]*R(0,1)+rn(fam[i]),fam[i]],C=[rn(fam[j]),fam[j]],r=[D*R(1,2)+rn(D),D],used=addR(B,C),A=addR(used,r);
+  return valQ({prompt:`Two-step problem. The team packs ${MXD(A,D)} liters of water. They drink ${MX(B[0],B[1])} liters on the way up and ${F(C[0],C[1])} liter at the top. How many liters are left?`,eq:`${MXD(A,D)} − ${MX(B[0],B[1])} − ${F(C[0],C[1])} = @@`,hint:`Find how much they drank in all, then subtract from ${MXD(A,D)}. Use ${NTH[D]} for everything.`,explain:`They drank ${MX(B[0],B[1])} + ${F(C[0],C[1])} = ${MXD(used,D)} liters. ${MXD(A,D)} − ${MXD(used,D)} = ${MX(r[0],r[1])} liters.`},simp(r))}
+};
+
+/* ---------- extra generators ---------- */
+Object.assign(G1,{
+ lineJump(){const{b,D,k}=eqp(EASY.concat(MID));return mkQ({kind:'num',prompt:`This line is marked in ${NTH[D]}. How many tick marks does one jump of ${F(1,b)} cover?`,eq:`${F(1,b)} = ${F('@@',D)}`,model:{t:'line',d:D,max:1},ans:k,ansText:F(k,D),hint:`Split the whole line into ${b} equal jumps. Count the ticks inside one jump.`,explain:`${D} ticks shared by ${b} equal jumps is ${k} ticks each. ${F(1,b)} = ${F(k,D)}.`})},
+ lineName(l){const{a,b,D,k}=eqp(l||EASY.concat(MID)),marks={};marks[a*k]='P';return mkQ({kind:'num',prompt:`Point P sits on a line marked in ${NTH[D]}. Name P in ${NTH[b]}.`,eq:`P = ${F('@@',b)}`,model:{t:'line',d:D,max:1,marks},ans:a,ansText:F(a,b),hint:`Count the ticks to P, then group the ticks in sets of ${k}.`,explain:`P is at tick ${a*k}, so P = ${F(a*k,D)}. Every ${k} ticks make one ${F(1,b)} jump, and ${a*k} ÷ ${k} = ${a}. P = ${F(a,b)}.`})},
+ slices(){const{b,D,k}=eqp(MID.concat(HUN));return mkQ({kind:'num',prompt:`To rename ${NTH[b]} as ${NTH[D]}, each part is sliced into how many equal pieces?`,eq:`1 part → @@ pieces`,ans:k,ansText:`${k} pieces`,hint:`${b} × ? = ${D}`,explain:`${b} parts × ${k} = ${D} parts, so each part is sliced into ${k}. Each new piece is smaller, and there are ${k} times as many.`})},
+ trueEq(){for(;;){const p=eqp(MID),w=[eqp(MID),eqp(EASY),eqp(MID)],right=`${F(p.a,p.b)} = ${F(p.a*p.k,p.D)}`,wr=[`${F(w[0].a,w[0].b)} = ${F(w[0].a+w[0].D-w[0].b,w[0].D)}`,`${F(w[1].a,w[1].b)} = ${F(w[1].a,w[1].D)}`,`${F(w[2].a,w[2].b)} = ${F(w[2].a*w[2].k+1,w[2].D)}`];if(new Set(wr.concat(right)).size<4)continue;
+  return mc('Only one of these equations is true. Tap it.',right,wr,{hint:`For each one, ask: was every part sliced into the same number of pieces?`,explain:`${p.b} × ${p.k} = ${p.D} and ${p.a} × ${p.k} = ${p.a*p.k}, so ${right} is true. The other three change the amount.`})}}
+});
+Object.assign(G2,{
+ three(){const fam=FAM[R(0,1)],D=fam[2],t=fam.map(d=>[rn(d),d]),n=t.reduce((s,f)=>s+f[0]*D/f[1],0);return valQ({prompt:'Add all three. Rename everything to same-size parts.',eq:`${t.map(f=>F(f[0],f[1])).join(' + ')} = @@`,hint:`Write all three fractions in ${NTH[D]}.`,explain:`In ${NTH[D]}: ${t.map(f=>F(f[0]*D/f[1],D)).join(' + ')} = ${F(n,D)}${MX(n,D)!==F(n,D)?' = '+MX(n,D):''}.`},simp([n,D]))},
+ renameMC(){const{x,y,D}=twoFr([0,1],(x,y)=>x[1]<y[1]),k=D/x[1];return mc(`Which rewrite of ${F(x[0],x[1])} + ${F(y[0],y[1])} keeps both amounts the same?`,`${F(x[0]*k,D)} + ${F(y[0],D)}`,[`${F(x[0],D)} + ${F(y[0],D)}`,`${F(x[0]+D-x[1],D)} + ${F(y[0],D)}`,`${F(x[0],x[1])} + ${F(y[0],x[1])}`],{hint:`Only ${F(x[0],x[1])} needs a new name. Slice each of its parts into ${k}.`,explain:`${x[1]} × ${k} = ${D} and ${x[0]} × ${k} = ${x[0]*k}, so ${F(x[0],x[1])} = ${F(x[0]*k,D)}. ${F(y[0],D)} stays the same.`})},
+ trade(){const w=R(2,5),d=pick([4,6,8,10,12]),n=R(1,d-1);return mkQ({kind:'num',prompt:`Trade 1 whole for ${NTH[d]}. Find the new numerator.`,eq:`${MXr(w,[n,d])} = <span class="wh">${w-1}</span>${F('@@',d)}`,ans:n+d,ansText:MXr(w-1,[n+d,d]),hint:`1 whole = ${F(d,d)}. Add those ${d} parts to the ${n} you already have.`,explain:`Take 1 from the ${w} wholes and cut it into ${d} parts. ${n} + ${d} = ${n+d}, so ${MXr(w,[n,d])} = ${MXr(w-1,[n+d,d])}.`})},
+ wholeMinus(){const W=R(2,5),w2=R(0,W-2),d=pick([4,6,8,10,12]),n=R(1,d-1),v=simp([(W-w2)*d-n,d]),raw=MXr(W-1-w2,[d-n,d]);return valQ({prompt:'Subtract from a whole number. Trade 1 whole first.',eq:`<span class="wh">${W}</span> − ${MXr(w2,[n,d])} = @@`,hint:`${W} = ${MXr(W-1,[d,d])}`,explain:`${W} = ${MXr(W-1,[d,d])}. ${MXr(W-1,[d,d])} − ${MXr(w2,[n,d])} = ${raw}${MX(v[0],v[1])!==raw?' = '+MX(v[0],v[1]):''}.`},v)},
+ mixedMissing(){const{x,y,D}=twoFr([0,1],()=>true),w1=R(1,2),w2=R(1,2),A=[w1*x[1]+x[0],x[1]],H=simp([w2*y[1]+y[0],y[1]]),C=addR(A,H);return valQ({prompt:'What number makes the equation true?',eq:`${MXr(w1,x)} + @@ = ${MXD(C,D)}`,hint:`Think: ${MXD(C,D)} − ${MXr(w1,x)}. Use ${NTH[D]}.`,explain:`${MXD(C,D)} − ${MXD(A,D)} = ${MXD(H,D)}${MX(H[0],H[1])!==MXD(H,D)?' = '+MX(H[0],H[1]):''}.`},H)},
+ estCmp(){const lt=[[3,8],[5,12],[4,10],[1,4],[1,3],[2,5],[1,8]],gt=[[5,8],[7,12],[6,10],[3,4],[2,3],[7,8],[5,6]],more=R(0,1),pool=more?gt:lt,x=pick(pool);let y;do y=pick(pool);while(y===x);const o=['More than 1, because both fractions are greater than ½.','Less than 1, because both fractions are less than ½.','Exactly 1.','You cannot tell without computing.'],r=o[more?0:1];
+  return mc(`No computing. Is ${F(x[0],x[1])} + ${F(y[0],y[1])} more than 1 or less than 1?`,r,o.filter(z=>z!==r),{hint:`Compare each fraction with ½. Two halves make 1.`,explain:`Both fractions are ${more?'greater':'less'} than ½, and ½ + ½ = 1, so the sum is ${more?'more':'less'} than 1.`})},
+ eqPick(){const{x,y}=twoFr([0,1],()=>true),w=R(1,3),A=MXr(w,x),B=F(y[0],y[1]),sub=R(0,1),nm=pick(['Maya','Theo','Ines']),eqs=[`${A} − ${B} = ?`,`${A} + ${B} = ?`,`${B} − ${A} = ?`,`${A} − ${w} = ?`],r=eqs[sub?0:1];
+  return mc(sub?`${nm} had ${A} meters of rope and used ${B} meter to tie down a tent. Which equation finds how much rope is left?`:`${nm} climbed ${A} miles in the morning and ${B} mile in the afternoon. Which equation finds the total distance?`,r,eqs.filter(z=>z!==r),{hint:sub?'Using some up makes the amount smaller.':'Putting two distances together makes a total.',explain:sub?`Start with ${A} and take away ${B}: ${r}`:`Join the two distances: ${r}`})}
+});
+
+/* ---------- sections ---------- */
+const RIDGES=[
+ {code:'NC.4.NF.1',title:'Equal Shares Ridge',about:'Explain why two fractions are equivalent using area and length models, noticing how the number and size of the parts change while the amount stays the same.'},
+ {code:'NC.5.NF.1',title:'Unlike Parts Ridge',about:'Add and subtract fractions and mixed numbers with unlike denominators using related fractions (halves, fourths, eighths; thirds, sixths, twelfths; fifths, tenths, hundredths). Estimate with benchmarks and solve one- and two-step word problems.'}];
+function P(id,ridge,part,title,pairs,quiz,tryIt,lesson){return{id,ridge,part,title,code:RIDGES[ridge].code,label:`Ridge ${ridge+1} · Part ${part}`,steps:pairs.map(p=>p[0]),names:pairs.map(p=>p[1]),quiz,tryIt,lesson}}
+const SECS=[
+P('s1',0,1,'Slice and Shade',[[G1.split,'Slice it'],[G1.shade,'Shade it'],[()=>G1.missNum(EASY),'Missing top'],[G1.split,'Slice again'],[G1.explain,'Why it works'],[G1.shade,'Match the bar'],[()=>G1.missDen(EASY.concat(MID)),'Missing bottom'],[G1.whichEq,'Spot the twin'],[()=>G1.simplify(MID),'Merge it'],[G1.hund,'Hundredths'],[()=>G1.missNum(MID),'Twelfths and more'],[G1.hundBack,'Read the grid'],[G1.notEq,'Find the impostor'],[G1.errorJo,'Catch the mistake'],[()=>G1.missNum(HUN),'Camp push']],
+ [()=>G1.missNum(MID),G1.hund,G1.missDen,()=>G1.simplify(MID),G1.whichEq,G1.notEq,G1.explain,G1.errorJo,G1.hundBack,G1.shade],()=>G1.missNum(MID),
+ ()=>[`<h2>Same amount, different names</h2><p>Equivalent fractions cover the same amount of the same whole. Only the way the whole is cut changes.</p><div class="model">${mrow(F(1,2),bar(1,2))}${mrow(F(2,4),bar(2,4,'',2))}${mrow(F(4,8),bar(4,8,'',4))}</div><p>All three bars are shaded to the same spot. ${F(1,2)} = ${F(2,4)} = ${F(4,8)}.</p>`,
+  `<h2>Slice every part</h2><p>Start with ${F(2,3)}. Slice each third into 2 equal pieces.</p><div class="model">${mrow(F(2,3),bar(2,3))}${mrow(F(4,6),bar(4,6,'',2))}</div><p>Now there are <b>2 times as many parts</b> (6 instead of 3) and <b>each part is half the size</b>. The shaded amount did not move.</p><p>That is why multiplying the top and bottom by the same number works: 2 × 2 = 4 and 3 × 2 = 6, so ${F(2,3)} = ${F(4,6)}.</p>`,
+  `<h2>Tenths and hundredths</h2><p>Slice each tenth into 10 tiny squares and you get hundredths.</p><div class="model">${hgrid(30)}</div><p>3 tenths became 3 × 10 = 30 hundredths. ${F(3,10)} = ${F(30,100)}. Ten times as many parts, each one ten times smaller.</p>`]),
+P('s2',0,2,'Number Line Ledge',[[G1.linePlace,'On the line'],[G1.lineJump,'Size of a jump'],[()=>G1.lineName(EASY),'Name the point'],[G1.linePlace,'Land on it'],[G1.explain,'Why it works'],[()=>G1.missNum(MID),'Missing top'],[()=>G1.lineName(MID),'Name it again'],[G1.chain,'Chain link'],[G1.compare,'Who is higher?'],[G1.missDen,'Missing bottom'],[G1.whichEq,'Same point'],[G1.lineJump,'Count the ticks'],[G1.chain,'Longer chain'],[G1.compare,'Race up the wall'],[()=>G1.lineName(MID),'Camp push']],
+ [G1.linePlace,G1.lineName,G1.lineJump,G1.chain,G1.compare,()=>G1.missNum(MID),G1.missDen,G1.whichEq,G1.linePlace,()=>G1.lineName(MID)],()=>G1.lineName(MID),
+ ()=>[`<h2>Equal fractions share a point</h2><p>On a number line, equivalent fractions land on exactly the same point.</p><div class="model">${lineSVG(8,1,{marks:{6:'3/4 and 6/8'}})}</div><p>Each fourth is a jump of 2 eighths. Three jumps reach tick 6, so ${F(3,4)} = ${F(6,8)}.</p>`,
+  `<h2>Count the ticks in one jump</h2><p>This line is marked in twelfths. One jump of ${F(1,3)} covers 4 ticks.</p><div class="model">${lineSVG(12,1,{marks:{4:'1/3',8:'2/3'}})}</div><p>So ${F(1,3)} = ${F(4,12)} and ${F(2,3)} = ${F(8,12)}. The ticks are smaller parts, and there are 4 times as many of them.</p>`,
+  `<h2>Naming a point two ways</h2><p>Point P is at tick 6 on a line of tenths, so P = ${F(6,10)}.</p><div class="model">${lineSVG(10,1,{marks:{6:'P'}})}</div><p>Group the ticks in twos to make fifths: 6 ÷ 2 = 3. P = ${F(3,5)} as well.</p>`]),
+P('s3',0,3,'Prove It Peak',[[G1.simplify,'Merge it'],[G1.slices,'How many slices?'],[G1.explain,'Why it works'],[G1.errorJo,'Catch the mistake'],[G1.cross,'Two moves'],[G1.notEq,'Find the impostor'],[G1.hund,'Hundredths'],[G1.trueEq,'One true equation'],[G1.compare,'Who is higher?'],[G1.hundBack,'Read the grid'],[G1.chain,'Chain link'],[G1.cross,'Two moves again'],[G1.trueEq,'Truth test'],[G1.errorJo,'Coach a friend'],[G1.cross,'Summit push']],
+ [G1.simplify,G1.slices,G1.explain,G1.errorJo,G1.cross,G1.notEq,G1.trueEq,G1.compare,G1.hundBack,G1.cross],G1.cross,
+ ()=>[`<h2>Merging works too</h2><p>Slicing makes more, smaller parts. Merging goes the other way.</p><div class="model">${mrow(F(6,8),bar(6,8,'',2))}${mrow(F(3,4),bar(3,4))}</div><p>Group the eighths in twos: 6 ÷ 2 = 3 and 8 ÷ 2 = 4. ${F(6,8)} = ${F(3,4)}. Fewer parts, each one bigger, same amount.</p>`,
+  `<h2>Adding does not work</h2><p>${F(1,2)} is not ${F(2,3)}, even though 1 was added to the top and bottom.</p><div class="model">${mrow(F(1,2),bar(1,2))}${mrow(F(2,3),bar(2,3,'b2'))}</div><p>The bars are shaded to different spots. Only slicing (multiply both) or merging (divide both) keeps the amount the same.</p>`,
+  `<h2>Two moves</h2><p>Sometimes you cannot slice straight from one fraction to the other. ${F(6,8)} = ${F('?',12)}</p><p><b>Move 1, merge:</b> ${F(6,8)} = ${F(3,4)}.</p><p><b>Move 2, slice each fourth into 3:</b> ${F(3,4)} = ${F(9,12)}.</p><div class="model">${mrow(F(6,8),bar(6,8,'',2))}${mrow(F(9,12),bar(9,12,'',3))}</div>`]),
+P('s4',1,1,'Unlike Parts Pass',[[()=>G2.add([0],'lt1'),'Same-size parts'],[()=>G2.add([1],'lt1'),'Thirds and sixths'],[()=>G2.sub([0]),'Take away'],[G2.hop,'Trail hop'],[()=>G2.sub([1]),'Twelfths take away'],[G2.renameMC,'Pick the rewrite'],[()=>G2.add([0,1],'gt1'),'Past one whole'],[()=>G2.add([2]),'Tenths and hundredths'],[()=>G2.sub([2]),'Hundredths take away'],[G2.missing,'Missing piece'],[G2.three,'Three at once'],[G2.hop,'Hop again'],[()=>G2.add([0,1],'gt1'),'Over the top'],[G2.missing,'What is hidden?'],[G2.three,'Camp push']],
+ [()=>G2.add([0,1],'lt1'),()=>G2.sub([0,1]),()=>G2.add([2]),()=>G2.sub([2]),()=>G2.add([0,1],'gt1'),G2.hop,G2.missing,G2.three,G2.renameMC,()=>G2.add([1])],()=>G2.add([0,1],'lt1'),
+ ()=>[`<h2>Same-size parts first</h2><p>You can only add parts that are the same size. Halves and eighths are different sizes, so rename.</p><div class="model">${mrow(F(1,2),bar(1,2))}${mrow(F(4,8),bar(4,8,'',4))}${mrow(F(3,8),bar(3,8,'b2'))}</div><p>${F(1,2)} = ${F(4,8)}. Now add: ${F(4,8)} + ${F(3,8)} = ${F(7,8)}. The denominator stays 8 because the part size did not change.</p>`,
+  `<h2>Subtract the same way</h2><p>${F(5,6)} − ${F(1,3)}. Thirds can be sliced into sixths.</p><div class="model">${mrow(F(5,6),bar(5,6))}${mrow(F(2,6),bar(2,6,'b2',2))}</div><p>${F(1,3)} = ${F(2,6)}. Then ${F(5,6)} − ${F(2,6)} = ${F(3,6)} = ${F(1,2)}.</p>`,
+  `<h2>When the sum passes 1</h2><p>${F(3,4)} + ${F(5,8)}: rename ${F(3,4)} as ${F(6,8)}. Then ${F(6,8)} + ${F(5,8)} = ${F(11,8)}.</p><div class="model">${mrow(F(11,8),bar(8,8)+bar(3,8))}</div><p>Eight eighths fill one whole, with 3 left over. ${F(11,8)} = ${MXr(1,[3,8])}.</p>`]),
+P('s5',1,2,'Mixed Number Glacier',[[()=>G2.mixedAdd(false),'Wholes and parts'],[()=>G2.mixedSub(false),'Take away'],[G2.trade,'Trade a whole'],[()=>G2.mixedAdd(false),'Add again'],[()=>G2.mixedAdd(true),'New whole'],[G2.wholeMinus,'From a whole'],[()=>G2.mixedSub(false),'Steady steps'],[G2.trade,'Trade again'],[()=>G2.mixedSub(true),'Trade and subtract'],[()=>G2.mixedAdd(true),'Regroup'],[G2.wholeMinus,'Break a whole'],[()=>G2.mixedSub(true),'Not enough parts'],[G2.mixedMissing,'Missing piece'],[()=>G2.mixedAdd(true),'Big sum'],[()=>G2.mixedSub(true),'Camp push']],
+ [()=>G2.mixedAdd(false),()=>G2.mixedSub(false),G2.trade,()=>G2.mixedAdd(true),G2.wholeMinus,()=>G2.mixedSub(true),G2.mixedMissing,()=>G2.mixedAdd(true),()=>G2.mixedSub(true),G2.wholeMinus],()=>G2.mixedSub(true),
+ ()=>[`<h2>Add wholes and parts</h2><p>${MXr(2,[3,4])} + ${MXr(1,[5,8])}</p><p>Fractions: ${F(6,8)} + ${F(5,8)} = ${F(11,8)} = ${MXr(1,[3,8])}.</p><p>Wholes: 2 + 1 = 3.</p><p>Total: 3 + ${MXr(1,[3,8])} = ${MXr(4,[3,8])}. The fractions made a new whole.</p>`,
+  `<h2>Trade a whole to subtract</h2><p>${MXr(3,[1,4])} − ${MXr(1,[5,8])}</p><p>Rename ${MXr(3,[1,4])} as ${MXr(3,[2,8])}. Two eighths is not enough to take away five.</p><p>Trade 1 whole for ${F(8,8)}: ${MXr(3,[2,8])} = ${MXr(2,[10,8])}.</p><p>${MXr(2,[10,8])} − ${MXr(1,[5,8])} = ${MXr(1,[5,8])}.</p>`,
+  `<h2>Subtracting from a whole number</h2><p>4 − ${MXr(1,[3,8])}. There are no eighths to take from yet.</p><p>Trade 1 whole: 4 = ${MXr(3,[8,8])}.</p><div class="model">${mrow(F(8,8),bar(8,8))}${mrow(F(3,8),bar(3,8,'b2'))}</div><p>${MXr(3,[8,8])} − ${MXr(1,[3,8])} = ${MXr(2,[5,8])}.</p>`]),
+P('s6',1,3,'Summit Stories',[[G2.est,'Estimate first'],[G2.estCmp,'More or less than 1?'],[G2.eqPick,'Pick the equation'],[G2.word1,'Trail story'],[G2.errReason,'Is it reasonable?'],[G2.est,'Benchmarks'],[G2.word1,'Another story'],[G2.estCmp,'Quick check'],[G2.word2,'Two steps'],[G2.eqPick,'Match the story'],[G2.errReason,'Coach a friend'],[G2.word1,'Rope and trail'],[G2.word2,'Water supply'],[G2.est,'Estimate again'],[G2.word2,'Summit push']],
+ [G2.est,G2.estCmp,G2.errReason,G2.word1,G2.eqPick,G2.word1,G2.word2,G2.est,G2.errReason,G2.word2],G2.word1,
+ ()=>[`<h2>Estimate with benchmarks</h2><p>Compare each fraction with 0, ½ and 1.</p><p>${F(5,8)} is close to ½. ${F(11,12)} is close to 1. So ${F(5,8)} + ${F(11,12)} should be about 1½.</p><div class="model">${lineSVG(8,2,{marks:{5:'5/8'}})}</div>`,
+  `<h2>Is the answer reasonable?</h2><p>Someone says ${F(3,4)} + ${F(5,8)} = ${F(8,12)}.</p><p>You know it is wrong without computing. Both addends are more than ½, so the sum must be more than 1, and ${F(8,12)} is less than 1.</p><p>The mistake was adding the tops and the bottoms. Rename first: ${F(6,8)} + ${F(5,8)} = ${F(11,8)} = ${MXr(1,[3,8])}.</p>`,
+  `<h2>Solving a story problem</h2><p>The team packs ${MXr(3,[1,2])} liters of water. They drink ${F(3,4)} liter going up and ${F(5,8)} liter at the top. How much is left?</p><p><b>Step 1, how much they drank:</b> ${F(6,8)} + ${F(5,8)} = ${F(11,8)} = ${MXr(1,[3,8])}.</p><p><b>Step 2, subtract:</b> ${MXr(3,[4,8])} − ${MXr(1,[3,8])} = ${MXr(2,[1,8])} liters.</p><p><b>Check:</b> about 3½ − 1½ = 2. The answer fits.</p>`])
+];
+
+/* ---------- models ---------- */
+function bar(n,d,cls,g){if(d===100)return hgrid(n);let h=`<div class="bar ${cls||''}">`;for(let i=0;i<d;i++)h+=`<i class="${i<n?'on':''}${g&&i&&i%g===0?' gb':''}"></i>`;return h+'</div>'}
+function bars(n,d,cls){let h='<div class="barwrap">',left=n;do{h+=bar(Math.min(left,d),d,cls);left-=d}while(left>0);return h+'</div>'}
+function hgrid(n){let h='<div class="hgrid">';for(let i=0;i<100;i++)h+=`<i class="${i<n?'on':''}"></i>`;return h+'</div>'}
+function mrow(lab,inner){return `<div class="mrow"><span class="lab">${lab}</span><div class="barwrap">${inner}</div></div>`}
+function lineSVG(d,max,o){o=o||{};const W=660,p=34,L=W-2*p,N=d*max;let s=`<svg viewBox="0 0 ${W} 110" class="nl" role="img" aria-label="number line from 0 to ${max}"><line x1="${p}" y1="60" x2="${W-p}" y2="60" class="ax"/>`;
+ for(let i=0;i<=N;i++){const x=p+L*i/N,wh=i%d===0;s+=`<line x1="${x}" x2="${x}" y1="${wh?42:50}" y2="${wh?78:70}" class="ax"/>`;if(wh)s+=`<text x="${x}" y="100" text-anchor="middle" class="nt">${i/d}</text>`;
+  if(o.flag===i)s+=`<path d="M${x} 58V16l18 8-18 8" class="flag"/>`;
+  if(o.marks&&o.marks[i])s+=`<circle cx="${x}" cy="60" r="8" class="mk"/><text x="${x}" y="30" text-anchor="middle" class="nt">${o.marks[i]}</text>`;
+  if(o.click)s+=`<circle cx="${x}" cy="60" r="${Math.min(13,L/N/2)}" class="tk" data-t="${i}"/>`}
+ return s+'</svg>'}
+function mountModel(el,m){
+ if(m.t==='grid'){el.innerHTML=hgrid(m.n);return}
+ if(m.t==='line'){el.innerHTML=lineSVG(m.d,m.max,{marks:m.marks});return}
+ if(m.t==='bars'){el.innerHTML=m.rows.map((r,i)=>`<div class="mrow"><span class="lab">${F(r[0],r[1])}</span>${bars(r[0],r[1],i?'b2':'')}</div>`).join('');return}
+ if(m.t==='split'){let k=1;const draw=()=>{el.innerHTML=`<div class="barwrap">${bar(m.n*k,m.d*k,'',k)}</div><div class="ks"><span>Slice each part into:</span>${m.ks.map(x=>`<button type="button" class="kbtn${x===k?' on':''}" data-k="${x}">${x}</button>`).join('')}</div><p class="tiny">${m.d*k} equal parts in the whole.</p>`;el.querySelectorAll('.kbtn').forEach(b=>b.onclick=()=>{k=+b.dataset.k;draw()})};draw()}
+}
+
+/* ---------- question widget ---------- */
+function mountQ(q,host,onEnter){
+ let sel=null,h=`<p class="prompt">${q.prompt}</p>`;
+ if(q.model)h+=`<div class="model" id="mdl"></div>`;
+ if(q.kind==='num')h+=`<div class="eq">${q.eq.replace('@@',INP('ans1'))}</div>`;
+ if(q.kind==='val')h+=`<div class="eq">${q.eq.replace('@@',`<span class="mixin">${INP('answ','whole')}<span class="fr"><b>${INP('ansn','top')}</b><b>${INP('ansd','bottom')}</b></span></span>`)}</div><p class="tiny">Leave the whole-number box empty if you do not need it. Any equivalent answer counts.</p>`;
+ if(q.kind==='mc')h+=`<div class="opts">${q.opts.map((o,i)=>`<button type="button" class="opt" data-i="${i}">${o.h}</button>`).join('')}</div>`;
+ if(q.kind==='line')h+=`<div class="model">${lineSVG(q.d,q.max,{click:true,flag:q.flag})}</div><p class="tiny" id="lsel">Tap a tick mark on the line.</p>`;
+ if(q.kind==='shade')h+=`<div class="model">${mrow(F(q.refN,q.refD),bar(q.refN,q.refD))}<div class="mrow"><span class="lab">yours</span><div class="barwrap"><div class="bar pick" id="shb">${'<i></i>'.repeat(q.D)}</div></div></div></div><p class="tiny" id="shc">Tap parts to shade them. 0 shaded.</p>`;
+ host.innerHTML=h;
+ if(q.model)mountModel(host.querySelector('#mdl'),q.model);
+ host.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{sel=+b.dataset.i;host.querySelectorAll('.opt').forEach(x=>x.classList.toggle('sel',x===b))});
+ host.querySelectorAll('.tk').forEach(c=>c.onclick=()=>{sel=+c.dataset.t;host.querySelectorAll('.tk').forEach(x=>x.classList.toggle('sel',x===c));host.querySelector('#lsel').textContent=`You picked tick ${sel} (${sel}/${q.d}).`});
+ host.querySelectorAll('#shb i').forEach(c=>c.onclick=()=>{c.classList.toggle('on');host.querySelector('#shc').textContent=`Tap parts to shade them. ${host.querySelectorAll('#shb i.on').length} shaded.`});
+ host.querySelectorAll('.ai').forEach(i=>i.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();onEnter&&onEnter()}});
+ const f=host.querySelector('.ai');if(f)f.focus();
+ const iv=id=>{const e=host.querySelector('#'+id),v=e?e.value.trim():'';return v===''?'':/^\d+$/.test(v)?+v:NaN};
+ return{
+  read(){
+   if(q.kind==='num'){const v=iv('ans1');return v===''||isNaN(v)?null:v}
+   if(q.kind==='val'){const w=iv('answ'),n=iv('ansn'),d=iv('ansd');if([w,n,d].some(v=>v!==''&&isNaN(v)))return null;if(n===''&&d==='')return w===''?null:[w,1];if(n===''||d===''||d===0)return null;return[(w||0)*d+n,d]}
+   if(q.kind==='shade'){const c=host.querySelectorAll('#shb i.on').length;return c||null}
+   return sel},
+  lock(){host.querySelectorAll('input,.opt,.kbtn').forEach(e=>e.disabled=true);host.querySelectorAll('.tk,#shb i').forEach(e=>e.style.pointerEvents='none')}
+ }}
+function isRight(q,r){if(q.kind==='val')return r[0]*q.ans[1]===q.ans[0]*r[1];if(q.kind==='mc')return q.opts[r].ok;return r===q.ans}
+function genQuiz(S,used){const seen=new Set(used||[]);return S.quiz.map(g=>{let q,t=0;do q=g();while(seen.has(q.sig)&&++t<40);seen.add(q.sig);return q})}
+
+/* ---------- storage ---------- */
+const LS='fraction-summit-v1';
+let duel=null,mode='',room=null,peersNow=[],db=null,user=null,cloudWrite=true,teacher=null,rec=null,streak=0,saveQ=Promise.resolve();
+const lsAll=()=>{try{return JSON.parse(localStorage.getItem(LS)||'{}')}catch(e){return{}}};
+const lsPut=(k,r)=>{try{const a=lsAll();if(r)a[k]=r;else delete a[k];localStorage.setItem(LS,JSON.stringify(a))}catch(e){}};
+const timeout=(p,ms)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej({code:'timeout'}),ms))]);
+const clone=o=>JSON.parse(JSON.stringify(o));
+const blankSec=()=>({steps:0,stars:0,attempts:[],lessonNeeded:false,lessons:0,used:[]});
+const keyOf=n=>n.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40);
+function syncNote(){const e=document.getElementById('sync');if(!e)return;e.textContent=db&&cloudWrite?'Scores are saving to the teacher dashboard.':'Scores are saving on this device only.'}
+function save(){rec.updated=Date.now();lsPut(rec.key,rec);if(db&&cloudWrite){const body=clone(rec);saveQ=saveQ.then(()=>db.doc('students/'+rec.key).set(body)).catch(e=>{if(e&&e.code!=='unavailable'){cloudWrite=false;syncNote()}})}}
+async function loadRec(key){if(db){try{const s=await timeout(db.doc('students/'+key).get(),8000);if(s.exists)return clone(s.data())}catch(e){}}return lsAll()[key]||null}
+const init=(async()=>{try{if(window.claude&&window.claude.use){user=await window.claude.use('user');db=await window.claude.use('db');room=await window.claude.use('room');if(room)room.onPeers(ch=>{peersNow=ch.peers;drawBar()},()=>{room=null;drawBar()});if(user){try{teacher=!!(await user.canEdit())}catch(e){teacher=null}}}}catch(e){}})();
+
+/* ---------- state ---------- */
+const passed=s=>s.attempts.some(a=>a.done&&a.score>=PASS);
+function st(s){if(s.steps<NSTEP)return'steps';if(passed(s))return'passed';if(s.lessonNeeded)return'lesson';if(s.attempts.length<2)return'quiz';return'moved'}
+const finished=s=>['passed','moved'].includes(st(s));
+const rank=n=>n<60?'Trail Scout':n<135?'Ridge Runner':n<225?'Summit Guide':'Peak Master';
+const totalStars=()=>SECS.reduce((t,S)=>t+rec[S.id].stars,0);
+const app=()=>document.getElementById('app');
+function myProg(){const i=SECS.findIndex(S=>!finished(rec[S.id]));return{pt:i<0?SECS.length:i,done:SECS.reduce((t,S)=>t+Math.min(rec[S.id].steps,NSTEP),0),stars:totalStars()}}
+function pres(){if(room)room.presence(rec?Object.assign({n:rec.name.slice(0,30),k:rec.key,buddy:rec.buddy||null,duel:duel?{id:duel.id,opp:duel.opp,part:duel.part,score:duel.score,at:duel.at,fin:duel.fin,ms:duel.ms}:null},myProg()):{n:null,k:null,duel:null,buddy:null,pt:null,done:null,stars:null}).catch(()=>{});drawBar()}
+function others(){const seen={};return peersNow.filter(p=>!p.sameTab&&p.kind==='viewer'&&p.presence&&typeof p.presence.k==='string'&&typeof p.presence.n==='string'&&(!rec||p.presence.k!==rec.key)&&!seen[p.presence.k]&&(seen[p.presence.k]=1)).slice(0,30)}
+function drawBar(){const el=document.getElementById('pbar');if(!el)return;if(mode==='duel'){el.hidden=true;duelTick();return}if(!room||!rec){el.hidden=true;return}el.hidden=false;const os=others(),total=SECS.length*NSTEP,free=mode!=='quiz';
+ const where=pr=>{const i=+pr.pt;return i>=SECS.length?'At the summit':SECS[i]?SECS[i].label:''};
+ const line=(name,pr)=>`<div class="prow"><span class="pn">${esc(name)}</span><span class="ptrack"><b style="width:${Math.max(2,Math.min(100,(+pr.done||0)/total*100))}%"></b></span><span class="tiny">${where(pr)} · ${+pr.done||0}/${total} steps · ★ ${+pr.stars||0}</span></div>`;
+ const ch=free?os.find(p=>{const d=p.presence.duel;return d&&typeof d==='object'&&d.opp===rec.key&&!d.fin&&!(+d.at)}):null;
+ let h=ch?`<div class="prow"><b>${esc(ch.presence.n)} challenges you to a fraction duel.</b><button class="pbtn" id="pacc" type="button">Accept the duel</button></div>`:'';
+ if(rec.buddy){const b=os.find(p=>p.presence.k===rec.buddy);h+=`<b>Climbing partners</b>${line(rec.name+' (you)',myProg())}${b?line(b.presence.n,b.presence):'<p class="tiny">Your partner is not online right now. Their progress shows here when they log in.</p>'}<div class="prow">${b&&free&&!ch?`<button class="pbtn" id="pdu" type="button">Challenge ${esc(b.presence.n)} to a duel</button>`:''}${free?'':'<span class="tiny">Finish your quiz before you duel.</span>'}<button class="link" id="pbx" type="button">Stop climbing together</button></div>`}
+ else{const asks=os.filter(p=>p.presence.buddy===rec.key);h+=`<b>Climb with a partner</b>${os.length?`<div class="prow">${os.map(p=>`<button class="pbtn" type="button" data-k="${esc(p.presence.k)}">${asks.includes(p)?'Join ':''}${esc(p.presence.n)}</button>`).join('')}</div><p class="tiny">${asks.length?'A climber invited you. ':''}Tap a name to link up. Then you can see each other's progress and challenge each other to a duel.</p>`:'<p class="tiny">No other climbers are online yet. When a classmate logs in on their own Chromebook, their name shows here.</p>'}`}
+ el.innerHTML=`<div>${h}</div>`;
+ const q=id=>el.querySelector(id);
+ if(q('#pbx'))q('#pbx').onclick=()=>{rec.buddy=null;save();pres()};
+ if(q('#pdu'))q('#pdu').onclick=challenge;
+ if(q('#pacc'))q('#pacc').onclick=()=>{const d=ch.presence.duel;rec.buddy=ch.presence.k;save();beginDuel(ch.presence.k,+d.id|0,Math.max(0,Math.min(SECS.length-1,+d.part|0)))};
+ el.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{rec.buddy=b.dataset.k;save();pres()})}
+/* ---------- duel: same 10 questions on two screens ---------- */
+function mulberry(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function duelQs(part,seed){const old=rnd;rnd=mulberry(seed);try{return SECS[part].quiz.map(g=>g())}finally{rnd=old}}
+function oppPeer(){return duel?others().find(p=>p.presence.k===duel.opp):null}
+function oppDuel(){const p=oppPeer(),d=p&&p.presence.duel;if(d&&typeof d==='object'&&(+d.id|0)===duel.id){duel.last=d;duel.oppName=p.presence.n;return d}return null}
+function challenge(){const b=others().find(p=>p.presence.k===rec.buddy);if(!b)return;beginDuel(rec.buddy,1+Math.floor(Math.random()*2e9),Math.max(0,Math.min(SECS.length-1,myProg().pt,+b.presence.pt||0)))}
+function beginDuel(opp,id,part){duel={id,opp,part,score:0,at:0,fin:false,ms:0,t0:0,qs:null,started:false,logged:false,show:false,last:null,oppName:'Your partner'};mode='duel';pres();vDuel()}
+function sbHTML(){const p=oppPeer(),od=oppDuel()||duel.last,row=(n,d)=>`<div class="prow"><span class="pn">${esc(n)}</span><span class="ptrack"><b style="width:${Math.min(100,(+d.at||0)*10)}%"></b></span><span>${+d.score||0} correct · ${d.fin?'finished':'on question '+Math.min(10,(+d.at||0)+1)}</span></div>`;
+ return row(rec.name+' (you)',duel)+(od?row(duel.oppName,od):`<p class="tiny">${p?'Waiting for your partner…':'Your partner is not online.'}</p>`)}
+function vDuel(){who0();const S=SECS[duel.part];
+ app().innerHTML=`<div class="card"><div class="row" style="justify-content:space-between"><span class="code">Fraction duel · ${S.code} · ${S.label}</span><button class="link" id="dq" type="button">Leave the duel</button></div><div id="dsb" class="dsb"></div><div id="dbody"></div></div>`;
+ app().querySelector('#dq').onclick=()=>vHome();drawBar()}
+function duelTick(){if(mode!=='duel'||!duel)return;const sb=document.getElementById('dsb'),body=document.getElementById('dbody');if(!sb)return;const od=oppDuel();sb.innerHTML=sbHTML();
+ if(!duel.started){if(od){duel.started=true;duel.qs=duelQs(duel.part,duel.id);duel.t0=Date.now();duelQ()}else if(!body.dataset.w){body.dataset.w='1';body.innerHTML='<h2>Waiting for your partner to accept…</h2><p>They will see your challenge at the top of their screen. You both get the same 10 questions. Most correct wins. If it is a tie, the faster climber wins.</p>'}return}
+ if(duel.fin&&duel.show)duelEnd()}
+function duelQ(){const body=document.getElementById('dbody'),q=duel.qs[duel.at];let done=false;
+ body.innerHTML=`<h2>Question ${duel.at+1} of 10</h2><div id="qh"></div><div id="fb" aria-live="polite"></div><button class="btn" id="ck" type="button">Lock in my answer</button>`;
+ const ck=body.querySelector('#ck'),fb=body.querySelector('#fb'),w=mountQ(q,body.querySelector('#qh'),()=>ck.click());
+ ck.onclick=()=>{if(done){if(duel.at<10)duelQ();else{duel.show=true;duelTick()}return}
+  const r=w.read();if(r===null){fb.innerHTML='<div class="fb hint">Finish your answer first.</div>';return}
+  done=true;w.lock();const ok=isRight(q,r);if(ok)duel.score++;duel.at++;if(duel.at>=10){duel.fin=true;duel.ms=Date.now()-duel.t0}pres();
+  fb.innerHTML=ok?'<div class="fb good"><b>Correct.</b></div>':`<div class="fb bad"><b>Not this time.</b> Answer: ${q.ansText}</div>`;ck.textContent=duel.at<10?'Next question':'See the result';ck.focus()}}
+function duelEnd(){const body=document.getElementById('dbody'),od=oppDuel()||duel.last;let h;
+ if(od&&od.fin){const my=duel.score,th=+od.score||0,tm=+od.ms||0,res=my>th?'w':my<th?'l':duel.ms<tm?'w':duel.ms>tm?'l':'t';
+  if(!duel.logged){duel.logged=true;rec.duels=Object.assign({w:0,l:0,t:0},rec.duels);rec.duels[res]++;save()}
+  h=`<p class="big">${my} – ${th}</p><h2>${res==='w'?'You win the duel!':res==='l'?esc(duel.oppName)+' wins this one.':'It is a tie!'}</h2>${my===th&&res!=='t'?'<p>Same score, so the faster climber wins.</p>':''}`}
+ else h=`<p class="big">${duel.score} / 10</p><h2>${oppPeer()?'Waiting for your partner to finish…':'Your partner left the duel.'}</h2><p class="tiny">Stay on this screen to see who wins.</p>`;
+ body.innerHTML=h+'<div><button class="btn" id="dh" type="button">Back to base camp</button></div>';body.querySelector('#dh').onclick=()=>vHome()}
+function who(){who0();pres()}
+function who0(){const w=document.getElementById('who');if(!rec){w.innerHTML='';return}const stars=totalStars();w.innerHTML=`<span class="chip">${esc(rec.name)}</span><span class="chip">★ ${stars} · ${rank(stars)}</span><span class="chip">Streak ${streak}</span><button class="link" id="out" type="button">Switch student</button>`;w.querySelector('#out').onclick=()=>{rec=null;streak=0;vLogin()}}
+function trail(s){let h='<div class="trail" aria-label="15 steps then a quiz">';for(let i=0;i<NSTEP;i++)h+=`<i class="${i<s.steps?'done':i===s.steps?'now':''}">${i+1}</i>`;return h+`<span class="gate ${passed(s)?'done':''}">Quiz</span></div>`}
+
+/* ---------- views ---------- */
+function vLogin(msg){mode='';duel=null;who();app().innerHTML=`<div class="card pop"><span class="code">NC.4.NF.1 · NC.5.NF.1</span><h1>Climb the Fraction Summit</h1><p>Two ridges with three parts on each. Every part has 15 steps and a quiz gate that opens the next part.</p><form id="lf" class="row"><label for="nm" style="width:100%;font-weight:700">Type your first name and last initial</label><input id="nm" class="name" maxlength="30" autocomplete="off" placeholder="Jordan P"><button class="btn" id="go">Start climbing</button></form><p class="tiny" id="lmsg">${msg||'Use the same name every time so your progress is saved.'}</p></div>`;
+ const f=document.getElementById('lf');document.getElementById('nm').focus();
+ f.onsubmit=async e=>{e.preventDefault();const name=document.getElementById('nm').value.trim().replace(/\s+/g,' '),key=keyOf(name);if(key.length<2){document.getElementById('lmsg').textContent='Type your name first (at least 2 letters).';return}
+  const b=document.getElementById('go');b.disabled=true;b.textContent='Finding your trail…';await timeout(init,10500).catch(()=>{});
+  let r=await loadRec(key);if(!r)r={name,key,created:Date.now()};
+  SECS.map(S=>S.id).forEach(k=>{r[k]=Object.assign(blankSec(),r[k]||{});r[k].attempts.forEach(a=>{if(!a.done){a.done=true;if(a.score<PASS)r[k].lessonNeeded=true}})});
+  rec=r;syncNote();save();vHome()}}
+function vHome(){mode='';duel=null;who();if(SECS.every(S=>finished(rec[S.id])))return vFinale();
+ const card=(S,i)=>{const s=rec[S.id],state=st(s),locked=i>0&&!finished(rec[SECS[i-1].id]);let pill,btn='';
+  if(locked){pill='<span class="pill idle">Locked until the part before it is finished</span>'}
+  else if(state==='steps'){pill=`<span class="pill idle">Step ${s.steps+1} of 15</span>`;btn=s.steps?'Keep climbing':'Start climbing'}
+  else if(state==='quiz'){pill=`<span class="pill warn">Quiz ready · try ${s.attempts.length+1} of 2</span>`;btn='Go to the quiz'}
+  else if(state==='lesson'){pill='<span class="pill warn">Lesson required</span>';btn='Open the lesson'}
+  else if(state==='passed'){pill=`<span class="pill good">Passed · ${Math.max(...s.attempts.map(a=>a.score))}/10</span>`}
+  else pill='<span class="pill bad">Finished · your teacher will review this with you</span>';
+  return `<div class="seccard ${locked?'locked':''}"><h3>Part ${S.part}: ${S.title}</h3>${trail(s)}<div>${pill}</div>${btn?`<div><button class="btn" data-go="${i}" type="button">${btn}</button></div>`:''}</div>`};
+ const ridges=RIDGES.map((Rg,r)=>`<section style="margin-top:22px"><span class="code">${Rg.code}</span><h2>Ridge ${r+1}: ${Rg.title}</h2><p class="tiny">${Rg.about}</p><div class="grid2">${SECS.map((S,i)=>S.ridge===r?card(S,i):'').join('')}</div></section>`).join('');
+ app().innerHTML=`<div class="card"><h1>Base camp</h1><p>Welcome, ${esc(rec.name)}. Each ridge has three parts. Every part is 15 steps and then a quiz gate. Pass with ${PASS} out of 10 to open the next part.</p>${ridges}</div>`;
+ app().querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>enter(+b.dataset.go))}
+function enter(i){const state=st(rec[SECS[i].id]);if(state==='steps')vStep(i);else if(state==='quiz')vGate(i);else if(state==='lesson')vLesson(i);else vHome()}
+function vStep(si){const S=SECS[si],s=rec[S.id];let tries=0,q=S.steps[s.steps](),w,solved=false;who();
+ app().innerHTML=`<div class="card"><div class="row" style="justify-content:space-between"><span class="code">${S.code} · ${S.label}</span><button class="link" id="bk" type="button">Back to base camp</button></div>${trail(s)}<h2>Step ${s.steps+1}: ${S.names[s.steps]}</h2><div id="qh"></div><div id="fb" aria-live="polite"></div><div class="row"><button class="btn" id="ck" type="button">Check</button></div></div>`;
+ const qh=app().querySelector('#qh'),fb=app().querySelector('#fb'),ck=app().querySelector('#ck');
+ app().querySelector('#bk').onclick=vHome;
+ const mount=()=>{w=mountQ(q,qh,()=>ck.click())};mount();
+ ck.onclick=()=>{
+  if(solved){s.steps++;save();return s.steps>=NSTEP?vGate(si):vStep(si)}
+  if(ck.dataset.fresh){delete ck.dataset.fresh;q=S.steps[s.steps]();fb.innerHTML='';ck.textContent='Check';mount();return}
+  const r=w.read();if(r===null){fb.innerHTML='<div class="fb hint">Finish your answer first. Use whole numbers in each box.</div>';return}
+  if(isRight(q,r)){solved=true;w.lock();const got=tries===0?3:tries===1?2:1;s.stars+=got;streak++;who();fb.innerHTML=`<div class="fb good pop"><b>Yes!</b> <span class="stars">${'★'.repeat(got)}</span> ${streak>=3?`Streak of ${streak}. `:''}${q.explain}</div>`;ck.textContent=s.steps+1>=NSTEP?'Go to the quiz gate':'Next step';ck.focus()}
+  else{tries++;streak=0;who();qh.classList.remove('shake');void qh.offsetWidth;qh.classList.add('shake');
+   if(tries===1)fb.innerHTML=`<div class="fb hint"><b>Not yet.</b> ${q.hint}</div>`;
+   else{w.lock();fb.innerHTML=`<div class="fb bad"><b>Here is how it works.</b> ${q.explain}<br>Answer: ${q.ansText}. Now show you can do a new one.</div>`;ck.textContent='Try a new one';ck.dataset.fresh='1'}}}}
+function vGate(si){const S=SECS[si],s=rec[S.id];if(st(s)!=='quiz')return enter(si);who();const n=s.attempts.length+1;
+ app().innerHTML=`<div class="card pop"><span class="code">${S.code} · Quiz gate</span><h1>Quiz for ${S.label}: ${S.title}</h1><p>You finished all 15 steps. Now show what you know.</p><p><b>10 questions.</b> You need <b>${PASS} correct</b> to pass. No hints.<br>This is <b>try ${n} of 2</b>. ${n===2?'These are new questions.':'If you do not pass, you will take a short lesson and get one more try with new questions.'}<br>Once you begin, the try counts, even if you leave.</p><div class="row"><button class="btn" id="bg" type="button">Begin the quiz</button><button class="btn alt" id="bk" type="button">Not yet</button></div></div>`;
+ app().querySelector('#bk').onclick=vHome;app().querySelector('#bg').onclick=()=>vQuiz(si)}
+function vQuiz(si){mode='quiz';const S=SECS[si],s=rec[S.id],qs=genQuiz(S,s.used),att={score:0,done:false,at:Date.now(),answered:0};s.attempts.push(att);s.used=s.used.concat(qs.map(q=>q.sig)).slice(-40);save();let i=0;
+ const show=()=>{const q=qs[i];let w,done=false;who();
+  app().innerHTML=`<div class="card"><span class="code">${S.code} · Quiz · try ${s.attempts.length} of 2</span><h2>Question ${i+1} of 10</h2><div class="qbar"><b style="width:${i*10}%"></b></div><div id="qh"></div><div id="fb" aria-live="polite"></div><div class="row"><button class="btn" id="ck" type="button">Lock in my answer</button></div></div>`;
+  const qh=app().querySelector('#qh'),fb=app().querySelector('#fb'),ck=app().querySelector('#ck');w=mountQ(q,qh,()=>ck.click());
+  ck.onclick=()=>{if(done){i++;return i<10?show():finish()}
+   const r=w.read();if(r===null){fb.innerHTML='<div class="fb hint">Finish your answer first. Use whole numbers in each box.</div>';return}
+   done=true;w.lock();const ok=isRight(q,r);if(ok)att.score++;att.answered=i+1;if(i===9)close();save();
+   fb.innerHTML=ok?'<div class="fb good"><b>Correct.</b></div>':`<div class="fb bad"><b>Not this time.</b> Answer: ${q.ansText}</div>`;ck.textContent=i<9?'Next question':'See my score';ck.focus()}};
+ const close=()=>{att.done=true;if(att.score<PASS)s.lessonNeeded=true};
+ const finish=()=>vResult(si,att);show()}
+function vResult(si,att){const S=SECS[si],s=rec[S.id],ok=att.score>=PASS;mode='';who();
+ app().innerHTML=`<div class="card pop"><span class="code">${S.code} · Quiz result</span><p class="big">${att.score}<span style="font-size:1.4rem"> / 10</span></p>${ok?`<h2>You passed ${S.title}!</h2><p>${si<SECS.length-1?'The next part is now open.':'You reached the summit.'}</p>`:`<h2>Not a pass yet</h2><p>You needed ${PASS}. Take the short lesson next. ${s.attempts.length<2?'Then you get one more try with new questions.':'Your teacher will see your scores and help you with this.'}</p>`}<button class="btn" id="nx" type="button">${ok?'Continue':'Open the lesson'}</button></div>`;
+ app().querySelector('#nx').onclick=()=>ok?vHome():vLesson(si)}
+function vLesson(si){const S=SECS[si],s=rec[S.id],slides=S.lesson();let i=0;who();
+ const show=()=>{app().innerHTML=`<div class="card"><span class="code">${S.code} · Lesson · part ${i+1} of ${slides.length+1}</span>${slides[i]}<div class="row"><button class="btn alt" id="pv" type="button" ${i?'':'disabled'}>Back</button><button class="btn" id="nx" type="button">${i<slides.length-1?'Next':'Now you try'}</button></div></div>`;
+  app().querySelector('#pv').onclick=()=>{i--;show()};app().querySelector('#nx').onclick=()=>{i++;i<slides.length?show():tryIt()}};
+ const tryIt=()=>{let q=S.tryIt(),w,state=0;app().innerHTML=`<div class="card"><span class="code">${S.code} · Lesson · your turn</span><h2>Show it once to finish the lesson</h2><div id="qh"></div><div id="fb" aria-live="polite"></div><button class="btn" id="ck" type="button">Check</button></div>`;
+  const qh=app().querySelector('#qh'),fb=app().querySelector('#fb'),ck=app().querySelector('#ck');const mount=()=>{w=mountQ(q,qh,()=>ck.click())};mount();
+  ck.onclick=()=>{if(state===2){s.lessonNeeded=false;s.lessons++;save();return st(s)==='quiz'?vGate(si):vHome()}
+   if(state===1){state=0;q=S.tryIt();fb.innerHTML='';ck.textContent='Check';mount();return}
+   const r=w.read();if(r===null){fb.innerHTML='<div class="fb hint">Finish your answer first.</div>';return}
+   w.lock();if(isRight(q,r)){state=2;fb.innerHTML=`<div class="fb good"><b>That is it.</b> ${q.explain}</div>`;ck.textContent=s.attempts.length<2?'Lesson done. Go to try 2':'Lesson done. Move on'}
+   else{state=1;fb.innerHTML=`<div class="fb bad"><b>Look at the steps.</b> ${q.explain}</div>`;ck.textContent='Try another one'}}};
+ show()}
+function vFinale(){const stars=totalStars(),rows=SECS.map(S=>{const s=rec[S.id],p=passed(s);return `<p><span class="code">${S.code}</span> Part ${S.part}, ${S.title}: <span class="pill ${p?'good':'bad'}">${p?'Passed':'Review with your teacher'}</span> best quiz ${Math.max(0,...s.attempts.map(a=>a.score))}/10</p>`}).join('');
+ app().innerHTML=`<div class="card pop"><h1>You finished the climb, ${esc(rec.name)}!</h1><p class="big stars">★ ${stars}</p><p>Rank: <b>${rank(stars)}</b> (${SECS.length*45} stars possible)</p>${rows}<p class="tiny">Your teacher can see your quiz scores.</p></div>`}
+
+/* ---------- teacher dashboard ---------- */
+function secStatus(s){const state=st(s);if(state==='steps')return s.steps?['idle',`Step ${s.steps+1}/15`]:['idle','Not started'];if(state==='quiz')return['warn',s.attempts.length?'Try 2 ready':'Quiz ready'];if(state==='lesson')return['warn','In lesson'];if(state==='passed')return['good',`Passed on try ${s.attempts.findIndex(a=>a.done&&a.score>=PASS)+1}`];return['bad','Did not pass']}
+async function vDash(){who();await timeout(init,10500).catch(()=>{});
+ if(user&&teacher===false){app().innerHTML=`<div class="card"><h2>Teacher dashboard</h2><p>This page is for the teacher. Ask your teacher if you need help.</p><button class="btn" id="bk" type="button">Back</button></div>`;app().querySelector('#bk').onclick=()=>rec?vHome():vLogin();return}
+ app().innerHTML=`<div class="card"><h1>Teacher dashboard</h1><p>Loading scores…</p></div>`;
+ let all=lsAll(),src='this device only';
+ if(db){try{const q=await timeout(db.collection('students').get(),10000);q.docs.forEach(d=>{all[d.id]=d.data()});src='all signed-in devices'}catch(e){src='this device only (shared scores could not be reached)'}}
+ const list=Object.values(all).filter(r=>r&&r.name&&r.key).map(r=>{r=clone(r);SECS.forEach(S=>r[S.id]=Object.assign(blankSec(),r[S.id]));return r}).sort((a,b)=>a.name.localeCompare(b.name));
+ const cnt=f=>list.filter(f).length,tr=(s,i)=>{const a=s.attempts[i];return a?`${a.score}/10${a.done?'':' (left early)'}`:'–'},ridgePass=(r,g)=>SECS.filter(S=>S.ridge===g).every(S=>passed(r[S.id]));
+ const body=list.map(r=>`<tr><th>${esc(r.name)}</th>${SECS.map(S=>{const s=r[S.id],p=secStatus(s);return `<td class="s">${tr(s,0)}</td><td>${tr(s,1)}</td><td><span class="pill ${p[0]}" title="${s.lessons} lesson${s.lessons===1?'':'s'} taken">${p[1]}</span></td>`}).join('')}<td class="s">${r.duels?+r.duels.w||0:0}</td><td>${r.updated?new Date(r.updated).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'–'}</td><td><button class="link" data-reset="${esc(r.key)}" type="button">Reset</button></td></tr>`).join('');
+ app().innerHTML=`<div class="card"><div class="row" style="justify-content:space-between"><h1>Teacher dashboard</h1><div class="row"><button class="btn alt" id="rf" type="button">Refresh</button><button class="btn alt" id="cp" type="button">Copy as CSV</button><button class="btn" id="bk" type="button">Close</button></div></div>
+ <p class="tiny">Showing scores from ${src}. Six quizzes, one per part. Passing is ${PASS} of 10. Each student gets two tries per quiz. A miss assigns the lesson before the next try.</p>
+ <div class="tiles"><div class="tile"><b>${list.length}</b>students</div><div class="tile"><b>${cnt(r=>ridgePass(r,0))}</b>passed all of NC.4.NF.1</div><div class="tile"><b>${cnt(r=>ridgePass(r,1))}</b>passed all of NC.5.NF.1</div><div class="tile"><b>${cnt(r=>SECS.some(S=>st(r[S.id])==='moved'||r[S.id].lessonNeeded))}</b>need reteaching</div></div>
+ ${list.length?`<div class="tw"><table><thead><tr><th rowspan="2">Student</th>${SECS.map(S=>`<th class="grp" colspan="3">${S.code.slice(3)} Part ${S.part}: ${S.title}</th>`).join('')}<th class="s" rowspan="2">Duel wins</th><th rowspan="2">Last active</th><th rowspan="2"></th></tr><tr>${'<th class="s">Try 1</th><th>Try 2</th><th>Status</th>'.repeat(SECS.length)}</tr></thead><tbody>${body}</tbody></table></div>`:'<p>No students have logged in yet. Scores appear here as soon as a student starts.</p>'}
+ <p class="tiny">Reset erases one student's progress and quiz tries so they can start over. The CSV also lists steps finished and lessons taken.</p><div id="csv"></div></div>`;
+ app().querySelector('#bk').onclick=()=>rec?vHome():vLogin();app().querySelector('#rf').onclick=vDash;
+ app().querySelectorAll('[data-reset]').forEach(b=>b.onclick=async()=>{if(!b.dataset.sure){b.dataset.sure='1';b.textContent='Tap again to erase';return}const k=b.dataset.reset;lsPut(k,null);if(db){try{await db.doc('students/'+k).delete()}catch(e){}}if(rec&&rec.key===k)rec=null;vDash()});
+ app().querySelector('#cp').onclick=async()=>{const csv=['Student,'+SECS.map(S=>{const p=`${S.code.slice(3)} P${S.part}`;return `${p} steps,${p} try 1,${p} try 2,${p} lessons,${p} status`}).join(',')].concat(list.map(r=>['"'+r.name.replace(/"/g,'""')+'"'].concat(SECS.flatMap(S=>{const s=r[S.id],a=s.attempts;return[s.steps,a[0]?a[0].score:'',a[1]?a[1].score:'',s.lessons,secStatus(s)[1]]})).join(','))).join('\n');
+  try{await navigator.clipboard.writeText(csv);app().querySelector('#cp').textContent='Copied'}catch(e){app().querySelector('#csv').innerHTML='<p class="tiny">Select and copy:</p><textarea id="csvt" readonly></textarea>';app().querySelector('#csvt').value=csv}}}
+
+if(typeof document!=='undefined'){document.getElementById('tbtn').onclick=vDash;syncNote();init.then(()=>{syncNote();pres();if(user&&teacher===false)document.getElementById('tbtn').hidden=true});vLogin()}
+</script>
+</body>
+</html>
