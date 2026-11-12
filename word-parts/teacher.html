@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Word Parts Teacher Dashboard</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Fredoka:wght@500;600&display=swap">
+<style>
+/* Layout: summary row on top, then one table of students; a row opens to show the paragraph. */
+:root{
+  --bg:#F3F5FA; --surface:#FFFFFF; --ink:#1A2238; --muted:#566080; --line:#D3D9E8;
+  --accent:#2B3A8C; --on-accent:#FFFFFF;
+  --good:#1B7446; --good-bg:#DDF2E5; --warn:#8A5A00; --warn-bg:#FBEBC8; --bad:#B3261E; --bad-bg:#FBE3E1;
+  --display:"Fredoka","Trebuchet MS",system-ui,sans-serif;
+  --body:"Atkinson Hyperlegible",Verdana,system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#121625; --surface:#1B2135; --ink:#EEF1F8; --muted:#A5AEC6; --line:#343C57;
+    --accent:#A9B7FF; --on-accent:#121625;
+    --good:#7FD3A2; --good-bg:#163424; --warn:#F2C14E; --warn-bg:#3D2F0C; --bad:#F2938C; --bad-bg:#421C1A;
+    color-scheme:dark;
+  }
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5}
+.wrap{max-width:1040px;margin:0 auto;padding:24px 16px 56px;display:flex;flex-direction:column;gap:18px}
+h1,h2{font-family:var(--display);font-weight:600;margin:0;line-height:1.15;text-wrap:balance}
+h1{font-size:clamp(1.6rem,4vw,2.1rem)} h2{font-size:1.2rem}
+p{margin:0} a{color:var(--accent)}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.top{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:flex-end;justify-content:space-between}
+.top p{color:var(--muted)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:4px 12px;font-size:.9rem;font-weight:700;background:var(--surface);border:2px solid var(--line)}
+.pill.on{color:var(--good);border-color:var(--good)} .pill.err{color:var(--bad);border-color:var(--bad)} .pill.demo{color:var(--warn);border-color:var(--warn)}
+.btn{font-family:var(--display);font-weight:500;border-radius:999px;padding:7px 18px;border:2px solid var(--accent);background:var(--accent);color:var(--on-accent)}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.card{background:var(--surface);border:2px solid var(--line);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.note{border-color:var(--warn);background:var(--warn-bg)}
+.note ol{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:4px}
+.field{background:var(--bg);border:2px solid var(--line);border-radius:999px;padding:7px 14px;min-width:0}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.tile{background:var(--surface);border:2px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:2px}
+.tile span{font-size:.78rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.tile b{font-family:var(--display);font-size:1.7rem;font-weight:600;line-height:1.1;font-variant-numeric:tabular-nums}
+.tile small{color:var(--muted)}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:640px}
+th{font-size:.78rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);text-align:left;padding:8px 10px;border-bottom:2px solid var(--line);white-space:nowrap}
+td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top}
+th.n,td.n{text-align:right}
+tr.s{cursor:pointer} tr.s:hover td{background:var(--bg)}
+tr.s td:first-child{font-weight:700}
+.g{display:inline-block;min-width:2.2em;text-align:center;border-radius:8px;padding:2px 8px;font-family:var(--display);font-weight:600;border:2px solid}
+.g3{color:var(--good);background:var(--good-bg);border-color:var(--good)}
+.g2{color:var(--warn);background:var(--warn-bg);border-color:var(--warn)}
+.g1{color:var(--bad);background:var(--bad-bg);border-color:var(--bad)}
+.detail td{background:var(--bg)}
+.detail .in{display:flex;flex-direction:column;gap:10px;max-width:75ch}
+.detail h3{margin:0;font-size:.78rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.detail .para{white-space:pre-wrap;background:var(--surface);border:2px solid var(--line);border-radius:10px;padding:12px 14px}
+.detail ul{margin:0;padding-left:20px}
+.muted{color:var(--muted)} .empty{color:var(--muted);padding:20px 4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Word Parts Teacher Dashboard</h1>
+      <p>Root word paragraphs your students have turned in.</p>
+    </div>
+    <div class="row">
+      <span class="pill" id="status">Loading</span>
+      <button class="btn ghost" id="refresh">Refresh</button>
+      <button class="btn ghost" id="changeCode" hidden>Change code</button>
+    </div>
+  </header>
+
+  <section class="card note" id="demoNote" hidden>
+    <h2>Example data. This dashboard is not connected yet.</h2>
+    <p>The students below are made up so you can see how the dashboard works. To collect real work, connect a Google Sheet once:</p>
+    <ol>
+      <li>Make a new Google Sheet. Open Extensions, then Apps Script.</li>
+      <li>Paste in the code from <a href="https://github.com/Derwood67/derwood67.github.io/blob/main/word-parts/Code.gs">word-parts/Code.gs</a>. Change <b>TEACHER_CODE</b> to a code only you know. Save, then run <b>setup</b> once.</li>
+      <li>Choose Deploy, then New deployment, then Web app. Set "Execute as" to Me and "Who has access" to Anyone.</li>
+      <li>Copy the web app URL into <b>word-parts/config.js</b> on GitHub.</li>
+    </ol>
+  </section>
+
+  <section class="card" id="codePanel" hidden>
+    <h2>Teacher code</h2>
+    <p class="muted" id="codeMsg">Type the teacher code you set in the Apps Script.</p>
+    <form class="row" id="codeForm">
+      <input class="field" id="code" type="password" autocomplete="off" aria-label="Teacher code">
+      <button class="btn">Open dashboard</button>
+    </form>
+  </section>
+
+  <div id="main" hidden style="display:flex;flex-direction:column;gap:18px">
+    <section class="tiles" id="tiles"></section>
+    <section class="card">
+      <div class="row" style="justify-content:space-between">
+        <h2>Students</h2>
+        <div class="row">
+          <label class="muted" for="range">Show</label>
+          <select class="field" id="range"><option value="all">All work</option><option value="today">Today</option><option value="week">Last 7 days</option></select>
+          <label class="muted" for="sort">Sort by</label>
+          <select class="field" id="sort"><option value="new">Newest</option><option value="name">Name</option><option value="grade">Grade</option><option value="time">Time spent</option></select>
+        </div>
+      </div>
+      <p class="muted">Each row shows a student's latest paragraph. Select a row to read it. The grade is scored by the page, so read the paragraph before you record it.</p>
+      <div class="scroll"><table>
+        <thead><tr><th>Student</th><th>Grade</th><th class="n">Time spent</th><th class="n">Sentences</th><th class="n">Root words</th><th class="n">Mistakes</th><th>Turned in</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table></div>
+      <p class="muted">Grade 3: 5+ sentences, 5+ root words, 0 to 1 mistakes. Grade 2: 5+ sentences, 3+ root words, up to 4 mistakes. Grade 1: fewer root words or 5+ mistakes. Time counts while the student has the paragraph tab open and pauses after 2 minutes without typing.</p>
+    </section>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const URL_=(window.WORD_PARTS_SHEET_URL||"").trim(), demo=!URL_;
+let code="", results=[], open=new Set(), timer=null;
+try{code=localStorage.getItem("wordPartsTeacherCode")||""}catch(e){}
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const keyOf=n=>String(n||"").trim().toLowerCase();
+function fmtDur(sec){sec=Number(sec);if(!isFinite(sec)||sec<0)return"";const m=Math.floor(sec/60),s=Math.round(sec%60);return m+":"+String(s).padStart(2,"0")}
+function fmtWhen(iso){const d=new Date(iso);if(isNaN(d))return"";const t=d.toLocaleTimeString([], {hour:"numeric",minute:"2-digit"});
+  return d.toDateString()===new Date().toDateString()?"Today "+t:d.toLocaleDateString([], {month:"short",day:"numeric"})+" "+t}
+function setStatus(kind,text){$("status").className="pill "+kind;$("status").textContent=text}
+
+function sample(){
+  const ago=m=>new Date(Date.now()-m*60000).toISOString();
+  return [
+   {time:ago(12),student:"Ava (example)",grade:3,seconds:545,sentences:6,rootCount:7,rootWords:"aquarium, transport, inspect, telephone, photograph, audience, incredible",mistakes:0,feedback:"",checks:3,paragraph:"My class took a field trip to the aquarium on Friday. A bus had to transport all of us across town. Our teacher told us to inspect every tank closely. I used my telephone to take a photograph of a huge turtle. The audience clapped when the divers fed the sharks. It was an incredible day!"},
+   {time:ago(95),student:"Ava (example)",grade:2,seconds:310,sentences:5,rootCount:4,rootWords:"aquarium, transport, telephone, photograph",mistakes:2,feedback:"Sentence 1: Capitalize \"friday.\" Days and months start with a capital letter. | Sentence 4: Always capitalize the word \"I.\"",checks:1,paragraph:"My class took a field trip to the aquarium on friday. A bus had to transport all of us. We saw sharks. i used my telephone to take a photograph. It was fun."},
+   {time:ago(20),student:"Marcus (example)",grade:2,seconds:402,sentences:6,rootCount:5,rootWords:"aquarium, photograph, telephone, audience, spectator",mistakes:4,feedback:"Sentence 1: Start this sentence with a capital letter. | Sentence 1: Capitalize \"friday.\" Days and months start with a capital letter. | Sentence 2: Check your subject and verb. \"they was\" should be \"they were.\" | Sentence 4: Check your subject and verb. \"audience were\" should be \"audience was.\"",checks:2,paragraph:"we went to the aquarium on friday. They was feeding the sharks. I took a photograph with my telephone. The audience were loud. My friend and I are spectators at the show. It was fun."},
+   {time:ago(31),student:"Sofia (example)",grade:3,seconds:731,sentences:5,rootCount:5,rootWords:"bicycle, pedal, motion, flexible, report",mistakes:1,feedback:"Sentence 3: Put a space after each comma.",checks:4,paragraph:"I ride my bicycle to the park every Saturday. My feet push each pedal to keep the wheels in motion. When I turn,my body has to be flexible. I wrote a report about bike safety for school. Riding is my favorite way to move!"},
+   {time:ago(44),student:"Jordan (example)",grade:1,seconds:148,sentences:5,rootCount:1,rootWords:"tractor",mistakes:1,feedback:"Sentence 2: Check your subject and verb. \"he don't\" should be \"he doesn't.\"",checks:0,paragraph:"My grandpa has a tractor. He don't let me drive it. It is red. It is loud. I like the farm."},
+   {time:ago(52),student:"Priya (example)",grade:2,seconds:615,sentences:7,rootCount:3,rootWords:"telescope, astronaut, vision",mistakes:0,feedback:"",checks:2,paragraph:"I got a telescope for my birthday. At night I look at the moon. I can see the holes on it. My dad says an astronaut walked there. I want to go someday. You need good vision to find the planets. Mars looks like a tiny red dot."}
+  ];
+}
+
+function draw(){
+  const range=$("range").value, cut=range==="today"?new Date().setHours(0,0,0,0):range==="week"?Date.now()-7*864e5:0;
+  const by=new Map();
+  results.filter(r=>new Date(r.time).getTime()>=cut).forEach(r=>{const k=keyOf(r.student);if(!k)return;(by.get(k)||by.set(k,[]).get(k)).push(r)});
+  const list=[...by.values()].map(a=>{a.sort((x,y)=>new Date(y.time)-new Date(x.time));return {latest:a[0],all:a}});
+  const sort=$("sort").value;
+  list.sort((a,b)=>sort==="name"?keyOf(a.latest.student).localeCompare(keyOf(b.latest.student))
+    :sort==="grade"?(b.latest.grade||0)-(a.latest.grade||0)
+    :sort==="time"?(b.latest.seconds||0)-(a.latest.seconds||0)
+    :new Date(b.latest.time)-new Date(a.latest.time));
+  const n=list.length, cnt=g=>list.filter(x=>Number(x.latest.grade)===g).length;
+  const times=list.map(x=>Number(x.latest.seconds)).filter(x=>isFinite(x)&&x>0);
+  const avg=times.length?times.reduce((a,b)=>a+b,0)/times.length:0;
+  const tile=(label,val,sub)=>`<div class="tile"><span>${label}</span><b>${val}</b><small>${sub}</small></div>`;
+  $("tiles").innerHTML=tile("Turned in",n,n===1?"student":"students")
+    +tile("Average time",n?fmtDur(avg):"0:00","minutes:seconds")
+    +tile("Grade 3",cnt(3),"met the goal")+tile("Grade 2",cnt(2),"getting close")+tile("Grade 1",cnt(1),"needs support");
+  $("rows").innerHTML=n?list.map(({latest:r,all})=>{
+    const k=keyOf(r.student), isOpen=open.has(k), g=Number(r.grade);
+    const fb=String(r.feedback||"").split(" | ").filter(Boolean);
+    return `<tr class="s" data-k="${esc(k)}" tabindex="0" aria-expanded="${isOpen}">
+      <td>${esc(r.student)}${all.length>1?` <span class="muted" style="font-weight:400">(${all.length} tries)</span>`:""}</td>
+      <td><span class="g g${g}">${g||"?"}</span></td>
+      <td class="n">${fmtDur(r.seconds)}</td><td class="n">${esc(r.sentences)}</td><td class="n">${esc(r.rootCount)}</td><td class="n">${esc(r.mistakes)}</td>
+      <td>${fmtWhen(r.time)}</td></tr>`
+    +(isOpen?`<tr class="detail"><td colspan="7"><div class="in">
+      <h3>Paragraph</h3><div class="para">${esc(r.paragraph)}</div>
+      <h3>Root words used</h3><div>${esc(r.rootWords)||'<span class="muted">None</span>'}</div>
+      <h3>Feedback the student saw</h3>${fb.length?"<ul>"+fb.map(x=>"<li>"+esc(x)+"</li>").join("")+"</ul>":'<div class="muted">No mistakes found.</div>'}
+      <div class="muted">Checked the paragraph ${esc(r.checks||0)} time${Number(r.checks)===1?"":"s"} before turning in.</div>
+      ${all.length>1?"<h3>Earlier tries</h3><ul>"+all.slice(1).map(x=>`<li>${fmtWhen(x.time)}: grade ${esc(x.grade)}, ${fmtDur(x.seconds)} spent, ${esc(x.mistakes)} mistakes</li>`).join("")+"</ul>":""}
+    </div></td></tr>`:"");
+  }).join(""):'<tr><td colspan="7" class="empty">No paragraphs turned in yet. When a student taps Turn in, their work appears here.</td></tr>';
+}
+function toggle(tr){const k=tr.dataset.k;open.has(k)?open.delete(k):open.add(k);draw()}
+$("rows").addEventListener("click",e=>{const tr=e.target.closest("tr.s");if(tr)toggle(tr)});
+$("rows").addEventListener("keydown",e=>{const tr=e.target.closest("tr.s");if(tr&&(e.key==="Enter"||e.key===" ")){e.preventDefault();toggle(tr)}});
+$("range").onchange=$("sort").onchange=draw;
+
+function needCode(msg){
+  clearInterval(timer);$("codePanel").hidden=false;$("main").hidden=true;$("changeCode").hidden=true;
+  if(msg)$("codeMsg").textContent=msg;setStatus("err","Not connected");$("code").focus();
+}
+async function load(){
+  if(demo){results=sample();draw();return}
+  try{
+    const r=await fetch(`${URL_}?action=results&key=${encodeURIComponent(code)}`), j=await r.json();
+    if(j.error){needCode(j.message);return}
+    results=j.results||[];$("main").hidden=false;$("codePanel").hidden=true;$("changeCode").hidden=false;
+    setStatus("on","Connected · updated "+new Date().toLocaleTimeString([], {hour:"numeric",minute:"2-digit"}));draw();
+  }catch(e){setStatus("err","Can't reach the Sheet. Trying again soon.")}
+}
+function start(){clearInterval(timer);load();timer=setInterval(load,30000)}
+$("refresh").onclick=load;
+$("codeForm").addEventListener("submit",e=>{e.preventDefault();code=$("code").value.trim();try{localStorage.setItem("wordPartsTeacherCode",code)}catch(_){};start()});
+$("changeCode").onclick=()=>{try{localStorage.removeItem("wordPartsTeacherCode")}catch(e){};code="";needCode("Type the new teacher code.")};
+if(demo){$("demoNote").hidden=false;$("main").hidden=false;setStatus("demo","Example data");load()}
+else if(code)start(); else needCode();
+</script>
+</body>
+</html>
