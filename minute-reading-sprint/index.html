@@ -80,7 +80,7 @@ th{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mu
 <div class="wrap">
   <div>
     <h1>Minute Reading Sprint</h1>
-    <p class="sub">Letter sounds and decoding · one minute · 25-item sets · untimed practice · the student reads aloud, you score</p>
+    <p class="sub">Letter sounds and decoding · you pick the time and set size · untimed practice · the student reads aloud, you score</p>
   </div>
 
   <div class="card setup" id="setup">
@@ -94,6 +94,10 @@ th{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mu
     <div class="row"><span class="label">Options</span>
       <label class="row" for="showKey" style="gap:6px"><input type="checkbox" id="showKey" checked> Show answer key (for me)</label>
       <label class="row" for="redV" style="gap:6px"><input type="checkbox" id="redV"> Vowels in red</label>
+    </div>
+    <div class="row"><span class="label">Round</span>
+      <label class="row" for="setN" style="gap:6px"><select id="setN"><option>5</option><option>10</option><option>15</option><option>20</option><option>25</option><option>30</option><option>40</option><option>50</option><option>75</option><option>100</option></select> <span id="setUnit">items</span></label>
+      <label class="row" for="mins" style="gap:6px"><select id="mins"><option value="0.5">30 seconds</option><option value="1">1 minute</option><option value="2">2 minutes</option><option value="3">3 minutes</option><option value="4">4 minutes</option><option value="5">5 minutes</option></select></label>
     </div>
     <div class="std" id="std"></div>
     <div class="row"><button class="btn go" id="start">Start 1 minute</button><button class="btn" id="practice">Practice (no timer)</button><span class="note" id="setupBase"></span></div>
@@ -129,7 +133,7 @@ th{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mu
 
   <div class="card" style="display:grid;gap:8px">
     <div class="row" style="justify-content:space-between"><span class="label">History for this student and skill</span><button class="btn" id="resetBase" style="font-size:.8rem;padding:5px 10px">Reset baseline</button></div>
-    <div class="tw"><table><thead><tr><th>Date</th><th id="hUnit">Correct</th><th>Tried</th><th>Accuracy</th><th>vs. baseline</th></tr></thead><tbody id="hist"></tbody></table></div>
+    <div class="tw"><table><thead><tr><th>Date</th><th id="hUnit">Correct</th><th>Tried</th><th>Accuracy</th><th>Round</th><th>vs. baseline</th></tr></thead><tbody id="hist"></tbody></table></div>
     <p class="note" id="histEmpty">No rounds yet. The first round becomes the baseline.</p>
     <p class="note" id="resetConfirm" hidden>Clear this student's history for this skill? <button class="btn" id="resetYes" style="font-size:.8rem;padding:4px 10px">Yes, clear</button> <button class="btn" id="resetNo" style="font-size:.8rem;padding:4px 10px">Cancel</button></p>
   </div>
@@ -138,7 +142,7 @@ th{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mu
 <script>
 (function(){
 "use strict";
-const SET=25;
+let SET=25,MIN=1;
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -170,11 +174,19 @@ let mode=store.get("mode","ls");$("#student").value=store.get("student","");
 $("#showKey").checked=store.get("key",true);$("#redV").checked=store.get("redV",false);
 $("#showKey").onchange=()=>store.set("key",$("#showKey").checked);
 $("#redV").onchange=()=>store.set("redV",$("#redV").checked);
+$("#setN").value=String(store.get("setN",25));if(!$("#setN").value)$("#setN").value="25";
+$("#mins").value=String(store.get("mins",1));if(!$("#mins").value)$("#mins").value="1";
+const timeTxt=m=>m<1?`${Math.round(m*60)} seconds`:m===1?"1 minute":`${m} minutes`;
+function readRound(){SET=+$("#setN").value||25;MIN=+$("#mins").value||1}
+function roundUI(){readRound();$("#start").textContent=`Start ${timeTxt(MIN)}`;$("#setUnit").textContent=mode==="sen"?"sentences":mode==="ls"?"sounds":"words"}
+$("#setN").onchange=()=>{store.set("setN",+$("#setN").value);roundUI()};
+$("#mins").onchange=()=>{store.set("mins",+$("#mins").value);roundUI()};
+const fmt=s=>`${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;
 const key=()=>`r|${($("#student").value.trim()||"(no name)").toLowerCase()}|${mode}`;
 function baseline(){const h=store.get(key(),[]);return h.length?h[0].c:null}
 function sync(){
   $$("[data-m]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.m===mode));
-  $("#std").innerHTML=STD[mode];$("#hUnit").textContent=`Correct ${UNIT[mode]}`;renderHist();
+  roundUI();$("#std").innerHTML=STD[mode];$("#hUnit").textContent=`Correct ${UNIT[mode]}`;renderHist();
   const b=baseline();
   $("#setupBase").textContent=b===null?"No baseline yet for this skill. This round sets it.":`Baseline to beat: ${b} correct ${UNIT[mode]}`;
 }
@@ -232,15 +244,15 @@ document.addEventListener("keydown",e=>{
 });
 function start(p){
   practice=!!p;$(".bar").hidden=practice;$("#stop").textContent=practice?"Finish practice":"Stop";
-  log=[];idx=0;doneEarly=false;running=true;base=baseline();set=buildSet();
+  readRound();log=[];idx=0;doneEarly=false;running=true;base=baseline();set=buildSet();
   $("#setup").hidden=true;$("#results").hidden=true;$("#drill").hidden=false;
   show();tallyTxt();$("#bOk").focus();
   clearInterval(tick);
   if(practice){$("#clock").textContent="Practice · no timer";return}
-  endAt=Date.now()+60000;tick=setInterval(upd,200);upd();
+  endAt=Date.now()+MIN*60000;tick=setInterval(upd,200);upd();
 }
 function upd(){const left=Math.max(0,endAt-Date.now()),s=Math.ceil(left/1000);
-  $("#clock").textContent=s>=60?"1:00":`0:${String(s).padStart(2,"0")}`;$("#barFill").style.width=(left/600)+"%";if(left<=0)finish()}
+  $("#clock").textContent=fmt(s);$("#barFill").style.width=(left/(MIN*600))+"%";if(left<=0)finish()}
 $("#start").onclick=()=>start(false);$("#practice").onclick=()=>start(true);$("#again").onclick=()=>start(practice);
 $("#stop").onclick=()=>{if(practice&&running){finish();return}running=false;clearInterval(tick);$("#drill").hidden=true;$("#setup").hidden=false;sync()};
 $("#back").onclick=()=>{$("#results").hidden=true;$("#setup").hidden=false;sync()};
@@ -259,33 +271,33 @@ function finish(){
       `<div class="stat"><b style="font-size:1.2rem">Practice</b><span>Not saved to history</span></div>`;
     const pm=[...new Set(log.filter(x=>!x.ok).map(x=>x.t))];
     $("#miss").innerHTML=pm.map(m=>`<span>${esc(m)}</span>`).join("");$("#missWrap").hidden=!pm.length;
-    $("#baseNote").textContent="Practice round: no timer, and it doesn't change the baseline or history. Press Start 1 minute for a scored round.";
+    $("#baseNote").textContent="Practice round: no timer, and it doesn't change the baseline or history. Press Start for a scored round.";
     return;
   }
   const secsLeft=Math.max(0,Math.round((endAt-Date.now())/1000));
   const c=score(),t=log.reduce((s,x)=>s+x.n,0);
   const acc=t?Math.round(c/t*100):0;
   const h=store.get(key(),[]);const b=h.length?h[0].c:c;const first=!h.length;
-  h.push({d:Date.now(),c,t});store.set(key(),h.slice(-50));
+  h.push({d:Date.now(),c,t,n:SET,m:MIN});store.set(key(),h.slice(-50));
   const best=Math.max(...h.map(x=>x.c)),diff=c-b;
   $("#drill").hidden=true;$("#results").hidden=false;
   const nm=$("#student").value.trim();$("#rTitle").textContent=`${nm?nm+" · ":""}${NAME[mode]}`;
   const u=UNIT[mode],items=log.length,itemsOk=log.filter(x=>x.ok).length;
   $("#stats").innerHTML=
-    `<div class="stat"><b>${c}</b><span>Correct ${u} / minute</span></div>`+
+    `<div class="stat"><b>${c}</b><span>Correct ${u} in ${timeTxt(MIN)}</span></div>`+
     `<div class="stat"><b>${itemsOk}<small style="font-size:1rem;color:var(--muted)">/${SET}</small></b><span>${ITEM[mode]}s right this set (${items} read)</span></div>`+
     `<div class="stat"><b>${b}</b><span>Baseline</span></div>`+
     `<div class="stat"><b class="delta ${diff>0?"up":diff<0?"down":""}">${first?"—":(diff>0?"+":"")+diff}</b><span>${first?"First round":"Change from baseline"}</span></div>`;
   const miss=[...new Set(log.filter(x=>!x.ok).map(x=>x.t))];
   $("#miss").innerHTML=miss.map(m=>`<span>${esc(m)}</span>`).join("");$("#missWrap").hidden=!miss.length;
   const early=doneEarly?`Finished all ${SET} with ${secsLeft} seconds left. `:"";
-  $("#baseNote").textContent=early+`Accuracy ${acc}% (${c}/${t}). `+(first?`This is the baseline: ${c} correct ${u} in one minute. Later rounds are compared to it.`:`Best so far: ${best}. Rounds played: ${h.length}.`);
+  $("#baseNote").textContent=early+`Accuracy ${acc}% (${c}/${t}). `+(first?`This is the baseline: ${c} correct ${u} in ${timeTxt(MIN)}. Later rounds are compared to it.`:`Best so far: ${best}. Rounds played: ${h.length}.`);
   renderHist();
 }
 function renderHist(){
   const h=store.get(key(),[]);$("#histEmpty").hidden=h.length>0;const b=h.length?h[0].c:0;
   $("#hist").innerHTML=h.slice().reverse().map((x,i)=>{const d=new Date(x.d),isB=i===h.length-1,df=x.c-b;
-    return `<tr><td>${d.toLocaleDateString()} ${d.toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})}</td><td><b>${x.c}</b></td><td>${x.t}</td><td>${x.t?Math.round(x.c/x.t*100):0}%</td><td>${isB?"Baseline":`<span class="delta ${df>0?"up":df<0?"down":""}">${df>0?"+":""}${df}</span>`}</td></tr>`}).join("");
+    return `<tr><td>${d.toLocaleDateString()} ${d.toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})}</td><td><b>${x.c}</b></td><td>${x.t}</td><td>${x.t?Math.round(x.c/x.t*100):0}%</td><td>${x.n?`${x.n} · ${timeTxt(x.m)}`:"—"}</td><td>${isB?"Baseline":`<span class="delta ${df>0?"up":df<0?"down":""}">${df>0?"+":""}${df}</span>`}</td></tr>`}).join("");
 }
 $("#resetBase").onclick=()=>{$("#resetConfirm").hidden=false};
 $("#resetNo").onclick=()=>{$("#resetConfirm").hidden=true};
