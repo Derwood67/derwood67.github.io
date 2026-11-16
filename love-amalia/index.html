@@ -107,6 +107,10 @@ nav button[aria-selected="true"]{background:var(--blue);border-color:var(--blue)
 .missed li{margin:.6em 0}
 .missed small{display:block;color:var(--soft)}
 
+.tile.locked{opacity:.55;cursor:not-allowed;background:#f3ecdf}
+.rule{margin:0 0 8px;font-size:.92rem;color:var(--olive)}
+.fb ul{margin:.4em 0 0;padding-left:1.2em}
+
 /* summary */
 .plan{display:grid;gap:8px;margin:8px 0 18px}
 .planrow{display:grid;grid-template-columns:110px 1fr;gap:4px 12px;align-items:center;background:#fff;border:2px solid var(--line);border-radius:12px;padding:10px 12px}
@@ -159,15 +163,15 @@ nav button[aria-selected="true"]{background:var(--blue);border-color:var(--blue)
       <button id="switchBtn" class="btn ghost small">Switch student</button></div>
   </header>
   <nav role="tablist">
-    <button role="tab" data-tab="map" aria-selected="true">📖 Story Map</button>
-    <button role="tab" data-tab="quiz" aria-selected="false">✏️ Quiz</button>
-    <button role="tab" data-tab="summary" aria-selected="false">📝 Summary</button>
-    <button role="tab" data-tab="progress" aria-selected="false">⭐ My Progress</button>
+    <button role="tab" data-tab="map" aria-selected="true" data-label="📖 Story Map">📖 Story Map</button>
+    <button role="tab" data-tab="quiz" aria-selected="false" data-label="✏️ Quiz">✏️ Quiz</button>
+    <button role="tab" data-tab="summary" aria-selected="false" data-label="📝 Summary">📝 Summary</button>
+    <button role="tab" data-tab="progress" aria-selected="false" data-label="⭐ My Progress">⭐ My Progress</button>
   </nav>
 
   <section id="tab-map" class="panel">
     <h2>Story Map</h2>
-    <p class="lead">Tap each part to learn how this story is built. Then write your own thinking — your notes are saved under your name.</p>
+    <p class="lead">Work through the parts <b>in order</b>. Read each one, then answer the question in complete sentences to unlock the next part. Finish all six to unlock the Quiz, and finish the Quiz to unlock the Summary.</p>
     <div id="tiles" class="grid"></div>
     <div id="detail" class="detail"></div>
   </section>
@@ -320,6 +324,7 @@ function login(raw){
   const name = clean[0].toUpperCase() + clean.slice(1).toLowerCase();
   meKey = name.toLowerCase();
   me = all[meKey] || {name, explored:[], notes:{}, quiz:null, attempts:0, best:null, last:null};
+  me.done = me.done || [];
   if(me.quiz && !me.quiz.asked) me.quiz = null;   // quiz saved by the older, non-adaptive version
   save();
   $("#whoName").textContent = me.name;
@@ -333,6 +338,7 @@ $("#switchBtn").addEventListener("click", showLogin);
 /* ---------- tabs ---------- */
 function showTab(t){
   document.querySelectorAll("nav button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === t));
+  updateNav();
   ["map","quiz","summary","progress"].forEach(x => $("#tab-"+x).classList.toggle("hidden", x !== t));
   if(t === "quiz") renderQuiz();
   if(t === "summary") renderSummary();
@@ -340,28 +346,77 @@ function showTab(t){
 }
 document.querySelector("nav").addEventListener("click", e => { const b = e.target.closest("button"); if(b) showTab(b.dataset.tab); });
 
+/* ---------- complete-sentence checker ---------- */
+function checkSentences(text, minSentences){
+  const t = text.trim(), issues = [];
+  if(!t) return ["Write your answer first."];
+  const safe = t.replace(/\b(Mr|Mrs|Ms|Dr|St|Jr)\./g, "$1");            // don't split on "Mr."
+  const parts = (safe.match(/[^.!?]+[.!?]+["')\]]*|[^.!?]+$/g) || []).map(s => s.trim()).filter(Boolean);
+  if(!/[.!?]["')\]]*$/.test(t)) issues.push("End your last sentence with a period, question mark, or exclamation point.");
+  if(parts.some(s => !/^["'(¿¡]*\p{Lu}/u.test(s))) issues.push("Start every sentence with a capital letter.");
+  if(parts.some(s => (s.match(/[\p{L}']+/gu) || []).length < 3)) issues.push("Make every sentence a complete thought (at least three words).");
+  if(/(^|[^\p{L}'])i(?=$|[^\p{L}])/u.test(t)) issues.push("Capitalize the word \"I.\"");
+  if(/\s[.!?,]/.test(t)) issues.push("Don't put a space before a punctuation mark.");
+  if(parts.length < minSentences) issues.push("Write at least " + minSentences + " complete sentences.");
+  return issues;
+}
+
+/* ---------- locks: each section must be completed before the next one opens ---------- */
+const partsDone = () => PARTS.every(p => me.done.includes(p.id));
+const quizDone = () => me.attempts >= 1;
+const partLocked = i => i > 0 && !me.done.includes(PARTS[i-1].id);
+function updateNav(){
+  const lock = {map:false, quiz:!partsDone(), summary:!(partsDone() && quizDone()), progress:false};
+  document.querySelectorAll("nav button").forEach(b => { b.textContent = (lock[b.dataset.tab] ? "🔒 " : "") + b.dataset.label; });
+}
+function lockedPanel(el, title, msg){
+  el.innerHTML = `<div class="center"><div class="big">🔒</div><h2>${title}</h2><p>${msg}</p>
+    <div class="row" style="justify-content:center"><button class="btn" id="goBack">Go to where I left off</button></div></div>`;
+  $("#goBack").onclick = () => showTab(partsDone() ? "quiz" : "map");
+}
+
 /* ---------- story map ---------- */
 let current = null, saveTimer = null;
 function renderTiles(){
-  $("#tiles").innerHTML = PARTS.map(p => `<button class="tile" data-id="${p.id}" aria-pressed="${current===p.id}">
-    <span class="emoji">${p.emoji}</span>${p.title}${me.explored.includes(p.id) ? '<span class="done" title="Explored">✔</span>' : ''}</button>`).join("");
+  $("#tiles").innerHTML = PARTS.map((p,i) => { const locked = partLocked(i), done = me.done.includes(p.id);
+    return `<button class="tile${locked?" locked":""}" data-id="${p.id}" aria-pressed="${current===p.id}" ${locked?'disabled aria-label="'+p.title+' (locked)"':""}>
+    <span class="emoji">${locked ? "🔒" : p.emoji}</span>${i+1}. ${p.title}${done ? '<span class="done" title="Completed">✔</span>' : ''}</button>`; }).join("");
+}
+function openPart(id){
+  current = id;
+  if(!me.explored.includes(id)){ me.explored.push(id); save(); }
+  renderTiles(); renderDetail();
 }
 $("#tiles").addEventListener("click", e => {
-  const b = e.target.closest(".tile"); if(!b) return;
-  current = b.dataset.id;
-  if(!me.explored.includes(current)){ me.explored.push(current); save(); }
-  renderTiles(); renderDetail();
+  const b = e.target.closest(".tile"); if(!b || b.disabled) return;
+  openPart(b.dataset.id);
 });
 function renderDetail(){
-  const p = PARTS.find(x => x.id === current);
+  const idx = PARTS.findIndex(x => x.id === current), p = PARTS[idx], next = PARTS[idx+1];
   $("#detail").innerHTML = `<h2>${p.emoji} ${p.title}</h2><div class="def">${p.def}</div>${p.body}
     <div class="think"><label for="note">✍️ Your thinking: ${p.prompt}</label>
+    <p class="rule">Answer in <b>at least 2 complete sentences</b>. Start each sentence with a capital letter and end it with a period, question mark, or exclamation point.</p>
     <textarea id="note" placeholder="Write your answer here…">${esc(me.notes[p.id] || "")}</textarea>
-    <div id="savedMsg" class="saved"></div></div>`;
+    <div id="savedMsg" class="saved"></div>
+    <div class="row"><button class="btn clay" id="submitNote">Check my answer</button></div>
+    <div id="noteFb" role="status"></div></div>`;
   $("#note").addEventListener("input", e => {
     me.notes[p.id] = e.target.value; clearTimeout(saveTimer);
     saveTimer = setTimeout(() => { save(); $("#savedMsg").textContent = "Saved for " + me.name + " ✔"; }, 400);
   });
+  const showDone = () => {
+    $("#noteFb").innerHTML = `<div class="fb good">✅ Section complete! ${next ? "<b>"+next.title+"</b> is now unlocked." : "You finished the Story Map. <b>The Quiz is now unlocked!</b>"}
+      <div class="row"><button class="btn" id="goNext">${next ? "Go to "+next.title+" →" : "Start the Quiz →"}</button></div></div>`;
+    $("#goNext").onclick = () => next ? openPart(next.id) : showTab("quiz");
+  };
+  $("#submitNote").onclick = () => {
+    const issues = checkSentences($("#note").value, 2);
+    if(issues.length){ $("#noteFb").innerHTML = `<div class="fb bad">Almost there! Fix these, then check again:<ul>${issues.map(i => "<li>"+esc(i)+"</li>").join("")}</ul></div>`; return; }
+    me.notes[p.id] = $("#note").value;
+    if(!me.done.includes(p.id)) me.done.push(p.id);
+    save(); renderTiles(); updateNav(); showDone();
+  };
+  if(me.done.includes(p.id)) showDone();
 }
 
 /* ---------- adaptive quiz: right answer -> next question is harder, wrong answer -> easier ---------- */
@@ -380,6 +435,8 @@ function pickQuestion(z){
 }
 function renderQuiz(){
   const el = $("#tab-quiz");
+  if(!partsDone()){ const left = PARTS.filter(p => !me.done.includes(p.id)).length;
+    return lockedPanel(el, "The Quiz is locked", "Finish all six Story Map parts first. You have " + left + " left."); }
   if(!me.quiz){
     el.innerHTML = `<h2>Comprehension Quiz</h2>
       <p class="lead">25 questions about <i>Love, Amalia</i>, picked just for you as you go.</p>
@@ -441,9 +498,12 @@ function renderResults(el){
     <div class="big">${score} / ${total}</div><p><b>${Math.round(score/total*100)}%</b> — ${msg}</p></div>
     <h3>How you did at each level</h3>${levelTable(levelCounts(z))}
     ${missed.length ? `<div class="missed"><h3>Questions to review</h3><ol>${missed.map(x => `<li>${esc(x.Q.q)}<small>✔ ${esc(x.Q.a[0])} — ${esc(x.Q.e)}</small></li>`).join("")}</ol></div>` : `<p class="center">🌟 A perfect score!</p>`}
-    <div class="row"><button class="btn clay" id="again">Try again (new questions)</button><button class="btn ghost" id="toMap">Back to Story Map</button></div>`;
+    <p class="center"><b>📝 The Summary section is now unlocked!</b></p>
+    <div class="row"><button class="btn" id="toSum">Write my summary →</button><button class="btn clay" id="again">Try again (new questions)</button><button class="btn ghost" id="toMap">Back to Story Map</button></div>`;
   $("#again").onclick = () => { newQuiz(); renderQuiz(); };
   $("#toMap").onclick = () => showTab("map");
+  $("#toSum").onclick = () => showTab("summary");
+  updateNav();
 }
 
 /* ---------- summary writing ---------- */
@@ -464,6 +524,7 @@ const CHECKS = [
 const words = t => (t.trim().match(/\S+/g) || []).length;
 const sentences = t => (t.match(/[^.!?]+[.!?]+/g) || []).length;
 function renderSummary(){
+  if(!partsDone() || !quizDone()) return lockedPanel($("#tab-summary"), "The Summary is locked", "Finish the Story Map and all 25 quiz questions first.");
   const S = me.summary = me.summary || {plan:{}, text:"", done:false};
   $("#tab-summary").innerHTML = `<h2>Write a Summary</h2>
     <p class="lead">A <b>summary</b> retells the most important parts of a story in your own words. It is short, it goes in order, and it leaves out your opinions and small details.</p>
@@ -491,7 +552,7 @@ function renderSummary(){
   ta.addEventListener("input", () => { S.text = ta.value; refresh(); later(); });
   document.querySelectorAll("#tab-summary .planrow input").forEach(i => i.addEventListener("input", () => { S.plan[i.dataset.k] = i.value; later(); }));
   $("#sumDone").onclick = () => {
-    if(!S.done && words(ta.value) < 30){ $("#sumDoneMsg").textContent = "Write a little more first — aim for at least 5 sentences."; return; }
+    if(!S.done){ const issues = checkSentences(ta.value, 5); if(issues.length){ $("#sumDoneMsg").textContent = "Fix this first: " + issues.join(" "); return; } }
     S.done = !S.done; save(); $("#sumDoneMsg").textContent = S.done ? "Nice work, " + me.name + "!" : ""; refresh();
   };
   refresh();
@@ -504,7 +565,7 @@ function renderProgress(){
   const notes = PARTS.filter(p => (me.notes[p.id] || "").trim());
   $("#tab-progress").innerHTML = `<h2>${esc(me.name)}'s Progress</h2>
     <div class="stats">
-      <div class="stat"><b>${me.explored.length}/${PARTS.length}</b><span>Story Map parts explored</span></div>
+      <div class="stat"><b>${me.done.length}/${PARTS.length}</b><span>Story Map parts completed</span></div>
       <div class="stat"><b>${notes.length}/${PARTS.length}</b><span>Thinking notes written</span></div>
       <div class="stat"><b>${S.done ? "✔" : S.text.trim() ? "…" : "—"}</b><span>Summary ${S.done ? "turned in" : S.text.trim() ? "in progress" : "not started"}</span></div>
       <div class="stat"><b>${me.best === null ? "—" : me.best + "/25"}</b><span>Best quiz score</span></div>
