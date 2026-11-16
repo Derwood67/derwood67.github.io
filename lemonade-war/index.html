@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lemonade War Reading Stand</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a lemonade-stand sign board. Money jar on top tracks earnings to $100; five tabs below, each with Learn then Practice. */
+:root{
+  color-scheme: light;
+  --sky:#DDF1F8;
+  --paper:#FFFFFF;
+  --ink:#1B2A41;
+  --ink-soft:#4A5A72;
+  --lemon:#FFD93B;
+  --rind:#E5A900;
+  --leaf:#1F6B4A;
+  --pink:#E8527A;
+  --good:#1F7A4D;
+  --good-bg:#DFF5E6;
+  --bad:#B3261E;
+  --bad-bg:#FBE4E2;
+  --display:"Fredoka","Trebuchet MS",sans-serif;
+  --body:"Atkinson Hyperlegible","Verdana",sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--sky);color:var(--ink);font-family:var(--body);font-size:18px;line-height:1.55}
+.wrap{max-width:860px;margin:0 auto;padding:20px 16px 56px;display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{font-family:var(--display);line-height:1.15;margin:0;text-wrap:balance}
+h1{font-size:clamp(1.8rem,5vw,2.6rem);font-weight:700}
+h2{font-size:1.6rem;font-weight:600}
+h3{font-size:1.2rem;font-weight:600}
+p{margin:0;max-width:65ch}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--pink);outline-offset:2px}
+
+header.sign{background:var(--lemon);border:3px solid var(--ink);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:14px;box-shadow:0 5px 0 var(--ink)}
+.sign-top{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.sign-top svg{flex:none}
+.byline{font-size:1rem;color:var(--ink)}
+.jar{background:var(--paper);border:3px solid var(--ink);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.jar-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.jar-label{font-family:var(--display);font-weight:600}
+.jar-amt{font-family:var(--display);font-weight:700;font-size:1.3rem;font-variant-numeric:tabular-nums}
+.meter{height:22px;border:2px solid var(--ink);border-radius:999px;background:#F3F6F8;overflow:hidden}
+.meter i{display:block;height:100%;width:0;background:repeating-linear-gradient(-45deg,var(--pink) 0 12px,#F17C9A 12px 24px);transition:width .4s}
+.jar-note{font-size:.95rem;color:var(--ink-soft)}
+.reset{align-self:flex-start;background:none;border:none;padding:0;text-decoration:underline;font-size:.95rem;color:var(--ink-soft)}
+
+nav.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tab{font-family:var(--display);font-weight:600;background:var(--paper);border:2px solid var(--ink);border-radius:999px;padding:8px 16px;display:flex;gap:8px;align-items:center}
+.tab[aria-selected="true"]{background:var(--leaf);color:#fff}
+.tab .count{font-size:.85rem;font-variant-numeric:tabular-nums;opacity:.85}
+
+section.panel{display:none;flex-direction:column;gap:18px}
+section.panel.on{display:flex}
+.card{background:var(--paper);border:2px solid var(--ink);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.eyebrow{font-family:var(--display);font-weight:600;font-size:.9rem;letter-spacing:.08em;text-transform:uppercase;color:var(--leaf)}
+.practice .eyebrow{color:var(--pink)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.mini{border:2px solid var(--ink);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px;background:#FFF9DC}
+.mini.alt{background:#E9F6EE}
+.mini p{font-size:1rem}
+.tagrow{display:flex;flex-wrap:wrap;gap:6px}
+.tag{font-size:.85rem;font-weight:700;border:2px solid var(--ink);border-radius:999px;padding:1px 10px;background:var(--paper)}
+details{font-size:1rem}
+summary{cursor:pointer;font-weight:700;color:var(--leaf)}
+details p{margin-top:6px}
+ul.plain{margin:0;padding-left:1.2em;max-width:65ch}
+ul.plain li{margin:4px 0}
+
+.q{border-top:2px dashed #C9D3DE;padding-top:14px;display:flex;flex-direction:column;gap:10px}
+.q:first-of-type{border-top:none;padding-top:0}
+.q-text{font-weight:700;max-width:65ch}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opt{background:var(--paper);border:2px solid var(--ink);border-radius:12px;padding:8px 14px;text-align:left;box-shadow:0 3px 0 var(--ink)}
+.opt:hover:not(:disabled){background:#FFF3B0}
+.opt.right{background:var(--good-bg);border-color:var(--good);box-shadow:0 3px 0 var(--good)}
+.opt.wrong{background:var(--bad-bg);border-color:var(--bad);box-shadow:none;text-decoration:line-through}
+.opt:disabled{cursor:default}
+.fb{font-size:1rem;border-radius:10px;padding:8px 12px;max-width:65ch}
+.fb.good{background:var(--good-bg);color:var(--good)}
+.fb.bad{background:var(--bad-bg);color:var(--bad)}
+.fb:empty{display:none}
+
+ol.seq{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+ol.seq li{display:flex;gap:10px;align-items:center;border:2px solid var(--ink);border-radius:12px;padding:8px 10px;background:#FFF9DC}
+ol.seq .num{font-family:var(--display);font-weight:700;width:1.6em;text-align:center;flex:none}
+ol.seq .txt{flex:1;font-size:1rem}
+ol.seq .mv{display:flex;flex-direction:column;gap:4px;flex:none}
+ol.seq .mv button{border:2px solid var(--ink);background:var(--paper);border-radius:8px;width:38px;height:30px;line-height:1;font-weight:700}
+ol.seq .mv button:disabled{opacity:.3;cursor:default}
+ol.seq.done li{background:var(--good-bg);border-color:var(--good)}
+.check{align-self:flex-start;font-family:var(--display);font-weight:600;background:var(--leaf);color:#fff;border:2px solid var(--ink);border-radius:12px;padding:8px 18px;box-shadow:0 3px 0 var(--ink)}
+.write{background:#E9F6EE}
+@media (prefers-reduced-motion:reduce){.meter i{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="sign">
+  <div class="sign-top">
+    <svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true">
+      <ellipse cx="32" cy="34" rx="24" ry="19" fill="#FFF3A0" stroke="#1B2A41" stroke-width="3"/>
+      <path d="M8 34h48M32 15v38M15 21l34 26M49 21L15 47" stroke="#E5A900" stroke-width="2.5"/>
+      <path d="M40 12c6-8 14-7 17-5-2 7-9 10-17 5z" fill="#1F6B4A" stroke="#1B2A41" stroke-width="2.5"/>
+    </svg>
+    <div>
+      <h1>The Lemonade War Reading Stand</h1>
+      <p class="byline">A reading workout for the novel by Jacqueline Davies</p>
+    </div>
+  </div>
+  <div class="jar" aria-live="polite">
+    <div class="jar-row">
+      <span class="jar-label">Your money jar</span>
+      <span class="jar-amt"><span id="amt">$0</span> of $100</span>
+    </div>
+    <div class="meter"><i id="bar"></i></div>
+    <span class="jar-note" id="note">Evan and Jessie raced to earn $100. You can too. Every correct answer puts $4 in your jar.</span>
+    <button class="reset" id="reset" type="button">Empty the jar and start over</button>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist" aria-label="Reading skills" id="tabs"></nav>
+
+<!-- CHARACTERS -->
+<section class="panel" id="p-characters" role="tabpanel">
+  <div class="card">
+    <span class="eyebrow">Learn</span>
+    <h2>Characters</h2>
+    <p>Authors show us who characters are through what they say, do, think, and feel. These are called <strong>character traits</strong>. Good readers also ask what each character <strong>wants</strong> and how the character <strong>changes</strong>.</p>
+    <div class="grid">
+      <div class="mini">
+        <h3>Evan Treski</h3>
+        <div class="tagrow"><span class="tag">friendly</span><span class="tag">proud</span><span class="tag">people-smart</span></div>
+        <p>Big brother, heading into fourth grade. He makes friends easily, but math is hard for him.</p>
+        <details><summary>What he wants and how he changes</summary><p>Evan wants to feel smart and respected. He starts out angry and hiding his feelings. By the end he admits what he did wrong and tells Jessie the truth.</p></details>
+      </div>
+      <div class="mini alt">
+        <h3>Jessie Treski</h3>
+        <div class="tagrow"><span class="tag">math whiz</span><span class="tag">determined</span><span class="tag">puzzled by feelings</span></div>
+        <p>Little sister. She is skipping third grade and will be in Evan's class. Numbers are easy for her, but people confuse her.</p>
+        <details><summary>What she wants and how she changes</summary><p>Jessie wants her brother back and wants to fit in at school. She learns to notice how others feel and to say sorry.</p></details>
+      </div>
+      <div class="mini">
+        <h3>Megan Moriarty</h3>
+        <div class="tagrow"><span class="tag">kind</span><span class="tag">generous</span></div>
+        <p>A girl from Evan's grade who becomes Jessie's lemonade partner and her friend.</p>
+        <details><summary>Why she matters</summary><p>Megan shows Jessie that she can make a friend on her own, and that money can be used to help others.</p></details>
+      </div>
+      <div class="mini alt">
+        <h3>Scott Spencer</h3>
+        <div class="tagrow"><span class="tag">competitive</span><span class="tag">hard to trust</span></div>
+        <p>A classmate Evan teams up with early on. Evan never feels good about him.</p>
+        <details><summary>Why he matters</summary><p>When money goes missing at a friend's house, Evan suspects Scott. That loss pushes Evan to finally come clean.</p></details>
+      </div>
+      <div class="mini">
+        <h3>Mrs. Treski</h3>
+        <div class="tagrow"><span class="tag">caring</span><span class="tag">busy</span></div>
+        <p>Evan and Jessie's mom. She works from home and can tell something is wrong between her kids.</p>
+        <details><summary>Why she matters</summary><p>She does not fix the fight for them. Evan and Jessie have to solve it themselves.</p></details>
+      </div>
+    </div>
+  </div>
+  <div class="card practice">
+    <span class="eyebrow">Practice</span>
+    <h2>Evan, Jessie, or both?</h2>
+    <p>Comparing characters helps you understand them. Pick who each sentence describes.</p>
+    <div id="q-characters"></div>
+  </div>
+  <div class="card write">
+    <span class="eyebrow">Think and write</span>
+    <p>Evan is people-smart and Jessie is math-smart. Which kind of smart helped more in the lemonade war? Use two details from the book to explain.</p>
+  </div>
+</section>
+
+<!-- SETTING -->
+<section class="panel" id="p-setting" role="tabpanel">
+  <div class="card">
+    <span class="eyebrow">Learn</span>
+    <h2>Setting</h2>
+    <p>Setting is <strong>when</strong> and <strong>where</strong> a story happens. A strong setting does a job. It can cause problems, change the mood, or push characters to act.</p>
+    <div class="grid">
+      <div class="mini">
+        <h3>When</h3>
+        <p>The last five days of summer vacation, during a heat wave. The story ends on Labor Day weekend, right before school starts.</p>
+      </div>
+      <div class="mini alt">
+        <h3>Where</h3>
+        <p>The Treski house and the streets of their neighborhood, the town center, and friends' houses nearby.</p>
+      </div>
+      <div class="mini">
+        <h3>Why it matters</h3>
+        <p>Hot days mean thirsty customers. The first day of school is coming fast, so the clock is always ticking.</p>
+      </div>
+    </div>
+  </div>
+  <div class="card practice">
+    <span class="eyebrow">Practice</span>
+    <h2>How does the setting shape the story?</h2>
+    <div id="q-setting"></div>
+  </div>
+  <div class="card write">
+    <span class="eyebrow">Think and write</span>
+    <p>Imagine this story happened in January instead of August. What would have to change? Name at least two things.</p>
+  </div>
+</section>
+
+<!-- TEXT STRUCTURE -->
+<section class="panel" id="p-structure" role="tabpanel">
+  <div class="card">
+    <span class="eyebrow">Learn</span>
+    <h2>Text structure</h2>
+    <p>Text structure is how an author builds and organizes a book. Jacqueline Davies made some smart choices about how the chapters fit together.</p>
+    <div class="grid">
+      <div class="mini">
+        <h3>Time order</h3>
+        <p>Events happen in sequence over five days. The countdown builds suspense.</p>
+      </div>
+      <div class="mini alt">
+        <h3>Two points of view</h3>
+        <p>Chapters take turns following Evan and Jessie. We learn what each one thinks, even when they will not tell each other.</p>
+      </div>
+      <div class="mini">
+        <h3>Business-word chapter titles</h3>
+        <p>Each chapter is named for a business term and starts with its definition. The term hints at what will happen.</p>
+      </div>
+      <div class="mini alt">
+        <h3>Cause and effect</h3>
+        <p>One choice leads to the next. A hurtful word causes a bet. A mean trick causes a bigger one.</p>
+      </div>
+    </div>
+  </div>
+  <div class="card practice">
+    <span class="eyebrow">Practice 1</span>
+    <h2>Put the events in time order</h2>
+    <p>Use the arrows to move each event up or down. Then check your order.</p>
+    <ol class="seq" id="seq"></ol>
+    <button class="check" id="seq-check" type="button">Check my order</button>
+    <div class="fb" id="seq-fb" role="status"></div>
+  </div>
+  <div class="card practice">
+    <span class="eyebrow">Practice 2</span>
+    <h2>Match the chapter title to the event</h2>
+    <p>Each question gives a chapter title and what the business term means. Pick the event that fits.</p>
+    <div id="q-structure"></div>
+  </div>
+  <div class="card write">
+    <span class="eyebrow">Think and write</span>
+    <p>Why do you think the author let us see inside both Evan's and Jessie's heads? How would the book feel if only Evan told the story?</p>
+  </div>
+</section>
+
+<!-- MAIN IDEA -->
+<section class="panel" id="p-main-idea" role="tabpanel">
+  <div class="card">
+    <span class="eyebrow">Learn</span>
+    <h2>Main idea</h2>
+    <p>The <strong>main idea</strong> is what the story is mostly about. <strong>Supporting details</strong> are smaller facts and events that help build it. A good test: could you tell a friend the whole story in one or two sentences? That is your main idea.</p>
+    <ul class="plain">
+      <li><strong>Main idea</strong> covers the whole book or a big part of it.</li>
+      <li><strong>A detail</strong> is true, but it is only one small piece.</li>
+    </ul>
+  </div>
+  <div class="card practice">
+    <span class="eyebrow">Practice</span>
+    <h2>Main idea or detail?</h2>
+    <div id="q-main-idea"></div>
+  </div>
+  <div class="card write">
+    <span class="eyebrow">Think and write</span>
+    <p>Write the main idea of the book in your own words. Then list three details that support it.</p>
+  </div>
+</section>
+
+<!-- THEME -->
+<section class="panel" id="p-theme" role="tabpanel">
+  <div class="card">
+    <span class="eyebrow">Learn</span>
+    <h2>Theme</h2>
+    <p>The <strong>theme</strong> is the lesson about life that the story teaches. It is bigger than this one book. You could use it in your own life.</p>
+    <div class="grid">
+      <div class="mini">
+        <h3>Topic</h3>
+        <p>One or two words. <em>Example: honesty</em></p>
+      </div>
+      <div class="mini alt">
+        <h3>Plot event</h3>
+        <p>Something that happens to these characters. <em>Example: Evan and Jessie make a bet.</em></p>
+      </div>
+      <div class="mini">
+        <h3>Theme</h3>
+        <p>A full-sentence lesson with no character names. <em>Example: Hiding the truth makes problems grow.</em></p>
+      </div>
+    </div>
+    <p>To find a theme, ask: What did the characters learn? How did they change? What caused the trouble, and what fixed it?</p>
+  </div>
+  <div class="card practice">
+    <span class="eyebrow">Practice</span>
+    <h2>Topic, plot event, or theme?</h2>
+    <div id="q-theme"></div>
+  </div>
+  <div class="card write">
+    <span class="eyebrow">Think and write</span>
+    <p>Choose one theme from this book. Describe a time in your own life, or in another book, when that lesson was true.</p>
+  </div>
+</section>
+
+</div>
+<script>
+const TABS=[
+  {id:"characters",label:"Characters"},
+  {id:"setting",label:"Setting"},
+  {id:"structure",label:"Text structure"},
+  {id:"main-idea",label:"Main idea"},
+  {id:"theme",label:"Theme"}
+];
+const EJB=["Evan","Jessie","Both"];
+const MD=["Main idea","Detail"];
+const TPT=["Topic","Plot event","Theme"];
+const QUESTIONS={
+  "characters":[
+    {q:"Can plan a business and do the math in a flash.",o:EJB,a:1,hint:"Think about who loves numbers.",why:"Jessie is the math whiz. She works out prices and profits quickly."},
+    {q:"Knows just what to say to customers and makes friends easily.",o:EJB,a:0,hint:"Who is people-smart?",why:"Evan is great with people, and that helps him sell."},
+    {q:"Feels nervous about fourth grade.",o:EJB,a:2,hint:"Each sibling has a different worry about the same classroom.",why:"Both. Evan fears looking less smart than his little sister. Jessie fears she will not fit in with older kids."},
+    {q:"Has a hard time telling what other people are feeling.",o:EJB,a:1,hint:"Who is confused about why the fight even started?",why:"Jessie cannot work out why Evan is so angry with her."},
+    {q:"Feels embarrassed, but acts angry instead of explaining.",o:EJB,a:0,hint:"Who says hurtful things at the start?",why:"Evan hides his embarrassment behind anger, and that starts the war."},
+    {q:"Does something unfair to win, and feels bad about it later.",o:EJB,a:2,hint:"Think about the bugs and the missing money.",why:"Both. Jessie ruins Evan's lemonade, and Evan takes Jessie's money."}
+  ],
+  "setting":[
+    {q:"When does the story take place?",o:["During winter break","The last days of summer before school starts","The first week of fourth grade","Over one long afternoon"],a:1,hint:"Think about what the kids are counting down to.",why:"The whole war fits into the last five days of summer vacation."},
+    {q:"Why is the heat wave important to the plot?",o:["It keeps everyone indoors","It makes people thirsty, so lemonade sells","It cancels the first day of school","It makes Evan sick"],a:1,hint:"What do people want on a very hot day?",why:"Hot weather creates customers. Without it, a lemonade war would not work."},
+    {q:"School starts in just a few days. How does that affect the mood?",o:["It makes the story calm and slow","It adds pressure, because time is running out","It makes the story funny","It does not matter at all"],a:1,hint:"Think about a ticking clock.",why:"The deadline adds tension. Both the bet and the worry about fourth grade are getting closer."},
+    {q:"Evan moves his stand to the town center. Why is that place a smart choice?",o:["It is cooler there","His mom works there","Many more people walk by","No one can see him"],a:2,hint:"More people means more of something.",why:"A busy place has more customers. Where a business sits can matter as much as what it sells."}
+  ],
+  "structure":[
+    {q:"Underselling: charging less than your competition to win customers.",o:["Evan drops his price far below everyone else's","Jessie counts her money","Mrs. Treski makes dinner","Megan goes on a trip"],a:0,hint:"Look for the event about price.",why:"Evan sells very cheap lemonade to pull customers away from other stands."},
+    {q:"Location, location, location: where you sell matters a lot.",o:["Jessie reads a business booklet","Evan wheels his stand to the busy town center","The kids watch fireworks","Evan hides in the basement"],a:1,hint:"Look for the event about a place.",why:"Evan picks a spot with lots of people walking by."},
+    {q:"Malicious mischief: damaging someone's property on purpose.",o:["Jessie and Megan become partners","Evan apologizes","Jessie drops bugs into Evan's lemonade","A letter arrives from school"],a:2,hint:"Which event ruins something?",why:"Jessie spoils Evan's lemonade so he cannot sell it."},
+    {q:"Reconciliation: becoming friendly again after a fight.",o:["Evan and Jessie make their bet","Evan and Jessie tell the truth and make peace","Evan teams up with Scott","Money goes missing"],a:1,hint:"This chapter comes at the very end.",why:"The last chapter is where the brother and sister forgive each other."}
+  ],
+  "main-idea":[
+    {q:"A brother and sister turn a fight into a lemonade-selling contest, and they have to learn to be honest with each other to end it.",o:MD,a:0,hint:"Does this cover the whole book or one small part?",why:"This sums up the whole story from start to finish."},
+    {q:"Jessie keeps her earnings in a lock box.",o:MD,a:1,hint:"Is this the whole story or one small fact?",why:"It is true, but it is one small piece of the story."},
+    {q:"Evan's anger is really about feeling embarrassed and worried, not about lemonade.",o:MD,a:0,hint:"This idea explains why the whole war happens.",why:"This big idea runs through the entire book and explains the conflict."},
+    {q:"Evan sets up a stand in the town center.",o:MD,a:1,hint:"This happens in one chapter.",why:"It is one event that supports the bigger story of the contest."},
+    {q:"Which sentence is the best main idea for the whole book?",o:["Lemonade is easy to sell in hot weather.","Two siblings compete to earn the most money, but what they truly need is to understand each other.","Jessie is better at math than Evan.","Scott Spencer cannot be trusted."],a:1,hint:"Pick the one that covers the beginning, middle, and end.",why:"It includes the contest and the real problem underneath it."}
+  ],
+  "theme":[
+    {q:"Siblings",o:TPT,a:0,hint:"It is only one word.",why:"One word names a topic. A theme needs a full sentence that teaches something."},
+    {q:"Talking honestly about your feelings works better than fighting.",o:TPT,a:2,hint:"Could this lesson be true in your own life?",why:"It is a full-sentence life lesson with no character names."},
+    {q:"Jessie puts bugs in Evan's lemonade.",o:TPT,a:1,hint:"It names characters and tells what happened.",why:"This is something that happens in the story. It is not a lesson."},
+    {q:"People have different strengths, and they do better when they work together.",o:TPT,a:2,hint:"Think of people-smart and math-smart.",why:"Evan and Jessie each have a talent. Together they are stronger than apart."},
+    {q:"Which event best supports the theme that honesty heals a broken relationship?",o:["Evan sells lemonade for a very low price","Jessie gets other kids to run stands for her","Evan and Jessie admit what they did and forgive each other","The heat wave continues"],a:2,hint:"Look for the moment the war finally ends.",why:"The fight only ends once both of them tell the truth."}
+  ]
+};
+const SEQ=[
+  "A letter says Jessie will be in Evan's fourth-grade class.",
+  "Evan and Jessie bet on who can earn $100 selling lemonade.",
+  "Each of them sets up lemonade stands with friends.",
+  "Jessie spoils Evan's lemonade with bugs.",
+  "Evan takes Jessie's money, and then it is stolen from him.",
+  "They tell the truth, apologize, and watch the fireworks together."
+];
+const PER=4;
+const earned=new Set();
+const totals={};
+TABS.forEach(t=>totals[t.id]=QUESTIONS[t.id].length+(t.id==="structure"?1:0));
+const $=s=>document.querySelector(s);
+function el(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e}
+
+function updateJar(){
+  const money=earned.size*PER;
+  $("#amt").textContent="$"+money;
+  $("#bar").style.width=Math.min(100,money)+"%";
+  $("#note").textContent=money>=100?"You earned $100. You win the lemonade war!":
+    money===0?"Evan and Jessie raced to earn $100. You can too. Every correct answer puts $4 in your jar.":
+    "$"+(100-money)+" to go. Every correct answer puts $4 in your jar.";
+  TABS.forEach(t=>{
+    const done=[...earned].filter(k=>k.startsWith(t.id+":")).length;
+    document.getElementById("c-"+t.id).textContent=done+"/"+totals[t.id];
+  });
+}
+function earn(key){earned.add(key);updateJar()}
+
+function renderQuestions(){
+  TABS.forEach(t=>{
+    const box=document.getElementById("q-"+t.id);
+    box.innerHTML="";
+    QUESTIONS[t.id].forEach((item,i)=>{
+      const q=el("div","q");
+      q.appendChild(el("div","q-text",(i+1)+". "+item.q));
+      const opts=el("div","opts");
+      const fb=el("div","fb");fb.setAttribute("role","status");
+      item.o.forEach((label,j)=>{
+        const b=el("button","opt",label);b.type="button";
+        b.addEventListener("click",()=>{
+          if(j===item.a){
+            b.classList.add("right");
+            opts.querySelectorAll("button").forEach(x=>x.disabled=true);
+            fb.className="fb good";fb.textContent="Correct! "+item.why;
+            earn(t.id+":"+i);
+          }else{
+            b.classList.add("wrong");b.disabled=true;
+            fb.className="fb bad";fb.textContent="Not yet. "+item.hint;
+          }
+        });
+        opts.appendChild(b);
+      });
+      q.appendChild(opts);q.appendChild(fb);box.appendChild(q);
+    });
+  });
+}
+
+let order=[];
+function shuffleSeq(){
+  order=SEQ.map((_,i)=>i);
+  do{for(let i=order.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[order[i],order[j]]=[order[j],order[i]]}}
+  while(order.every((v,i)=>v===i));
+}
+function renderSeq(done){
+  const ol=$("#seq");ol.innerHTML="";ol.classList.toggle("done",!!done);
+  order.forEach((idx,pos)=>{
+    const li=el("li");
+    li.appendChild(el("span","num",String(pos+1)));
+    li.appendChild(el("span","txt",SEQ[idx]));
+    if(!done){
+      const mv=el("span","mv");
+      const up=el("button",null,"▲");up.type="button";up.setAttribute("aria-label","Move up");up.disabled=pos===0;
+      const dn=el("button",null,"▼");dn.type="button";dn.setAttribute("aria-label","Move down");dn.disabled=pos===order.length-1;
+      up.addEventListener("click",()=>{[order[pos-1],order[pos]]=[order[pos],order[pos-1]];renderSeq()});
+      dn.addEventListener("click",()=>{[order[pos+1],order[pos]]=[order[pos],order[pos+1]];renderSeq()});
+      mv.appendChild(up);mv.appendChild(dn);li.appendChild(mv);
+    }
+    ol.appendChild(li);
+  });
+  $("#seq-check").style.display=done?"none":"";
+}
+$("#seq-check").addEventListener("click",()=>{
+  const fb=$("#seq-fb");
+  const right=order.filter((v,i)=>v===i).length;
+  if(right===SEQ.length){
+    fb.className="fb good";fb.textContent="Correct! Notice how each event causes the next one.";
+    renderSeq(true);earn("structure:seq");
+  }else{
+    fb.className="fb bad";fb.textContent="Not yet. "+right+" of "+SEQ.length+" events are in the right spot. Think about what caused the bet, and how the war ended.";
+  }
+});
+
+function show(id){
+  if(!TABS.some(t=>t.id===id))id=TABS[0].id;
+  TABS.forEach(t=>{
+    document.getElementById("p-"+t.id).classList.toggle("on",t.id===id);
+    document.getElementById("t-"+t.id).setAttribute("aria-selected",t.id===id?"true":"false");
+  });
+}
+TABS.forEach(t=>{
+  const b=el("button","tab");b.type="button";b.id="t-"+t.id;b.setAttribute("role","tab");
+  b.appendChild(el("span",null,t.label));
+  const c=el("span","count");c.id="c-"+t.id;b.appendChild(c);
+  b.addEventListener("click",()=>{location.hash=t.id;show(t.id)});
+  $("#tabs").appendChild(b);
+});
+window.addEventListener("hashchange",()=>show(location.hash.slice(1)));
+
+function start(){
+  earned.clear();renderQuestions();shuffleSeq();renderSeq();
+  $("#seq-fb").className="fb";$("#seq-fb").textContent="";
+  updateJar();
+}
+$("#reset").addEventListener("click",start);
+start();show(location.hash.slice(1));
+</script>
+</body>
+</html>
