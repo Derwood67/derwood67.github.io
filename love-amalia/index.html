@@ -85,6 +85,8 @@ nav button[aria-selected="true"]{background:var(--blue);border-color:var(--blue)
 .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--clay));border-radius:99px;transition:width .3s}
 .meta{display:flex;justify-content:space-between;font-weight:800;color:var(--soft);font-size:.92rem;font-variant-numeric:tabular-nums}
 .skill{display:inline-block;margin:16px 0 6px;font-size:.8rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--clay);background:var(--clay-soft);padding:3px 12px;border-radius:99px}
+.lvl{display:inline-block;font-size:.8rem;font-weight:800;padding:3px 12px;border-radius:99px;background:var(--olive-soft);color:var(--olive)}
+.lvl3{background:#fbeccb;color:#8a5a00}.lvl1{background:var(--blue-soft);color:var(--blue)}
 .q{font-family:Fraunces,Georgia,serif;font-size:1.45rem;font-weight:500;margin:.2em 0 .7em}
 .opts{display:grid;gap:10px}
 .opt{text-align:left;padding:14px 16px;border-radius:12px;border:2px solid var(--line);background:#fff;font-weight:600;display:flex;gap:12px;align-items:flex-start}
@@ -104,6 +106,17 @@ nav button[aria-selected="true"]{background:var(--blue);border-color:var(--blue)
 .missed{text-align:left;margin-top:18px}
 .missed li{margin:.6em 0}
 .missed small{display:block;color:var(--soft)}
+
+/* summary */
+.plan{display:grid;gap:8px;margin:8px 0 18px}
+.planrow{display:grid;grid-template-columns:110px 1fr;gap:4px 12px;align-items:center;background:#fff;border:2px solid var(--line);border-radius:12px;padding:10px 12px}
+.planrow .pw{font-family:Fraunces,serif;font-weight:700;color:var(--clay);font-size:1.15rem;grid-row:span 2}
+.planrow .ph{font-size:.88rem;color:var(--soft);font-weight:700}
+.planrow input{font:inherit;padding:8px 10px;border:2px solid var(--line);border-radius:8px;width:100%;color:var(--ink);background:#fff}
+.checks{list-style:none;padding:0;margin:8px 0}
+.checks li{padding:6px 0;font-weight:600;color:var(--soft)}
+.checks li.ok{color:var(--good)}
+@media (max-width:520px){.planrow{grid-template-columns:1fr}.planrow .pw{grid-row:auto}}
 
 /* progress */
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:14px 0}
@@ -148,6 +161,7 @@ nav button[aria-selected="true"]{background:var(--blue);border-color:var(--blue)
   <nav role="tablist">
     <button role="tab" data-tab="map" aria-selected="true">📖 Story Map</button>
     <button role="tab" data-tab="quiz" aria-selected="false">✏️ Quiz</button>
+    <button role="tab" data-tab="summary" aria-selected="false">📝 Summary</button>
     <button role="tab" data-tab="progress" aria-selected="false">⭐ My Progress</button>
   </nav>
 
@@ -159,6 +173,7 @@ nav button[aria-selected="true"]{background:var(--blue);border-color:var(--blue)
   </section>
 
   <section id="tab-quiz" class="panel hidden"></section>
+  <section id="tab-summary" class="panel hidden"></section>
   <section id="tab-progress" class="panel hidden"></section>
 </main>
 
@@ -232,33 +247,61 @@ const PARTS = [
   prompt:"In your own words, tell what this story is mostly about in one or two sentences."}
 ];
 
-/* ---------- 25 questions (answer 0 is correct; choices are shuffled for each student) ---------- */
+/* ---------- question bank: 45 questions, 15 at each level (d: 1 easy, 2 medium, 3 challenge).
+   Answer 0 is correct; choices are shuffled for each student. Each quiz asks 25. ---------- */
+const QUIZ_LEN = 25;
+const LEVELS = {1:{name:"Warm-Up",stars:"⭐"},2:{name:"On Track",stars:"⭐⭐"},3:{name:"Challenge",stars:"⭐⭐⭐"}};
 const QUESTIONS = [
- {s:"Setting", q:"In which city does Amalia live?", a:["Chicago","Mexico City","Los Angeles","San José"], e:"The story takes place in Chicago, where Amalia and Abuelita both live."},
- {s:"Key Details", q:"When does Amalia usually visit Abuelita?", a:["On Friday afternoons","On Sunday mornings","Every day before school","Only on holidays"], e:"Friday afternoons at Abuelita's have been Amalia's tradition since she was little."},
- {s:"Plot", q:"What is upsetting Amalia at the beginning of the story?", a:["Her best friend Martha is moving away","She has to change schools","She lost Abuelita's box","Her cousins are coming to live with her"], e:"Amalia arrives at Abuelita's without Martha and admits that Martha's family is moving."},
- {s:"Setting", q:"Where is Martha's family moving?", a:["California","Costa Rica","Puerto Rico","New York"], e:"Martha's family is moving west to California — far from Chicago."},
- {s:"Key Details", q:"What do Amalia and Abuelita make together in the kitchen at the beginning of the book?", a:["Melcocha, a kind of taffy","Tamales","Birthday cupcakes","Hot chocolate"], e:"They pull melcocha, a sweet taffy, while Amalia shares her bad news."},
- {s:"Vocabulary", q:"Amalia calls her grandmother \"Abuelita.\" What does this Spanish word mean?", a:["Grandma (a loving word for grandmother)","Best friend","Aunt","Teacher"], e:"Abuela means grandmother; adding -ita makes it a loving nickname, like \"Grandma.\""},
- {s:"Characters", q:"Why was Martha part of Amalia's Friday tradition?", a:["She often came along to Abuelita's house with Amalia","She lived next door to Abuelita","She was Amalia's cousin","Abuelita was her babysitter"], e:"For about two years, Martha joined Amalia at Abuelita's on most Fridays."},
- {s:"Characters", q:"What grade is Amalia in?", a:["Sixth grade","Third grade","Fourth grade","Eighth grade"], e:"Amalia is a sixth grader."},
- {s:"Inference", q:"Abuelita says she knows how hard it is when someone you love goes away. Why does she understand so well?", a:["Many people she loves, including her own children, live far away","She once moved to California herself","She has never been apart from her family","Martha told her how it feels"], e:"Abuelita's children and other loved ones live far away in places like Mexico and Costa Rica."},
- {s:"Key Details", q:"How does Abuelita keep faraway family members close?", a:["She writes to them and saves their cards and letters","She visits each of them every month","She keeps their photos on her phone","She asks Amalia to call them"], e:"Abuelita treasures the cards and letters she exchanges with her family."},
- {s:"Key Details", q:"Abuelita's special box is made of what?", a:["Olive wood","Silver","Cardboard","Glass"], e:"The treasured box is made of olive wood."},
- {s:"Plot", q:"What does Amalia do when Martha's family leaves?", a:["She is so upset that she does not say goodbye","She throws Martha a surprise party","She gives Martha the olive-wood box","She moves to California with her"], e:"Amalia is hurt and angry, so she avoids saying goodbye."},
- {s:"Inference", q:"Why does Amalia most likely act angry toward Martha?", a:["She is deeply sad about losing her, and it comes out as anger","Martha broke a promise to visit Abuelita","Martha said something mean about her family","She never really liked Martha"], e:"Sometimes sadness and hurt show up as anger. Amalia doesn't want to lose her friend."},
- {s:"Plot", q:"What sudden event changes Amalia's life soon after Martha leaves?", a:["Abuelita dies unexpectedly","Amalia's family moves to Mexico","Martha moves back to Chicago","Abuelita's house is sold"], e:"Abuelita's sudden death is the turning point (climax) of the story."},
- {s:"Compare", q:"How are Amalia's two losses alike?", a:["Both times, she does not get to say goodbye","Both people moved to California","Both losses happened on her birthday","Both people were angry at her"], e:"She chose not to say goodbye to Martha, and she had no chance to say goodbye to Abuelita."},
- {s:"Setting", q:"After Abuelita dies, relatives travel to Chicago. Where do many of them come from?", a:["Mexico and Costa Rica","California and Texas","Spain and Italy","Canada"], e:"Abuelita's family is spread out across Mexico and Costa Rica."},
- {s:"Characters", q:"How does Amalia feel when all the relatives gather?", a:["Alone in her grief — she barely knows many of them","Excited to have a big party","Bored and ready to go home","Angry that they brought gifts"], e:"Amalia doesn't know these relatives well and can't understand why they don't seem as sad as she is."},
- {s:"Key Details", q:"Who gives Amalia the olive-wood box?", a:["Her mother","Martha","Her teacher","Her uncle from Costa Rica"], e:"Amalia's mother gives her the box after Abuelita's death."},
- {s:"Key Details", q:"What special thing does Amalia find inside the box?", a:["A Christmas card Abuelita had made for the coming holiday","A plane ticket to California","Abuelita's recipe for tamales","A photograph of Martha"], e:"Along with years of saved cards and letters, there is a Christmas card Abuelita had made."},
- {s:"Cause & Effect", q:"How does receiving the box change Amalia?", a:["It helps her heal and see that people can stay close through words and memories","It makes her decide to stop speaking Spanish","It makes her angrier at her relatives","It convinces her to forget about Martha"], e:"The cards show Amalia how Abuelita stayed connected to people she loved — and how much Amalia mattered to her."},
- {s:"Plot", q:"What does Amalia finally find the courage to do at the end of the story?", a:["Write to Martha","Move in with her cousins","Sell Abuelita's house","Stop visiting the kitchen"], e:"Amalia reaches out to Martha, just as Abuelita taught her to keep loved ones close."},
- {s:"Author's Craft", q:"Why is the book titled \"Love, Amalia\"?", a:["It is the way you sign a letter, and Amalia learns to stay connected by writing","Amalia is the name of a love song Abuelita sings","Abuelita writes a book about Amalia","It is the name of Abuelita's kitchen"], e:"\"Love, Amalia\" is a letter closing. Letters are how the family — and now Amalia — keep love alive across distance."},
- {s:"Point of View", q:"The narrator uses words like \"she\" and \"Amalia\" and tells us Amalia's private thoughts and feelings. What point of view is this?", a:["Third-person limited","First person","Second person","Third-person, knowing every character's thoughts"], e:"A narrator outside the story follows one character closely — that is third-person limited."},
- {s:"Theme", q:"Which sentence best states a theme of the story?", a:["People we love stay with us through memories, traditions, and keeping in touch","Friends who move away are not real friends","It is best to hide your feelings from your family","Cooking is the most important skill to learn"], e:"A theme is a life lesson. Abuelita teaches that love lasts across distance and loss."},
- {s:"Main Idea", q:"Which choice best tells the main idea of the story?", a:["After her friend moves and her grandmother dies, Amalia uses Abuelita's lessons to heal and reach out","Amalia learns to make taffy and flan in her grandmother's kitchen","Martha's family has an exciting adventure in California","Amalia's relatives plan a trip to Costa Rica"], e:"The main idea covers the whole story: two losses, and how Amalia learns to keep love close."}
+ /* ----- Level 1: right-there details ----- */
+ {d:1,s:"Setting", q:"In which city does Amalia live?", a:["Chicago","Mexico City","Los Angeles","San José"], e:"The story takes place in Chicago, where Amalia and Abuelita both live."},
+ {d:1,s:"Key Details", q:"When does Amalia usually visit Abuelita?", a:["On Friday afternoons","On Sunday mornings","Every day before school","Only on holidays"], e:"Friday afternoons at Abuelita's have been Amalia's tradition since she was little."},
+ {d:1,s:"Plot", q:"What is upsetting Amalia at the beginning of the story?", a:["Her best friend Martha is moving away","She has to change schools","She lost Abuelita's box","Her cousins are coming to live with her"], e:"Amalia arrives at Abuelita's without Martha and admits that Martha's family is moving."},
+ {d:1,s:"Setting", q:"Where is Martha's family moving?", a:["California","Costa Rica","Puerto Rico","New York"], e:"Martha's family is moving west to California — far from Chicago."},
+ {d:1,s:"Key Details", q:"What do Amalia and Abuelita make together in the kitchen at the beginning of the book?", a:["Melcocha, a kind of taffy","Tamales","Birthday cupcakes","Hot chocolate"], e:"They pull melcocha, a sweet taffy, while Amalia shares her bad news."},
+ {d:1,s:"Vocabulary", q:"Amalia calls her grandmother \"Abuelita.\" What does this Spanish word mean?", a:["Grandma (a loving word for grandmother)","Best friend","Aunt","Teacher"], e:"Abuela means grandmother; adding -ita makes it a loving nickname, like \"Grandma.\""},
+ {d:1,s:"Characters", q:"What grade is Amalia in?", a:["Sixth grade","Third grade","Fourth grade","Eighth grade"], e:"Amalia is a sixth grader."},
+ {d:1,s:"Key Details", q:"Abuelita's special box is made of what?", a:["Olive wood","Silver","Cardboard","Glass"], e:"The treasured box is made of olive wood."},
+ {d:1,s:"Plot", q:"What sudden event changes Amalia's life soon after Martha leaves?", a:["Abuelita dies unexpectedly","Amalia's family moves to Mexico","Martha moves back to Chicago","Abuelita's house is sold"], e:"Abuelita's sudden death is the turning point of the story."},
+ {d:1,s:"Setting", q:"After Abuelita dies, relatives travel to Chicago. Where do many of them come from?", a:["Mexico and Costa Rica","California and Texas","Spain and Italy","Canada"], e:"Abuelita's family is spread out across Mexico and Costa Rica."},
+ {d:1,s:"Key Details", q:"Who gives Amalia the olive-wood box?", a:["Her mother","Martha","Her teacher","Her uncle from Costa Rica"], e:"Amalia's mother gives her the box after Abuelita's death."},
+ {d:1,s:"Key Details", q:"What special thing does Amalia find inside the box?", a:["A Christmas card Abuelita had made for the coming holiday","A plane ticket to California","Abuelita's recipe for tamales","A photograph of Martha"], e:"Along with years of saved cards and letters, there is a Christmas card Abuelita had made."},
+ {d:1,s:"Plot", q:"What does Amalia finally find the courage to do at the end of the story?", a:["Write to Martha","Move in with her cousins","Sell Abuelita's house","Stop visiting the kitchen"], e:"Amalia reaches out to Martha, just as Abuelita taught her to keep loved ones close."},
+ {d:1,s:"Key Details", q:"Besides cooking, what do Amalia and Abuelita enjoy together on their Friday visits?", a:["Listening to music and sharing family stories","Playing video games","Shopping at the mall","Watching soccer on TV"], e:"Their Fridays are full of cooking, music, and stories about the family."},
+ {d:1,s:"Characters", q:"Amalia's mother's family is from Mexico. Where is her father's family from?", a:["Puerto Rico","Costa Rica","California","Spain"], e:"Amalia's father is Puerto Rican, so she has two heritages to be proud of."},
+
+ /* ----- Level 2: think-and-connect ----- */
+ {d:2,s:"Characters", q:"Why was Martha part of Amalia's Friday tradition?", a:["She often came along to Abuelita's house with Amalia","She lived next door to Abuelita","She was Amalia's cousin","Abuelita was her babysitter"], e:"For about two years, Martha joined Amalia at Abuelita's on most Fridays."},
+ {d:2,s:"Inference", q:"Abuelita says she knows how hard it is when someone you love goes away. Why does she understand so well?", a:["Many people she loves, including her own children, live far away","She once moved to California herself","She has never been apart from her family","Martha told her how it feels"], e:"Abuelita's children and other loved ones live far away in places like Mexico and Costa Rica."},
+ {d:2,s:"Key Details", q:"How does Abuelita keep faraway family members close?", a:["She writes to them and saves their cards and letters","She visits each of them every month","She keeps their photos on her phone","She asks Amalia to call them"], e:"Abuelita treasures the cards and letters she exchanges with her family."},
+ {d:2,s:"Plot", q:"What does Amalia do when Martha's family leaves?", a:["She is so upset that she does not say goodbye","She throws Martha a surprise party","She gives Martha the olive-wood box","She moves to California with her"], e:"Amalia is hurt and angry, so she avoids saying goodbye."},
+ {d:2,s:"Inference", q:"Why does Amalia most likely act angry toward Martha?", a:["She is deeply sad about losing her, and it comes out as anger","Martha broke a promise to visit Abuelita","Martha said something mean about her family","She never really liked Martha"], e:"Sometimes sadness and hurt show up as anger. Amalia doesn't want to lose her friend."},
+ {d:2,s:"Characters", q:"How does Amalia feel when all the relatives gather?", a:["Alone in her grief — she barely knows many of them","Excited to have a big party","Bored and ready to go home","Angry that they brought gifts"], e:"Amalia doesn't know these relatives well and can't understand why they don't seem as sad as she is."},
+ {d:2,s:"Cause & Effect", q:"How does receiving the box change Amalia?", a:["It helps her heal and see that people can stay close through words and memories","It makes her decide to stop speaking Spanish","It makes her angrier at her relatives","It convinces her to forget about Martha"], e:"The cards show Amalia how Abuelita stayed connected to people she loved — and how much Amalia mattered to her."},
+ {d:2,s:"Vocabulary", q:"Abuelita's kitchen towels each show a day of the week in Spanish. On the day Amalia always visits, the towel says \"viernes.\" What does viernes most likely mean?", a:["Friday","Kitchen","Grandmother","Welcome"], e:"Amalia visits on Fridays and the towels name the days, so viernes must mean Friday. That's using context clues!"},
+ {d:2,s:"Inference", q:"Why does Abuelita tell Amalia about her own faraway loved ones while they cook?", a:["To help Amalia see that people can stay close even when they are apart","To make Amalia feel worse about Martha","To convince Amalia to move to Mexico","To change the subject to something happier"], e:"Abuelita uses her own life to teach Amalia that distance doesn't have to end a relationship."},
+ {d:2,s:"Cause & Effect", q:"Why do Amalia's tíos, tías, and cousins travel to Chicago?", a:["To come together and remember Abuelita after she dies","To help Martha's family move","To celebrate Amalia's birthday","To take the olive-wood box home with them"], e:"The family gathers from far away to honor Abuelita's life."},
+ {d:2,s:"Characters", q:"Which word best describes Abuelita?", a:["Wise","Impatient","Forgetful","Strict and cold"], e:"Abuelita listens, comforts Amalia, and shares lessons from her own life — that shows wisdom."},
+ {d:2,s:"Sequence", q:"Which of these events happens FIRST in the story?", a:["Amalia tells Abuelita that Martha is moving","Amalia's mother gives her the olive-wood box","Relatives arrive from Mexico and Costa Rica","Amalia writes to Martha"], e:"The story opens with Amalia sharing her news in Abuelita's kitchen. The other events come later."},
+ {d:2,s:"Inference", q:"What does the taffy-making scene show about Amalia and Abuelita?", a:["They are close, and Amalia trusts Abuelita with her feelings","They do not spend much time together","Abuelita is too busy to listen","Amalia dislikes cooking"], e:"Amalia opens up while they work side by side — that shows a trusting, loving relationship."},
+ {d:2,s:"Characters", q:"Which word best describes how Amalia feels at the beginning of the story?", a:["Hurt","Proud","Curious","Relieved"], e:"Amalia feels hurt and angry that her best friend is leaving."},
+ {d:2,s:"Cause & Effect", q:"What causes the trouble between Amalia and Martha?", a:["Martha's move makes Amalia so upset that she pulls away","Martha tells a secret about Amalia","The girls argue about a soccer game","Abuelita tells them to stop being friends"], e:"The move itself isn't Martha's fault, but Amalia's hurt feelings make her pull away."},
+
+ /* ----- Level 3: deep thinking ----- */
+ {d:3,s:"Compare", q:"How are Amalia's two losses alike?", a:["Both times, she does not get to say goodbye","Both people moved to California","Both losses happened on her birthday","Both people were angry at her"], e:"She chose not to say goodbye to Martha, and she had no chance to say goodbye to Abuelita."},
+ {d:3,s:"Author's Craft", q:"Why is the book titled \"Love, Amalia\"?", a:["It is the way you sign a letter, and Amalia learns to stay connected by writing","Amalia is the name of a love song Abuelita sings","Abuelita writes a book about Amalia","It is the name of Abuelita's kitchen"], e:"\"Love, Amalia\" is a letter closing. Letters are how the family — and now Amalia — keep love alive across distance."},
+ {d:3,s:"Point of View", q:"The narrator uses words like \"she\" and \"Amalia\" and tells us Amalia's private thoughts and feelings. What point of view is this?", a:["Third-person limited","First person","Second person","Third-person, knowing every character's thoughts"], e:"A narrator outside the story follows one character closely — that is third-person limited."},
+ {d:3,s:"Theme", q:"Which sentence best states a theme of the story?", a:["People we love stay with us through memories, traditions, and keeping in touch","Friends who move away are not real friends","It is best to hide your feelings from your family","Cooking is the most important skill to learn"], e:"A theme is a life lesson. Abuelita teaches that love lasts across distance and loss."},
+ {d:3,s:"Main Idea", q:"Which choice best tells the main idea of the story?", a:["After her friend moves and her grandmother dies, Amalia uses Abuelita's lessons to heal and reach out","Amalia learns to make taffy and flan in her grandmother's kitchen","Martha's family has an exciting adventure in California","Amalia's relatives plan a trip to Costa Rica"], e:"The main idea covers the whole story: two losses, and how Amalia learns to keep love close."},
+ {d:3,s:"Symbolism", q:"What does the olive-wood box most likely stand for (symbolize) in the story?", a:["Love and connection that last across distance and time","Amalia's anger at Martha","The city of Chicago","The end of the family's traditions"], e:"The box holds years of cards and letters — proof that love can be kept close even when people are far away or gone."},
+ {d:3,s:"Text Evidence", q:"Which detail best supports the theme that love can last across distance?", a:["Abuelita saved years of cards and letters from family who live far away","Amalia is in sixth grade","Martha's family leaves sooner than expected","Melcocha is a kind of taffy"], e:"The saved cards are evidence that Abuelita stayed close to people she rarely saw."},
+ {d:3,s:"Character Change", q:"How does Amalia change from the beginning of the story to the end?", a:["She goes from shutting people out when she is hurt to reaching out to them","She goes from loving her family to wanting to live alone","She goes from being brave to being afraid of everything","She does not change at all"], e:"At first Amalia refuses to say goodbye. By the end, she chooses to write to Martha."},
+ {d:3,s:"Point of View", q:"How does the story's point of view affect what readers know?", a:["We understand Amalia's feelings deeply, but must figure out other characters' feelings from what they say and do","We know what every character is secretly thinking","We only know what Martha sees in California","We never learn how Amalia feels"], e:"Third-person limited stays inside one character's mind — here, Amalia's."},
+ {d:3,s:"Author's Craft", q:"Why did the authors most likely include Spanish words, music, and family recipes in the story?", a:["To show the family's heritage and how it ties Amalia to the people she loves","To make the book harder to read","Because the story takes place in Spain","To teach readers how to open a restaurant"], e:"Language, music, and food are ways Abuelita passes her culture — and her love — on to Amalia."},
+ {d:3,s:"Theme", q:"Which lesson from Abuelita does Amalia put into action at the end of the story?", a:["You can find ways to keep the people you love close","It is better not to make close friends","You should never talk about sad things","Family is more important than friends"], e:"By writing to Martha, Amalia does exactly what Abuelita did with her own faraway family."},
+ {d:3,s:"Setting", q:"How does the setting of Abuelita's kitchen add to the story?", a:["It is a place of comfort where Abuelita passes on lessons, which makes losing her feel even bigger","It shows that Amalia's family is very wealthy","It is a scary place Amalia tries to avoid","It has nothing to do with the characters' feelings"], e:"The kitchen is where Amalia feels safest and learns the most, so it matters deeply to the story."},
+ {d:3,s:"Plot", q:"Why is Abuelita's death the turning point (climax) of the story?", a:["It is the hardest moment, and it forces Amalia to face loss and use what she has learned","It is the first event in the book","It solves all of Amalia's problems right away","It is when Martha decides to move"], e:"The climax is the moment of greatest tension. After it, Amalia begins to change."},
+ {d:3,s:"Inference", q:"Abuelita had already made a Christmas card before she died. What does this detail show about her?", a:["She was always thinking ahead about the people she loved","She did not like Christmas","She forgot to mail her letters","She wanted Amalia to stop writing"], e:"Even at the end of her life, Abuelita was reaching out with love — and that love is still there for Amalia to find."},
+ {d:3,s:"Inference", q:"Amalia can't understand why her relatives don't seem as sad as she is. What does she still need to learn?", a:["People show grief in different ways","Her relatives did not love Abuelita","Only children feel sad","Crying is the only way to remember someone"], e:"Sharing stories and being together is another way of grieving. Sadness doesn't look the same for everyone."}
 ];
 
 /* ---------- login ---------- */
@@ -277,6 +320,7 @@ function login(raw){
   const name = clean[0].toUpperCase() + clean.slice(1).toLowerCase();
   meKey = name.toLowerCase();
   me = all[meKey] || {name, explored:[], notes:{}, quiz:null, attempts:0, best:null, last:null};
+  if(me.quiz && !me.quiz.asked) me.quiz = null;   // quiz saved by the older, non-adaptive version
   save();
   $("#whoName").textContent = me.name;
   $("#login").classList.add("hidden"); $("#app").classList.remove("hidden");
@@ -289,8 +333,9 @@ $("#switchBtn").addEventListener("click", showLogin);
 /* ---------- tabs ---------- */
 function showTab(t){
   document.querySelectorAll("nav button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === t));
-  ["map","quiz","progress"].forEach(x => $("#tab-"+x).classList.toggle("hidden", x !== t));
+  ["map","quiz","summary","progress"].forEach(x => $("#tab-"+x).classList.toggle("hidden", x !== t));
   if(t === "quiz") renderQuiz();
+  if(t === "summary") renderSummary();
   if(t === "progress") renderProgress();
 }
 document.querySelector("nav").addEventListener("click", e => { const b = e.target.closest("button"); if(b) showTab(b.dataset.tab); });
@@ -319,70 +364,157 @@ function renderDetail(){
   });
 }
 
-/* ---------- quiz ---------- */
+/* ---------- adaptive quiz: right answer -> next question is harder, wrong answer -> easier ---------- */
 function newQuiz(){
-  me.quiz = { order: shuffle(QUESTIONS.map((_,i)=>i)), opts: QUESTIONS.map(()=>shuffle([0,1,2,3])), answers: [], pos: 0 };
+  me.quiz = { asked: [], opts: {}, answers: [], pos: 0, level: 2 };
   save();
+}
+function pickQuestion(z){
+  const used = new Set(z.asked);
+  // try the current level first, then the nearest level that still has unused questions
+  const tryOrder = z.level === 1 ? [1,2,3] : z.level === 3 ? [3,2,1] : [2,1,3];
+  for(const lv of tryOrder){
+    const pool = QUESTIONS.map((q,i)=>i).filter(i => QUESTIONS[i].d === lv && !used.has(i));
+    if(pool.length){ const qi = pool[Math.floor(Math.random()*pool.length)]; z.asked.push(qi); z.opts[qi] = shuffle([0,1,2,3]); return; }
+  }
 }
 function renderQuiz(){
   const el = $("#tab-quiz");
   if(!me.quiz){
     el.innerHTML = `<h2>Comprehension Quiz</h2>
-      <p class="lead">25 questions about <i>Love, Amalia</i>. The questions and answer choices are mixed up in a different order for every student and every try.</p>
-      <ul><li>Read each question carefully and pick the best answer.</li><li>You'll see right away if you were correct, with an explanation.</li><li>You can stop and come back — your place is saved under your name.</li></ul>
+      <p class="lead">25 questions about <i>Love, Amalia</i>, picked just for you as you go.</p>
+      <ul><li><b>Get one right</b> and the next question steps up a level. <b>Miss one</b> and the next question steps down so you can build back up.</li>
+      <li>Levels: ⭐ Warm-Up, ⭐⭐ On Track, ⭐⭐⭐ Challenge. Everyone starts at On Track.</li>
+      <li>Questions and answer choices are mixed up for every student and every try.</li>
+      <li>You can stop and come back — your place is saved under your name.</li></ul>
       <div class="row"><button class="btn clay" id="startQuiz">Start the quiz</button></div>`;
     $("#startQuiz").onclick = () => { newQuiz(); renderQuiz(); };
     return;
   }
   const z = me.quiz;
-  if(z.pos >= QUESTIONS.length){ return renderResults(el); }
-  const qi = z.order[z.pos], Q = QUESTIONS[qi], order = z.opts[qi];
+  if(z.pos >= QUIZ_LEN){ return renderResults(el); }
+  if(z.asked[z.pos] === undefined){ pickQuestion(z); save(); }
+  const qi = z.asked[z.pos], Q = QUESTIONS[qi], order = z.opts[qi], L = LEVELS[Q.d];
   const picked = z.answers[z.pos];           // original index of chosen option, or undefined
   const answered = picked !== undefined;
   const score = z.answers.filter(a => a === 0).length;
-  el.innerHTML = `<div class="meta"><span>Question ${z.pos+1} of ${QUESTIONS.length}</span><span>Score: ${score}</span></div>
-    <div class="bar"><i style="width:${(z.pos + (answered?1:0))/QUESTIONS.length*100}%"></i></div>
-    <span class="skill">${Q.s}</span>
+  let nextMsg = "";
+  if(answered && z.pos+1 < QUIZ_LEN){
+    nextMsg = picked === 0 ? (Q.d < 3 ? " Next one steps up a level! ⬆️" : " Stay at the top — here comes another Challenge question!")
+                           : (Q.d > 1 ? " The next one will be a little easier. You've got this!" : " Let's try another Warm-Up question.");
+  }
+  el.innerHTML = `<div class="meta"><span>Question ${z.pos+1} of ${QUIZ_LEN}</span><span>Score: ${score}</span></div>
+    <div class="bar"><i style="width:${(z.pos + (answered?1:0))/QUIZ_LEN*100}%"></i></div>
+    <span class="skill">${Q.s}</span> <span class="lvl lvl${Q.d}">${L.stars} ${L.name}</span>
     <div class="q">${esc(Q.q)}</div>
     <div class="opts">${order.map((oi,k) => {
       let cls = ""; if(answered){ if(oi===0) cls=" right"; else if(oi===picked) cls=" wrong"; }
       return `<button class="opt${cls}" data-oi="${oi}" ${answered?"disabled":""}><span class="l">${"ABCD"[k]}</span><span>${esc(Q.a[oi])}</span></button>`;
     }).join("")}</div>
-    ${answered ? `<div class="fb ${picked===0?"good":"bad"}" role="status">${picked===0 ? "✅ Correct! " : "Not quite. The answer is: <b>"+esc(Q.a[0])+"</b>. "}${esc(Q.e)}</div>
-      <div class="row"><button class="btn" id="nextQ">${z.pos+1 === QUESTIONS.length ? "See my results" : "Next question →"}</button></div>` : ""}`;
-  el.querySelectorAll(".opt").forEach(b => b.onclick = () => { z.answers[z.pos] = +b.dataset.oi; save(); renderQuiz(); });
-  if(answered){ $("#nextQ").onclick = () => { z.pos++; if(z.pos >= QUESTIONS.length) finish(); save(); renderQuiz(); }; $("#nextQ").focus(); }
+    ${answered ? `<div class="fb ${picked===0?"good":"bad"}" role="status">${picked===0 ? "✅ Correct! " : "Not quite. The answer is: <b>"+esc(Q.a[0])+"</b>. "}${esc(Q.e)}<b>${nextMsg}</b></div>
+      <div class="row"><button class="btn" id="nextQ">${z.pos+1 === QUIZ_LEN ? "See my results" : "Next question →"}</button></div>` : ""}`;
+  el.querySelectorAll(".opt").forEach(b => b.onclick = () => {
+    const pick = +b.dataset.oi; z.answers[z.pos] = pick;
+    z.level = pick === 0 ? Math.min(3, Q.d + 1) : Math.max(1, Q.d - 1);   // harder after a right answer, easier after a miss
+    save(); renderQuiz();
+  });
+  if(answered){ $("#nextQ").onclick = () => { z.pos++; if(z.pos >= QUIZ_LEN) finish(); save(); renderQuiz(); }; $("#nextQ").focus(); }
 }
 function finish(){
   const z = me.quiz, score = z.answers.filter(a => a === 0).length;
-  if(!z.done){ z.done = true; me.attempts++; me.last = score; me.best = Math.max(me.best ?? 0, score); }
+  if(!z.done){ z.done = true; me.attempts++; me.last = score; me.best = Math.max(me.best ?? 0, score);
+    me.lastLevels = levelCounts(z); }
+}
+function levelCounts(z){
+  const c = {1:[0,0],2:[0,0],3:[0,0]};
+  z.asked.forEach((qi,pos) => { const d = QUESTIONS[qi].d; c[d][1]++; if(z.answers[pos] === 0) c[d][0]++; });
+  return c;
+}
+function levelTable(c){
+  return `<div class="stats">${[1,2,3].map(d => `<div class="stat"><b>${c[d][0]}/${c[d][1]}</b><span>${LEVELS[d].stars} ${LEVELS[d].name} correct</span></div>`).join("")}</div>`;
 }
 function renderResults(el){
-  const z = me.quiz, total = QUESTIONS.length, score = z.answers.filter(a => a === 0).length;
+  const z = me.quiz, total = QUIZ_LEN, score = z.answers.filter(a => a === 0).length;
   const msg = score >= 23 ? "Outstanding! You really understand this story." : score >= 18 ? "Great work! You know this story well." : score >= 13 ? "Good effort! Review the Story Map and try again." : "Keep going! Reread the Story Map, then try again.";
-  const missed = z.order.map((qi,pos) => ({Q:QUESTIONS[qi], a:z.answers[pos]})).filter(x => x.a !== 0);
+  const missed = z.asked.map((qi,pos) => ({Q:QUESTIONS[qi], a:z.answers[pos]})).filter(x => x.a !== 0);
   el.innerHTML = `<div class="center"><div class="script">Results for ${esc(me.name)}</div>
     <div class="big">${score} / ${total}</div><p><b>${Math.round(score/total*100)}%</b> — ${msg}</p></div>
+    <h3>How you did at each level</h3>${levelTable(levelCounts(z))}
     ${missed.length ? `<div class="missed"><h3>Questions to review</h3><ol>${missed.map(x => `<li>${esc(x.Q.q)}<small>✔ ${esc(x.Q.a[0])} — ${esc(x.Q.e)}</small></li>`).join("")}</ol></div>` : `<p class="center">🌟 A perfect score!</p>`}
-    <div class="row"><button class="btn clay" id="again">Try again (new order)</button><button class="btn ghost" id="toMap">Back to Story Map</button></div>`;
+    <div class="row"><button class="btn clay" id="again">Try again (new questions)</button><button class="btn ghost" id="toMap">Back to Story Map</button></div>`;
   $("#again").onclick = () => { newQuiz(); renderQuiz(); };
   $("#toMap").onclick = () => showTab("map");
+}
+
+/* ---------- summary writing ---------- */
+const PLAN = [
+ ["somebody","Somebody","Who is the main character?"],
+ ["wanted","Wanted","What does she want?"],
+ ["but","But","What problem gets in the way?"],
+ ["so","So","What does she do, or what happens next?"],
+ ["then","Then","How does the story end?"]
+];
+const CHECKS = [
+ ["I named the main character and the setting.", t => /amalia/i.test(t) && /chicago|abuelita'?s (house|home|kitchen)/i.test(t)],
+ ["I told the problem (Martha moving away).", t => /martha/i.test(t)],
+ ["I included Abuelita and what happens to her.", t => /abuelita|grandmother|grandma/i.test(t)],
+ ["I told how the story ends.", t => /letter|writes?|wrote|writing|box/i.test(t)],
+ ["My summary is 5 to 8 sentences long.", t => { const n = sentences(t); return n >= 5 && n <= 8; }]
+];
+const words = t => (t.trim().match(/\S+/g) || []).length;
+const sentences = t => (t.match(/[^.!?]+[.!?]+/g) || []).length;
+function renderSummary(){
+  const S = me.summary = me.summary || {plan:{}, text:"", done:false};
+  $("#tab-summary").innerHTML = `<h2>Write a Summary</h2>
+    <p class="lead">A <b>summary</b> retells the most important parts of a story in your own words. It is short, it goes in order, and it leaves out your opinions and small details.</p>
+    <h3>Step 1: Plan it</h3>
+    <div class="plan">${PLAN.map(([k,w,h]) => `<label class="planrow"><span class="pw">${w}…</span><span class="ph">${h}</span>
+      <input type="text" data-k="${k}" maxlength="160" value="${esc(S.plan[k] || "")}"></label>`).join("")}</div>
+    <h3>Step 2: Write it</h3>
+    <p class="lead">Turn your plan into a paragraph of 5 to 8 sentences. Use transition words like <i>first</i>, <i>then</i>, <i>after that</i>, and <i>in the end</i>.</p>
+    <div class="think"><label for="sumText">✍️ My summary of <i>Love, Amalia</i></label>
+      <textarea id="sumText" style="min-height:200px" placeholder="Start writing your summary here…">${esc(S.text)}</textarea>
+      <div class="meta"><span id="sumCount"></span><span id="sumSaved" class="saved"></span></div></div>
+    <h3>Step 3: Check it</h3>
+    <ul id="sumChecks" class="checks"></ul>
+    <p class="note">The checkmarks look for key words and count sentences. They can't tell whether your summary is in your own words or in the right order — reread it yourself, and Mr. Echols will read it too.</p>
+    <div class="row"><button class="btn clay" id="sumDone"></button><span id="sumDoneMsg" class="saved"></span></div>`;
+  const ta = $("#sumText");
+  function refresh(){
+    const t = ta.value;
+    $("#sumCount").textContent = words(t) + " words · " + sentences(t) + " sentences";
+    $("#sumChecks").innerHTML = CHECKS.map(([label,fn]) => { const ok = fn(t); return `<li class="${ok?"ok":""}">${ok?"✅":"⬜"} ${label}</li>`; }).join("");
+    $("#sumDone").textContent = S.done ? "Summary turned in ✔ (tap to keep editing)" : "I'm finished — turn in my summary";
+  }
+  let timer;
+  const later = () => { clearTimeout(timer); timer = setTimeout(() => { save(); $("#sumSaved").textContent = "Saved for " + me.name + " ✔"; }, 400); };
+  ta.addEventListener("input", () => { S.text = ta.value; refresh(); later(); });
+  document.querySelectorAll("#tab-summary .planrow input").forEach(i => i.addEventListener("input", () => { S.plan[i.dataset.k] = i.value; later(); }));
+  $("#sumDone").onclick = () => {
+    if(!S.done && words(ta.value) < 30){ $("#sumDoneMsg").textContent = "Write a little more first — aim for at least 5 sentences."; return; }
+    S.done = !S.done; save(); $("#sumDoneMsg").textContent = S.done ? "Nice work, " + me.name + "!" : ""; refresh();
+  };
+  refresh();
 }
 
 /* ---------- progress ---------- */
 function renderProgress(){
   const z = me.quiz, inProg = z && !z.done;
+  const S = me.summary || {text:"", done:false};
   const notes = PARTS.filter(p => (me.notes[p.id] || "").trim());
   $("#tab-progress").innerHTML = `<h2>${esc(me.name)}'s Progress</h2>
     <div class="stats">
       <div class="stat"><b>${me.explored.length}/${PARTS.length}</b><span>Story Map parts explored</span></div>
       <div class="stat"><b>${notes.length}/${PARTS.length}</b><span>Thinking notes written</span></div>
+      <div class="stat"><b>${S.done ? "✔" : S.text.trim() ? "…" : "—"}</b><span>Summary ${S.done ? "turned in" : S.text.trim() ? "in progress" : "not started"}</span></div>
       <div class="stat"><b>${me.best === null ? "—" : me.best + "/25"}</b><span>Best quiz score</span></div>
       <div class="stat"><b>${me.last === null ? "—" : me.last + "/25"}</b><span>Latest quiz score</span></div>
       <div class="stat"><b>${me.attempts}</b><span>Quizzes finished</span></div>
     </div>
+    ${me.lastLevels ? `<h3>Latest quiz by level</h3>${levelTable(me.lastLevels)}` : ""}
     ${inProg ? `<p>📌 You have a quiz in progress: question ${Math.min(z.pos+1,25)} of 25.</p>` : ""}
     ${notes.length ? `<h3>My thinking notes</h3>${notes.map(p => `<div class="think" style="margin-top:10px"><label>${p.emoji} ${p.title}</label>${esc(me.notes[p.id])}</div>`).join("")}` : ""}
+    ${S.text.trim() ? `<h3>My summary ${S.done ? "(turned in)" : "(still working)"}</h3><div class="think" style="white-space:pre-wrap">${esc(S.text)}<div class="saved">${words(S.text)} words</div></div>` : ""}
     <p class="note">Your work is saved under your name on this device and browser. Use the same Chromebook to pick up where you left off.</p>`;
 }
 
