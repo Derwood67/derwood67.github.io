@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Love, Amalia — Story Explorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Nunito:wght@400;600;700;800&family=Caveat:wght@600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#fbf5e9; --card:#fffdf8; --ink:#2f2a25; --soft:#6b6157;
+  --line:#e4d8c3; --blue:#27457a; --blue-soft:#e3eaf6;
+  --clay:#b8532f; --clay-soft:#f8e3d9; --olive:#6d7335; --olive-soft:#edefd8;
+  --gold:#d79a2b; --good:#2e7d4f; --good-soft:#dff2e6; --bad:#b23a3a; --bad-soft:#f9e0e0;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:Nunito,system-ui,sans-serif;color:var(--ink);background:var(--paper);font-size:18px;line-height:1.55;
+  background-image:repeating-linear-gradient(0deg,transparent 0 35px,rgba(39,69,122,.045) 35px 36px)}
+h1,h2,h3{font-family:Fraunces,Georgia,serif;line-height:1.15;margin:0 0 .4em}
+button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.wrap{max-width:900px;margin:0 auto;padding:20px 18px 60px}
+.hidden{display:none!important}
+.script{font-family:Caveat,cursive;font-size:1.5em;color:var(--clay)}
+
+/* airmail stripe */
+.stripe{height:10px;background:repeating-linear-gradient(135deg,var(--clay) 0 16px,var(--card) 16px 32px,var(--blue) 32px 48px,var(--card) 48px 64px)}
+
+/* login */
+.login{max-width:520px;margin:6vh auto 0;background:var(--card);border:2px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:0 10px 30px rgba(60,40,10,.12)}
+.login-in{padding:30px 28px 32px;text-align:center}
+.login h1{font-size:2.5rem;color:var(--blue)}
+.login p{color:var(--soft);margin:.3em 0 1.2em}
+.field{display:flex;gap:10px;flex-wrap:wrap}
+.field input{flex:1 1 200px;font:inherit;font-weight:700;padding:14px 16px;border:2px solid var(--line);border-radius:12px;background:#fff;color:var(--ink)}
+.btn{background:var(--blue);color:#fff;font-weight:800;padding:14px 22px;border-radius:12px;transition:transform .1s}
+.btn:hover{transform:translateY(-1px)}
+.btn.clay{background:var(--clay)}
+.btn.ghost{background:transparent;color:var(--blue);border:2px solid var(--blue)}
+.btn.small{padding:8px 14px;font-size:.9rem}
+.err{color:var(--bad);font-weight:700;min-height:1.5em;margin-top:10px}
+.returning{margin-top:18px;border-top:1px dashed var(--line);padding-top:16px;font-size:.95rem;color:var(--soft)}
+.chips{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:8px}
+.chip{background:var(--olive-soft);color:var(--olive);font-weight:800;padding:6px 14px;border-radius:99px}
+
+/* header */
+header.top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+header.top h1{font-size:1.9rem;color:var(--blue);margin:0;flex:1 1 auto}
+.who{display:flex;align-items:center;gap:10px;font-weight:700}
+nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+nav button{padding:10px 18px;border-radius:99px;font-weight:800;background:var(--card);border:2px solid var(--line);color:var(--soft)}
+nav button[aria-selected="true"]{background:var(--blue);border-color:var(--blue);color:#fff}
+
+.panel{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:24px;box-shadow:0 6px 18px rgba(60,40,10,.07)}
+.lead{color:var(--soft);margin-top:0}
+
+/* story map */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin:16px 0 20px}
+.tile{position:relative;text-align:left;padding:16px;border-radius:14px;border:2px solid var(--line);background:#fff;font-weight:800;min-height:96px;display:flex;flex-direction:column;gap:6px}
+.tile .emoji{font-size:1.7rem;line-height:1}
+.tile[aria-pressed="true"]{border-color:var(--clay);background:var(--clay-soft)}
+.tile .done{position:absolute;top:8px;right:10px;color:var(--good);font-size:1.1rem}
+.detail h2{color:var(--clay);font-size:1.7rem}
+.def{background:var(--blue-soft);border-left:6px solid var(--blue);padding:12px 16px;border-radius:0 12px 12px 0;margin:10px 0 16px}
+.def b{color:var(--blue)}
+.detail ul{padding-left:1.2em;margin:.4em 0 1em}
+.detail li{margin:.35em 0}
+.people{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin:12px 0}
+.person{border:2px solid var(--line);border-radius:14px;padding:14px;background:#fff}
+.person h3{font-size:1.15rem;color:var(--blue);margin-bottom:.2em}
+.person .tag{display:inline-block;font-size:.78rem;font-weight:800;background:var(--olive-soft);color:var(--olive);padding:2px 10px;border-radius:99px;margin-bottom:6px}
+.person p{margin:0;font-size:.96rem}
+.plot{display:grid;gap:10px;margin:12px 0}
+.step{display:grid;grid-template-columns:44px 1fr;gap:12px;align-items:start;border:2px solid var(--line);border-radius:14px;padding:12px;background:#fff}
+.step .n{width:44px;height:44px;border-radius:50%;background:var(--clay);color:#fff;font-weight:800;display:grid;place-items:center}
+.step b{color:var(--blue)}
+.think{margin-top:18px;background:var(--olive-soft);border-radius:14px;padding:16px}
+.think label{font-weight:800;color:var(--olive);display:block;margin-bottom:8px}
+.think textarea{width:100%;min-height:90px;font:inherit;padding:12px;border-radius:10px;border:2px solid #cfd3a6;background:#fff;color:var(--ink);resize:vertical}
+.saved{font-size:.85rem;color:var(--olive);font-weight:700;min-height:1.3em}
+
+/* quiz */
+.bar{height:14px;background:var(--line);border-radius:99px;overflow:hidden;margin:6px 0 4px}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--clay));border-radius:99px;transition:width .3s}
+.meta{display:flex;justify-content:space-between;font-weight:800;color:var(--soft);font-size:.92rem;font-variant-numeric:tabular-nums}
+.skill{display:inline-block;margin:16px 0 6px;font-size:.8rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--clay);background:var(--clay-soft);padding:3px 12px;border-radius:99px}
+.q{font-family:Fraunces,Georgia,serif;font-size:1.45rem;font-weight:500;margin:.2em 0 .7em}
+.opts{display:grid;gap:10px}
+.opt{text-align:left;padding:14px 16px;border-radius:12px;border:2px solid var(--line);background:#fff;font-weight:600;display:flex;gap:12px;align-items:flex-start}
+.opt .l{flex:none;width:30px;height:30px;border-radius:50%;background:var(--blue-soft);color:var(--blue);font-weight:800;display:grid;place-items:center}
+.opt:not(:disabled):hover{border-color:var(--blue)}
+.opt:disabled{cursor:default}
+.opt.right{border-color:var(--good);background:var(--good-soft)}
+.opt.right .l{background:var(--good);color:#fff}
+.opt.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.opt.wrong .l{background:var(--bad);color:#fff}
+.fb{margin-top:14px;padding:14px 16px;border-radius:12px;font-weight:600}
+.fb.good{background:var(--good-soft);color:#1d5636}
+.fb.bad{background:var(--bad-soft);color:#7d2626}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;align-items:center}
+.big{font-family:Fraunces,serif;font-size:3.4rem;color:var(--blue);font-weight:700;line-height:1}
+.center{text-align:center}
+.missed{text-align:left;margin-top:18px}
+.missed li{margin:.6em 0}
+.missed small{display:block;color:var(--soft)}
+
+/* progress */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:14px 0}
+.stat{background:#fff;border:2px solid var(--line);border-radius:14px;padding:14px;text-align:center}
+.stat b{display:block;font-family:Fraunces,serif;font-size:2rem;color:var(--clay);font-variant-numeric:tabular-nums}
+.stat span{font-size:.9rem;color:var(--soft);font-weight:700}
+.note{font-size:.88rem;color:var(--soft);margin-top:14px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="stripe"></div>
+
+<!-- LOGIN -->
+<main id="login" class="wrap">
+  <div class="login">
+    <div class="stripe"></div>
+    <div class="login-in">
+      <div class="script">Con cariño…</div>
+      <h1>Love, Amalia</h1>
+      <p>Story Explorer for the novel by Alma Flor Ada &amp; Gabriel M. Zubizarreta</p>
+      <form id="loginForm" class="field" autocomplete="off">
+        <input id="nameInput" type="text" maxlength="20" placeholder="Type your first name" aria-label="Your first name">
+        <button class="btn" type="submit">Start</button>
+      </form>
+      <div id="loginErr" class="err" role="alert"></div>
+      <div id="returning" class="returning hidden">
+        Been here before? Tap your name:
+        <div id="chips" class="chips"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- APP -->
+<main id="app" class="wrap hidden">
+  <header class="top">
+    <h1>Love, Amalia <span class="script">Story Explorer</span></h1>
+    <div class="who"><span>Hi, <span id="whoName"></span>!</span>
+      <button id="switchBtn" class="btn ghost small">Switch student</button></div>
+  </header>
+  <nav role="tablist">
+    <button role="tab" data-tab="map" aria-selected="true">📖 Story Map</button>
+    <button role="tab" data-tab="quiz" aria-selected="false">✏️ Quiz</button>
+    <button role="tab" data-tab="progress" aria-selected="false">⭐ My Progress</button>
+  </nav>
+
+  <section id="tab-map" class="panel">
+    <h2>Story Map</h2>
+    <p class="lead">Tap each part to learn how this story is built. Then write your own thinking — your notes are saved under your name.</p>
+    <div id="tiles" class="grid"></div>
+    <div id="detail" class="detail"></div>
+  </section>
+
+  <section id="tab-quiz" class="panel hidden"></section>
+  <section id="tab-progress" class="panel hidden"></section>
+</main>
+
+<script>
+/* ---------- storage (per student, on this device) ---------- */
+const KEY = "loveAmalia.v1";
+let mem = {};
+function loadAll(){ try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }catch(e){ return mem; } }
+function saveAll(d){ mem = d; try{ localStorage.setItem(KEY, JSON.stringify(d)); }catch(e){} }
+let all = loadAll(), me = null, meKey = null;
+function save(){ all[meKey] = me; saveAll(all); }
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function shuffle(a){ a = a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+/* ---------- story map content ---------- */
+const PARTS = [
+ {id:"setting", emoji:"🏙️", title:"Setting",
+  def:"<b>Setting</b> is where and when a story takes place.",
+  body:`<ul>
+   <li><b>Where:</b> Chicago, Illinois. Most of the important scenes happen in <b>Abuelita's home</b> — especially her warm kitchen — and in Amalia's own home.</li>
+   <li><b>When:</b> The present day, during the fall and into the Christmas season, while Amalia is in sixth grade.</li>
+   <li><b>Faraway places matter too:</b> California (where Martha moves), and Mexico and Costa Rica (where family members live).</li>
+   <li><b>Why it matters:</b> Abuelita's kitchen is where Amalia feels safest. Every Friday afternoon they cook, listen to music, and share family stories there.</li></ul>`,
+  prompt:"Abuelita's kitchen is a special place for Amalia. Describe a place that feels special to you and tell why."},
+ {id:"pov", emoji:"👁️", title:"Point of View",
+  def:"<b>Point of view</b> is who is telling the story and whose thoughts we get to know.",
+  body:`<ul>
+   <li>The story is told in <b>third-person limited</b> point of view.</li>
+   <li><b>Third person:</b> A narrator outside the story tells it, using words like <i>she</i>, <i>her</i>, and <i>Amalia</i> — not <i>I</i> or <i>me</i>.</li>
+   <li><b>Limited:</b> The narrator stays close to <b>Amalia</b>. We know her thoughts and feelings, but we only learn about other characters from what they say and do.</li>
+   <li><b>Why it matters:</b> We feel Amalia's anger and sadness with her, and we discover things at the same time she does.</li></ul>`,
+  prompt:"How might the story be different if Martha were the one we followed? Write two or three sentences."},
+ {id:"characters", emoji:"👨‍👩‍👧", title:"Characters",
+  def:"<b>Characters</b> are the people in a story. The <b>main character</b> usually changes or learns something.",
+  body:`<div class="people">
+   <div class="person"><span class="tag">Main character</span><h3>Amalia</h3><p>A sixth grader in Chicago. Her mother's family is from Mexico and her father is Puerto Rican. She is loving and thoughtful, but she shuts down when she feels hurt. She <b>changes</b> the most in the story.</p></div>
+   <div class="person"><span class="tag">Grandmother</span><h3>Abuelita</h3><p>Amalia's wise, gentle grandmother. She teaches through cooking, music, and stories, and she keeps faraway family close with cards and letters she saves in her olive-wood box.</p></div>
+   <div class="person"><span class="tag">Best friend</span><h3>Martha</h3><p>Amalia's best friend, who often came along on Friday visits. Her family moves to California, which starts Amalia's problem.</p></div>
+   <div class="person"><span class="tag">Parents</span><h3>Mami &amp; Papi</h3><p>Amalia's mother and father. After Abuelita dies, her mother gives Amalia the olive-wood box.</p></div>
+   <div class="person"><span class="tag">Extended family</span><h3>Tíos, tías &amp; cousins</h3><p>Abuelita's children and grandchildren who live far away in Mexico and Costa Rica. They travel to Chicago to remember Abuelita together.</p></div>
+  </div>`,
+  prompt:"Which character are you most like? Use a detail from the story to explain."},
+ {id:"plot", emoji:"⛰️", title:"Plot",
+  def:"<b>Plot</b> is the order of events in a story: the beginning, the problem, the turning point, and how things work out.",
+  body:`<div class="plot">
+   <div class="step"><div class="n">1</div><div><b>Beginning (exposition):</b> Amalia goes to Abuelita's on a Friday afternoon — without Martha. While they make <i>melcocha</i> (taffy), she admits that Martha is moving away.</div></div>
+   <div class="step"><div class="n">2</div><div><b>Rising action:</b> Abuelita shares how she keeps faraway loved ones close. Martha's family leaves sooner than expected, and Amalia is so hurt and angry that she does not say goodbye.</div></div>
+   <div class="step"><div class="n">3</div><div><b>Turning point (climax):</b> Abuelita dies suddenly. Amalia never gets to say goodbye to her, either.</div></div>
+   <div class="step"><div class="n">4</div><div><b>Falling action:</b> Family arrives from far away. Amalia struggles with her grief. Then her mother gives her Abuelita's olive-wood box, full of cards and letters.</div></div>
+   <div class="step"><div class="n">5</div><div><b>Resolution:</b> Reading the cards helps Amalia understand what Abuelita taught her. She finds the courage to write to Martha.</div></div>
+  </div>`,
+  prompt:"Which event do you think was the most important in the story? Explain your choice."},
+ {id:"theme", emoji:"💌", title:"Theme",
+  def:"<b>Theme</b> is the big message or lesson about life. It is true for people outside the story too.",
+  body:`<ul>
+   <li><b>Love lasts across distance and loss.</b> People we love stay with us through memories, traditions, and staying in touch.</li>
+   <li><b>Grief can look like anger.</b> Amalia's anger at Martha is really sadness about losing her.</li>
+   <li><b>Family and heritage give us strength.</b> Recipes, Spanish words, music, and family stories connect Amalia to who she is.</li>
+   <li><b>Say what is in your heart while you can.</b> Reaching out takes courage, but it keeps relationships alive.</li></ul>`,
+  prompt:"Choose one theme. What happens in the story that proves it? Give at least one detail."},
+ {id:"mainidea", emoji:"🎯", title:"Main Idea",
+  def:"<b>Main idea</b> is what the story is mostly about — you can say it in a sentence or two. (Theme is the <i>lesson</i>; main idea is the <i>what happened</i>.)",
+  body:`<ul>
+   <li><b>Main idea:</b> When Amalia's best friend moves away and her beloved grandmother dies, she uses what Abuelita taught her — and the letters Abuelita saved — to heal and to reach out to the people she loves.</li>
+   <li><b>Key details that support it:</b>
+     <ul><li>Abuelita explains that you can find ways to keep people close.</li>
+     <li>Amalia refuses to say goodbye to Martha.</li>
+     <li>The olive-wood box shows Amalia how letters kept her family connected.</li>
+     <li>Amalia writes to Martha.</li></ul></li></ul>`,
+  prompt:"In your own words, tell what this story is mostly about in one or two sentences."}
+];
+
+/* ---------- 25 questions (answer 0 is correct; choices are shuffled for each student) ---------- */
+const QUESTIONS = [
+ {s:"Setting", q:"In which city does Amalia live?", a:["Chicago","Mexico City","Los Angeles","San José"], e:"The story takes place in Chicago, where Amalia and Abuelita both live."},
+ {s:"Key Details", q:"When does Amalia usually visit Abuelita?", a:["On Friday afternoons","On Sunday mornings","Every day before school","Only on holidays"], e:"Friday afternoons at Abuelita's have been Amalia's tradition since she was little."},
+ {s:"Plot", q:"What is upsetting Amalia at the beginning of the story?", a:["Her best friend Martha is moving away","She has to change schools","She lost Abuelita's box","Her cousins are coming to live with her"], e:"Amalia arrives at Abuelita's without Martha and admits that Martha's family is moving."},
+ {s:"Setting", q:"Where is Martha's family moving?", a:["California","Costa Rica","Puerto Rico","New York"], e:"Martha's family is moving west to California — far from Chicago."},
+ {s:"Key Details", q:"What do Amalia and Abuelita make together in the kitchen at the beginning of the book?", a:["Melcocha, a kind of taffy","Tamales","Birthday cupcakes","Hot chocolate"], e:"They pull melcocha, a sweet taffy, while Amalia shares her bad news."},
+ {s:"Vocabulary", q:"Amalia calls her grandmother \"Abuelita.\" What does this Spanish word mean?", a:["Grandma (a loving word for grandmother)","Best friend","Aunt","Teacher"], e:"Abuela means grandmother; adding -ita makes it a loving nickname, like \"Grandma.\""},
+ {s:"Characters", q:"Why was Martha part of Amalia's Friday tradition?", a:["She often came along to Abuelita's house with Amalia","She lived next door to Abuelita","She was Amalia's cousin","Abuelita was her babysitter"], e:"For about two years, Martha joined Amalia at Abuelita's on most Fridays."},
+ {s:"Characters", q:"What grade is Amalia in?", a:["Sixth grade","Third grade","Fourth grade","Eighth grade"], e:"Amalia is a sixth grader."},
+ {s:"Inference", q:"Abuelita says she knows how hard it is when someone you love goes away. Why does she understand so well?", a:["Many people she loves, including her own children, live far away","She once moved to California herself","She has never been apart from her family","Martha told her how it feels"], e:"Abuelita's children and other loved ones live far away in places like Mexico and Costa Rica."},
+ {s:"Key Details", q:"How does Abuelita keep faraway family members close?", a:["She writes to them and saves their cards and letters","She visits each of them every month","She keeps their photos on her phone","She asks Amalia to call them"], e:"Abuelita treasures the cards and letters she exchanges with her family."},
+ {s:"Key Details", q:"Abuelita's special box is made of what?", a:["Olive wood","Silver","Cardboard","Glass"], e:"The treasured box is made of olive wood."},
+ {s:"Plot", q:"What does Amalia do when Martha's family leaves?", a:["She is so upset that she does not say goodbye","She throws Martha a surprise party","She gives Martha the olive-wood box","She moves to California with her"], e:"Amalia is hurt and angry, so she avoids saying goodbye."},
+ {s:"Inference", q:"Why does Amalia most likely act angry toward Martha?", a:["She is deeply sad about losing her, and it comes out as anger","Martha broke a promise to visit Abuelita","Martha said something mean about her family","She never really liked Martha"], e:"Sometimes sadness and hurt show up as anger. Amalia doesn't want to lose her friend."},
+ {s:"Plot", q:"What sudden event changes Amalia's life soon after Martha leaves?", a:["Abuelita dies unexpectedly","Amalia's family moves to Mexico","Martha moves back to Chicago","Abuelita's house is sold"], e:"Abuelita's sudden death is the turning point (climax) of the story."},
+ {s:"Compare", q:"How are Amalia's two losses alike?", a:["Both times, she does not get to say goodbye","Both people moved to California","Both losses happened on her birthday","Both people were angry at her"], e:"She chose not to say goodbye to Martha, and she had no chance to say goodbye to Abuelita."},
+ {s:"Setting", q:"After Abuelita dies, relatives travel to Chicago. Where do many of them come from?", a:["Mexico and Costa Rica","California and Texas","Spain and Italy","Canada"], e:"Abuelita's family is spread out across Mexico and Costa Rica."},
+ {s:"Characters", q:"How does Amalia feel when all the relatives gather?", a:["Alone in her grief — she barely knows many of them","Excited to have a big party","Bored and ready to go home","Angry that they brought gifts"], e:"Amalia doesn't know these relatives well and can't understand why they don't seem as sad as she is."},
+ {s:"Key Details", q:"Who gives Amalia the olive-wood box?", a:["Her mother","Martha","Her teacher","Her uncle from Costa Rica"], e:"Amalia's mother gives her the box after Abuelita's death."},
+ {s:"Key Details", q:"What special thing does Amalia find inside the box?", a:["A Christmas card Abuelita had made for the coming holiday","A plane ticket to California","Abuelita's recipe for tamales","A photograph of Martha"], e:"Along with years of saved cards and letters, there is a Christmas card Abuelita had made."},
+ {s:"Cause & Effect", q:"How does receiving the box change Amalia?", a:["It helps her heal and see that people can stay close through words and memories","It makes her decide to stop speaking Spanish","It makes her angrier at her relatives","It convinces her to forget about Martha"], e:"The cards show Amalia how Abuelita stayed connected to people she loved — and how much Amalia mattered to her."},
+ {s:"Plot", q:"What does Amalia finally find the courage to do at the end of the story?", a:["Write to Martha","Move in with her cousins","Sell Abuelita's house","Stop visiting the kitchen"], e:"Amalia reaches out to Martha, just as Abuelita taught her to keep loved ones close."},
+ {s:"Author's Craft", q:"Why is the book titled \"Love, Amalia\"?", a:["It is the way you sign a letter, and Amalia learns to stay connected by writing","Amalia is the name of a love song Abuelita sings","Abuelita writes a book about Amalia","It is the name of Abuelita's kitchen"], e:"\"Love, Amalia\" is a letter closing. Letters are how the family — and now Amalia — keep love alive across distance."},
+ {s:"Point of View", q:"The narrator uses words like \"she\" and \"Amalia\" and tells us Amalia's private thoughts and feelings. What point of view is this?", a:["Third-person limited","First person","Second person","Third-person, knowing every character's thoughts"], e:"A narrator outside the story follows one character closely — that is third-person limited."},
+ {s:"Theme", q:"Which sentence best states a theme of the story?", a:["People we love stay with us through memories, traditions, and keeping in touch","Friends who move away are not real friends","It is best to hide your feelings from your family","Cooking is the most important skill to learn"], e:"A theme is a life lesson. Abuelita teaches that love lasts across distance and loss."},
+ {s:"Main Idea", q:"Which choice best tells the main idea of the story?", a:["After her friend moves and her grandmother dies, Amalia uses Abuelita's lessons to heal and reach out","Amalia learns to make taffy and flan in her grandmother's kitchen","Martha's family has an exciting adventure in California","Amalia's relatives plan a trip to Costa Rica"], e:"The main idea covers the whole story: two losses, and how Amalia learns to keep love close."}
+];
+
+/* ---------- login ---------- */
+function showLogin(){
+  me = null; meKey = null;
+  $("#app").classList.add("hidden"); $("#login").classList.remove("hidden");
+  $("#nameInput").value = ""; $("#loginErr").textContent = "";
+  const names = Object.values(all).map(p => p.name);
+  $("#returning").classList.toggle("hidden", !names.length);
+  $("#chips").innerHTML = names.map(n => `<button class="chip" data-n="${esc(n)}">${esc(n)}</button>`).join("");
+  $("#nameInput").focus();
+}
+function login(raw){
+  const clean = raw.trim().replace(/[^\p{L}' -]/gu, "").slice(0,20);
+  if(clean.length < 2){ $("#loginErr").textContent = "Please type your first name (letters only)."; return; }
+  const name = clean[0].toUpperCase() + clean.slice(1).toLowerCase();
+  meKey = name.toLowerCase();
+  me = all[meKey] || {name, explored:[], notes:{}, quiz:null, attempts:0, best:null, last:null};
+  save();
+  $("#whoName").textContent = me.name;
+  $("#login").classList.add("hidden"); $("#app").classList.remove("hidden");
+  current = null; renderTiles(); $("#detail").innerHTML = ""; showTab("map");
+}
+$("#loginForm").addEventListener("submit", e => { e.preventDefault(); login($("#nameInput").value); });
+$("#chips").addEventListener("click", e => { const b = e.target.closest(".chip"); if(b) login(b.dataset.n); });
+$("#switchBtn").addEventListener("click", showLogin);
+
+/* ---------- tabs ---------- */
+function showTab(t){
+  document.querySelectorAll("nav button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === t));
+  ["map","quiz","progress"].forEach(x => $("#tab-"+x).classList.toggle("hidden", x !== t));
+  if(t === "quiz") renderQuiz();
+  if(t === "progress") renderProgress();
+}
+document.querySelector("nav").addEventListener("click", e => { const b = e.target.closest("button"); if(b) showTab(b.dataset.tab); });
+
+/* ---------- story map ---------- */
+let current = null, saveTimer = null;
+function renderTiles(){
+  $("#tiles").innerHTML = PARTS.map(p => `<button class="tile" data-id="${p.id}" aria-pressed="${current===p.id}">
+    <span class="emoji">${p.emoji}</span>${p.title}${me.explored.includes(p.id) ? '<span class="done" title="Explored">✔</span>' : ''}</button>`).join("");
+}
+$("#tiles").addEventListener("click", e => {
+  const b = e.target.closest(".tile"); if(!b) return;
+  current = b.dataset.id;
+  if(!me.explored.includes(current)){ me.explored.push(current); save(); }
+  renderTiles(); renderDetail();
+});
+function renderDetail(){
+  const p = PARTS.find(x => x.id === current);
+  $("#detail").innerHTML = `<h2>${p.emoji} ${p.title}</h2><div class="def">${p.def}</div>${p.body}
+    <div class="think"><label for="note">✍️ Your thinking: ${p.prompt}</label>
+    <textarea id="note" placeholder="Write your answer here…">${esc(me.notes[p.id] || "")}</textarea>
+    <div id="savedMsg" class="saved"></div></div>`;
+  $("#note").addEventListener("input", e => {
+    me.notes[p.id] = e.target.value; clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => { save(); $("#savedMsg").textContent = "Saved for " + me.name + " ✔"; }, 400);
+  });
+}
+
+/* ---------- quiz ---------- */
+function newQuiz(){
+  me.quiz = { order: shuffle(QUESTIONS.map((_,i)=>i)), opts: QUESTIONS.map(()=>shuffle([0,1,2,3])), answers: [], pos: 0 };
+  save();
+}
+function renderQuiz(){
+  const el = $("#tab-quiz");
+  if(!me.quiz){
+    el.innerHTML = `<h2>Comprehension Quiz</h2>
+      <p class="lead">25 questions about <i>Love, Amalia</i>. The questions and answer choices are mixed up in a different order for every student and every try.</p>
+      <ul><li>Read each question carefully and pick the best answer.</li><li>You'll see right away if you were correct, with an explanation.</li><li>You can stop and come back — your place is saved under your name.</li></ul>
+      <div class="row"><button class="btn clay" id="startQuiz">Start the quiz</button></div>`;
+    $("#startQuiz").onclick = () => { newQuiz(); renderQuiz(); };
+    return;
+  }
+  const z = me.quiz;
+  if(z.pos >= QUESTIONS.length){ return renderResults(el); }
+  const qi = z.order[z.pos], Q = QUESTIONS[qi], order = z.opts[qi];
+  const picked = z.answers[z.pos];           // original index of chosen option, or undefined
+  const answered = picked !== undefined;
+  const score = z.answers.filter(a => a === 0).length;
+  el.innerHTML = `<div class="meta"><span>Question ${z.pos+1} of ${QUESTIONS.length}</span><span>Score: ${score}</span></div>
+    <div class="bar"><i style="width:${(z.pos + (answered?1:0))/QUESTIONS.length*100}%"></i></div>
+    <span class="skill">${Q.s}</span>
+    <div class="q">${esc(Q.q)}</div>
+    <div class="opts">${order.map((oi,k) => {
+      let cls = ""; if(answered){ if(oi===0) cls=" right"; else if(oi===picked) cls=" wrong"; }
+      return `<button class="opt${cls}" data-oi="${oi}" ${answered?"disabled":""}><span class="l">${"ABCD"[k]}</span><span>${esc(Q.a[oi])}</span></button>`;
+    }).join("")}</div>
+    ${answered ? `<div class="fb ${picked===0?"good":"bad"}" role="status">${picked===0 ? "✅ Correct! " : "Not quite. The answer is: <b>"+esc(Q.a[0])+"</b>. "}${esc(Q.e)}</div>
+      <div class="row"><button class="btn" id="nextQ">${z.pos+1 === QUESTIONS.length ? "See my results" : "Next question →"}</button></div>` : ""}`;
+  el.querySelectorAll(".opt").forEach(b => b.onclick = () => { z.answers[z.pos] = +b.dataset.oi; save(); renderQuiz(); });
+  if(answered){ $("#nextQ").onclick = () => { z.pos++; if(z.pos >= QUESTIONS.length) finish(); save(); renderQuiz(); }; $("#nextQ").focus(); }
+}
+function finish(){
+  const z = me.quiz, score = z.answers.filter(a => a === 0).length;
+  if(!z.done){ z.done = true; me.attempts++; me.last = score; me.best = Math.max(me.best ?? 0, score); }
+}
+function renderResults(el){
+  const z = me.quiz, total = QUESTIONS.length, score = z.answers.filter(a => a === 0).length;
+  const msg = score >= 23 ? "Outstanding! You really understand this story." : score >= 18 ? "Great work! You know this story well." : score >= 13 ? "Good effort! Review the Story Map and try again." : "Keep going! Reread the Story Map, then try again.";
+  const missed = z.order.map((qi,pos) => ({Q:QUESTIONS[qi], a:z.answers[pos]})).filter(x => x.a !== 0);
+  el.innerHTML = `<div class="center"><div class="script">Results for ${esc(me.name)}</div>
+    <div class="big">${score} / ${total}</div><p><b>${Math.round(score/total*100)}%</b> — ${msg}</p></div>
+    ${missed.length ? `<div class="missed"><h3>Questions to review</h3><ol>${missed.map(x => `<li>${esc(x.Q.q)}<small>✔ ${esc(x.Q.a[0])} — ${esc(x.Q.e)}</small></li>`).join("")}</ol></div>` : `<p class="center">🌟 A perfect score!</p>`}
+    <div class="row"><button class="btn clay" id="again">Try again (new order)</button><button class="btn ghost" id="toMap">Back to Story Map</button></div>`;
+  $("#again").onclick = () => { newQuiz(); renderQuiz(); };
+  $("#toMap").onclick = () => showTab("map");
+}
+
+/* ---------- progress ---------- */
+function renderProgress(){
+  const z = me.quiz, inProg = z && !z.done;
+  const notes = PARTS.filter(p => (me.notes[p.id] || "").trim());
+  $("#tab-progress").innerHTML = `<h2>${esc(me.name)}'s Progress</h2>
+    <div class="stats">
+      <div class="stat"><b>${me.explored.length}/${PARTS.length}</b><span>Story Map parts explored</span></div>
+      <div class="stat"><b>${notes.length}/${PARTS.length}</b><span>Thinking notes written</span></div>
+      <div class="stat"><b>${me.best === null ? "—" : me.best + "/25"}</b><span>Best quiz score</span></div>
+      <div class="stat"><b>${me.last === null ? "—" : me.last + "/25"}</b><span>Latest quiz score</span></div>
+      <div class="stat"><b>${me.attempts}</b><span>Quizzes finished</span></div>
+    </div>
+    ${inProg ? `<p>📌 You have a quiz in progress: question ${Math.min(z.pos+1,25)} of 25.</p>` : ""}
+    ${notes.length ? `<h3>My thinking notes</h3>${notes.map(p => `<div class="think" style="margin-top:10px"><label>${p.emoji} ${p.title}</label>${esc(me.notes[p.id])}</div>`).join("")}` : ""}
+    <p class="note">Your work is saved under your name on this device and browser. Use the same Chromebook to pick up where you left off.</p>`;
+}
+
+showLogin();
+</script>
+</body>
+</html>
