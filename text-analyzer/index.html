@@ -83,6 +83,10 @@
   body:not(.lib) .lib-only{display:none!important}
   .libnote{background:var(--soft);border:1px solid #cfe3da;border-radius:12px;padding:10px 12px;font-size:13px;margin-bottom:14px}
   .booklist{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 12px}
+  .booklist{max-height:340px;overflow-y:auto;padding-right:4px}
+  .info-cover{float:right;width:96px;margin:0 0 8px 12px;border-radius:6px;border:1px solid var(--line)}
+  .info-src{font-size:12px;color:#666;margin-top:8px}
+  .tags{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0}.tags span{font-size:12px;background:var(--soft);border-radius:99px;padding:2px 9px}
   .booklist button{font-size:12px;padding:5px 10px;border-radius:99px;background:var(--soft);color:var(--accent);border-color:#cfe3da}
 </style>
 </head>
@@ -156,6 +160,10 @@
 
 <script src="books.js"></script>
 <script src="poems.js"></script>
+<script src="books2.js"></script>
+<script src="books3.js"></script>
+<script src="books4.js"></script>
+<script src="poems2.js"></script>
 <script>
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -229,7 +237,7 @@ async function run(){
   if(!title){ showError("Type the title of a book, story, or article first."); $("#title").focus(); return; }
   if(!sample){
     const book = findBook(title);
-    if(!book){ $("#out").innerHTML=""; showError("That title isn't in the library yet. Choose one of the books or poems listed on the left."); return; }
+    if(!book){ lookupTitle(title); return; }
     lastResult = book; render(book, "4–5"); return;
   }
   const grade = $("#grade").value, kind = $("#kind").value;
@@ -371,13 +379,82 @@ function findBook(t){
   const lib = window.LIBRARY || [], n = norm(t);
   if(!n) return null;
   return lib.find(b => norm(b.title) === n || (b.aliases||[]).some(a => norm(a) === n))
-      || lib.find(b => norm(b.title).includes(n) || n.includes(norm(b.title)));
+      || (n.length >= 4 ? lib.find(b => norm(b.title).includes(n) || (norm(b.title).length >= 6 && n.includes(norm(b.title)))) : null);
+}
+const stripHtml = h => { const d=document.createElement("div"); d.innerHTML=h; d.querySelectorAll("sup,style,table,.mw-editsection,.reference,.hatnote").forEach(x=>x.remove()); return [...d.querySelectorAll("p")].map(p=>p.textContent.replace(/\[\d+\]/g,"").trim()).filter(Boolean); };
+async function getJSON(url, signal){ const r = await fetch(url, {signal}); if(!r.ok) throw new Error(r.status); return r.json(); }
+async function wikiFor(title, author, signal){
+  const W = "https://en.wikipedia.org/w/api.php?format=json&origin=*&";
+  const sr = await getJSON(W + "action=query&list=search&srlimit=5&srsearch=" + encodeURIComponent(title + (author ? " " + author : "")), signal);
+  const hits = (sr.query && sr.query.search) || [];
+  for(const h of hits){
+    const sum = await getJSON("https://en.wikipedia.org/api/rest_v1/page/summary/" + encodeURIComponent(h.title.replace(/ /g,"_")), signal).catch(()=>null);
+    if(!sum || sum.type === "disambiguation") continue;
+    const desc = sum.description || (sum.extract||"").slice(0,200);
+    if(/film|movie|television|tv series|album|song|video game|musical|opera|band|episode/i.test(sum.description||"")) continue;
+    if(!/novel|book|poem|story|stories|memoir|picture book|fiction|series|verse|fable|tale|play|poetry/i.test(desc)) continue;
+    let plot = [];
+    try{
+      const secs = await getJSON(W + "action=parse&prop=sections&page=" + encodeURIComponent(h.title), signal);
+      const sec = (secs.parse && secs.parse.sections || []).find(x => /^(plot|synopsis|plot summary|summary|story|plot overview)$/i.test(x.line.trim()));
+      if(sec){
+        const t = await getJSON(W + "action=parse&prop=text&section=" + sec.index + "&page=" + encodeURIComponent(h.title), signal);
+        plot = stripHtml(t.parse.text["*"]).slice(0,4);
+      }
+    }catch{}
+    return { title: sum.title, description: sum.description, extract: sum.extract, plot, url: sum.content_urls && sum.content_urls.desktop && sum.content_urls.desktop.page };
+  }
+  return null;
+}
+async function lookupTitle(title){
+  if(controller) controller.abort();
+  controller = new AbortController(); const signal = controller.signal;
+  $("#go").disabled = true; $("#go").textContent = "Looking up…";
+  $("#out").innerHTML = `<div class="panel"><div class="status"><div class="spin"></div><span>Looking up “${esc(title)}”…</span></div></div>`;
+  try{
+    const ol = await getJSON("https://openlibrary.org/search.json?limit=5&fields=key,title,author_name,first_publish_year,subject,number_of_pages_median,cover_i&q=" + encodeURIComponent(title), signal).catch(()=>null);
+    const doc = ol && ol.docs && (ol.docs.find(d => norm(d.title) === norm(title)) || ol.docs[0]);
+    const author = doc && doc.author_name ? doc.author_name[0] : "";
+    let olDesc = "";
+    if(doc){ const w = await getJSON("https://openlibrary.org" + doc.key + ".json", signal).catch(()=>null); if(w && w.description) olDesc = typeof w.description === "string" ? w.description : (w.description.value||""); olDesc = olDesc.split(/\n-{3,}|\n\n\(|\[source\]/)[0].trim(); }
+    const wiki = await wikiFor(title, author, signal).catch(()=>null);
+    if(!doc && !wiki){ $("#out").innerHTML=""; showError("I couldn't find that title. Check the spelling, or add the author's last name after the title."); return; }
+    renderInfo(title, doc, olDesc, author, wiki);
+  }catch(err){
+    if(err && err.name === "AbortError") return;
+    $("#out").innerHTML=""; showError("The lookup didn't work. Check your internet connection and try again.");
+  }finally{
+    $("#go").disabled = false; $("#go").textContent = "Show analysis";
+  }
+}
+function renderInfo(title, doc, olDesc, author, wiki){
+  const t = (doc && doc.title) || (wiki && wiki.title) || title;
+  const subs = doc && doc.subject ? doc.subject.filter(x => x.length < 40 && !/accessible|protected|daisy|large type|in library|nyt:/i.test(x)).slice(0,10) : [];
+  const cover = doc && doc.cover_i ? `<img class="info-cover" alt="Cover" onerror="this.remove()" src="https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg">` : "";
+  const facts = [ author && `<li><b>Author:</b> ${esc(author)}</li>`, doc && doc.first_publish_year && `<li><b>First published:</b> ${doc.first_publish_year}</li>`, wiki && wiki.description && `<li><b>Type:</b> ${esc(wiki.description)}</li>`, doc && doc.number_of_pages_median && `<li><b>Pages:</b> about ${doc.number_of_pages_median}</li>` ].filter(Boolean).join("");
+  const summary = (wiki && wiki.extract) || olDesc;
+  const plotTxt = wiki && wiki.plot && wiki.plot.length ? wiki.plot : [];
+  const plain = `${t}${author?" by "+author:""}\n\n${summary||""}${plotTxt.length?"\n\nPlot:\n"+plotTxt.join("\n\n"):""}`;
+  const src = [doc && `<a href="https://openlibrary.org${doc.key}" target="_blank" rel="noopener">Open Library</a>`, wiki && wiki.url && `<a href="${esc(wiki.url)}" target="_blank" rel="noopener">Wikipedia</a>`].filter(Boolean).join(" · ");
+  let html = `<div class="error" style="background:#fff8e6;border-color:#efdca5;color:#6b4e0e"><b>Basic information only.</b> This title isn't in the ready-made library, so this page shows what free book databases have about it. These descriptions are written for adults and may give away the ending, so read them before sharing with students. For the full analysis (theme, point of view, text structure, and more), use your claude.ai version or ask to have the title added to the library.</div>
+  <div class="results-head"><div><h2>${esc(t)}</h2><div class="meta">${author?"by "+esc(author):""}</div></div>
+  <div class="btns"><button id="copyAll">Copy all</button></div></div><div class="grid">
+  <article class="card wide" style="--c:var(--c1)"><h3>About this title</h3>${cover}<ul>${facts}</ul>${summary?`<p>${esc(summary)}</p>`:""}
+  ${olDesc && wiki && wiki.extract ? `<div class="sub">Publisher description</div><p>${esc(olDesc.slice(0,900))}${olDesc.length>900?"…":""}</p>`:""}</article>`;
+  if(plotTxt.length) html += `<article class="card wide" style="--c:var(--c2)"><h3>Plot summary</h3>${plotTxt.map(p=>`<p>${esc(p)}</p>`).join("")}</article>`;
+  if(subs.length) html += `<article class="card wide" style="--c:var(--c6)"><h3>Subjects</h3><div class="tags">${subs.map(x=>`<span>${esc(x)}</span>`).join("")}</div></article>`;
+  html += `</div><div class="info-src">Sources: ${src}. Wikipedia text is shared under CC BY-SA.</div>`;
+  $("#out").innerHTML = html;
+  $("#copyAll").onclick = () => copy(plain);
+  window.scrollTo({top: $("#out").getBoundingClientRect().top + window.scrollY - 10, behavior:"smooth"});
 }
 function setupLibrary(){
   document.body.classList.add("lib");
   const lib = window.LIBRARY || [];
+  const sortKey = b => norm(b.title);
+  lib.sort((a,b) => sortKey(a).localeCompare(sortKey(b)));
   const books = lib.filter(b => b.genre !== "Poetry"), poems = lib.filter(b => b.genre === "Poetry");
-  $("#libnote").innerHTML = `Choose one of the <b>${books.length} books</b> or <b>${poems.length} poems</b> in the library to see its full analysis.`;
+  $("#libnote").innerHTML = `Choose one of the <b>${books.length} books</b> or <b>${poems.length} poems</b> in the library to see its full analysis. For any other title, type it in to get basic information (author, year, and summary) from free book databases.`;
   $("#bookTitles").innerHTML = lib.map(b => `<option value="${esc(b.title)}">`).join("");
   const grp = (name, arr) => arr.length ? `<div class="sub" style="width:100%;margin:2px 0 0">${name}</div>` + arr.map(b => `<button type="button">${esc(b.title)}</button>`).join("") : "";
   $("#booklist").innerHTML = grp("Books", books) + grp("Poems", poems);
