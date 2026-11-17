@@ -105,6 +105,14 @@ svg.bar{width:100%;max-width:600px;height:auto}
 
 .finish{align-items:center;text-align:center}
 .finish .stars{font-size:3rem;letter-spacing:6px;color:#E0A800}
+.lvlbadge{display:inline-block;border:2px solid var(--ink);border-radius:999px;padding:1px 10px;font-size:.85rem;font-weight:800;font-family:var(--display)}
+.lvlbadge.m3{background:var(--good-bg);color:var(--good);border-color:var(--good)}
+.lvlbadge.m2{background:#FFF3C4;color:#7A5A00;border-color:#C99A00}
+.lvlbadge.m1{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+.lvlbadge.m0{background:#EEF2F5;color:var(--soft);border-color:#B8C4CE}
+.finish .lvlbadge{font-size:1.6rem;padding:6px 22px;border-width:3px}
+.scale{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.progress i.retry{background:var(--sun)}
 canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:50}
 .teacher{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .teacher input{width:110px;border:2px solid var(--ink);border-radius:10px;padding:6px 8px}
@@ -153,7 +161,11 @@ const KEY="frogHopFractions.v1";
 let prog={stars:{},all:false};
 try{prog=Object.assign(prog,JSON.parse(localStorage.getItem(KEY)||"{}"))}catch(e){}
 function saveProg(){try{localStorage.setItem(KEY,JSON.stringify(prog))}catch(e){}updateStars()}
-function updateStars(){$("#star-total").textContent="★ "+Object.values(prog.stars).reduce((a,b)=>a+b,0)+" of "+LEVELS.length*3}
+const LV=["Not started","Not yet","Almost","Mastery"];
+const LVICON=["","○","◐","●"];
+const lvBadge=v=>`<span class="lvlbadge m${v}">${v?LVICON[v]+" ":""}${LV[v]}</span>`;
+const levelFor=first=>first>=5?3:first>=3?2:1;   /* first-try correct out of 6 */
+function updateStars(){$("#star-total").textContent="● Mastered "+Object.values(prog.stars).filter(v=>v===3).length+" of "+LEVELS.length}
 
 /* ================= SOUND ================= */
 let soundOn=true,ac=null;
@@ -228,7 +240,7 @@ function lineSVG(o){
   }
   (o.flags||[]).forEach(f=>{const fx_=NL.x0+(f.v+neg)*(NL.x1-NL.x0)/wholes,c=f.color||"#E07A1F";
     s+=`<line x1="${fx_}" y1="${y-4}" x2="${fx_}" y2="${y+26}" stroke="${c}" stroke-width="3"/><circle cx="${fx_}" cy="${y}" r="7" fill="${c}" stroke="#17324D" stroke-width="2"/><rect x="${fx_-21}" y="${y+26}" width="42" height="56" rx="10" fill="${c}" stroke="#17324D" stroke-width="2"/>${f.d?`<text x="${fx_}" y="${y+48}" text-anchor="middle" font-family="Fredoka,sans-serif" font-weight="700" font-size="19" fill="#fff">${f.n}</text><line x1="${fx_-11}" x2="${fx_+11}" y1="${y+54}" y2="${y+54}" stroke="#fff" stroke-width="2.5"/><text x="${fx_}" y="${y+73}" text-anchor="middle" font-family="Fredoka,sans-serif" font-weight="700" font-size="19" fill="#fff">${f.d}</text>`:`<text x="${fx_}" y="${y+62}" text-anchor="middle" font-family="Fredoka,sans-serif" font-weight="700" font-size="26" fill="#fff">${f.n}</text>`}`});
-  if(o.frog!=null)s+=`<g class="frog" transform="translate(${X(o.frog)},${y})">${frogShape(o.frogColor)}</g>`;
+  if(o.frog!=null)s+=`<g class="frog" pointer-events="none" transform="translate(${X(o.frog)},${y})">${frogShape(o.frogColor)}</g>`;
   return s+"</svg>";
 }
 function nlX(svg,n){const N=svg.dataset.den*svg.dataset.wholes;return NL.x0+n*(NL.x1-NL.x0)/N}
@@ -511,8 +523,8 @@ const EXT=[
     const svg=$("#ln svg");
     onPick($("#ln"),"[data-n]",t=>{if(busy||R.done)return;const n=+t.dataset.n;busy=true;hop(svg,0,n,()=>{
       if(n===R.b)api.ok(`Found it! The flag is ${R.a} jumps from 0, so each jump is ${fr(1,R.b)}. ${R.b} jumps of ${fr(1,R.b)} make ${fr(R.b,R.b)} = 1.`);
-      else{api.miss(`Each jump is ${fr(1,R.b)}, because the flag at ${fr(R.a,R.b)} is ${R.a} jumps from 0. How many jumps make ${fr(R.b,R.b)}? Fernando landed on ${fr(n,R.b)}.`);setTimeout(()=>{busy=false;paint()},1700)}
-    },true)});
+      else{api.miss(`Think: how many jumps from 0 to the flag? What does each jump have to be worth? How many of those make one whole?`);setTimeout(()=>{busy=false;paint()},1700)}
+    })});
    };paint();}},
  {id:"x-between",name:"Squeeze Between",grade:"Gr 4–5",icon:"B",blurb:"Find a fraction between two others",ext:true,
   teach:`Is there always a fraction between two fractions? Yes! But sometimes the log isn't cut finely enough to see it. Re-cut the log into more equal parts until a lily pad appears <b>between</b> the two flags. Tip: try a number both denominators divide into.`,
@@ -526,8 +538,8 @@ const EXT=[
     const svg=$("#ln svg"),d=R.parts;
     onPick($("#ln"),"[data-n]",t=>{if(busy||R.done)return;const n=+t.dataset.n;busy=true;hop(svg,0,n,()=>{
       if(n/d>lo&&n/d<hi){const g=gcd(n,d);api.ok(`${fr(R.a1,R.b1)} &lt; ${fr(n,d)} &lt; ${fr(R.a2,R.b2)}${g>1?` (that's also ${fr(n/g,d/g)})`:""}. You squeezed a fraction in!`)}
-      else{const L=lcm(R.b1,R.b2);api.miss(n/d===lo||n/d===hi?`That pad is right ON a flag. You need one strictly between them.`:`That pad is ${n/d<lo?"before":"past"} the flags. If no pad fits between, cut the log into more parts. ${L*2<=24?`Try ${L*2}.`:""}`);setTimeout(()=>{busy=false;paint()},1500)}
-    },true)});
+      else{api.miss(n/d===lo||n/d===hi?`That pad is right on a flag. You need one strictly between them.`:`That pad is not between the flags. If no pad fits between them, change how the log is cut.`);setTimeout(()=>{busy=false;paint()},1500)}
+    })});
    };paint();}},
  {id:"x-bench",name:"Benchmark Bounce",grade:"Gr 4–5",icon:"C",blurb:"Closer to 0, ½, or 1?",ext:true,
   teach:`Mathematicians estimate with <b>benchmarks</b>: 0, ${fr(1,2)}, and 1. Trick: find half of the bottom number. If the top number is close to that, the fraction is close to ${fr(1,2)}. Tiny top number? Close to 0. Top almost equal to bottom? Close to 1.`,
@@ -538,7 +550,7 @@ const EXT=[
    api.stage(`<div id="ln" style="width:100%"></div>`);
    const names=["0",fr(1,2),"1"];
    const ans=k=>{if(k===R.best){$("#ln").innerHTML=lineSVG({den:R.b,labels:"ends",frog:R.a,flags:[{v:.5,n:1,d:2,color:"#7C4DCC"}]});api.ok(`${fr(R.a,R.b)} is closest to ${names[k]}. Half of ${R.b} is ${R.b/2}, and ${R.a} is ${R.a<R.b/2?"less":"more"} than that.`)}
-     else api.miss(`Half of ${R.b} is ${R.b/2}. Is ${R.a} close to 0, close to ${R.b/2}, or close to ${R.b}?`)};
+     else api.miss(`Compare the top number to half of the bottom number, and to the whole bottom number.`)};
    api.controls([["Closest to 0","btn alt",()=>ans(0)],[`Closest to ${fr(1,2)}`,"btn sun",()=>ans(1)],["Closest to 1","btn",()=>ans(2)]]);
   }},
  {id:"x-add",name:"Add the Hops",grade:"Gr 4–5",icon:"D",blurb:"Add fractions on the line",ext:true,
@@ -548,12 +560,12 @@ const EXT=[
   render(R,api){let busy=false;
    const paint=()=>{
     api.prompt(`Fernando sits on ${fr(R.a1,R.b1)}. He hops ${fr(R.a2,R.b2)} more. Tap where he lands.`);
-    api.stage(`<div id="ln" style="width:100%">${lineSVG({den:R.D,wholes:R.w,labels:"ends",pads:true,frog:R.start})}</div><div class="readout">This log is cut into <b>${R.D}</b> parts per whole.</div>`);
+    api.stage(`<div id="ln" style="width:100%">${lineSVG({den:R.D,wholes:R.w,labels:"ends",pads:true,frog:R.start})}</div>`);
     const svg=$("#ln svg");
     onPick($("#ln"),"[data-n]",t=>{if(busy||R.done)return;const n=+t.dataset.n;busy=true;hop(svg,R.start,n,()=>{
       if(n===R.sum)api.ok(`${fr(R.a1,R.b1)} + ${fr(R.a2,R.b2)} = ${R.b1!==R.D||R.b2!==R.D?`${fr(R.start,R.D)} + ${fr(R.sum-R.start,R.D)} = `:""}${fr(R.sum,R.D)}${R.sum>R.D?` = ${mixed(R.sum,R.D)}`:""}`);
-      else{api.miss(`Rename both in ${R.D}ths: ${fr(R.a1,R.b1)} = ${fr(R.start,R.D)} and ${fr(R.a2,R.b2)} = ${fr(R.sum-R.start,R.D)}. Start at Fernando and hop ${R.sum-R.start} more.`);setTimeout(()=>{busy=false;paint()},1800)}
-    },true)});
+      else{api.miss(`Count how many parts make one whole on this log. Then think: how many of those parts is the second fraction?`);setTimeout(()=>{busy=false;paint()},1800)}
+    })});
    };paint();}},
  {id:"x-times",name:"Jump Multiplier",grade:"Gr 4",icon:"E",blurb:"Multiply a fraction by a whole number",ext:true,
   teach:`${"3 × "}${fr(2,5)} means <b>3 jumps</b>, and each jump is ${fr(2,5)} long. That's the same as 6 little jumps of ${fr(1,5)}, so 3 × ${fr(2,5)} = ${fr(6,5)} = 1${fr(1,5)}.`,
@@ -567,8 +579,8 @@ const EXT=[
     onPick($("#ln"),"[data-n]",t=>{if(busy||R.done)return;const n=+t.dataset.n;busy=true;hop(svg,0,n,()=>{
       const T=R.m*R.a;
       if(n===T)api.ok(`${R.m} × ${fr(R.a,R.b)} = ${fr(T,R.b)}${T>R.b?` = ${mixed(T,R.b)}`:""}. ${R.m} big jumps = ${T} little jumps of ${fr(1,R.b)}.`);
-      else{api.miss(`Each big jump is ${R.a} little jump${R.a>1?"s":""}. ${R.m} big jumps is ${R.m} × ${R.a} little jumps. Fernando landed on ${fr(n,R.b)}.`);setTimeout(()=>{busy=false;paint()},1700)}
-    },true)});
+      else{api.miss(`How many little parts is ONE big jump? Then think about ${R.m} of them.`);setTimeout(()=>{busy=false;paint()},1700)}
+    })});
    };paint();}},
  {id:"x-order",name:"Line Up the Frogs",grade:"Gr 4–5",icon:"F",blurb:"Order three fractions",ext:true,
   teach:`Put three fractions in order from <b>least to greatest</b>. Strategies: compare to ${fr(1,2)}, look for same numerators (bigger denominator = smaller pieces), or rename with a common denominator.`,
@@ -582,7 +594,7 @@ const EXT=[
     api.controls(R.f.map((x,k)=>[fr(x[0],x[1]),"btn"+(R.picked.includes(k)?" alt":""),()=>{
       if(R.picked.includes(k))return;
       if(k===order[R.picked.length]){R.picked.push(k);sfx.tick();if(R.picked.length===3)api.ok(`${order.map(k=>fr(...R.f[k])).join(" &lt; ")}. Great reasoning!`);else paint()}
-      else{const hlf=R.f[k][0]/R.f[k][1]>.5?"more":"less";api.miss(`${fr(...R.f[k])} is not the ${R.picked.length===0?"least":"next smallest"}. Hint: ${fr(...R.f[k])} is ${hlf} than ${fr(1,2)}. Compare each one to ${fr(1,2)} first.`)}
+      else{api.miss(`${fr(...R.f[k])} is not the ${R.picked.length===0?"least":"next smallest"}. Try comparing each one to ${fr(1,2)}, or rename them with a common denominator.`)}
     }]));
    };paint();
   }},
@@ -593,12 +605,12 @@ const EXT=[
   render(R,api){let busy=false;const g=gcd(R.a,R.d);
    const paint=()=>{
     api.prompt(`Hop to <span class="big" style="font-family:var(--display)">${R.dec}</span>`);
-    api.stage(`<div id="ln" style="width:100%">${lineSVG({den:R.d,labels:"ends",pads:true,frog:0})}</div><div class="readout">This log is cut into <b>${R.d}</b> equal parts. Each part = ${fr(1,R.d)} = ${+(1/R.d).toFixed(3)}</div>`);
+    api.stage(`<div id="ln" style="width:100%">${lineSVG({den:R.d,labels:"ends",pads:true,frog:0})}</div>`);
     const svg=$("#ln svg");
     onPick($("#ln"),"[data-n]",t=>{if(busy||R.done)return;const n=+t.dataset.n;busy=true;hop(svg,0,n,()=>{
       if(n===R.a)api.ok(`${R.dec} = ${fr(R.a,R.d)}${g>1?` = ${fr(R.a/g,R.d/g)}`:""}${R.d!==10&&R.d!==100&&(10*R.a)%R.d===0?` = ${fr(10*R.a/R.d,10)}`:""}.`);
-      else{api.miss(`Fernando landed on ${fr(n,R.d)} = ${+(n/R.d).toFixed(3)}. Each jump is worth ${+(1/R.d).toFixed(3)}. How many jumps make ${R.dec}?`);setTimeout(()=>{busy=false;paint()},1700)}
-    },true)});
+      else{api.miss(`Count the parts in one whole. What decimal is each part worth? Then figure out how many parts make ${R.dec}.`);setTimeout(()=>{busy=false;paint()},1700)}
+    })});
    };paint();}},
  {id:"x-divide",name:"How Many Jumps?",grade:"Gr 5–6",icon:"H",blurb:"Divide with fractions",ext:true,
   teach:`Division asks <b>“how many fit?”</b> 2 ÷ ${fr(1,3)} means: how many jumps of ${fr(1,3)} does it take to reach 2? Each whole holds 3 thirds, so 2 wholes hold 6. That's why 2 ÷ ${fr(1,3)} = 6. It works for any fraction: ${fr(3,4)} ÷ ${fr(3,8)} = 2, because 2 jumps of ${fr(3,8)} reach ${fr(3,4)}.`,
@@ -612,8 +624,8 @@ const EXT=[
      <div class="row"><label for="qq" class="readout">Number of jumps:</label><input class="numin" id="qq" inputmode="numeric" maxlength="2"></div>`);
    const svg=$("#ln svg");
    const check=()=>{if(busy)return;const v=parseInt($("#qq").value,10);if(!v){api.miss("Type how many jumps.");return}
-     if(v===R.q){busy=true;hop(svg,0,R.q*R.s,()=>api.ok(`${tgt} ÷ ${jmp} = ${R.q}. Exactly ${R.q} jumps of ${jmp} fit.`),true,R.s)}
-     else api.miss(`Each jump of ${jmp} covers ${R.s} little part${R.s>1?"s":""} on this log. The flag is ${R.q*R.s} little parts from 0. How many jumps of ${R.s} make ${R.q*R.s}?`)};
+     if(v===R.q){busy=true;hop(svg,0,R.q*R.s,()=>api.ok(`${tgt} ÷ ${jmp} = ${R.q}. Exactly ${R.q} jumps of ${jmp} fit.`),false,R.s)}
+     else api.miss(`Figure out how many little parts one jump of ${jmp} covers, and how many little parts it is from 0 to the flag.`)};
    api.controls([["Check","btn",check]]);$("#qq").addEventListener("keydown",e=>{if(e.key==="Enter")check()});$("#qq").focus();
   }},
  {id:"x-negative",name:"Below Zero",grade:"Gr 6",icon:"I",blurb:"Negative fractions and opposites",ext:true,
@@ -628,8 +640,8 @@ const EXT=[
     onPick($("#ln"),"[data-n]",t=>{if(busy||R.done)return;const n=+t.dataset.n;busy=true;hop(svg,z,n,()=>{
       const v=n-z;
       if(v===R.goal)api.ok(R.opp?`${sv(R.a,R.b)} and ${sv(R.goal,R.b)} are opposites: both are ${Math.abs(R.a)} jumps from 0, on different sides.`:`${sv(R.goal,R.b)} is ${Math.abs(R.goal)} jumps ${R.goal<0?"left":"right"} of 0.`);
-      else{api.miss(`Fernando landed on ${v===0?"0":sv(v,R.b)}. ${R.goal<0?"Negative numbers are LEFT of 0.":"Positive numbers are RIGHT of 0."} Count ${Math.abs(R.goal)} jumps of ${fr(1,R.b)} from 0.`);setTimeout(()=>{busy=false;paint()},1700)}
-    },true)});
+      else{api.miss(R.opp?`Opposites are the same distance from 0, on different sides.`:`Check which side of 0 the number belongs on, and how many parts make one whole.`);setTimeout(()=>{busy=false;paint()},1700)}
+    })});
    };paint();}}
 ];
 LEVELS.push(...EXT);
@@ -637,12 +649,12 @@ const CORE=LEVELS.filter(L=>!L.ext).length;
 const levelLabel=i=>LEVELS[i].ext?"Challenge "+LEVELS[i].icon:"Level "+(i+1);
 
 /* ================= HOME / MAP ================= */
-const unlocked=i=>prog.all||i===0||i===CORE||(prog.stars[LEVELS[i-1].id]||0)>0;
+const unlocked=i=>prog.all||i===0||i===CORE||(prog.stars[LEVELS[i-1].id]||0)>=2;
 function home(){
   location.hash="";
   const a=app();a.innerHTML="";
   const intro=document.createElement("div");intro.className="card";
-  intro.innerHTML=`<h2>Welcome to the pond!</h2><p>Start in the <b>Workshop</b> to learn how to build a number line. Then play the levels in order. Ready for more? Try the <b>Challenge Pond</b> at the bottom. Each level has ${ROUNDS} rounds. Fewer mistakes earn more stars ★★★, and finishing a level unlocks the next lily pad.</p>`;
+  intro.innerHTML=`<h2>Welcome to the pond!</h2><p>Start in the <b>Workshop</b> to learn how to build a number line. Then play the levels in order. Ready for more? Try the <b>Challenge Pond</b> at the bottom. Each level has ${ROUNDS} rounds. Your level of success depends on how many rounds you get right on the <b>first try</b>:</p><div class="scale">${lvBadge(3)}<span class="small">5–6 first tries</span>${lvBadge(2)}<span class="small">3–4 first tries</span>${lvBadge(1)}<span class="small">0–2 first tries</span></div><p>Reach <b>Almost</b> or <b>Mastery</b> to unlock the next lily pad. Then keep playing until you hit Mastery!</p>`;
   a.appendChild(intro);
   let m=document.createElement("div");m.className="map";
   const ws=document.createElement("button");ws.type="button";ws.className="lvl workshop";
@@ -651,12 +663,12 @@ function home(){
   let xm=null;
   LEVELS.forEach((L,i)=>{
     if(i===CORE){a.appendChild(m);const h=document.createElement("div");h.className="card";h.style.background="#FFF4D6";
-      h.innerHTML=`<span class="tag" style="align-self:flex-start">Extension</span><h2>Challenge Pond 🏆</h2><p>For advanced hoppers who want a challenge. These levels climb from 4th grade up to 6th grade: find the hidden 1, squeeze fractions between fractions, estimate with benchmarks, add and multiply on the number line, order fractions, match decimals, divide by fractions, and hop below zero into negative numbers. Each one ends with a <b>Think deeper</b> question.</p>`;
+      h.innerHTML=`<span class="tag" style="align-self:flex-start">Extension</span><h2>Challenge Pond 🏆</h2><p>For advanced hoppers who want a challenge. These levels climb from 4th grade up to 6th grade: find the hidden 1, squeeze fractions between fractions, estimate with benchmarks, add and multiply on the number line, order fractions, match decimals, divide by fractions, and hop below zero into negative numbers. No helpers here: you only see the fraction, and hints never give away the answer. Each one ends with a <b>Think deeper</b> question.</p>`;
       a.appendChild(h);xm=document.createElement("div");xm.className="map";m=xm}
     const b=document.createElement("button");b.type="button";b.className="lvl"+(L.ext?" ext":"");b.disabled=!unlocked(i);
     const st=prog.stars[L.id]||0;
-    b.innerHTML=`<span class="pad">${b.disabled?"🔒":L.icon}</span><span><b>${L.name}</b><span class="small">${L.blurb}</span>${L.grade?` <span class="tag" style="font-size:.75rem">${L.grade}</span>`:""}<br><span class="stars" aria-label="${st} of 3 stars">${"★".repeat(st)}${"☆".repeat(3-st)}</span></span>`;
-    if(b.disabled)b.title="Finish "+LEVELS[i-1].name+" first";
+    b.innerHTML=`<span class="pad">${b.disabled?"🔒":L.icon}</span><span><b>${L.name}</b><span class="small">${L.blurb}</span>${L.grade?` <span class="tag" style="font-size:.75rem">${L.grade}</span>`:""}<br>${lvBadge(st)}</span>`;
+    if(b.disabled)b.title="Reach Almost or Mastery on "+LEVELS[i-1].name+" first";
     b.addEventListener("click",()=>intro_(i));
     m.appendChild(b);
   });
@@ -676,7 +688,7 @@ function intro_(i){
 /* ================= GAME ENGINE ================= */
 let G=null;
 function play(i){
-  G={i,L:LEVELS[i],r:0,misses:0,used:new Set()};
+  G={i,L:LEVELS[i],r:0,misses:0,first:0,hist:[],used:new Set()};
   const a=app();a.innerHTML="";
   const c=document.createElement("div");c.className="card";
   c.innerHTML=`<div class="row" style="justify-content:space-between"><button class="btn alt" id="back" type="button">← Pond map</button><span><b style="font-family:var(--display)">${levelLabel(i)}: ${G.L.name}</b></span><div class="progress" id="dots" aria-label="Round progress"></div></div>
@@ -691,7 +703,7 @@ function play(i){
   round();
 }
 function round(){
-  $("#dots").innerHTML=Array.from({length:ROUNDS},(_,k)=>`<i class="${k<G.r?"done":k===G.r?"now":""}"></i>`).join("");
+  $("#dots").innerHTML=Array.from({length:ROUNDS},(_,k)=>`<i class="${k<G.r?(G.hist[k]?"done":"retry"):k===G.r?"now":""}" title="${k<G.r?(G.hist[k]?"Right on first try":"Needed another try"):""}"></i>`).join("");
   $("#fb").className="fb";$("#fb").innerHTML="";$("#next").hidden=true;
   const R=G.L.gen(G.r,G.used);R.done=false;G.R=R;
   const api={
@@ -699,26 +711,27 @@ function round(){
     stage:h=>{$("#stage").innerHTML=h},
     controls:list=>{const c=$("#controls");c.innerHTML="";list.forEach(([label,cls,fn])=>{const b=document.createElement("button");b.type="button";b.className=cls;b.innerHTML=label;b.addEventListener("click",()=>{if(!R.done)fn()});c.appendChild(b)})},
     say:h=>{$("#fb").className="fb good";$("#fb").innerHTML=h},
-    ok:h=>{if(R.done)return;R.done=true;sfx.good();$("#fb").className="fb good";$("#fb").innerHTML="✓ "+h;$("#controls").querySelectorAll("button").forEach(b=>b.disabled=true);$("#next").hidden=false;$("#next").textContent=G.r===ROUNDS-1?"Finish level ★":"Next round →";$("#next").focus({preventScroll:true});$("#fb").scrollIntoView({block:"nearest",behavior:reduceMotion?"auto":"smooth"})},
-    miss:h=>{if(R.done)return;G.misses++;sfx.bad();$("#fb").className="fb bad";$("#fb").innerHTML="Not yet. "+h}
+    ok:h=>{if(R.done)return;R.done=true;G.hist[G.r]=!R.missed;if(!R.missed)G.first++;sfx.good();$("#fb").className="fb good";$("#fb").innerHTML="✓ "+h;$("#controls").querySelectorAll("button").forEach(b=>b.disabled=true);$("#next").hidden=false;$("#next").textContent=G.r===ROUNDS-1?"See my results":"Next round →";$("#next").focus({preventScroll:true});$("#fb").scrollIntoView({block:"nearest",behavior:reduceMotion?"auto":"smooth"})},
+    miss:h=>{if(R.done)return;G.misses++;R.missed=true;sfx.bad();$("#fb").className="fb bad";$("#fb").innerHTML="Not yet. "+h}
   };
   G.L.render(R,api);
 }
 function finish(){
-  const st=G.misses===0?3:G.misses<=3?2:1;
+  const st=levelFor(G.first);
   const prev=prog.stars[G.L.id]||0;prog.stars[G.L.id]=Math.max(prev,st);saveProg();
-  sfx.win();confetti();
+  if(st>=2){sfx.win();confetti()}else sfx.ribbit();
   const a=app();a.innerHTML="";
   const c=document.createElement("div");c.className="card finish";
-  const nextI=G.i+1<LEVELS.length&&G.i+1!==CORE?G.i+1:null;
+  const nextI=st>=2&&G.i+1<LEVELS.length&&G.i+1!==CORE?G.i+1:null;
   c.innerHTML=`<svg width="120" height="100" viewBox="-40 -48 80 60" aria-hidden="true">${frogShape()}</svg>
-    <h2>${levelLabel(G.i)} complete!</h2><div class="stars" aria-label="${st} of 3 stars">${"★".repeat(st)}${"☆".repeat(3-st)}</div>
-    <p>${G.misses===0?"Perfect hopping, no mistakes!":G.misses+" mistake"+(G.misses>1?"s":"")+" this time. "+(st<3?"Play again for 3 stars.":"")}</p>
+    <h2>${levelLabel(G.i)}: ${G.L.name}</h2><div>${lvBadge(st)}</div><p><b>${G.first} of ${ROUNDS}</b> rounds right on the first try.</p>
+    <p>${st===3?(G.first===ROUNDS?"Perfect hopping! You have mastered this skill.":"You have mastered this skill!"):st===2?"You are almost there! The next level is unlocked. Play this one again to reach Mastery.":"Not yet, and that is okay. Review the lesson, then try again. Reach Almost to unlock the next level."}${prev>st?`<br><span class="small">Your best so far is still ${LV[prev]}.</span>`:""}</p>
     ${G.L.deeper?`<div class="explain" style="text-align:left"><b>Think deeper:</b> ${G.L.deeper}<br><span class="small">Talk it over with a partner or write your answer in your math journal.</span></div>`:""}
-    <div class="row" style="justify-content:center">${nextI!=null?`<button class="btn pink" id="nx" type="button">Next level: ${LEVELS[nextI].name} →</button>`:(G.L.ext?`<span class="tag">Challenge Pond conquered! 🏆</span>`:`<span class="tag">You finished every level! Try the Challenge Pond 🏆</span>`)}
+    <div class="row" style="justify-content:center">${nextI!=null?`<button class="btn pink" id="nx" type="button">Next level: ${LEVELS[nextI].name} →</button>`:(st<2?`<button class="btn pink" id="review" type="button">Review the lesson</button>`:G.i+1===LEVELS.length?`<span class="tag">Challenge Pond conquered! 🏆</span>`:G.i+1===CORE?`<span class="tag">You finished every level! Try the Challenge Pond 🏆</span>`:"")}
     <button class="btn alt" id="again" type="button">Play again</button><button class="btn alt" id="map" type="button">Pond map</button></div>`;
   a.appendChild(c);
   if(nextI!=null)$("#nx").addEventListener("click",()=>intro_(nextI));
+  if($("#review"))$("#review").addEventListener("click",()=>intro_(G.i));
   $("#again").addEventListener("click",()=>play(G.i));$("#map").addEventListener("click",home);
   window.scrollTo(0,0);
 }
@@ -731,7 +744,7 @@ $("#teacher").addEventListener("submit",e=>{e.preventDefault();
 let resetArm=false;
 $("#reset").addEventListener("click",e=>{
   if($("#tcode").value.trim()!=="8531"){$("#tmsg").textContent="Type the teacher code first.";return}
-  if(!resetArm){resetArm=true;e.currentTarget.textContent="Tap again to erase stars";return}
+  if(!resetArm){resetArm=true;e.currentTarget.textContent="Tap again to erase progress";return}
   prog={stars:{},all:false};saveProg();resetArm=false;e.currentTarget.textContent="Reset progress on this device";$("#tmsg").textContent="Progress reset.";$("#tcode").value="";home()});
 
 home();
