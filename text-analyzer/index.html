@@ -64,7 +64,7 @@
   .card p{margin:6px 0}
   .card ul{margin:6px 0;padding-left:20px}
   .card li{margin:3px 0}
-  .quote{border-left:3px solid color-mix(in srgb,var(--c) 45%,white);padding:4px 10px;color:#3a3f46;font-style:italic;margin:8px 0;background:color-mix(in srgb,var(--c) 5%,white);border-radius:0 8px 8px 0}
+  .quote{border-left:3px solid color-mix(in srgb,var(--c) 45%,white);padding:4px 10px;color:#3a3f46;margin:8px 0;background:color-mix(in srgb,var(--c) 5%,white);border-radius:0 8px 8px 0}
   .sub{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-top:10px}
   .na{color:var(--muted);font-style:italic}
   .copy{position:absolute;top:12px;right:12px;font-size:11px;padding:4px 8px;border-radius:7px;color:var(--muted)}
@@ -86,7 +86,7 @@
 <body>
 <header>
   <h1>Text Analyzer</h1>
-  <p>Paste a story, poem, or article. Get the summary, main idea, text structure, theme, point of view, narrator, characters, and setting — with evidence from the text.</p>
+  <p>Type the name of a book, story, poem, or article. Get the summary, main idea, text structure, theme, point of view, narrator, characters, and setting — with evidence from the text.</p>
 </header>
 
 <main>
@@ -99,11 +99,21 @@
       </div>
       <div class="hint"><span id="keyStatus">Saved only in this browser on this device. Never shared with students.</span><button class="linkish" type="button" id="forgetKey">Forget key</button></div>
     </div>
+    <div class="field">
+      <label for="title">Book, story, or article title</label>
+      <input type="text" id="title" placeholder="e.g. The Lemonade War" autocomplete="off">
+    </div>
     <div class="row">
       <div>
-        <label for="title">Title (optional)</label>
-        <input type="text" id="title" placeholder="e.g. The Lemonade War">
+        <label for="author">Author (optional)</label>
+        <input type="text" id="author" placeholder="e.g. Jacqueline Davies" autocomplete="off">
       </div>
+      <div>
+        <label for="part">Chapter / section (optional)</label>
+        <input type="text" id="part" placeholder="Whole text, or e.g. Ch. 3" autocomplete="off">
+      </div>
+    </div>
+    <div class="row">
       <div>
         <label for="grade">Write results for</label>
         <select id="grade">
@@ -114,29 +124,18 @@
           <option value="6">Grade 6</option>
         </select>
       </div>
-    </div>
-    <div class="field">
-      <label for="kind">Type of text</label>
-      <select id="kind">
-        <option value="auto" selected>Detect automatically</option>
-        <option value="Literature (fiction)">Literature / fiction</option>
-        <option value="Informational (nonfiction)">Informational / nonfiction</option>
-        <option value="Poetry">Poetry</option>
-        <option value="Drama">Drama / play</option>
-      </select>
-    </div>
-    <div class="field">
-      <label for="text">Passage</label>
-      <textarea id="text" placeholder="Paste the passage here…"></textarea>
-      <div class="hint">
-        <span id="count">0 words</span>
-        <span>
-          <label class="file-label" for="fileIn">Upload .txt</label>
-          <input type="file" id="fileIn" accept=".txt,text/plain">
-          &nbsp;·&nbsp;<button class="linkish" id="sampleBtn" type="button">Try a sample</button>
-        </span>
+      <div>
+        <label for="kind">Type of text</label>
+        <select id="kind">
+          <option value="auto" selected>Detect automatically</option>
+          <option value="Literature (fiction)">Literature / fiction</option>
+          <option value="Informational (nonfiction)">Informational / nonfiction</option>
+          <option value="Poetry">Poetry</option>
+          <option value="Drama">Drama / play</option>
+        </select>
       </div>
     </div>
+    <div class="hint" style="margin:-4px 0 12px"><span>Try: <button class="linkish ex" type="button">The Lemonade War</button> · <button class="linkish ex" type="button" data-a="E.B. White">Charlotte's Web</button> · <button class="linkish ex" type="button" data-a="Zilpha Keatley Snyder">The Egypt Game</button></span></div>
     <div class="btns">
       <button class="primary" id="go" type="button">Analyze text</button>
       <button id="clear" type="button">Clear</button>
@@ -146,7 +145,7 @@
   <section id="out">
     <div class="panel empty" id="empty">
       <h2>Results will appear here</h2>
-      <div>Each element comes with an explanation and text evidence you can use in a lesson.</div>
+      <div>Type a title on the left. Each element comes with an explanation and text evidence you can use in a lesson.</div>
       <div class="chips">
         <span class="chip">Summary</span><span class="chip">Main idea</span><span class="chip">Text structure</span>
         <span class="chip">Theme</span><span class="chip">Point of view</span><span class="chip">Narrator</span>
@@ -162,20 +161,6 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 let sample = null, lastResult = null, controller = null;
 
-const SAMPLE = `The Last Seed
-
-Every spring, Grandma Rosa planted sunflowers along the fence behind her small yellow house. This year, though, her hands shook too much to hold the tiny seeds, so she handed the paper packet to me.
-
-"There are only twelve," she said. "Make each one count."
-
-I was ten, and I was in a hurry. I poked the seeds into the dirt as fast as I could, then ran off to play soccer with my cousin Mateo. I forgot to water them. When the first hot week of June arrived, the ground beside the fence was cracked and bare.
-
-Grandma didn't scold me. She just sat on the porch step and looked at the empty dirt for a long time. That night I couldn't sleep. In the morning I dug through her kitchen drawer until I found one more seed, flat and striped, stuck in the corner of an old envelope.
-
-This time I went slowly. I loosened the soil with a spoon. I watered it every morning before school and every evening after dinner. I built a little fence of popsicle sticks so the neighbor's dog would stay away. Mateo laughed at me, but after a while he started bringing the watering can.
-
-By August, the sunflower was taller than me. On the day it opened, Grandma Rosa stood beside it with her hand on my shoulder. "One seed," she said, "and a patient gardener. That's all it ever takes."`;
-
 const STD = {
   summary: g => `RL.${g}.2 · RI.${g}.2`,
   main: g => `RI.${g}.2`,
@@ -188,67 +173,67 @@ const STD = {
   questions: g => `RL.${g}.1 · RI.${g}.1`
 };
 
-function words(t){ return (t.trim().match(/\S+/g)||[]).length; }
-$("#text").addEventListener("input", () => $("#count").textContent = words($("#text").value) + " words");
-$("#sampleBtn").onclick = () => { $("#text").value = SAMPLE; $("#title").value = "The Last Seed"; $("#text").dispatchEvent(new Event("input")); };
-$("#clear").onclick = () => { $("#text").value=""; $("#title").value=""; $("#text").dispatchEvent(new Event("input")); };
-$("#fileIn").onchange = async e => {
-  const f = e.target.files[0]; if(!f) return;
-  $("#text").value = await f.text();
-  if(!$("#title").value) $("#title").value = f.name.replace(/\.[^.]+$/,"");
-  $("#text").dispatchEvent(new Event("input")); e.target.value="";
-};
+document.querySelectorAll(".ex").forEach(b => b.onclick = () => {
+  $("#title").value = b.textContent; $("#author").value = b.dataset.a || (b.textContent==="The Lemonade War"?"Jacqueline Davies":""); $("#part").value = "";
+});
+$("#clear").onclick = () => { ["#title","#author","#part"].forEach(id => $(id).value = ""); };
+$("#title").addEventListener("keydown", e => { if(e.key === "Enter") run(); });
 
 function toast(m){ const t=$("#toast"); t.textContent=m; t.classList.add("on"); setTimeout(()=>t.classList.remove("on"),1400); }
 async function copy(text){ try{ await navigator.clipboard.writeText(text); toast("Copied"); }catch{ toast("Couldn't copy — select and copy instead"); } }
 
-function buildPrompt(text, title, grade, kind){
-  return `You are an expert elementary ELA teacher and literacy coach. Analyze the passage below for a teacher. Write every explanation in clear, teacher-ready language that could be read aloud to students in grade ${grade}. Base everything ONLY on the passage; do not invent events. Use short exact quotes (under 20 words) from the passage as evidence.
+function buildPrompt(title, author, part, grade, kind){
+  return `You are an expert elementary ELA teacher and literacy coach. A teacher wants a literary analysis of a published text, identified only by name. Use your own knowledge of the text. Write every explanation in clear, teacher-ready language that could be read aloud to students in grade ${grade}.
 
+Text: "${title}"${author ? " by " + author : ""}
+Part to analyze: ${part ? part + " (analyze only this part, but you may use the rest of the book for context)" : "the whole text"}
 Text type: ${kind === "auto" ? "Detect it (Literature, Informational, Poetry, or Drama)." : kind}
-${title ? "Title: " + title : ""}
+
+Accuracy rules:
+- Only state plot events, names, and details you are confident are in this text. Never invent events or characters.
+- If you do not recognize the text, or there are several texts with this title and you can't tell which one, set "known" to false, put a short explanation in "note", and leave the other fields empty.
+- If you know the text but not the specific chapter/section well, say so in "note", set confidence to "low", and keep the analysis general.
+- For evidence, describe specific moments from the text in your own words (e.g. "When Evan finds out Jessie skipped to his grade, he..."). Do not quote long passages.
 
 Return ONLY a JSON object with exactly this shape:
 {
+  "known": boolean,
+  "confidence": "high" | "medium" | "low",
+  "note": string or null (anything the teacher should double-check),
   "genre": "Literature" | "Informational" | "Poetry" | "Drama",
-  "title": string (given title, or a short descriptive one),
-  "summary": string (3-5 sentences, objective, in order, no opinions),
+  "title": string (correct full title),
+  "author": string,
+  "summary": string (4-6 sentences, objective, in order, no opinions),
   "somebody_wanted_but_so_then": string or null (one-sentence SWBST summary for literature; null for informational),
   "main_idea": { "statement": string (one sentence), "key_details": [string, string, string] },
   "text_structure": {
     "type": one of "Chronological/Sequence", "Compare and Contrast", "Cause and Effect", "Problem and Solution", "Description", "Narrative (story structure)", "Poem structure (stanzas/lines)", "Drama structure (scenes/dialogue)",
-    "explanation": string (how the author organized the text and how you can tell),
-    "signal_words": [string] (words/phrases from the text that signal the structure; may be empty),
+    "explanation": string (how the author organized the text and how you can tell, e.g. alternating narrators, chapter titles, flashbacks),
+    "signal_words": [string] (typical signal words/features students can look for; may be empty),
     "plot": { "beginning": string, "problem": string, "rising_action": string, "climax": string, "resolution": string } or null (fill for stories/drama; null for informational)
   },
-  "theme": { "statement": string (a complete sentence lesson/message, not one word) or null if informational, "topic_word": string (one-word topic, e.g. "patience"), "explanation": string, "evidence": [string] (1-3 quotes) },
-  "point_of_view": { "type": one of "First person", "Second person", "Third person limited", "Third person omniscient", "Third person objective", "Author's point of view (informational)", "explanation": string (which pronouns and what the reader can/can't know), "evidence": string (one quote) },
-  "narrator": { "who": string (who is telling it, e.g. "the granddaughter, a 10-year-old character in the story" or "an outside narrator not in the story" or "the author"), "inside_or_outside": "Character in the story" | "Outside the story" | "Author (informational)" | "Speaker (poem)", "explanation": string },
-  "characters": [ { "name": string, "role": "Main character" | "Supporting character" | "Antagonist" | "Narrator character" | "Person/group (informational)", "traits": [string] (2-4 single-word traits), "evidence": string (how we know: actions, words, thoughts), "changes": string or null (how the character changes) } ],
-  "setting": { "place": string, "time": string, "importance": string (why the setting matters), "evidence": string (one quote) or null },
+  "theme": { "statement": string (a complete sentence lesson/message, not one word) or null if informational, "topic_word": string (one-word topic, e.g. "sibling rivalry"), "explanation": string, "evidence": [string] (2-3 specific moments, paraphrased) },
+  "point_of_view": { "type": one of "First person", "Second person", "Third person limited", "Third person omniscient", "Third person objective", "Alternating / multiple", "Author's point of view (informational)", "explanation": string (which pronouns and what the reader can/can't know), "evidence": string (one specific moment, paraphrased) },
+  "narrator": { "who": string, "inside_or_outside": "Character in the story" | "Outside the story" | "Author (informational)" | "Speaker (poem)", "explanation": string },
+  "characters": [ { "name": string, "role": "Main character" | "Supporting character" | "Antagonist" | "Narrator character" | "Person/group (informational)", "traits": [string] (2-4 single-word traits), "evidence": string (how we know: actions, words, thoughts), "changes": string or null } ] (main and important supporting characters, up to 6),
+  "setting": { "place": string, "time": string, "importance": string (why the setting matters), "evidence": string or null },
   "discussion_questions": [string, string, string, string] (text-dependent questions, mix of literal and inferential)
-}
-If an element doesn't apply (for example, characters in an article with no people), use an empty list or a short explanation saying so instead of guessing.
-
-PASSAGE:
-"""
-${text}
-"""`;
+}`;
 }
 
 async function run(){
-  const text = $("#text").value.trim();
-  if(words(text) < 15){ showError("Paste a passage of at least a few sentences first."); return; }
+  const title = $("#title").value.trim(), author = $("#author").value.trim(), part = $("#part").value.trim();
+  if(!title){ showError("Type the title of a book, story, or article first."); $("#title").focus(); return; }
   if(!sample && !getKey()){ $("#keybox").style.display="block"; showError("Enter your Anthropic API key at the top left, then click Analyze."); $("#apiKey").focus(); return; }
-  const grade = $("#grade").value, kind = $("#kind").value, title = $("#title").value.trim();
+  const grade = $("#grade").value, kind = $("#kind").value;
   if(controller) controller.abort();
   controller = new AbortController();
   $("#go").disabled = true; $("#go").textContent = "Analyzing…";
-  $("#out").innerHTML = `<div class="panel"><div class="status"><div class="spin"></div><span id="stat">Reading the passage…</span></div></div>`;
-  const msgs = ["Reading the passage…","Finding the main idea…","Tracing the theme…","Checking point of view…","Gathering evidence…"];
+  $("#out").innerHTML = `<div class="panel"><div class="status"><div class="spin"></div><span id="stat">Looking up the text…</span></div></div>`;
+  const msgs = ["Looking up the text…","Finding the main idea…","Tracing the theme…","Checking point of view…","Gathering evidence…"];
   let i=0; const tick = setInterval(()=>{ const s=$("#stat"); if(s) s.textContent = msgs[++i % msgs.length]; }, 2200);
   try{
-    const prompt = buildPrompt(text, title, grade, kind);
+    const prompt = buildPrompt(title, author, part, grade, kind);
     let data;
     if(!sample){
       data = await callApi(prompt, controller.signal);
@@ -284,7 +269,7 @@ function showError(m){
 }
 
 const list = arr => (arr && arr.length) ? `<ul>${arr.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>` : "";
-const q = s => s ? `<div class="quote">“${esc(String(s).replace(/^["“]|["”]$/g,""))}”</div>` : "";
+const q = s => s ? `<div class="quote">${esc(s)}</div>` : "";
 const gnum = g => g.includes("-") ? g.split("-")[0] : g;
 
 function card(key, title, color, body, plain, wide){
@@ -300,9 +285,16 @@ function render(d, grade){
   const ts = d.text_structure||{}, th=d.theme||{}, pov=d.point_of_view||{}, nar=d.narrator||{}, st=d.setting||{}, mi=d.main_idea||{};
   const chars = Array.isArray(d.characters)?d.characters:[];
   const informational = /inform/i.test(d.genre||"");
-  let html = `<div class="results-head">
+  if(d.known === false){
+    $("#out").innerHTML = "";
+    showError("I couldn't find that text. " + (d.note || "") + " Check the spelling, or add the author's name.");
+    return;
+  }
+  const warn = (d.confidence && d.confidence !== "high") || d.note
+    ? `<div class="error" style="background:#fff8e6;border-color:#efdca5;color:#6b4e0e"><b>Double-check:</b> ${esc(d.note || "Some details may be less certain for this text.")}${d.confidence==="low"?" (low confidence)":""}</div>` : "";
+  let html = warn + `<div class="results-head">
       <div><h2>${esc(d.title||"Analysis")}<span class="genre">${esc(d.genre||"")}</span></h2>
-      <div class="meta">${words($("#text").value)} words · written for grade ${esc(grade)}</div></div>
+      <div class="meta">${d.author?"by "+esc(d.author)+" · ":""}${$("#part").value.trim()?esc($("#part").value.trim())+" · ":""}written for grade ${esc(grade)}</div></div>
       <div class="btns"><button id="copyAll">Copy all</button><button id="again">Re-analyze</button></div>
     </div><div class="grid">`;
 
@@ -330,11 +322,11 @@ function render(d, grade){
     `${th.topic_word?`<span class="tag">${esc(th.topic_word)}</span>`:""}
      ${th.statement?`<p class="big">${esc(th.statement)}</p>`:`<p class="na">Informational texts usually have a main idea instead of a theme.</p>`}
      <p>${esc(th.explanation)}</p>${(th.evidence||[]).map(q).join("")}`,
-    `Theme: ${th.statement||th.topic_word||""}\n${th.explanation||""}\nEvidence: ${(th.evidence||[]).map(e=>`"${e}"`).join(" ")}`);
+    `Theme: ${th.statement||th.topic_word||""}\n${th.explanation||""}\nEvidence:\n${(th.evidence||[]).map(e=>"- "+e).join("\n")}`);
 
   html += card("pov","Point of View","--c5",
     `<span class="tag">${esc(pov.type)}</span><p>${esc(pov.explanation)}</p>${q(pov.evidence)}`,
-    `Point of view: ${pov.type||""}\n${pov.explanation||""}${pov.evidence?`\nEvidence: "${pov.evidence}"`:""}`);
+    `Point of view: ${pov.type||""}\n${pov.explanation||""}${pov.evidence?`\nEvidence: ${pov.evidence}`:""}`);
 
   html += card("narrator","Narrator","--c6",
     `<span class="tag">${esc(nar.inside_or_outside)}</span><p class="big">${esc(nar.who)}</p><p>${esc(nar.explanation)}</p>`,
@@ -359,7 +351,7 @@ function render(d, grade){
   html += `</div>`;
   $("#out").innerHTML = html;
   $("#out").querySelectorAll("[data-copy]").forEach(b => b.onclick = () => copy(b.dataset.copy));
-  $("#copyAll").onclick = () => copy(`${d.title||""} (${d.genre||""})\n\n` + [...$("#out").querySelectorAll("[data-copy]")].map(b=>b.dataset.copy).join("\n\n"));
+  $("#copyAll").onclick = () => copy(`${d.title||""}${d.author?" by "+d.author:""} (${d.genre||""})\n\n` + [...$("#out").querySelectorAll("[data-copy]")].map(b=>b.dataset.copy).join("\n\n"));
   $("#again").onclick = run;
   window.scrollTo({top: $("#out").getBoundingClientRect().top + window.scrollY - 10, behavior:"smooth"});
 }
@@ -388,7 +380,7 @@ async function callApi(prompt, signal){
     },
     body: JSON.stringify({
       model: "claude-sonnet-5-5",
-      max_tokens: 4000,
+      max_tokens: 6000,
       messages: [{ role: "user", content: prompt }]
     })
   });
