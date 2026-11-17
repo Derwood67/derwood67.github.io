@@ -127,6 +127,8 @@ tr.click:hover td{background:#FFFBE6}
 .pill.no{background:var(--bad-bg);color:var(--bad)}
 .pill.wait{background:#EEF1F5;color:var(--ink-soft)}
 .cert{background:var(--lemon);border:4px double var(--ink);text-align:center;align-items:center}
+.modal{position:fixed;inset:0;background:rgba(27,42,65,.55);display:grid;place-items:center;z-index:40;padding:16px}
+.modal .card{max-width:460px;width:100%}
 @media (prefers-reduced-motion:reduce){.meter i{transition:none}}
 @media print{body{background:#fff}.noprint{display:none!important}}
 </style>
@@ -491,6 +493,22 @@ function fix(r){if(!r.earned)r.earned=[];if(!r.writes)r.writes={};if(!r.sec)r.se
   SECTIONS.forEach(S=>{if(!r.sec[S.id])r.sec[S.id]={attempts:[],passed:false}});
   if(!r.final)r.final={attempts:[],passed:false};return r}
 
+/* ================= IN-PAGE DIALOG (pop-up boxes are blocked in some viewers) ================= */
+function ask(msg,opt){opt=opt||{};return new Promise(res=>{
+  const m=el("div","modal");m.setAttribute("role","dialog");m.setAttribute("aria-modal","true");
+  const c=el("form","card");c.appendChild(el("p",null,msg));
+  let inp=null;if(opt.input){inp=el("input");inp.type="password";inp.inputMode="numeric";inp.autocomplete="off";inp.style.cssText="border:2px solid var(--ink);border-radius:10px;padding:8px 10px;font-size:1.1rem";c.appendChild(inp)}
+  const err=el("div","fb bad");c.appendChild(err);
+  const row=el("div","row");const ok=el("button","btn",opt.ok||"OK");ok.type="submit";row.appendChild(ok);
+  const no=el("button","btn alt",opt.cancel||"Cancel");no.type="button";row.appendChild(no);c.appendChild(row);
+  const done=v=>{m.remove();res(v)};
+  no.addEventListener("click",()=>done(opt.input?null:false));
+  m.addEventListener("keydown",e=>{if(e.key==="Escape")done(opt.input?null:false)});
+  c.addEventListener("submit",e=>{e.preventDefault();if(opt.check&&!opt.check(inp.value)){err.textContent=opt.bad||"Try again.";inp.value="";inp.focus();return}done(opt.input?inp.value:true)});
+  m.appendChild(c);document.body.appendChild(m);(inp||ok).focus();
+})}
+const leaveOk=()=>quiz?ask("Leave the quiz? Your answers on this try will not count.",{ok:"Leave",cancel:"Stay"}):Promise.resolve(true);
+
 /* ================= STATE ================= */
 let rec=null,view=null,quiz=null;
 const practiceDone=(r,id)=>r.earned.filter(k=>k.startsWith(id+":")).length;
@@ -560,14 +578,14 @@ function renderTabs(){
     b.appendChild(el("span",null,(ok?"":"🔒 ")+(i+1)+". "+S.label));
     b.appendChild(el("span","count",st.passed?"✓":practiceDone(rec,S.id)+"/"+PRACTICE[S.id].length));
     if(!ok)b.title="Pass "+SECTIONS[i-1].label+" first";
-    b.addEventListener("click",()=>{if(quiz&&!confirm("Leave the quiz? Your answers on this try will not count."))return;quiz=null;view=S.id;render();window.scrollTo(0,0)});
+    b.addEventListener("click",async()=>{if(!(await leaveOk()))return;quiz=null;view=S.id;render();window.scrollTo(0,0)});
     nav.appendChild(b);
   });
   const fu=finalUnlocked(rec);
   const f=el("button","tab");f.type="button";f.setAttribute("role","tab");f.setAttribute("aria-selected",view==="final"?"true":"false");f.disabled=!fu;
   f.appendChild(el("span",null,(fu?"":"🔒 ")+"Final book quiz"));
   if(rec.final.passed)f.appendChild(el("span","count","✓"));
-  f.addEventListener("click",()=>{if(quiz&&!confirm("Leave the quiz? Your answers on this try will not count."))return;quiz=null;view="final";render();window.scrollTo(0,0)});
+  f.addEventListener("click",async()=>{if(!(await leaveOk()))return;quiz=null;view="final";render();window.scrollTo(0,0)});
   nav.appendChild(f);
   return nav;
 }
@@ -738,7 +756,7 @@ function renderQuiz(){
   const nx=el("button","btn"+(last?" pink":""),last?"Finish and score my quiz":"Next →");nx.type="button";nx.disabled=Q.ans[Q.i]==null;
   nx.addEventListener("click",()=>{
     if(!last){Q.i++;render();return}
-    if(Q.ans.some(x=>x==null)){alert("Answer every question first.");return}
+    if(Q.ans.some(x=>x==null))return;
     finishQuiz();
   });
   row.appendChild(nx);c.appendChild(row);
@@ -818,10 +836,9 @@ function renderFinal(a){
 }
 
 /* ================= TEACHER DASHBOARD ================= */
-function teacherGate(){
-  const code=prompt("Teacher lock code:");
+async function teacherGate(){
+  const code=await ask("Teacher lock code:",{input:true,ok:"Open dashboard",check:v=>v.trim()===TEACHER_CODE,bad:"That code is not correct."});
   if(code===null)return;
-  if(code.trim()!==TEACHER_CODE){alert("That code is not correct.");return}
   try{sessionStorage.setItem("lw-teacher","1")}catch(e){}
   showDashboard();
 }
@@ -860,8 +877,8 @@ function showStudent(r){
     <p class="small">Started ${fmtDate(r.created)} · Last active ${fmtDate(r.updated)} · Now on: <b>${esc(currentSpot(r))}</b> · Practice ${r.earned.length}/50</p>`;
   const row=el("div","row noprint");
   const back=el("button","btn alt","← All students");back.type="button";back.addEventListener("click",showDashboard);row.appendChild(back);
-  const rs=el("button","btn alt","Reset this student's progress");rs.type="button";rs.addEventListener("click",()=>{if(!confirm("Erase all of "+r.name+"'s progress and scores?"))return;const n=blankRec(r.name);n.created=r.created;save(n);showDashboard()});row.appendChild(rs);
-  const del=el("button","btn alt","Remove student");del.type="button";del.addEventListener("click",async()=>{if(!confirm("Remove "+r.name+" from the dashboard completely?"))return;await removeRec(r.key);showDashboard()});row.appendChild(del);
+  const rs=el("button","btn alt","Reset this student's progress");rs.type="button";rs.addEventListener("click",async()=>{if(!(await ask("Erase all of "+r.name+"'s progress and scores?",{ok:"Erase"})))return;const n=blankRec(r.name);n.created=r.created;save(n);showDashboard()});row.appendChild(rs);
+  const del=el("button","btn alt","Remove student");del.type="button";del.addEventListener("click",async()=>{if(!(await ask("Remove "+r.name+" from the dashboard completely?",{ok:"Remove"})))return;await removeRec(r.key);showDashboard()});row.appendChild(del);
   c.appendChild(row);a.appendChild(c);
   const parts=SECTIONS.map(S=>({label:S.label,st:r.sec[S.id],write:r.writes[S.id],prac:practiceDone(r,S.id)+"/"+PRACTICE[S.id].length})).concat([{label:"Final book quiz",st:r.final}]);
   parts.forEach(p=>{
@@ -892,7 +909,7 @@ function downloadCSV(list){
 }
 
 /* ================= BOOT ================= */
-$("#signout").addEventListener("click",()=>{if(quiz&&!confirm("Leave the quiz? Your answers on this try will not count."))return;try{sessionStorage.removeItem("lw-who")}catch(e){}showLogin()});
+$("#signout").addEventListener("click",async()=>{if(!(await leaveOk()))return;try{sessionStorage.removeItem("lw-who")}catch(e){}showLogin()});
 $("#teacher-btn").addEventListener("click",()=>{let ok=false;try{ok=sessionStorage.getItem("lw-teacher")==="1"}catch(e){}ok?showDashboard():teacherGate()});
 (async()=>{
   let k=null;try{k=sessionStorage.getItem("lw-who")}catch(e){}
