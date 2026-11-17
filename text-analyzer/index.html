@@ -79,8 +79,11 @@
   ol.q{padding-left:20px;margin:6px 0}
   .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#1f2328;color:#fff;padding:8px 14px;border-radius:10px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none}
   .toast.on{opacity:1}
-  .keybox{background:#fff8e6;border:1px solid #efdca5;border-radius:12px;padding:12px 14px;margin-bottom:14px;display:none}
-  .keybox.ok{background:var(--soft);border-color:#cfe3da}
+  .lib .live-only{display:none!important}
+  body:not(.lib) .lib-only{display:none!important}
+  .libnote{background:var(--soft);border:1px solid #cfe3da;border-radius:12px;padding:10px 12px;font-size:13px;margin-bottom:14px}
+  .booklist{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 12px}
+  .booklist button{font-size:12px;padding:5px 10px;border-radius:99px;background:var(--soft);color:var(--accent);border-color:#cfe3da}
 </style>
 </head>
 <body>
@@ -91,19 +94,14 @@
 
 <main>
   <section class="panel input-panel">
-    <div class="keybox" id="keybox">
-      <label for="apiKey">Anthropic API key</label>
-      <div style="display:flex;gap:6px">
-        <input type="password" id="apiKey" placeholder="sk-ant-…" autocomplete="off">
-        <button type="button" id="saveKey">Save</button>
-      </div>
-      <div class="hint"><span id="keyStatus">Saved only in this browser on this device. Never shared with students.</span><button class="linkish" type="button" id="forgetKey">Forget key</button></div>
-    </div>
+    <div class="libnote lib-only" id="libnote"></div>
     <div class="field">
-      <label for="title">Book, story, or article title</label>
-      <input type="text" id="title" placeholder="e.g. The Lemonade War" autocomplete="off">
+      <label for="title"><span class="live-only">Book, story, or article title</span><span class="lib-only">Book title</span></label>
+      <input type="text" id="title" placeholder="e.g. The Lemonade War" autocomplete="off" list="bookTitles">
+      <datalist id="bookTitles"></datalist>
     </div>
-    <div class="row">
+    <div class="booklist lib-only" id="booklist"></div>
+    <div class="row live-only">
       <div>
         <label for="author">Author (optional)</label>
         <input type="text" id="author" placeholder="e.g. Jacqueline Davies" autocomplete="off">
@@ -113,7 +111,7 @@
         <input type="text" id="part" placeholder="Whole text, or e.g. Ch. 3" autocomplete="off">
       </div>
     </div>
-    <div class="row">
+    <div class="row live-only">
       <div>
         <label for="grade">Write results for</label>
         <select id="grade">
@@ -135,7 +133,7 @@
         </select>
       </div>
     </div>
-    <div class="hint" style="margin:-4px 0 12px"><span>Try: <button class="linkish ex" type="button">The Lemonade War</button> · <button class="linkish ex" type="button" data-a="E.B. White">Charlotte's Web</button> · <button class="linkish ex" type="button" data-a="Zilpha Keatley Snyder">The Egypt Game</button></span></div>
+    <div class="hint live-only" style="margin:-4px 0 12px"><span>Try: <button class="linkish ex" type="button">The Lemonade War</button> · <button class="linkish ex" type="button" data-a="E.B. White">Charlotte's Web</button> · <button class="linkish ex" type="button" data-a="Zilpha Keatley Snyder">The Egypt Game</button></span></div>
     <div class="btns">
       <button class="primary" id="go" type="button">Analyze text</button>
       <button id="clear" type="button">Clear</button>
@@ -156,6 +154,7 @@
 </main>
 <div class="toast" id="toast">Copied</div>
 
+<script src="books.js"></script>
 <script>
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -224,7 +223,11 @@ Return ONLY a JSON object with exactly this shape:
 async function run(){
   const title = $("#title").value.trim(), author = $("#author").value.trim(), part = $("#part").value.trim();
   if(!title){ showError("Type the title of a book, story, or article first."); $("#title").focus(); return; }
-  if(!sample && !getKey()){ $("#keybox").style.display="block"; showError("Enter your Anthropic API key at the top left, then click Analyze."); $("#apiKey").focus(); return; }
+  if(!sample){
+    const book = findBook(title);
+    if(!book){ $("#out").innerHTML=""; showError("That book isn't in the library yet. Choose one of the books listed on the left."); return; }
+    lastResult = book; render(book, "4–5"); return;
+  }
   const grade = $("#grade").value, kind = $("#kind").value;
   if(controller) controller.abort();
   controller = new AbortController();
@@ -235,9 +238,7 @@ async function run(){
   try{
     const prompt = buildPrompt(title, author, part, grade, kind);
     let data;
-    if(!sample){
-      data = await callApi(prompt, controller.signal);
-    } else if(typeof sample.json === "function"){
+    if(typeof sample.json === "function"){
       data = await sample.json(prompt, { signal: controller.signal, modelTier: "default" });
     } else {
       const r = await sample(prompt, { signal: controller.signal, modelTier: "default" });
@@ -250,14 +251,12 @@ async function run(){
     if(err && err.name === "AbortError") return;
     const code = err && err.code;
     let msg = "Something went wrong analyzing the text. Please try again.";
-    if(code === "bad_key") msg = "That API key didn't work. Check it, save it again, and retry.";
-    else if(code === "api") msg = "The analysis service returned an error: " + (err.message||"") ;
-    else if(code === "not_granted") msg = "Permission to analyze wasn't granted. Click Analyze again and allow it when asked.";
+    if(code === "not_granted") msg = "Permission to analyze wasn't granted. Click Analyze again and allow it when asked.";
     else if(code === "rate_limited") msg = "Too many requests right now. Wait a minute, then try again.";
     $("#out").innerHTML = ""; showError(msg);
   }finally{
     clearInterval(tick);
-    $("#go").disabled = false; $("#go").textContent = "Analyze text";
+    $("#go").disabled = false; $("#go").textContent = sample ? "Analyze text" : "Show analysis";
   }
 }
 $("#go").onclick = run;
@@ -270,13 +269,13 @@ function showError(m){
 
 const list = arr => (arr && arr.length) ? `<ul>${arr.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>` : "";
 const q = s => s ? `<div class="quote">${esc(s)}</div>` : "";
-const gnum = g => g.includes("-") ? g.split("-")[0] : g;
+const gnum = g => /4.5/.test(g) ? "4/5" : g;
 
 function card(key, title, color, body, plain, wide){
   return `<article class="card${wide?" wide":""}" style="--c:var(${color})" data-key="${key}">
     <button class="copy" data-copy="${esc(plain)}">Copy</button>
     <h3>${title}</h3>
-    <div class="std">${STD[key](gnum($("#grade").value))}</div>
+    <div class="std">${STD[key](gnum(sample ? $("#grade").value : "4-5"))}</div>
     ${body}
   </article>`;
 }
@@ -291,11 +290,11 @@ function render(d, grade){
     return;
   }
   const warn = (d.confidence && d.confidence !== "high") || d.note
-    ? `<div class="error" style="background:#fff8e6;border-color:#efdca5;color:#6b4e0e"><b>Double-check:</b> ${esc(d.note || "Some details may be less certain for this text.")}${d.confidence==="low"?" (low confidence)":""}</div>` : "";
+    ? `<div class="error" style="background:#fff8e6;border-color:#efdca5;color:#6b4e0e"><b>Teacher note:</b> ${esc(d.note || "Some details may be less certain for this text.")}${d.confidence==="low"?" (low confidence)":""}</div>` : "";
   let html = warn + `<div class="results-head">
       <div><h2>${esc(d.title||"Analysis")}<span class="genre">${esc(d.genre||"")}</span></h2>
       <div class="meta">${d.author?"by "+esc(d.author)+" · ":""}${$("#part").value.trim()?esc($("#part").value.trim())+" · ":""}written for grade ${esc(grade)}</div></div>
-      <div class="btns"><button id="copyAll">Copy all</button><button id="again">Re-analyze</button></div>
+      <div class="btns"><button id="copyAll">Copy all</button><button id="again" class="live-only">Re-analyze</button></div>
     </div><div class="grid">`;
 
   html += card("summary","Summary","--c1",
@@ -356,46 +355,26 @@ function render(d, grade){
   window.scrollTo({top: $("#out").getBoundingClientRect().top + window.scrollY - 10, behavior:"smooth"});
 }
 
-const KEY_NAME = "textAnalyzer.apiKey";
-function getKey(){ try{ return localStorage.getItem(KEY_NAME) || ""; }catch{ return window.__key || ""; } }
-function setKey(k){ try{ k ? localStorage.setItem(KEY_NAME,k) : localStorage.removeItem(KEY_NAME); }catch{} window.__key = k; refreshKeyUI(); }
-function refreshKeyUI(){
-  const has = !!getKey();
-  $("#keybox").classList.toggle("ok", has);
-  $("#apiKey").value = "";
-  $("#apiKey").placeholder = has ? "Key saved ✓ (paste a new one to replace)" : "sk-ant-…";
+const norm = t => String(t||"").toLowerCase().replace(/[^a-z0-9 ]/g,"").replace(/^(the|a|an) /,"").replace(/\s+/g," ").trim();
+function findBook(t){
+  const lib = window.LIBRARY || [], n = norm(t);
+  if(!n) return null;
+  return lib.find(b => norm(b.title) === n || (b.aliases||[]).some(a => norm(a) === n))
+      || lib.find(b => norm(b.title).includes(n) || n.includes(norm(b.title)));
 }
-$("#saveKey").onclick = () => { const k = $("#apiKey").value.trim(); if(k){ setKey(k); toast("Key saved on this device"); } };
-$("#apiKey").addEventListener("keydown", e => { if(e.key === "Enter") $("#saveKey").click(); });
-$("#forgetKey").onclick = () => { setKey(""); toast("Key removed"); };
-
-async function callApi(prompt, signal){
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST", signal,
-    headers: {
-      "content-type": "application/json",
-      "x-api-key": getKey(),
-      "anthropic-version": "2023-06-01",
-      "anthropic-dangerous-direct-browser-access": "true"
-    },
-    body: JSON.stringify({
-      model: "claude-sonnet-5-5",
-      max_tokens: 6000,
-      messages: [{ role: "user", content: prompt }]
-    })
-  });
-  if(res.status === 401 || res.status === 403) throw { code: "bad_key" };
-  if(res.status === 429) throw { code: "rate_limited" };
-  const body = await res.json().catch(() => ({}));
-  if(!res.ok) throw { code: "api", message: body?.error?.message || ("HTTP " + res.status) };
-  const text = (body.content || []).filter(b => b.type === "text").map(b => b.text).join("");
-  const m = text.match(/\{[\s\S]*\}/);
-  return JSON.parse(m ? m[0] : text);
+function setupLibrary(){
+  document.body.classList.add("lib");
+  const lib = window.LIBRARY || [];
+  $("#libnote").innerHTML = `Choose one of the <b>${lib.length} books</b> in the library to see its full analysis.`;
+  $("#bookTitles").innerHTML = lib.map(b => `<option value="${esc(b.title)}">`).join("");
+  $("#booklist").innerHTML = lib.map(b => `<button type="button">${esc(b.title)}</button>`).join("");
+  $("#booklist").querySelectorAll("button").forEach(btn => btn.onclick = () => { $("#title").value = btn.textContent; run(); });
+  $("#go").textContent = "Show analysis";
 }
 
 (async () => {
   try{ sample = window.claude && window.claude.use ? await window.claude.use("sample") : null; }catch{ sample = null; }
-  if(!sample){ $("#keybox").style.display = "block"; refreshKeyUI(); }
+  if(!sample) setupLibrary();
 })();
 </script>
 </body>
