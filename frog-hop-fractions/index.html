@@ -63,6 +63,9 @@ input{font:inherit;color:inherit}
 .lvl b{font-family:var(--display);font-size:1.15rem;display:block}
 .lvl .stars{letter-spacing:2px;color:#E0A800;font-size:1.1rem}
 .lvl.workshop{background:var(--sun)}
+.lvl.ext{border-color:#7C4DCC;box-shadow:0 5px 0 #4B2C85}
+.lvl.ext .pad{background:#7C4DCC;border-color:#4B2C85}
+.lvl.ext .pad::after{display:none}
 .lvl.workshop .pad{background:var(--pink);border-color:#8C1D3D}
 
 /* play */
@@ -192,8 +195,8 @@ $("#logo-frog").innerHTML=frogShape();
 /* Number line: o = {den, wholes, cut(bool), labels:'none'|'ends'|'wholes'|'all', pads(bool), frog:n|null, frogColor, segs(bool) } */
 const NL={x0:70,x1:730,y:96};
 function lineSVG(o){
-  const den=o.den,wholes=o.wholes||1,N=den*wholes,step=(NL.x1-NL.x0)/N,y=NL.y,X=n=>NL.x0+n*step;
-  const lab=o.labels||"ends",h=lab==="all"?(wholes>1?200:170):150;
+  const den=o.den,neg=o.neg||0,wholes=(o.wholes||1)+neg,N=den*wholes,step=(NL.x1-NL.x0)/N,y=NL.y,X=n=>NL.x0+n*step;
+  const lab=o.labels||"ends",h=Math.max(lab==="all"?(wholes>1?200:170):150,o.flags?190:0);
   let s=`<svg class="nl" viewBox="0 0 800 ${h}" data-den="${den}" data-wholes="${wholes}" role="img" aria-label="Number line from 0 to ${wholes}${o.cut!==false?", each whole cut into "+den+" equal parts":""}">`;
   s+=`<rect x="10" y="${y-34}" width="780" height="68" rx="34" fill="#9BD5E3" opacity=".55"/>`;
   s+=`<path d="M20 ${y+18} q15 -6 30 0 t30 0" stroke="#fff" stroke-width="2" fill="none" opacity=".7"/><path d="M700 ${y-20} q15 -6 30 0 t30 0" stroke="#fff" stroke-width="2" fill="none" opacity=".7"/>`;
@@ -202,7 +205,7 @@ function lineSVG(o){
   s+=`<path d="M${NL.x0-42} ${y} l14 -9 v18 z M${NL.x1+42} ${y} l-14 -9 v18 z" fill="#7A4B23"/>`;
   s+=`<g class="trails"></g>`;
   for(let n=0;n<=N;n++){
-    const whole=n%den===0;
+    const whole=n%den===0&&!o.plain;
     if(o.cut===false&&!whole)continue;
     s+=`<line x1="${X(n)}" y1="${y-(whole?20:13)}" x2="${X(n)}" y2="${y+(whole?20:13)}" stroke="#17324D" stroke-width="${whole?4:3}" stroke-linecap="round"/>`;
   }
@@ -215,25 +218,28 @@ function lineSVG(o){
   }
   // labels
   const fx=(n,yy)=>`<text x="${X(n)}" y="${yy}" text-anchor="middle" font-family="Fredoka,sans-serif" font-weight="700" font-size="${den>8?17:20}" fill="#17324D">${n}</text><line x1="${X(n)-11}" x2="${X(n)+11}" y1="${yy+5}" y2="${yy+5}" stroke="#17324D" stroke-width="2.5"/><text x="${X(n)}" y="${yy+24}" text-anchor="middle" font-family="Fredoka,sans-serif" font-weight="700" font-size="${den>8?17:20}" fill="#17324D">${den}</text>`;
-  const wx=(w,yy)=>`<text x="${X(w*den)}" y="${yy}" text-anchor="middle" font-family="Fredoka,sans-serif" font-weight="700" font-size="30" fill="#17324D">${w}</text>`;
+  const wx=(w,yy)=>`<text x="${X(w*den)}" y="${yy}" text-anchor="middle" font-family="Fredoka,sans-serif" font-weight="700" font-size="30" fill="#17324D">${w-neg<0?"−"+(neg-w):w-neg}</text>`;
   if(lab==="all"){
     for(let n=0;n<=N;n++)s+=fx(n,y+40);
     for(let w=0;w<=wholes;w++)s+=`<rect x="${X(w*den)-16}" y="${y+78}" width="32" height="34" rx="9" fill="#FFD447" stroke="#17324D" stroke-width="2"/>`+wx(w,y+105);
+  }else if(lab==="zero"){s+=wx(neg,y+54);
   }else if(lab==="ends"||lab==="wholes"){
     for(let w=0;w<=wholes;w++)s+=wx(w,y+54);
   }
+  (o.flags||[]).forEach(f=>{const fx_=NL.x0+(f.v+neg)*(NL.x1-NL.x0)/wholes,c=f.color||"#E07A1F";
+    s+=`<line x1="${fx_}" y1="${y-4}" x2="${fx_}" y2="${y+26}" stroke="${c}" stroke-width="3"/><circle cx="${fx_}" cy="${y}" r="7" fill="${c}" stroke="#17324D" stroke-width="2"/><rect x="${fx_-21}" y="${y+26}" width="42" height="56" rx="10" fill="${c}" stroke="#17324D" stroke-width="2"/>${f.d?`<text x="${fx_}" y="${y+48}" text-anchor="middle" font-family="Fredoka,sans-serif" font-weight="700" font-size="19" fill="#fff">${f.n}</text><line x1="${fx_-11}" x2="${fx_+11}" y1="${y+54}" y2="${y+54}" stroke="#fff" stroke-width="2.5"/><text x="${fx_}" y="${y+73}" text-anchor="middle" font-family="Fredoka,sans-serif" font-weight="700" font-size="19" fill="#fff">${f.d}</text>`:`<text x="${fx_}" y="${y+62}" text-anchor="middle" font-family="Fredoka,sans-serif" font-weight="700" font-size="26" fill="#fff">${f.n}</text>`}`});
   if(o.frog!=null)s+=`<g class="frog" transform="translate(${X(o.frog)},${y})">${frogShape(o.frogColor)}</g>`;
   return s+"</svg>";
 }
 function nlX(svg,n){const N=svg.dataset.den*svg.dataset.wholes;return NL.x0+n*(NL.x1-NL.x0)/N}
-function hop(svg,from,to,cb,trail){
+function hop(svg,from,to,cb,trail,stride){stride=stride||1;
   const frog=svg.querySelector(".frog"),y=NL.y,trails=svg.querySelector(".trails");
   if(trail)trails.innerHTML="";
   let cur=from,count=0;const dir=to>=from?1:-1;
   if(from===to){cb&&cb();return}
   function one(){
     if(cur===to){cb&&cb();return}
-    const nx=cur+dir,xa=nlX(svg,cur),xb=nlX(svg,nx),mid=(xa+xb)/2,ht=Math.min(48,18+Math.abs(xb-xa)*.6);count++;
+    const nx=cur+dir*stride,xa=nlX(svg,cur),xb=nlX(svg,nx),mid=(xa+xb)/2,ht=Math.min(48,18+Math.abs(xb-xa)*.6);count++;
     if(trail){trails.insertAdjacentHTML("beforeend",`<path d="M${xa} ${y-6} Q${mid} ${y-ht*2} ${xb} ${y-6}" fill="none" stroke="#F0628E" stroke-width="3" stroke-dasharray="6 5"/><circle cx="${mid}" cy="${y-ht-20}" r="12" fill="#fff" stroke="#F0628E" stroke-width="2"/><text x="${mid}" y="${y-ht-14}" text-anchor="middle" font-family="Fredoka" font-weight="700" font-size="16" fill="#B3264F">${count}</text>`)}
     sfx.hop();
     if(reduceMotion){frog.setAttribute("transform",`translate(${xb},${y})`);cur=nx;setTimeout(one,150);return}
@@ -490,22 +496,166 @@ const LEVELS=[
   }}
 ];
 
+
+/* ================= CHALLENGE POND (extension for advanced students) ================= */
+const lcm=(a,b)=>a/gcd(a,b)*b;
+const EXT=[
+ {id:"x-mystery",name:"Mystery Log",grade:"Gr 3–4",icon:"A",blurb:"Find where 1 is hiding",ext:true,
+  teach:`Uh oh, someone erased the 1! The only clue is a flag. If the flag is at ${fr(2,5)}, then 0 to the flag is 2 jumps of ${fr(1,5)}. How many jumps of ${fr(1,5)} make one whole? Find the 1.`,
+  deeper:`If a flag at ${fr(3,4)} is 6 cm from 0, how far from 0 is 1? How did you figure it out?`,
+  gen(i,used){let b,a;do{b=pick([3,4,5,6]);a=i<3?ri(2,b-1):ri(b+1,2*b-1)}while(used.has(a+"/"+b));used.add(a+"/"+b);return{a,b}},
+  render(R,api){let busy=false;
+   const paint=()=>{
+    api.prompt(`The flag marks ${fr(R.a,R.b)}. Tap the lily pad where <b>1</b> should be.`);
+    api.stage(`<div id="ln" style="width:100%">${lineSVG({den:R.b,wholes:2,plain:true,labels:"zero",pads:true,frog:0,flags:[{v:R.a/R.b,n:R.a,d:R.b}]})}</div>`);
+    const svg=$("#ln svg");
+    onPick($("#ln"),"[data-n]",t=>{if(busy||R.done)return;const n=+t.dataset.n;busy=true;hop(svg,0,n,()=>{
+      if(n===R.b)api.ok(`Found it! The flag is ${R.a} jumps from 0, so each jump is ${fr(1,R.b)}. ${R.b} jumps of ${fr(1,R.b)} make ${fr(R.b,R.b)} = 1.`);
+      else{api.miss(`Each jump is ${fr(1,R.b)}, because the flag at ${fr(R.a,R.b)} is ${R.a} jumps from 0. How many jumps make ${fr(R.b,R.b)}? Fernando landed on ${fr(n,R.b)}.`);setTimeout(()=>{busy=false;paint()},1700)}
+    },true)});
+   };paint();}},
+ {id:"x-between",name:"Squeeze Between",grade:"Gr 4–5",icon:"B",blurb:"Find a fraction between two others",ext:true,
+  teach:`Is there always a fraction between two fractions? Yes! But sometimes the log isn't cut finely enough to see it. Re-cut the log into more equal parts until a lily pad appears <b>between</b> the two flags. Tip: try a number both denominators divide into.`,
+  deeper:`How many fractions do you think are between ${fr(1,3)} and ${fr(1,2)}? Could you ever run out? Explain.`,
+  gen(i,used){const P=[[1,3,1,2],[1,4,1,3],[2,5,1,2],[1,2,2,3],[2,3,3,4],[3,4,4,5],[1,5,1,4],[3,5,2,3]];let p;do{p=pick(i<2?P.slice(0,4):P.slice(2))}while(used.has(p.join()));used.add(p.join());return{a1:p[0],b1:p[1],a2:p[2],b2:p[3],parts:Math.max(p[1],p[3])}},
+  render(R,api){let busy=false;const lo=R.a1/R.b1,hi=R.a2/R.b2;
+   const paint=()=>{
+    api.prompt(`Find a fraction <b>between</b> ${fr(R.a1,R.b1)} and ${fr(R.a2,R.b2)}. Change the cuts, then tap a pad between the flags.`);
+    api.stage(`<div id="ln" style="width:100%">${lineSVG({den:R.parts,labels:"ends",pads:true,frog:0,flags:[{v:lo,n:R.a1,d:R.b1,color:"#E07A1F"},{v:hi,n:R.a2,d:R.b2,color:"#7C4DCC"}]})}</div><div class="readout">Log cut into <b>${R.parts}</b> equal parts</div>`);
+    api.controls([["−","btn alt round-btn",()=>{if(!busy){R.parts=Math.max(2,R.parts-1);sfx.tick();paint()}}],["+","btn alt round-btn",()=>{if(!busy){R.parts=Math.min(24,R.parts+1);sfx.tick();paint()}}]]);
+    const svg=$("#ln svg"),d=R.parts;
+    onPick($("#ln"),"[data-n]",t=>{if(busy||R.done)return;const n=+t.dataset.n;busy=true;hop(svg,0,n,()=>{
+      if(n/d>lo&&n/d<hi){const g=gcd(n,d);api.ok(`${fr(R.a1,R.b1)} &lt; ${fr(n,d)} &lt; ${fr(R.a2,R.b2)}${g>1?` (that's also ${fr(n/g,d/g)})`:""}. You squeezed a fraction in!`)}
+      else{const L=lcm(R.b1,R.b2);api.miss(n/d===lo||n/d===hi?`That pad is right ON a flag. You need one strictly between them.`:`That pad is ${n/d<lo?"before":"past"} the flags. If no pad fits between, cut the log into more parts. ${L*2<=24?`Try ${L*2}.`:""}`);setTimeout(()=>{busy=false;paint()},1500)}
+    },true)});
+   };paint();}},
+ {id:"x-bench",name:"Benchmark Bounce",grade:"Gr 4–5",icon:"C",blurb:"Closer to 0, ½, or 1?",ext:true,
+  teach:`Mathematicians estimate with <b>benchmarks</b>: 0, ${fr(1,2)}, and 1. Trick: find half of the bottom number. If the top number is close to that, the fraction is close to ${fr(1,2)}. Tiny top number? Close to 0. Top almost equal to bottom? Close to 1.`,
+  deeper:`Without finding a common denominator, how can benchmarks help you decide whether ${fr(3,7)} + ${fr(5,9)} is more or less than 1?`,
+  gen(i,used){let a,b,best;for(;;){b=pick([5,6,7,8,9,10,11,12]);a=ri(1,b-1);const v=a/b,ds=[v,Math.abs(v-.5),1-v];const m=Math.min(...ds);if(ds.filter(x=>Math.abs(x-m)<1e-9).length>1||Math.abs(v-.5)<1e-9||used.has(a+"/"+b))continue;best=ds.indexOf(m);break}used.add(a+"/"+b);return{a,b,best}},
+  render(R,api){
+   api.prompt(`Is <span class="big">${fr(R.a,R.b)}</span> closest to 0, ${fr(1,2)}, or 1? Think first, no counting pads!`);
+   api.stage(`<div id="ln" style="width:100%"></div>`);
+   const names=["0",fr(1,2),"1"];
+   const ans=k=>{if(k===R.best){$("#ln").innerHTML=lineSVG({den:R.b,labels:"ends",frog:R.a,flags:[{v:.5,n:1,d:2,color:"#7C4DCC"}]});api.ok(`${fr(R.a,R.b)} is closest to ${names[k]}. Half of ${R.b} is ${R.b/2}, and ${R.a} is ${R.a<R.b/2?"less":"more"} than that.`)}
+     else api.miss(`Half of ${R.b} is ${R.b/2}. Is ${R.a} close to 0, close to ${R.b/2}, or close to ${R.b}?`)};
+   api.controls([["Closest to 0","btn alt",()=>ans(0)],[`Closest to ${fr(1,2)}`,"btn sun",()=>ans(1)],["Closest to 1","btn",()=>ans(2)]]);
+  }},
+ {id:"x-add",name:"Add the Hops",grade:"Gr 4–5",icon:"D",blurb:"Add fractions on the line",ext:true,
+  teach:`Adding fractions is just hopping farther! Start at the first fraction, then hop the second. When the denominators are different, use a log cut so both fractions land on pads, like eighths for ${fr(1,4)} + ${fr(3,8)}: ${fr(1,4)} = ${fr(2,8)}, then 3 more jumps lands on ${fr(5,8)}.`,
+  deeper:`Mia says ${fr(1,2)} + ${fr(1,3)} = ${fr(2,5)}. Use a number line to show why she can't be right.`,
+  gen(i,used){let a1,b1,a2,b2,D;do{if(i<2){b1=b2=pick([4,5,6,8]);a1=ri(1,b1-1);a2=ri(1,b2-1)}else{b1=pick([2,3,4,6]);b2=pick([2,3,4,6,8,12].filter(x=>x!==b1&&lcm(b1,x)<=12));a1=ri(1,b1-1);a2=ri(1,b2-1)}D=lcm(b1,b2)}while(used.has([a1,b1,a2,b2].join())||a1*D/b1+a2*D/b2>=2*D||(a1*D/b1+a2*D/b2)%D===0&&i>1);used.add([a1,b1,a2,b2].join());const s=a1*D/b1,t=a2*D/b2;return{a1,b1,a2,b2,D,start:s,sum:s+t,w:s+t>D?2:1}},
+  render(R,api){let busy=false;
+   const paint=()=>{
+    api.prompt(`Fernando sits on ${fr(R.a1,R.b1)}. He hops ${fr(R.a2,R.b2)} more. Tap where he lands.`);
+    api.stage(`<div id="ln" style="width:100%">${lineSVG({den:R.D,wholes:R.w,labels:"ends",pads:true,frog:R.start})}</div><div class="readout">This log is cut into <b>${R.D}</b> parts per whole.</div>`);
+    const svg=$("#ln svg");
+    onPick($("#ln"),"[data-n]",t=>{if(busy||R.done)return;const n=+t.dataset.n;busy=true;hop(svg,R.start,n,()=>{
+      if(n===R.sum)api.ok(`${fr(R.a1,R.b1)} + ${fr(R.a2,R.b2)} = ${R.b1!==R.D||R.b2!==R.D?`${fr(R.start,R.D)} + ${fr(R.sum-R.start,R.D)} = `:""}${fr(R.sum,R.D)}${R.sum>R.D?` = ${mixed(R.sum,R.D)}`:""}`);
+      else{api.miss(`Rename both in ${R.D}ths: ${fr(R.a1,R.b1)} = ${fr(R.start,R.D)} and ${fr(R.a2,R.b2)} = ${fr(R.sum-R.start,R.D)}. Start at Fernando and hop ${R.sum-R.start} more.`);setTimeout(()=>{busy=false;paint()},1800)}
+    },true)});
+   };paint();}},
+ {id:"x-times",name:"Jump Multiplier",grade:"Gr 4",icon:"E",blurb:"Multiply a fraction by a whole number",ext:true,
+  teach:`${"3 × "}${fr(2,5)} means <b>3 jumps</b>, and each jump is ${fr(2,5)} long. That's the same as 6 little jumps of ${fr(1,5)}, so 3 × ${fr(2,5)} = ${fr(6,5)} = 1${fr(1,5)}.`,
+  deeper:`Is 4 × ${fr(2,3)} more or less than 4? How can you tell before you multiply?`,
+  gen(i,used){let m,a,b;do{m=ri(2,i<3?3:5);b=pick([2,3,4,5,6]);a=ri(1,b-1)}while(used.has(m+"x"+a+"/"+b)||m*a>3*b);used.add(m+"x"+a+"/"+b);return{m,a,b,w:Math.max(1,Math.ceil(m*a/b))}},
+  render(R,api){let busy=false;
+   const paint=()=>{
+    api.prompt(`Fernando makes <b>${R.m}</b> big jumps, each ${fr(R.a,R.b)} long. Where does he land? <span class="big">${R.m} × ${fr(R.a,R.b)}</span>`);
+    api.stage(`<div id="ln" style="width:100%">${lineSVG({den:R.b,wholes:R.w,labels:"wholes",pads:true,frog:0})}</div>`);
+    const svg=$("#ln svg");
+    onPick($("#ln"),"[data-n]",t=>{if(busy||R.done)return;const n=+t.dataset.n;busy=true;hop(svg,0,n,()=>{
+      const T=R.m*R.a;
+      if(n===T)api.ok(`${R.m} × ${fr(R.a,R.b)} = ${fr(T,R.b)}${T>R.b?` = ${mixed(T,R.b)}`:""}. ${R.m} big jumps = ${T} little jumps of ${fr(1,R.b)}.`);
+      else{api.miss(`Each big jump is ${R.a} little jump${R.a>1?"s":""}. ${R.m} big jumps is ${R.m} × ${R.a} little jumps. Fernando landed on ${fr(n,R.b)}.`);setTimeout(()=>{busy=false;paint()},1700)}
+    },true)});
+   };paint();}},
+ {id:"x-order",name:"Line Up the Frogs",grade:"Gr 4–5",icon:"F",blurb:"Order three fractions",ext:true,
+  teach:`Put three fractions in order from <b>least to greatest</b>. Strategies: compare to ${fr(1,2)}, look for same numerators (bigger denominator = smaller pieces), or rename with a common denominator.`,
+  deeper:`Which strategy did you use most? Write a rule for comparing two fractions with the same numerator, like ${fr(3,5)} and ${fr(3,8)}.`,
+  gen(i,used){let f;do{f=[0,1,2].map(()=>{const b=pick([2,3,4,5,6,8,10,12]);return[ri(1,b-1),b]})}while(new Set(f.map(x=>x[0]/x[1])).size<3||used.has(f.map(x=>x.join("/")).sort().join()));used.add(f.map(x=>x.join("/")).sort().join());return{f,picked:[]}},
+  render(R,api){
+   const order=R.f.map((x,k)=>k).sort((p,q)=>R.f[p][0]/R.f[p][1]-R.f[q][0]/R.f[q][1]);
+   const paint=()=>{
+    api.prompt(`Tap the frogs' fractions from <b>least</b> to <b>greatest</b>.`);
+    api.stage(`<div class="readout big" id="ord">${R.picked.length?R.picked.map(k=>fr(...R.f[k])).join(" &lt; "):"<span class='small'>Your order shows here</span>"}</div>`);
+    api.controls(R.f.map((x,k)=>[fr(x[0],x[1]),"btn"+(R.picked.includes(k)?" alt":""),()=>{
+      if(R.picked.includes(k))return;
+      if(k===order[R.picked.length]){R.picked.push(k);sfx.tick();if(R.picked.length===3)api.ok(`${order.map(k=>fr(...R.f[k])).join(" &lt; ")}. Great reasoning!`);else paint()}
+      else{const hlf=R.f[k][0]/R.f[k][1]>.5?"more":"less";api.miss(`${fr(...R.f[k])} is not the ${R.picked.length===0?"least":"next smallest"}. Hint: ${fr(...R.f[k])} is ${hlf} than ${fr(1,2)}. Compare each one to ${fr(1,2)} first.`)}
+    }]));
+   };paint();
+  }},
+ {id:"x-decimal",name:"Decimal Dock",grade:"Gr 4–6",icon:"G",blurb:"Fractions and decimals",ext:true,
+  teach:`Decimals are fractions in disguise! 0.6 means 6 tenths, ${fr(6,10)}. On a log cut into 5 parts, each part is ${fr(1,5)} = ${fr(2,10)} = 0.2, so 0.6 is 3 jumps. On a log cut into 4 parts, each part is 0.25.`,
+  deeper:`Why is ${fr(1,3)} hard to write as a decimal? Try dividing a log cut into 10 parts into 3 equal groups. What happens?`,
+  gen(i,used){let d,a;do{d=pick(i<2?[10]:i<4?[5,2,4]:[4,20,5,8]);a=ri(1,d-1)}while(used.has(a+"/"+d)||String(a/d).length>(d===8?5:4));used.add(a+"/"+d);return{a,d,dec:String(+(a/d).toFixed(3))}},
+  render(R,api){let busy=false;const g=gcd(R.a,R.d);
+   const paint=()=>{
+    api.prompt(`Hop to <span class="big" style="font-family:var(--display)">${R.dec}</span>`);
+    api.stage(`<div id="ln" style="width:100%">${lineSVG({den:R.d,labels:"ends",pads:true,frog:0})}</div><div class="readout">This log is cut into <b>${R.d}</b> equal parts. Each part = ${fr(1,R.d)} = ${+(1/R.d).toFixed(3)}</div>`);
+    const svg=$("#ln svg");
+    onPick($("#ln"),"[data-n]",t=>{if(busy||R.done)return;const n=+t.dataset.n;busy=true;hop(svg,0,n,()=>{
+      if(n===R.a)api.ok(`${R.dec} = ${fr(R.a,R.d)}${g>1?` = ${fr(R.a/g,R.d/g)}`:""}${R.d!==10&&R.d!==100&&(10*R.a)%R.d===0?` = ${fr(10*R.a/R.d,10)}`:""}.`);
+      else{api.miss(`Fernando landed on ${fr(n,R.d)} = ${+(n/R.d).toFixed(3)}. Each jump is worth ${+(1/R.d).toFixed(3)}. How many jumps make ${R.dec}?`);setTimeout(()=>{busy=false;paint()},1700)}
+    },true)});
+   };paint();}},
+ {id:"x-divide",name:"How Many Jumps?",grade:"Gr 5–6",icon:"H",blurb:"Divide with fractions",ext:true,
+  teach:`Division asks <b>“how many fit?”</b> 2 ÷ ${fr(1,3)} means: how many jumps of ${fr(1,3)} does it take to reach 2? Each whole holds 3 thirds, so 2 wholes hold 6. That's why 2 ÷ ${fr(1,3)} = 6. It works for any fraction: ${fr(3,4)} ÷ ${fr(3,8)} = 2, because 2 jumps of ${fr(3,8)} reach ${fr(3,4)}.`,
+  deeper:`When you divide by a fraction less than 1, why is the answer bigger than the number you started with?`,
+  gen(i,used){let D,s,q,W,b;for(;;){if(i<3){b=pick([2,3,4]);W=ri(1,3);D=b;s=1;q=W*b}else{D=pick([4,6,8,12]);s=pick([2,3,4].filter(x=>x<D&&D%x!==1));q=ri(2,5)}if(q*s>2*D||!s)continue;const k=q+"|"+s+"|"+D;if(used.has(k))continue;used.add(k);break}
+   const T=q*s,gt=gcd(T,D),gj=gcd(s,D);return{D,s,q,tn:T/gt,td:D/gt,jn:s/gj,jd:D/gj,w:Math.ceil(T/D)}},
+  render(R,api){let busy=false;
+   const tgt=R.td===1?`<span style="font-family:var(--display);font-weight:700">${R.tn}</span>`:fr(R.tn,R.td),jmp=fr(R.jn,R.jd);
+   api.prompt(`<span class="big">${tgt} ÷ ${jmp} = ?</span> &nbsp;How many jumps of ${jmp} reach the flag?`);
+   api.stage(`<div id="ln" style="width:100%">${lineSVG({den:R.D,wholes:R.w,labels:"wholes",frog:0,flags:[{v:R.tn/R.td,n:R.tn,d:R.td===1?null:R.td}]})}</div>
+     <div class="row"><label for="qq" class="readout">Number of jumps:</label><input class="numin" id="qq" inputmode="numeric" maxlength="2"></div>`);
+   const svg=$("#ln svg");
+   const check=()=>{if(busy)return;const v=parseInt($("#qq").value,10);if(!v){api.miss("Type how many jumps.");return}
+     if(v===R.q){busy=true;hop(svg,0,R.q*R.s,()=>api.ok(`${tgt} ÷ ${jmp} = ${R.q}. Exactly ${R.q} jumps of ${jmp} fit.`),true,R.s)}
+     else api.miss(`Each jump of ${jmp} covers ${R.s} little part${R.s>1?"s":""} on this log. The flag is ${R.q*R.s} little parts from 0. How many jumps of ${R.s} make ${R.q*R.s}?`)};
+   api.controls([["Check","btn",check]]);$("#qq").addEventListener("keydown",e=>{if(e.key==="Enter")check()});$("#qq").focus();
+  }},
+ {id:"x-negative",name:"Below Zero",grade:"Gr 6",icon:"I",blurb:"Negative fractions and opposites",ext:true,
+  teach:`The number line keeps going <b>left of 0</b>! Numbers to the left are <b>negative</b>, like −${fr(3,4)}. A number and its <b>opposite</b> are the same distance from 0 on different sides: ${fr(2,3)} and −${fr(2,3)} are opposites.`,
+  deeper:`The temperature is −${fr(1,2)} degree and rises ${fr(3,4)} of a degree. Is it above or below 0 now? Use a number line to explain.`,
+  gen(i,used){let b,a,opp,N;do{N=i<3?1:2;b=pick(N===1?[2,3,4,5,6]:[2,3,4]);a=ri(-N*b+1,N*b-1);opp=i%3===2}while(a===0||a%b===0||(!opp&&a>0&&i!==4)||used.has(a+"/"+b+opp));used.add(a+"/"+b+opp);return{a,b,N,opp,goal:opp?-a:a}},
+  render(R,api){let busy=false;const sv=(n,d)=>n<0?`−${fr(-n,d)}`:fr(n,d);const z=R.N*R.b;
+   const paint=()=>{
+    api.prompt(R.opp?`Tap the <b>opposite</b> of <span class="big">${sv(R.a,R.b)}</span>`:`Hop to <span class="big">${sv(R.a,R.b)}</span>`);
+    api.stage(`<div id="ln" style="width:100%">${lineSVG({den:R.b,neg:R.N,wholes:R.N,labels:"ends",pads:true,frog:z,flags:R.opp?[{v:R.a/R.b,n:(R.a<0?"−":"")+Math.abs(R.a),d:R.b}]:[]})}</div>`);
+    const svg=$("#ln svg");
+    onPick($("#ln"),"[data-n]",t=>{if(busy||R.done)return;const n=+t.dataset.n;busy=true;hop(svg,z,n,()=>{
+      const v=n-z;
+      if(v===R.goal)api.ok(R.opp?`${sv(R.a,R.b)} and ${sv(R.goal,R.b)} are opposites: both are ${Math.abs(R.a)} jumps from 0, on different sides.`:`${sv(R.goal,R.b)} is ${Math.abs(R.goal)} jumps ${R.goal<0?"left":"right"} of 0.`);
+      else{api.miss(`Fernando landed on ${v===0?"0":sv(v,R.b)}. ${R.goal<0?"Negative numbers are LEFT of 0.":"Positive numbers are RIGHT of 0."} Count ${Math.abs(R.goal)} jumps of ${fr(1,R.b)} from 0.`);setTimeout(()=>{busy=false;paint()},1700)}
+    },true)});
+   };paint();}}
+];
+LEVELS.push(...EXT);
+const CORE=LEVELS.filter(L=>!L.ext).length;
+const levelLabel=i=>LEVELS[i].ext?"Challenge "+LEVELS[i].icon:"Level "+(i+1);
+
 /* ================= HOME / MAP ================= */
-const unlocked=i=>prog.all||i===0||(prog.stars[LEVELS[i-1].id]||0)>0;
+const unlocked=i=>prog.all||i===0||i===CORE||(prog.stars[LEVELS[i-1].id]||0)>0;
 function home(){
   location.hash="";
   const a=app();a.innerHTML="";
   const intro=document.createElement("div");intro.className="card";
-  intro.innerHTML=`<h2>Welcome to the pond!</h2><p>Start in the <b>Workshop</b> to learn how to build a number line. Then play the levels in order. Each level has ${ROUNDS} rounds. Fewer mistakes earn more stars ★★★, and finishing a level unlocks the next lily pad.</p>`;
+  intro.innerHTML=`<h2>Welcome to the pond!</h2><p>Start in the <b>Workshop</b> to learn how to build a number line. Then play the levels in order. Ready for more? Try the <b>Challenge Pond</b> at the bottom. Each level has ${ROUNDS} rounds. Fewer mistakes earn more stars ★★★, and finishing a level unlocks the next lily pad.</p>`;
   a.appendChild(intro);
-  const m=document.createElement("div");m.className="map";
+  let m=document.createElement("div");m.className="map";
   const ws=document.createElement("button");ws.type="button";ws.className="lvl workshop";
   ws.innerHTML=`<span class="pad">★</span><span><b>Number Line Workshop</b><span class="small" style="color:var(--ink)">Learn: line, bubble, and bar</span></span>`;
   ws.addEventListener("click",workshop);m.appendChild(ws);
+  let xm=null;
   LEVELS.forEach((L,i)=>{
-    const b=document.createElement("button");b.type="button";b.className="lvl";b.disabled=!unlocked(i);
+    if(i===CORE){a.appendChild(m);const h=document.createElement("div");h.className="card";h.style.background="#FFF4D6";
+      h.innerHTML=`<span class="tag" style="align-self:flex-start">Extension</span><h2>Challenge Pond 🏆</h2><p>For advanced hoppers who want a challenge. These levels climb from 4th grade up to 6th grade: find the hidden 1, squeeze fractions between fractions, estimate with benchmarks, add and multiply on the number line, order fractions, match decimals, divide by fractions, and hop below zero into negative numbers. Each one ends with a <b>Think deeper</b> question.</p>`;
+      a.appendChild(h);xm=document.createElement("div");xm.className="map";m=xm}
+    const b=document.createElement("button");b.type="button";b.className="lvl"+(L.ext?" ext":"");b.disabled=!unlocked(i);
     const st=prog.stars[L.id]||0;
-    b.innerHTML=`<span class="pad">${b.disabled?"🔒":L.icon}</span><span><b>${L.name}</b><span class="small">${L.blurb}</span><br><span class="stars" aria-label="${st} of 3 stars">${"★".repeat(st)}${"☆".repeat(3-st)}</span></span>`;
+    b.innerHTML=`<span class="pad">${b.disabled?"🔒":L.icon}</span><span><b>${L.name}</b><span class="small">${L.blurb}</span>${L.grade?` <span class="tag" style="font-size:.75rem">${L.grade}</span>`:""}<br><span class="stars" aria-label="${st} of 3 stars">${"★".repeat(st)}${"☆".repeat(3-st)}</span></span>`;
     if(b.disabled)b.title="Finish "+LEVELS[i-1].name+" first";
     b.addEventListener("click",()=>intro_(i));
     m.appendChild(b);
@@ -515,7 +665,7 @@ function home(){
 function intro_(i){
   const L=LEVELS[i],a=app();a.innerHTML="";
   const c=document.createElement("div");c.className="card";
-  c.innerHTML=`<div class="row" style="justify-content:space-between"><button class="btn alt" id="back" type="button">← Pond map</button><span class="tag">Level ${i+1}</span></div>
+  c.innerHTML=`<div class="row" style="justify-content:space-between"><button class="btn alt" id="back" type="button">← Pond map</button><span class="tag">${levelLabel(i)}</span></div>
    <h2>${L.name}</h2><div class="explain">${L.teach}</div>
    <div class="row"><button class="btn pink" id="go" type="button">Let's hop! 🐸</button><button class="btn alt" id="ws" type="button">Review the Workshop</button></div>`;
   a.appendChild(c);
@@ -529,7 +679,7 @@ function play(i){
   G={i,L:LEVELS[i],r:0,misses:0,used:new Set()};
   const a=app();a.innerHTML="";
   const c=document.createElement("div");c.className="card";
-  c.innerHTML=`<div class="row" style="justify-content:space-between"><button class="btn alt" id="back" type="button">← Pond map</button><span><b style="font-family:var(--display)">Level ${i+1}: ${G.L.name}</b></span><div class="progress" id="dots" aria-label="Round progress"></div></div>
+  c.innerHTML=`<div class="row" style="justify-content:space-between"><button class="btn alt" id="back" type="button">← Pond map</button><span><b style="font-family:var(--display)">${levelLabel(i)}: ${G.L.name}</b></span><div class="progress" id="dots" aria-label="Round progress"></div></div>
    <div class="prompt" id="prompt" aria-live="polite"></div>
    <div class="stage" id="stage"></div>
    <div class="row" id="controls" style="justify-content:center"></div>
@@ -560,11 +710,12 @@ function finish(){
   sfx.win();confetti();
   const a=app();a.innerHTML="";
   const c=document.createElement("div");c.className="card finish";
-  const nextI=G.i+1<LEVELS.length?G.i+1:null;
+  const nextI=G.i+1<LEVELS.length&&G.i+1!==CORE?G.i+1:null;
   c.innerHTML=`<svg width="120" height="100" viewBox="-40 -48 80 60" aria-hidden="true">${frogShape()}</svg>
-    <h2>Level ${G.i+1} complete!</h2><div class="stars" aria-label="${st} of 3 stars">${"★".repeat(st)}${"☆".repeat(3-st)}</div>
+    <h2>${levelLabel(G.i)} complete!</h2><div class="stars" aria-label="${st} of 3 stars">${"★".repeat(st)}${"☆".repeat(3-st)}</div>
     <p>${G.misses===0?"Perfect hopping, no mistakes!":G.misses+" mistake"+(G.misses>1?"s":"")+" this time. "+(st<3?"Play again for 3 stars.":"")}</p>
-    <div class="row" style="justify-content:center">${nextI!=null?`<button class="btn pink" id="nx" type="button">Next level: ${LEVELS[nextI].name} →</button>`:`<span class="tag">You finished every level! Fraction Frog Champion 🏆</span>`}
+    ${G.L.deeper?`<div class="explain" style="text-align:left"><b>Think deeper:</b> ${G.L.deeper}<br><span class="small">Talk it over with a partner or write your answer in your math journal.</span></div>`:""}
+    <div class="row" style="justify-content:center">${nextI!=null?`<button class="btn pink" id="nx" type="button">Next level: ${LEVELS[nextI].name} →</button>`:(G.L.ext?`<span class="tag">Challenge Pond conquered! 🏆</span>`:`<span class="tag">You finished every level! Try the Challenge Pond 🏆</span>`)}
     <button class="btn alt" id="again" type="button">Play again</button><button class="btn alt" id="map" type="button">Pond map</button></div>`;
   a.appendChild(c);
   if(nextI!=null)$("#nx").addEventListener("click",()=>intro_(nextI));
