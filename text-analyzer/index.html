@@ -96,8 +96,8 @@
   <section class="panel input-panel">
     <div class="libnote lib-only" id="libnote"></div>
     <div class="field">
-      <label for="title"><span class="live-only">Book, story, or article title</span><span class="lib-only">Book title</span></label>
-      <input type="text" id="title" placeholder="e.g. The Lemonade War" autocomplete="off" list="bookTitles">
+      <label for="title"><span class="live-only">Book, story, or article title</span><span class="lib-only">Book or poem title</span></label>
+      <input type="text" id="title" placeholder="e.g. The Lemonade War or Fog" autocomplete="off" list="bookTitles">
       <datalist id="bookTitles"></datalist>
     </div>
     <div class="booklist lib-only" id="booklist"></div>
@@ -133,7 +133,7 @@
         </select>
       </div>
     </div>
-    <div class="hint live-only" style="margin:-4px 0 12px"><span>Try: <button class="linkish ex" type="button">The Lemonade War</button> · <button class="linkish ex" type="button" data-a="E.B. White">Charlotte's Web</button> · <button class="linkish ex" type="button" data-a="Zilpha Keatley Snyder">The Egypt Game</button></span></div>
+    <div class="hint live-only" style="margin:-4px 0 12px"><span>Try: <button class="linkish ex" type="button">The Lemonade War</button> · <button class="linkish ex" type="button" data-a="E.B. White">Charlotte's Web</button> · <button class="linkish ex" type="button" data-a="Zilpha Keatley Snyder">The Egypt Game</button> · <button class="linkish ex" type="button" data-a="Robert Frost">The Road Not Taken</button></span></div>
     <div class="btns">
       <button class="primary" id="go" type="button">Analyze text</button>
       <button id="clear" type="button">Clear</button>
@@ -155,6 +155,7 @@
 <div class="toast" id="toast">Copied</div>
 
 <script src="books.js"></script>
+<script src="poems.js"></script>
 <script>
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -169,7 +170,8 @@ const STD = {
   narrator: g => `RL.${g}.6`,
   characters: g => `RL.${g}.3`,
   setting: g => `RL.${g}.3`,
-  questions: g => `RL.${g}.1 · RI.${g}.1`
+  questions: g => `RL.${g}.1 · RI.${g}.1`,
+  poem: g => `RL.${g}.5 · RL.${g}.4 · L.${g}.5`
 };
 
 document.querySelectorAll(".ex").forEach(b => b.onclick = () => {
@@ -192,6 +194,7 @@ Accuracy rules:
 - Only state plot events, names, and details you are confident are in this text. Never invent events or characters.
 - If you do not recognize the text, or there are several texts with this title and you can't tell which one, set "known" to false, put a short explanation in "note", and leave the other fields empty.
 - If you know the text but not the specific chapter/section well, say so in "note", set confidence to "low", and keep the analysis general.
+- For poems, call the voice "the speaker," fill in "poetry," and never reproduce the poem or more than a few words of it.
 - For evidence, describe specific moments from the text in your own words (e.g. "When Evan finds out Jessie skipped to his grade, he..."). Do not quote long passages.
 
 Return ONLY a JSON object with exactly this shape:
@@ -211,6 +214,7 @@ Return ONLY a JSON object with exactly this shape:
     "signal_words": [string] (typical signal words/features students can look for; may be empty),
     "plot": { "beginning": string, "problem": string, "rising_action": string, "climax": string, "resolution": string } or null (fill for stories/drama; null for informational)
   },
+  "poetry": null, or for poems ONLY: { "form": string (e.g. "Lyric poem", "Narrative poem", "Free verse", "Haiku", "Limerick"), "stanzas": string, "lines": string, "rhyme_scheme": string (e.g. "AABB" or "No rhyme (free verse)"), "rhythm": string (describe the beat/meter simply), "figurative_language": [ { "device": string (simile, metaphor, personification, hyperbole, imagery, alliteration, onomatopoeia, repetition, etc.), "example": string (describe or quote only a few words) } ] (2-4 items), "sound_devices": [string], "mood": string, "tone": string },
   "theme": { "statement": string (a complete sentence lesson/message, not one word) or null if informational, "topic_word": string (one-word topic, e.g. "sibling rivalry"), "explanation": string, "evidence": [string] (2-3 specific moments, paraphrased) },
   "point_of_view": { "type": one of "First person", "Second person", "Third person limited", "Third person omniscient", "Third person objective", "Alternating / multiple", "Author's point of view (informational)", "explanation": string (which pronouns and what the reader can/can't know), "evidence": string (one specific moment, paraphrased) },
   "narrator": { "who": string, "inside_or_outside": "Character in the story" | "Outside the story" | "Author (informational)" | "Speaker (poem)", "explanation": string },
@@ -225,7 +229,7 @@ async function run(){
   if(!title){ showError("Type the title of a book, story, or article first."); $("#title").focus(); return; }
   if(!sample){
     const book = findBook(title);
-    if(!book){ $("#out").innerHTML=""; showError("That book isn't in the library yet. Choose one of the books listed on the left."); return; }
+    if(!book){ $("#out").innerHTML=""; showError("That title isn't in the library yet. Choose one of the books or poems listed on the left."); return; }
     lastResult = book; render(book, "4–5"); return;
   }
   const grade = $("#grade").value, kind = $("#kind").value;
@@ -317,6 +321,13 @@ function render(d, grade){
         ${plot.resolution?`<li><b>Resolution:</b> ${esc(plot.resolution)}</li>`:""}</ul>`:""}`,
     `Text structure: ${ts.type||""}\n${ts.explanation||""}${ts.signal_words&&ts.signal_words.length?"\nSignal words: "+ts.signal_words.join(", "):""}${plot?`\nBeginning: ${plot.beginning||""}\nProblem: ${plot.problem||""}\nRising action: ${plot.rising_action||""}\nClimax: ${plot.climax||""}\nResolution: ${plot.resolution||""}`:""}`);
 
+  const po = d.poetry;
+  if(po) html += card("poem","Poem Elements","--c5",
+    `<ul>${po.form?`<li><b>Form:</b> ${esc(po.form)}</li>`:""}${po.stanzas?`<li><b>Stanzas:</b> ${esc(po.stanzas)}</li>`:""}${po.lines?`<li><b>Lines:</b> ${esc(po.lines)}</li>`:""}${po.rhyme_scheme?`<li><b>Rhyme scheme:</b> ${esc(po.rhyme_scheme)}</li>`:""}${po.rhythm?`<li><b>Rhythm:</b> ${esc(po.rhythm)}</li>`:""}${po.mood?`<li><b>Mood:</b> ${esc(po.mood)}</li>`:""}${po.tone?`<li><b>Tone:</b> ${esc(po.tone)}</li>`:""}</ul>
+     ${(po.figurative_language||[]).length?`<div class="sub">Figurative language</div><ul>${po.figurative_language.map(f=>`<li><b>${esc(f.device)}:</b> ${esc(f.example)}</li>`).join("")}</ul>`:""}
+     ${(po.sound_devices||[]).length?`<div class="sub">Sound devices</div><div class="words">${po.sound_devices.map(w=>`<span>${esc(w)}</span>`).join("")}</div>`:""}`,
+    `Poem elements:\nForm: ${po.form||""}\nStanzas: ${po.stanzas||""}\nLines: ${po.lines||""}\nRhyme scheme: ${po.rhyme_scheme||""}\nRhythm: ${po.rhythm||""}\nMood: ${po.mood||""}\nTone: ${po.tone||""}\nFigurative language:\n${(po.figurative_language||[]).map(f=>"- "+f.device+": "+f.example).join("\n")}`, true);
+
   html += card("theme", informational ? "Theme / Author's Message" : "Theme","--c4",
     `${th.topic_word?`<span class="tag">${esc(th.topic_word)}</span>`:""}
      ${th.statement?`<p class="big">${esc(th.statement)}</p>`:`<p class="na">Informational texts usually have a main idea instead of a theme.</p>`}
@@ -327,11 +338,11 @@ function render(d, grade){
     `<span class="tag">${esc(pov.type)}</span><p>${esc(pov.explanation)}</p>${q(pov.evidence)}`,
     `Point of view: ${pov.type||""}\n${pov.explanation||""}${pov.evidence?`\nEvidence: ${pov.evidence}`:""}`);
 
-  html += card("narrator","Narrator","--c6",
+  html += card("narrator", po ? "Speaker / Narrator" : "Narrator","--c6",
     `<span class="tag">${esc(nar.inside_or_outside)}</span><p class="big">${esc(nar.who)}</p><p>${esc(nar.explanation)}</p>`,
     `Narrator: ${nar.who||""} (${nar.inside_or_outside||""})\n${nar.explanation||""}`);
 
-  html += card("characters", informational ? "People & Groups" : "Characters","--c7",
+  html += card("characters", informational ? "People & Groups" : po ? "Speaker & Characters" : "Characters","--c7",
     chars.length ? `<div class="chars">${chars.map(c=>`<div class="char"><b>${esc(c.name)}</b><span class="role">${esc(c.role)}</span>
       ${c.traits&&c.traits.length?`<div class="traits">${c.traits.map(t=>`<span>${esc(t)}</span>`).join("")}</div>`:""}
       <div>${esc(c.evidence)}</div>${c.changes?`<div style="margin-top:4px"><b>Changes:</b> ${esc(c.changes)}</div>`:""}</div>`).join("")}</div>`
@@ -365,9 +376,11 @@ function findBook(t){
 function setupLibrary(){
   document.body.classList.add("lib");
   const lib = window.LIBRARY || [];
-  $("#libnote").innerHTML = `Choose one of the <b>${lib.length} books</b> in the library to see its full analysis.`;
+  const books = lib.filter(b => b.genre !== "Poetry"), poems = lib.filter(b => b.genre === "Poetry");
+  $("#libnote").innerHTML = `Choose one of the <b>${books.length} books</b> or <b>${poems.length} poems</b> in the library to see its full analysis.`;
   $("#bookTitles").innerHTML = lib.map(b => `<option value="${esc(b.title)}">`).join("");
-  $("#booklist").innerHTML = lib.map(b => `<button type="button">${esc(b.title)}</button>`).join("");
+  const grp = (name, arr) => arr.length ? `<div class="sub" style="width:100%;margin:2px 0 0">${name}</div>` + arr.map(b => `<button type="button">${esc(b.title)}</button>`).join("") : "";
+  $("#booklist").innerHTML = grp("Books", books) + grp("Poems", poems);
   $("#booklist").querySelectorAll("button").forEach(btn => btn.onclick = () => { $("#title").value = btn.textContent; run(); });
   $("#go").textContent = "Show analysis";
 }
