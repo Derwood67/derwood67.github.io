@@ -6,40 +6,39 @@
 <title>Lemonade War Reading Stand</title>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
 <style>
-/* Layout idea: a lemonade-stand sign board. Money jar on top tracks earnings to $100; five tabs below, each with Learn then Practice. */
+/* Lemonade-stand sign board. Students sign in, work through 5 skill sections in order
+   (Learn -> 10 practice questions -> 10-question mastery check at 80%), then a final book quiz.
+   Teacher dashboard behind lock code. */
 :root{
   color-scheme: light;
-  --sky:#DDF1F8;
-  --paper:#FFFFFF;
-  --ink:#1B2A41;
-  --ink-soft:#4A5A72;
-  --lemon:#FFD93B;
-  --rind:#E5A900;
-  --leaf:#1F6B4A;
-  --pink:#E8527A;
-  --good:#1F7A4D;
-  --good-bg:#DFF5E6;
-  --bad:#B3261E;
-  --bad-bg:#FBE4E2;
+  --sky:#DDF1F8;--paper:#FFFFFF;--ink:#1B2A41;--ink-soft:#4A5A72;
+  --lemon:#FFD93B;--rind:#E5A900;--leaf:#1F6B4A;--pink:#E8527A;
+  --good:#1F7A4D;--good-bg:#DFF5E6;--bad:#B3261E;--bad-bg:#FBE4E2;
   --display:"Fredoka","Trebuchet MS",sans-serif;
   --body:"Atkinson Hyperlegible","Verdana",sans-serif;
 }
 *{box-sizing:border-box}
 html,body{margin:0}
 body{background:var(--sky);color:var(--ink);font-family:var(--body);font-size:18px;line-height:1.55}
-.wrap{max-width:860px;margin:0 auto;padding:20px 16px 56px;display:flex;flex-direction:column;gap:18px}
+.wrap{max-width:900px;margin:0 auto;padding:20px 16px 56px;display:flex;flex-direction:column;gap:18px}
 h1,h2,h3{font-family:var(--display);line-height:1.15;margin:0;text-wrap:balance}
-h1{font-size:clamp(1.8rem,5vw,2.6rem);font-weight:700}
-h2{font-size:1.6rem;font-weight:600}
+h1{font-size:clamp(1.7rem,5vw,2.5rem);font-weight:700}
+h2{font-size:1.55rem;font-weight:600}
 h3{font-size:1.2rem;font-weight:600}
 p{margin:0;max-width:65ch}
 button{font:inherit;color:inherit;cursor:pointer}
+input,textarea{font:inherit;color:inherit}
 :focus-visible{outline:3px solid var(--pink);outline-offset:2px}
+[hidden]{display:none!important}
 
-header.sign{background:var(--lemon);border:3px solid var(--ink);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:14px;box-shadow:0 5px 0 var(--ink)}
+header.sign{background:var(--lemon);border:3px solid var(--ink);border-radius:18px;padding:18px 20px;display:flex;flex-direction:column;gap:14px;box-shadow:0 5px 0 var(--ink)}
 .sign-top{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
 .sign-top svg{flex:none}
-.byline{font-size:1rem;color:var(--ink)}
+.sign-top .grow{flex:1;min-width:220px}
+.byline{font-size:1rem}
+.who{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:1rem}
+.who b{font-family:var(--display);font-size:1.1rem}
+.linkbtn{background:none;border:none;padding:0;text-decoration:underline;font-size:.95rem;color:var(--ink-soft)}
 .jar{background:var(--paper);border:3px solid var(--ink);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
 .jar-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
 .jar-label{font-family:var(--display);font-weight:600}
@@ -47,15 +46,13 @@ header.sign{background:var(--lemon);border:3px solid var(--ink);border-radius:18
 .meter{height:22px;border:2px solid var(--ink);border-radius:999px;background:#F3F6F8;overflow:hidden}
 .meter i{display:block;height:100%;width:0;background:repeating-linear-gradient(-45deg,var(--pink) 0 12px,#F17C9A 12px 24px);transition:width .4s}
 .jar-note{font-size:.95rem;color:var(--ink-soft)}
-.reset{align-self:flex-start;background:none;border:none;padding:0;text-decoration:underline;font-size:.95rem;color:var(--ink-soft)}
 
 nav.tabs{display:flex;flex-wrap:wrap;gap:8px}
-.tab{font-family:var(--display);font-weight:600;background:var(--paper);border:2px solid var(--ink);border-radius:999px;padding:8px 16px;display:flex;gap:8px;align-items:center}
+.tab{font-family:var(--display);font-weight:600;background:var(--paper);border:2px solid var(--ink);border-radius:999px;padding:8px 14px;display:flex;gap:8px;align-items:center}
 .tab[aria-selected="true"]{background:var(--leaf);color:#fff}
-.tab .count{font-size:.85rem;font-variant-numeric:tabular-nums;opacity:.85}
+.tab:disabled{opacity:.5;cursor:not-allowed;border-style:dashed}
+.tab .count{font-size:.85rem;font-variant-numeric:tabular-nums;opacity:.9}
 
-section.panel{display:none;flex-direction:column;gap:18px}
-section.panel.on{display:flex}
 .card{background:var(--paper);border:2px solid var(--ink);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:12px}
 .eyebrow{font-family:var(--display);font-weight:600;font-size:.9rem;letter-spacing:.08em;text-transform:uppercase;color:var(--leaf)}
 .practice .eyebrow{color:var(--pink)}
@@ -72,13 +69,15 @@ ul.plain{margin:0;padding-left:1.2em;max-width:65ch}
 ul.plain li{margin:4px 0}
 
 .q{border-top:2px dashed #C9D3DE;padding-top:14px;display:flex;flex-direction:column;gap:10px}
-.q:first-of-type{border-top:none;padding-top:0}
+.q:first-child{border-top:none;padding-top:0}
 .q-text{font-weight:700;max-width:65ch}
 .opts{display:flex;flex-wrap:wrap;gap:8px}
+.opts.stack{flex-direction:column;align-items:stretch}
 .opt{background:var(--paper);border:2px solid var(--ink);border-radius:12px;padding:8px 14px;text-align:left;box-shadow:0 3px 0 var(--ink)}
 .opt:hover:not(:disabled){background:#FFF3B0}
 .opt.right{background:var(--good-bg);border-color:var(--good);box-shadow:0 3px 0 var(--good)}
 .opt.wrong{background:var(--bad-bg);border-color:var(--bad);box-shadow:none;text-decoration:line-through}
+.opt.pick{background:#FFF3B0;border-width:3px}
 .opt:disabled{cursor:default}
 .fb{font-size:1rem;border-radius:10px;padding:8px 12px;max-width:65ch}
 .fb.good{background:var(--good-bg);color:var(--good)}
@@ -93,9 +92,43 @@ ol.seq .mv{display:flex;flex-direction:column;gap:4px;flex:none}
 ol.seq .mv button{border:2px solid var(--ink);background:var(--paper);border-radius:8px;width:38px;height:30px;line-height:1;font-weight:700}
 ol.seq .mv button:disabled{opacity:.3;cursor:default}
 ol.seq.done li{background:var(--good-bg);border-color:var(--good)}
-.check{align-self:flex-start;font-family:var(--display);font-weight:600;background:var(--leaf);color:#fff;border:2px solid var(--ink);border-radius:12px;padding:8px 18px;box-shadow:0 3px 0 var(--ink)}
+
+.btn{align-self:flex-start;font-family:var(--display);font-weight:600;background:var(--leaf);color:#fff;border:2px solid var(--ink);border-radius:12px;padding:9px 18px;box-shadow:0 3px 0 var(--ink)}
+.btn.alt{background:var(--paper);color:var(--ink)}
+.btn.pink{background:var(--pink)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .write{background:#E9F6EE}
+textarea{width:100%;min-height:110px;border:2px solid var(--ink);border-radius:10px;padding:10px;background:#fff;resize:vertical}
+.small{font-size:.92rem;color:var(--ink-soft)}
+.lockbox{background:#F3F6F8;border-style:dashed}
+.passed-badge{display:inline-block;background:var(--good-bg);color:var(--good);border:2px solid var(--good);border-radius:999px;padding:2px 12px;font-weight:700;font-size:.95rem}
+.progress{height:12px;border:2px solid var(--ink);border-radius:999px;overflow:hidden;background:#F3F6F8}
+.progress i{display:block;height:100%;background:var(--leaf);width:0}
+.score-big{font-family:var(--display);font-size:2.4rem;font-weight:700}
+.missed{border-left:5px solid var(--bad);background:#FFF6F5;padding:8px 12px;border-radius:8px;font-size:1rem}
+.missed.ok{border-left-color:var(--good);background:#F2FBF5}
+
+/* login */
+.login{max-width:520px;align-self:center;width:100%}
+.field{display:flex;flex-direction:column;gap:6px}
+.field input{border:2px solid var(--ink);border-radius:10px;padding:10px 12px;background:#fff;font-size:1.1rem}
+
+/* teacher */
+table{border-collapse:collapse;width:100%;font-size:.95rem}
+th,td{border-bottom:1px solid #C9D3DE;padding:7px 8px;text-align:left;vertical-align:top}
+th{font-family:var(--display);font-weight:600;background:#FFF9DC;position:sticky;top:0}
+td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.tscroll{overflow-x:auto;border:2px solid var(--ink);border-radius:12px}
+tr.click{cursor:pointer}
+tr.click:hover td{background:#FFFBE6}
+.pill{display:inline-block;border-radius:999px;padding:0 8px;font-size:.85rem;font-weight:700;white-space:nowrap}
+.pill.ok{background:var(--good-bg);color:var(--good)}
+.pill.no{background:var(--bad-bg);color:var(--bad)}
+.pill.wait{background:#EEF1F5;color:var(--ink-soft)}
+.cert{background:var(--lemon);border:4px double var(--ink);text-align:center;align-items:center}
 @media (prefers-reduced-motion:reduce){.meter i{transition:none}}
+@media print{body{background:#fff}.noprint{display:none!important}}
 </style>
 </head>
 <body>
@@ -103,31 +136,37 @@ ol.seq.done li{background:var(--good-bg);border-color:var(--good)}
 
 <header class="sign">
   <div class="sign-top">
-    <svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true">
+    <svg width="60" height="60" viewBox="0 0 64 64" aria-hidden="true">
       <ellipse cx="32" cy="34" rx="24" ry="19" fill="#FFF3A0" stroke="#1B2A41" stroke-width="3"/>
       <path d="M8 34h48M32 15v38M15 21l34 26M49 21L15 47" stroke="#E5A900" stroke-width="2.5"/>
       <path d="M40 12c6-8 14-7 17-5-2 7-9 10-17 5z" fill="#1F6B4A" stroke="#1B2A41" stroke-width="2.5"/>
     </svg>
-    <div>
+    <div class="grow">
       <h1>The Lemonade War Reading Stand</h1>
       <p class="byline">A reading workout for the novel by Jacqueline Davies</p>
     </div>
+    <div class="who noprint" id="who" hidden>
+      <span>Reader: <b id="who-name"></b></span>
+      <button class="linkbtn" id="signout" type="button">Switch reader</button>
+    </div>
   </div>
-  <div class="jar" aria-live="polite">
+  <div class="jar" id="jar" aria-live="polite" hidden>
     <div class="jar-row">
       <span class="jar-label">Your money jar</span>
       <span class="jar-amt"><span id="amt">$0</span> of $100</span>
     </div>
     <div class="meter"><i id="bar"></i></div>
-    <span class="jar-note" id="note">Evan and Jessie raced to earn $100. You can too. Every correct answer puts $4 in your jar.</span>
-    <button class="reset" id="reset" type="button">Empty the jar and start over</button>
+    <span class="jar-note" id="note"></span>
   </div>
 </header>
 
-<nav class="tabs" role="tablist" aria-label="Reading skills" id="tabs"></nav>
+<main id="app" style="display:flex;flex-direction:column;gap:18px"></main>
 
-<!-- CHARACTERS -->
-<section class="panel" id="p-characters" role="tabpanel">
+<p class="small noprint" style="text-align:center"><button class="linkbtn" id="teacher-btn" type="button">Teacher dashboard</button></p>
+</div>
+
+<!-- ================= LEARN CARDS ================= -->
+<template id="learn-characters">
   <div class="card">
     <span class="eyebrow">Learn</span>
     <h2>Characters</h2>
@@ -165,97 +204,36 @@ ol.seq.done li{background:var(--good-bg);border-color:var(--good)}
       </div>
     </div>
   </div>
-  <div class="card practice">
-    <span class="eyebrow">Practice</span>
-    <h2>Evan, Jessie, or both?</h2>
-    <p>Comparing characters helps you understand them. Pick who each sentence describes.</p>
-    <div id="q-characters"></div>
-  </div>
-  <div class="card write">
-    <span class="eyebrow">Think and write</span>
-    <p>Evan is people-smart and Jessie is math-smart. Which kind of smart helped more in the lemonade war? Use two details from the book to explain.</p>
-  </div>
-</section>
+</template>
 
-<!-- SETTING -->
-<section class="panel" id="p-setting" role="tabpanel">
+<template id="learn-setting">
   <div class="card">
     <span class="eyebrow">Learn</span>
     <h2>Setting</h2>
     <p>Setting is <strong>when</strong> and <strong>where</strong> a story happens. A strong setting does a job. It can cause problems, change the mood, or push characters to act.</p>
     <div class="grid">
-      <div class="mini">
-        <h3>When</h3>
-        <p>The last five days of summer vacation, during a heat wave. The story ends on Labor Day weekend, right before school starts.</p>
-      </div>
-      <div class="mini alt">
-        <h3>Where</h3>
-        <p>The Treski house and the streets of their neighborhood, the town center, and friends' houses nearby.</p>
-      </div>
-      <div class="mini">
-        <h3>Why it matters</h3>
-        <p>Hot days mean thirsty customers. The first day of school is coming fast, so the clock is always ticking.</p>
-      </div>
+      <div class="mini"><h3>When</h3><p>The last five days of summer vacation, during a heat wave. The story ends on Labor Day weekend, right before school starts.</p></div>
+      <div class="mini alt"><h3>Where</h3><p>The Treski house and the streets of their neighborhood, the town center, and friends' houses nearby.</p></div>
+      <div class="mini"><h3>Why it matters</h3><p>Hot days mean thirsty customers. The first day of school is coming fast, so the clock is always ticking.</p></div>
     </div>
   </div>
-  <div class="card practice">
-    <span class="eyebrow">Practice</span>
-    <h2>How does the setting shape the story?</h2>
-    <div id="q-setting"></div>
-  </div>
-  <div class="card write">
-    <span class="eyebrow">Think and write</span>
-    <p>Imagine this story happened in January instead of August. What would have to change? Name at least two things.</p>
-  </div>
-</section>
+</template>
 
-<!-- TEXT STRUCTURE -->
-<section class="panel" id="p-structure" role="tabpanel">
+<template id="learn-structure">
   <div class="card">
     <span class="eyebrow">Learn</span>
     <h2>Text structure</h2>
     <p>Text structure is how an author builds and organizes a book. Jacqueline Davies made some smart choices about how the chapters fit together.</p>
     <div class="grid">
-      <div class="mini">
-        <h3>Time order</h3>
-        <p>Events happen in sequence over five days. The countdown builds suspense.</p>
-      </div>
-      <div class="mini alt">
-        <h3>Two points of view</h3>
-        <p>Chapters take turns following Evan and Jessie. We learn what each one thinks, even when they will not tell each other.</p>
-      </div>
-      <div class="mini">
-        <h3>Business-word chapter titles</h3>
-        <p>Each chapter is named for a business term and starts with its definition. The term hints at what will happen.</p>
-      </div>
-      <div class="mini alt">
-        <h3>Cause and effect</h3>
-        <p>One choice leads to the next. A hurtful word causes a bet. A mean trick causes a bigger one.</p>
-      </div>
+      <div class="mini"><h3>Time order</h3><p>Events happen in sequence over five days. The countdown builds suspense.</p></div>
+      <div class="mini alt"><h3>Two points of view</h3><p>Chapters take turns following Evan and Jessie. We learn what each one thinks, even when they will not tell each other.</p></div>
+      <div class="mini"><h3>Business-word chapter titles</h3><p>Each chapter is named for a business term and starts with its definition. The term hints at what will happen.</p></div>
+      <div class="mini alt"><h3>Cause and effect</h3><p>One choice leads to the next. A hurtful word causes a bet. A mean trick causes a bigger one.</p></div>
     </div>
   </div>
-  <div class="card practice">
-    <span class="eyebrow">Practice 1</span>
-    <h2>Put the events in time order</h2>
-    <p>Use the arrows to move each event up or down. Then check your order.</p>
-    <ol class="seq" id="seq"></ol>
-    <button class="check" id="seq-check" type="button">Check my order</button>
-    <div class="fb" id="seq-fb" role="status"></div>
-  </div>
-  <div class="card practice">
-    <span class="eyebrow">Practice 2</span>
-    <h2>Match the chapter title to the event</h2>
-    <p>Each question gives a chapter title and what the business term means. Pick the event that fits.</p>
-    <div id="q-structure"></div>
-  </div>
-  <div class="card write">
-    <span class="eyebrow">Think and write</span>
-    <p>Why do you think the author let us see inside both Evan's and Jessie's heads? How would the book feel if only Evan told the story?</p>
-  </div>
-</section>
+</template>
 
-<!-- MAIN IDEA -->
-<section class="panel" id="p-main-idea" role="tabpanel">
+<template id="learn-main-idea">
   <div class="card">
     <span class="eyebrow">Learn</span>
     <h2>Main idea</h2>
@@ -263,98 +241,106 @@ ol.seq.done li{background:var(--good-bg);border-color:var(--good)}
     <ul class="plain">
       <li><strong>Main idea</strong> covers the whole book or a big part of it.</li>
       <li><strong>A detail</strong> is true, but it is only one small piece.</li>
+      <li>To find the main idea, ask: <em>What are most of the details about?</em></li>
     </ul>
   </div>
-  <div class="card practice">
-    <span class="eyebrow">Practice</span>
-    <h2>Main idea or detail?</h2>
-    <div id="q-main-idea"></div>
-  </div>
-  <div class="card write">
-    <span class="eyebrow">Think and write</span>
-    <p>Write the main idea of the book in your own words. Then list three details that support it.</p>
-  </div>
-</section>
+</template>
 
-<!-- THEME -->
-<section class="panel" id="p-theme" role="tabpanel">
+<template id="learn-theme">
   <div class="card">
     <span class="eyebrow">Learn</span>
     <h2>Theme</h2>
     <p>The <strong>theme</strong> is the lesson about life that the story teaches. It is bigger than this one book. You could use it in your own life.</p>
     <div class="grid">
-      <div class="mini">
-        <h3>Topic</h3>
-        <p>One or two words. <em>Example: honesty</em></p>
-      </div>
-      <div class="mini alt">
-        <h3>Plot event</h3>
-        <p>Something that happens to these characters. <em>Example: Evan and Jessie make a bet.</em></p>
-      </div>
-      <div class="mini">
-        <h3>Theme</h3>
-        <p>A full-sentence lesson with no character names. <em>Example: Hiding the truth makes problems grow.</em></p>
-      </div>
+      <div class="mini"><h3>Topic</h3><p>One or two words. <em>Example: honesty</em></p></div>
+      <div class="mini alt"><h3>Plot event</h3><p>Something that happens to these characters. <em>Example: Evan and Jessie make a bet.</em></p></div>
+      <div class="mini"><h3>Theme</h3><p>A full-sentence lesson with no character names. <em>Example: Hiding the truth makes problems grow.</em></p></div>
     </div>
     <p>To find a theme, ask: What did the characters learn? How did they change? What caused the trouble, and what fixed it?</p>
   </div>
-  <div class="card practice">
-    <span class="eyebrow">Practice</span>
-    <h2>Topic, plot event, or theme?</h2>
-    <div id="q-theme"></div>
-  </div>
-  <div class="card write">
-    <span class="eyebrow">Think and write</span>
-    <p>Choose one theme from this book. Describe a time in your own life, or in another book, when that lesson was true.</p>
-  </div>
-</section>
+</template>
 
-</div>
 <script>
-const TABS=[
-  {id:"characters",label:"Characters"},
-  {id:"setting",label:"Setting"},
-  {id:"structure",label:"Text structure"},
-  {id:"main-idea",label:"Main idea"},
-  {id:"theme",label:"Theme"}
+/* ================= SETTINGS ================= */
+const TEACHER_CODE="8531";
+const QUIZ_LEN=10;         // questions per section mastery check
+const PASS=0.8;            // 80% = mastery
+const FINAL_LEN=12;        // questions on the final book quiz
+const PER=2;               // dollars per practice question
+const LS="lemonadeWar.v2";
+
+const SECTIONS=[
+  {id:"characters",label:"Characters",write:"Evan is people-smart and Jessie is math-smart. Which kind of smart helped more in the lemonade war? Use two details from the book to explain."},
+  {id:"setting",label:"Setting",write:"Imagine this story happened in January instead of August. What would have to change? Name at least two things."},
+  {id:"structure",label:"Text structure",write:"Why do you think the author let us see inside both Evan's and Jessie's heads? How would the book feel if only Evan told the story?"},
+  {id:"main-idea",label:"Main idea",write:"Write the main idea of the book in your own words. Then list three details that support it."},
+  {id:"theme",label:"Theme",write:"Choose one theme from this book. Describe a time in your own life, or in another book, when that lesson was true."}
 ];
 const EJB=["Evan","Jessie","Both"];
 const MD=["Main idea","Detail"];
 const TPT=["Topic","Plot event","Theme"];
-const QUESTIONS={
+
+/* ================= PRACTICE (10 per section) ================= */
+const PRACTICE={
   "characters":[
     {q:"Can plan a business and do the math in a flash.",o:EJB,a:1,hint:"Think about who loves numbers.",why:"Jessie is the math whiz. She works out prices and profits quickly."},
     {q:"Knows just what to say to customers and makes friends easily.",o:EJB,a:0,hint:"Who is people-smart?",why:"Evan is great with people, and that helps him sell."},
     {q:"Feels nervous about fourth grade.",o:EJB,a:2,hint:"Each sibling has a different worry about the same classroom.",why:"Both. Evan fears looking less smart than his little sister. Jessie fears she will not fit in with older kids."},
     {q:"Has a hard time telling what other people are feeling.",o:EJB,a:1,hint:"Who is confused about why the fight even started?",why:"Jessie cannot work out why Evan is so angry with her."},
     {q:"Feels embarrassed, but acts angry instead of explaining.",o:EJB,a:0,hint:"Who says hurtful things at the start?",why:"Evan hides his embarrassment behind anger, and that starts the war."},
-    {q:"Does something unfair to win, and feels bad about it later.",o:EJB,a:2,hint:"Think about the bugs and the missing money.",why:"Both. Jessie ruins Evan's lemonade, and Evan takes Jessie's money."}
+    {q:"Does something unfair to win, and feels bad about it later.",o:EJB,a:2,hint:"Think about the bugs and the missing money.",why:"Both. Jessie ruins Evan's lemonade, and Evan takes Jessie's money."},
+    {q:"Is skipping a grade at school.",o:EJB,a:1,hint:"Who is younger but will be in the same class?",why:"Jessie skips third grade and joins Evan's fourth-grade class."},
+    {q:"Gets upset when he learns his sister will be in his class.",o:EJB,a:0,hint:"Look at the word 'his'.",why:"Evan is upset because he worries his little sister will make him look less smart."},
+    {q:"Wants to win the bet and earn $100.",o:EJB,a:2,hint:"Who made the bet?",why:"Both. The bet is between the two of them, and each one wants to win."},
+    {q:"Learns to tell the truth and say sorry by the end.",o:EJB,a:2,hint:"How does the war finally end?",why:"Both. The war only ends when both siblings admit what they did."}
   ],
   "setting":[
     {q:"When does the story take place?",o:["During winter break","The last days of summer before school starts","The first week of fourth grade","Over one long afternoon"],a:1,hint:"Think about what the kids are counting down to.",why:"The whole war fits into the last five days of summer vacation."},
     {q:"Why is the heat wave important to the plot?",o:["It keeps everyone indoors","It makes people thirsty, so lemonade sells","It cancels the first day of school","It makes Evan sick"],a:1,hint:"What do people want on a very hot day?",why:"Hot weather creates customers. Without it, a lemonade war would not work."},
     {q:"School starts in just a few days. How does that affect the mood?",o:["It makes the story calm and slow","It adds pressure, because time is running out","It makes the story funny","It does not matter at all"],a:1,hint:"Think about a ticking clock.",why:"The deadline adds tension. Both the bet and the worry about fourth grade are getting closer."},
-    {q:"Evan moves his stand to the town center. Why is that place a smart choice?",o:["It is cooler there","His mom works there","Many more people walk by","No one can see him"],a:2,hint:"More people means more of something.",why:"A busy place has more customers. Where a business sits can matter as much as what it sells."}
+    {q:"Evan moves his stand to the town center. Why is that place a smart choice?",o:["It is cooler there","His mom works there","Many more people walk by","No one can see him"],a:2,hint:"More people means more of something.",why:"A busy place has more customers. Where a business sits can matter as much as what it sells."},
+    {q:"Where does most of the story happen?",o:["In a big city apartment","Around the Treski home, their neighborhood, and town","On a farm","At a summer camp"],a:1,hint:"Where do the kids set up their stands?",why:"The story stays close to home: the house, the neighborhood, and the town center."},
+    {q:"Which word best describes the weather in the story?",o:["Snowy","Rainy","Hot","Windy and cold"],a:2,hint:"Think about why lemonade sells so well.",why:"A heat wave makes the days hot, which is perfect for lemonade."},
+    {q:"Setting is...",o:["when and where a story happens","the lesson of the story","the people in the story","the problem in the story"],a:0,hint:"Two question words: when and where.",why:"Setting means the time and place of a story."},
+    {q:"The story happens during summer vacation. How does that help the bet?",o:["The kids have free time to run their stands","The kids are in school all day","Everyone in town is away","It is too cold to sell anything"],a:0,hint:"What do kids have more of in summer?",why:"With no school, Evan and Jessie have whole days to sell lemonade."},
+    {q:"Which sentence best explains how the setting helps cause the conflict?",o:["The town is too small for two stands","School is about to start, and Jessie will be in Evan's class","The house has too many rooms","It rains every day"],a:1,hint:"What news upsets Evan at the start?",why:"The start of school brings the news that Jessie will share Evan's class, and that sparks the fight."},
+    {q:"Which detail tells you WHEN the story happens?",o:["At the town center","On the front porch","The last week of summer vacation","Behind the house"],a:2,hint:"Look for a time, not a place.",why:"'The last week of summer vacation' is a time. The others are places."}
   ],
   "structure":[
     {q:"Underselling: charging less than your competition to win customers.",o:["Evan drops his price far below everyone else's","Jessie counts her money","Mrs. Treski makes dinner","Megan goes on a trip"],a:0,hint:"Look for the event about price.",why:"Evan sells very cheap lemonade to pull customers away from other stands."},
     {q:"Location, location, location: where you sell matters a lot.",o:["Jessie reads a business booklet","Evan wheels his stand to the busy town center","The kids watch fireworks","Evan hides in the basement"],a:1,hint:"Look for the event about a place.",why:"Evan picks a spot with lots of people walking by."},
     {q:"Malicious mischief: damaging someone's property on purpose.",o:["Jessie and Megan become partners","Evan apologizes","Jessie drops bugs into Evan's lemonade","A letter arrives from school"],a:2,hint:"Which event ruins something?",why:"Jessie spoils Evan's lemonade so he cannot sell it."},
-    {q:"Reconciliation: becoming friendly again after a fight.",o:["Evan and Jessie make their bet","Evan and Jessie tell the truth and make peace","Evan teams up with Scott","Money goes missing"],a:1,hint:"This chapter comes at the very end.",why:"The last chapter is where the brother and sister forgive each other."}
+    {q:"Reconciliation: becoming friendly again after a fight.",o:["Evan and Jessie make their bet","Evan and Jessie tell the truth and make peace","Evan teams up with Scott","Money goes missing"],a:1,hint:"This chapter comes at the very end.",why:"The last chapter is where the brother and sister forgive each other."},
+    {seq:true},
+    {q:"Partnership: two people working together on one business.",o:["Jessie and Megan sell lemonade together","Evan sells alone at the town center","Mrs. Treski goes to work","The kids go to bed early"],a:0,hint:"Look for two people on the same team.",why:"Jessie and Megan team up, so they are partners."},
+    {q:"Most of The Lemonade War is told in what order?",o:["Time order, from first to last","Backward, from the end to the start","Random order","Only flashbacks"],a:0,hint:"The story counts down the last days of summer.",why:"Events are told in the order they happen, day by day."},
+    {q:"Why do the chapters switch between Evan and Jessie?",o:["So we see both sides of the fight","To confuse the reader","Because the author forgot who was talking","So we only know what Evan thinks"],a:0,hint:"Each sibling has a different side of the story.",why:"Switching lets readers know what both siblings think and feel."},
+    {q:"Each chapter begins with...",o:["a poem","a business word and its meaning","a map","a recipe"],a:1,hint:"Think about the chapter titles.",why:"Every chapter title is a business term, followed by a definition."},
+    {q:"Evan says hurtful things, so Jessie gets upset, and they make a bet. This is an example of...",o:["cause and effect","compare and contrast","a list","a definition"],a:0,hint:"One thing makes the next thing happen.",why:"Each action causes the next one. That is cause and effect."}
   ],
   "main-idea":[
     {q:"A brother and sister turn a fight into a lemonade-selling contest, and they have to learn to be honest with each other to end it.",o:MD,a:0,hint:"Does this cover the whole book or one small part?",why:"This sums up the whole story from start to finish."},
     {q:"Jessie keeps her earnings in a lock box.",o:MD,a:1,hint:"Is this the whole story or one small fact?",why:"It is true, but it is one small piece of the story."},
     {q:"Evan's anger is really about feeling embarrassed and worried, not about lemonade.",o:MD,a:0,hint:"This idea explains why the whole war happens.",why:"This big idea runs through the entire book and explains the conflict."},
     {q:"Evan sets up a stand in the town center.",o:MD,a:1,hint:"This happens in one chapter.",why:"It is one event that supports the bigger story of the contest."},
-    {q:"Which sentence is the best main idea for the whole book?",o:["Lemonade is easy to sell in hot weather.","Two siblings compete to earn the most money, but what they truly need is to understand each other.","Jessie is better at math than Evan.","Scott Spencer cannot be trusted."],a:1,hint:"Pick the one that covers the beginning, middle, and end.",why:"It includes the contest and the real problem underneath it."}
+    {q:"Which sentence is the best main idea for the whole book?",o:["Lemonade is easy to sell in hot weather.","Two siblings compete to earn the most money, but what they truly need is to understand each other.","Jessie is better at math than Evan.","Scott Spencer cannot be trusted."],a:1,hint:"Pick the one that covers the beginning, middle, and end.",why:"It includes the contest and the real problem underneath it."},
+    {q:"Megan becomes Jessie's lemonade partner.",o:MD,a:1,hint:"Is this one event or the whole book?",why:"It is one piece of the story, so it is a detail."},
+    {q:"Fighting with someone you love hurts both people, and Evan and Jessie learn this over five days.",o:MD,a:0,hint:"Does this cover the whole story?",why:"It covers the whole book: the fight, the hurt, and the lesson."},
+    {q:"Evan has a hard time with math.",o:MD,a:1,hint:"Is this a small fact about one character?",why:"It is a fact about Evan. It supports the main idea but is not the main idea."},
+    {q:"A main idea is...",o:["what the story or part is mostly about","one small fact","the title of the book","where the story happens"],a:0,hint:"Think 'mostly about'.",why:"The main idea is what most of the details are about."},
+    {q:"Which detail BEST supports the main idea that the siblings need to understand each other?",o:["Jessie cannot figure out why Evan is so angry","The lemonade is yellow","The stand has a sign","The weather is hot"],a:0,hint:"Which detail is about understanding feelings?",why:"Jessie's confusion shows that the siblings do not understand each other yet."}
   ],
   "theme":[
     {q:"Siblings",o:TPT,a:0,hint:"It is only one word.",why:"One word names a topic. A theme needs a full sentence that teaches something."},
     {q:"Talking honestly about your feelings works better than fighting.",o:TPT,a:2,hint:"Could this lesson be true in your own life?",why:"It is a full-sentence life lesson with no character names."},
     {q:"Jessie puts bugs in Evan's lemonade.",o:TPT,a:1,hint:"It names characters and tells what happened.",why:"This is something that happens in the story. It is not a lesson."},
     {q:"People have different strengths, and they do better when they work together.",o:TPT,a:2,hint:"Think of people-smart and math-smart.",why:"Evan and Jessie each have a talent. Together they are stronger than apart."},
-    {q:"Which event best supports the theme that honesty heals a broken relationship?",o:["Evan sells lemonade for a very low price","Jessie gets other kids to run stands for her","Evan and Jessie admit what they did and forgive each other","The heat wave continues"],a:2,hint:"Look for the moment the war finally ends.",why:"The fight only ends once both of them tell the truth."}
+    {q:"Which event best supports the theme that honesty heals a broken relationship?",o:["Evan sells lemonade for a very low price","Jessie gets other kids to run stands for her","Evan and Jessie admit what they did and forgive each other","The heat wave continues"],a:2,hint:"Look for the moment the war finally ends.",why:"The fight only ends once both of them tell the truth."},
+    {q:"Honesty",o:TPT,a:0,hint:"Is it a full sentence?",why:"One word is a topic. Turn it into a lesson to make a theme."},
+    {q:"Evan takes Jessie's money.",o:TPT,a:1,hint:"Does it name a character?",why:"It tells something a character does, so it is a plot event."},
+    {q:"Winning is not worth hurting the people you love.",o:TPT,a:2,hint:"Is it a lesson anyone could use?",why:"It is a full-sentence lesson with no character names."},
+    {q:"Family",o:TPT,a:0,hint:"Count the words.",why:"A single word names a topic, not a theme."},
+    {q:"Hiding your feelings can turn a small problem into a big one.",o:TPT,a:2,hint:"Could this be true outside the book?",why:"It is a life lesson that fits Evan's story and real life."}
   ]
 };
 const SEQ=[
@@ -362,117 +348,557 @@ const SEQ=[
   "Evan and Jessie bet on who can earn $100 selling lemonade.",
   "Each of them sets up lemonade stands with friends.",
   "Jessie spoils Evan's lemonade with bugs.",
-  "Evan takes Jessie's money, and then it is stolen from him.",
+  "Evan takes Jessie's money, and then it goes missing.",
   "They tell the truth, apologize, and watch the fireworks together."
 ];
-const PER=4;
-const earned=new Set();
-const totals={};
-TABS.forEach(t=>totals[t.id]=QUESTIONS[t.id].length+(t.id==="structure"?1:0));
+
+/* ================= MASTERY CHECK BANKS (14 each; 10 drawn per try) ================= */
+const QUIZ={
+  "characters":[
+    {q:"Which trait best describes Jessie?",o:["Math-smart","Lazy","Afraid of numbers","Careless"],a:0,why:"Jessie is a math whiz who figures out money quickly."},
+    {q:"Which trait best describes Evan?",o:["People-smart and friendly","Quiet and loves math","Mean to everyone","Does not care about winning"],a:0,why:"Evan makes friends easily and knows how to talk to people."},
+    {q:"Underneath his anger, what does Evan really want?",o:["To feel smart and respected","To move to a new town","A new bike","To quit school"],a:0,why:"Evan worries about looking less smart than his little sister."},
+    {q:"Why is Evan upset that Jessie will be in his class?",o:["He worries she will make him look less smart","He wanted a different teacher","He does not like school at all","She is too loud"],a:0,why:"Jessie is younger but great at schoolwork, and Evan feels embarrassed."},
+    {q:"How does Megan help Jessie?",o:["She becomes Jessie's partner and friend","She teaches Evan math","She ruins Jessie's stand","She takes Jessie's money"],a:0,why:"Megan teams up with Jessie and becomes her friend."},
+    {q:"Which detail shows a character trait through an ACTION?",o:["Jessie figures out the profit in her head","The story happens in summer","The chapter titles are business words","The book is about lemonade"],a:0,why:"What Jessie does shows that she is good at math."},
+    {q:"A character trait is...",o:["a word that describes what a character is like","where the story takes place","the lesson of the story","the order of events"],a:0,why:"Traits describe a character's personality, like kind or proud."},
+    {q:"Jessie cannot figure out why Evan is angry. What does this show about her?",o:["She is great with numbers but has trouble reading feelings","She does not care about Evan","She is angry too","She is older than Evan"],a:0,why:"Jessie understands math easily, but feelings confuse her."},
+    {q:"How does Evan change from the beginning to the end?",o:["He goes from angry and hiding his feelings to honest about what he did","He goes from honest to dishonest","He does not change at all","He goes from shy to loud"],a:0,why:"By the end, Evan admits his mistakes and tells Jessie the truth."},
+    {q:"How does Jessie change by the end of the story?",o:["She learns to notice others' feelings and to say sorry","She stops liking math","She gets meaner","She moves away"],a:0,why:"Jessie learns to pay attention to how other people feel."},
+    {q:"Mrs. Treski does not fix the fight for her kids. Why does that matter?",o:["Evan and Jessie have to solve it themselves","She does not love them","She is away on vacation","She wants Evan to win"],a:0,why:"Because their mom steps back, the siblings must work it out on their own."},
+    {q:"Evan never feels good about teaming up with Scott. Which word best fits Scott?",o:["Hard to trust","Kind","Generous","Shy"],a:0,why:"Scott is competitive, and Evan does not trust him."},
+    {q:"How are Evan and Jessie ALIKE?",o:["Both want to win, and both do something unfair","Both love math","Both are going into third grade","Both hate lemonade"],a:0,why:"Each one wants to win, and each one does something they regret."},
+    {q:"Which detail shows that Evan is people-smart?",o:["He knows how to talk customers into buying","He counts money very fast","He reads business booklets all day","He stays home alone"],a:0,why:"Evan's way with people helps him sell lemonade."}
+  ],
+  "setting":[
+    {q:"In what season does the story take place?",o:["Late summer","Winter","Spring","Fall"],a:0,why:"It happens in the last days of summer vacation."},
+    {q:"Which part of the setting adds a deadline?",o:["School starts in a few days","The kitchen table","The town center","The front porch"],a:0,why:"The first day of school is coming, so time is running out."},
+    {q:"If the story happened in winter, what would most likely change?",o:["Fewer people would want cold lemonade","Nothing would change","They would sell even more lemonade","The kids would be at the pool"],a:0,why:"Cold weather means fewer thirsty customers."},
+    {q:"The heat and the deadline make the mood feel...",o:["tense and rushed","calm and sleepy","spooky","silly"],a:0,why:"A hot, ticking-clock setting adds pressure."},
+    {q:"Why is the town center a good place to sell lemonade?",o:["More people pass by","It is always cold there","Nobody goes there","It is next to the school"],a:0,why:"More people walking by means more customers."},
+    {q:"Setting includes...",o:["time and place","only the characters","only the lesson","only the title"],a:0,why:"Setting is when and where a story happens."},
+    {q:"Which detail is part of the setting?",o:["A heat wave at the end of summer","Jessie is good at math","Evan feels embarrassed","Honesty matters"],a:0,why:"The heat wave and the time of year are part of when the story happens."},
+    {q:"Which of these is NOT part of the setting?",o:["Jessie is skipping a grade","A heat wave","The last week of summer","The Treski neighborhood"],a:0,why:"Skipping a grade is a fact about a character, not a time or place."},
+    {q:"How does the setting affect the characters' choices?",o:["The heat makes lemonade a good business, so they pick a lemonade contest","It makes them stay indoors all week","It makes them get sick","It makes them move to a new town"],a:0,why:"Hot days make lemonade the perfect thing to sell."},
+    {q:"Why is Labor Day weekend a good ending point for the story?",o:["Summer is over and school is starting","It is the middle of winter","Nothing ever happens on holidays","It is the start of summer"],a:0,why:"The end of summer gives the bet and the story a natural finish line."},
+    {q:"How does the time setting make Evan feel?",o:["Worried, because fourth grade with Jessie is coming soon","Bored","Excited for winter","Sleepy"],a:0,why:"Each day brings Evan closer to sharing a class with his sister."},
+    {q:"A setting can do a job in a story. Which is a job a setting can do?",o:["Cause problems or change the mood","Tell the moral of the story","Name the author","List the chapters"],a:0,why:"A setting can create problems, set a mood, and push characters to act."},
+    {q:"If the kids lived far from any other people, what would most likely happen?",o:["They would have trouble finding customers","They would sell more lemonade","They would need bigger stands","School would start sooner"],a:0,why:"A lemonade business needs people nearby to buy."},
+    {q:"Which words tell you WHEN a story happens?",o:["The last week of summer","At the town center","On the front porch","Behind the house"],a:0,why:"A time tells when. The other choices are places."}
+  ],
+  "structure":[
+    {q:"Text structure means...",o:["how an author organizes a book","the lesson of the story","who the characters are","where the story happens"],a:0,why:"Structure is how the parts of a book are put together."},
+    {q:"Time order means...",o:["events are told in the order they happen","events are told backward","events are listed by importance","events are told in random order"],a:0,why:"Time order goes from first to last."},
+    {q:"Why does the countdown to school build suspense?",o:["Readers know time is running out","It makes the story shorter","It explains how to make lemonade","It tells the theme"],a:0,why:"A deadline makes readers wonder what will happen in time."},
+    {q:"Switching between Evan and Jessie lets readers...",o:["know what both siblings think and feel","skip chapters","only learn about Evan","guess the ending right away"],a:0,why:"Two points of view show both sides of the fight."},
+    {q:"Which event matches the business word 'Partnership'?",o:["Jessie and Megan work together","Evan sells alone","The weather gets hotter","Evan and Jessie stop talking"],a:0,why:"Partners work on the same business together."},
+    {q:"'Profit' means the money left after you pay your costs. Which action figures out profit?",o:["Subtracting the cost of lemons and sugar from the money earned","Pouring a cup of lemonade","Painting a sign","Walking to town"],a:0,why:"Profit = money earned minus what you spent."},
+    {q:"What CAUSES the lemonade war to start?",o:["Evan is upset that Jessie will be in his class","It gets too hot","Megan moves away","Mrs. Treski asks them to sell lemonade"],a:0,why:"Evan's hurt feelings about the class news lead to the fight and the bet."},
+    {q:"What is an EFFECT of Jessie spoiling Evan's lemonade?",o:["The war gets worse","The siblings make up right away","It starts to snow","Megan quits"],a:0,why:"A mean trick leads to even bigger problems."},
+    {q:"Which event happens FIRST?",o:["A letter says Jessie will be in Evan's class","They watch fireworks together","Jessie spoils Evan's lemonade","Evan's money goes missing"],a:0,why:"The class letter starts everything."},
+    {q:"Which event happens LAST?",o:["They make peace and watch fireworks","They make the bet","They set up their stands","The letter arrives"],a:0,why:"Making peace is how the story ends."},
+    {q:"Why does the author start each chapter with a business word and its definition?",o:["To teach a business idea and hint at what will happen","To make the book longer","To list the characters","To describe the weather"],a:0,why:"The term gives readers a clue about the chapter."},
+    {q:"Which signal words show time order?",o:["First, next, then, finally","Because, so, as a result","Same, different, both","For example, such as"],a:0,why:"Those words show sequence. The others show cause/effect, comparison, or examples."},
+    {q:"If the book were told only from Evan's point of view, readers would...",o:["not know why Jessie acts the way she does","know everything Jessie thinks","see both sides equally","learn more about Megan"],a:0,why:"Without Jessie's chapters, we would miss her thoughts and feelings."},
+    {q:"The final chapter is titled 'Reconciliation.' What does that tell readers?",o:["The fight will be settled","A new fight is starting","Someone will open a store","The weather will change"],a:0,why:"Reconciliation means becoming friendly again after a fight."}
+  ],
+  "main-idea":[
+    {q:"The main idea of a book is...",o:["what it is mostly about","one small fact","the name of the main character","the place it happens"],a:0,why:"The main idea is the big point that most details are about."},
+    {q:"A supporting detail is...",o:["a smaller fact that helps explain the main idea","the title of the book","the lesson of the story","the same thing as the main idea"],a:0,why:"Details are small pieces that build the main idea."},
+    {q:"Which sentence best sums up the whole book?",o:["A brother and sister have a lemonade contest and learn to understand each other","Lemonade needs sugar","Evan likes to play outside","Megan has a nice house"],a:0,why:"It covers the contest and how it ends."},
+    {q:"Which is a DETAIL, not the main idea?",o:["Evan moves his stand to the town center","Two siblings fight and learn to make peace","The book is about a contest between a brother and sister","The siblings must learn to be honest"],a:0,why:"Moving the stand is one event, so it is a detail."},
+    {q:"What is the main idea of the BEGINNING of the book?",o:["Evan learns Jessie will be in his class, gets upset, and a bet begins","The siblings watch fireworks","Evan's money goes missing","They apologize"],a:0,why:"The beginning sets up the problem and the bet."},
+    {q:"What is the main idea of the MIDDLE of the book?",o:["The siblings use bigger and bigger tricks to win the contest","The siblings make up","School starts","The letter arrives"],a:0,why:"In the middle, the war grows."},
+    {q:"What is the main idea of the END of the book?",o:["Evan and Jessie tell the truth and make up","They make the bet","Jessie finds out she is skipping a grade","Evan buys lemons"],a:0,why:"The ending is about fixing their relationship."},
+    {q:"Which detail supports the idea that Evan is people-smart?",o:["He talks customers into buying lemonade","He gets every math problem right","He hides in the basement","He keeps a lock box"],a:0,why:"Talking with customers shows his people skills."},
+    {q:"Which detail supports the idea that the war gets out of hand?",o:["Jessie spoils Evan's lemonade","The siblings eat dinner","Jessie reads a booklet","Megan smiles"],a:0,why:"Ruining someone's lemonade shows the fight going too far."},
+    {q:"What is the best way to find the main idea?",o:["Ask what most of the details are about","Pick the first sentence you see","Pick the longest sentence","Look only at the pictures"],a:0,why:"The main idea connects most of the details."},
+    {q:"Which does NOT belong in a summary of the book?",o:["Your own opinion about lemonade","The bet between Evan and Jessie","How the fight ends","Why Evan is upset"],a:0,why:"A summary tells the important events, not your opinion."},
+    {q:"A friend asks what the book is about. What is the best answer?",o:["A brother and sister race to earn $100 selling lemonade and learn to understand each other","It is about lemons","It is about a girl named Megan","It is about fireworks"],a:0,why:"It tells the main idea in one sentence."},
+    {q:"Which detail supports the idea that Jessie wants her brother back?",o:["She feels hurt and confused when Evan stops being nice to her","She likes math","She is younger than Evan","She sells lemonade"],a:0,why:"Her hurt feelings show how much she cares about Evan."},
+    {q:"Which sentence is too SMALL to be the main idea of the book?",o:["Megan helps make the lemonade","Two siblings learn to understand each other","A contest pulls a brother and sister apart, and honesty brings them back","A fight turns into a lemonade war"],a:0,why:"Megan helping is one small detail."}
+  ],
+  "theme":[
+    {q:"A theme is...",o:["a lesson about life the story teaches","the place where the story happens","the main character","the first event"],a:0,why:"Theme is the big lesson readers can take away."},
+    {q:"Which of these is a theme statement?",o:["Telling the truth can repair a relationship.","Truth","Evan tells the truth.","Evan is honest."],a:0,why:"A theme is a full-sentence lesson without character names."},
+    {q:"Why is 'Evan and Jessie make up' NOT a theme?",o:["It names characters and tells what happens","It is too short","It is a question","It is about weather"],a:0,why:"That is a plot event. A theme is a lesson for anyone."},
+    {q:"Which question helps you find a theme?",o:["What did the characters learn?","What color is the lemonade?","How many pages is the book?","Who is the author's friend?"],a:0,why:"Lessons the characters learn point to the theme."},
+    {q:"Which event supports the theme 'Hiding feelings makes problems grow'?",o:["Evan acts angry instead of saying he feels embarrassed, and the fight gets worse","Megan sells lemonade","The sun is hot","Jessie reads a book"],a:0,why:"Evan's hidden feelings make the problem bigger."},
+    {q:"Evan is people-smart and Jessie is math-smart. Which theme fits?",o:["Everyone has different strengths","Math is the only thing that matters","Lemonade is sour","Summer is too short"],a:0,why:"The siblings show different kinds of smart."},
+    {q:"Which of these is a TOPIC, not a theme?",o:["Competition","Competition can make people do things they regret.","Honesty helps fix mistakes.","Family members need to listen to each other."],a:0,why:"One word is a topic."},
+    {q:"What lesson does Evan learn?",o:["Being honest about mistakes is better than hiding them","Lemonade is easy to sell","Math does not matter","He should never share"],a:0,why:"Evan finally tells the truth and things get better."},
+    {q:"What lesson does Jessie learn?",o:["It matters to pay attention to other people's feelings","Numbers are boring","Winning is everything","She should never make friends"],a:0,why:"Jessie learns to notice how others feel."},
+    {q:"Which theme statement is written correctly?",o:["Competition can push people to do things they regret.","Evan learns his lesson.","Lemonade","Jessie is smart."],a:0,why:"It is a complete lesson with no character names."},
+    {q:"Where can a theme be true?",o:["In many stories and in real life","Only in this one book","Only in summer","Only for Evan"],a:0,why:"Themes are big lessons that work in many places."},
+    {q:"Which detail does NOT support the theme 'Honesty heals'?",o:["The weather is hot","Evan admits he took the money","Jessie says she is sorry","They forgive each other after telling the truth"],a:0,why:"The weather has nothing to do with honesty."},
+    {q:"Which theme best fits the ending?",o:["Forgiveness lets people start over","It is fun to be angry","Money is all you need","Never trust your family"],a:0,why:"At the end the siblings forgive each other and start fresh."},
+    {q:"Why do authors include a theme?",o:["To share a lesson readers can use in their own lives","To make the book longer","To tell the setting","To name the characters"],a:0,why:"A theme gives readers something to think about beyond the story."}
+  ]
+};
+
+/* ================= FINAL BOOK QUIZ BANK (16; 12 drawn) ================= */
+const FINAL=[
+  {q:"Who are the two main characters?",o:["Evan and Jessie Treski","Megan and Scott","Mrs. Treski and Evan","Jessie and Megan"],a:0,why:"The story is about a brother and sister: Evan and Jessie."},
+  {q:"What is the bet?",o:["Who can earn $100 selling lemonade","Who can read the most books","Who can swim the farthest","Who can stay up latest"],a:0,why:"The siblings race to earn $100 selling lemonade."},
+  {q:"Why is Evan upset at the beginning?",o:["Jessie will be in his fourth-grade class","His stand broke","He lost a game","It is raining"],a:0,why:"Evan worries about sharing a class with his younger sister."},
+  {q:"When does the story take place?",o:["The last days of summer, during a heat wave","The middle of winter","The first day of spring","Thanksgiving"],a:0,why:"It happens in the last five days of summer vacation."},
+  {q:"Who becomes Jessie's lemonade partner?",o:["Megan","Scott","Evan","Mrs. Treski"],a:0,why:"Megan teams up with Jessie and becomes her friend."},
+  {q:"What is Jessie's biggest strength?",o:["Math and planning","Making friends easily","Sports","Drawing"],a:0,why:"Jessie is a math whiz."},
+  {q:"What is Evan's biggest strength?",o:["Getting along with people","Math","Spelling","Cooking"],a:0,why:"Evan is people-smart."},
+  {q:"Why do the chapters switch between Evan and Jessie?",o:["To show both siblings' thoughts and feelings","To confuse readers","To skip time","To introduce new characters"],a:0,why:"Two points of view show both sides of the fight."},
+  {q:"What does each chapter title name?",o:["A business term","A character","A place","A day of the week"],a:0,why:"Each chapter is named for a business word."},
+  {q:"Which is the best main idea of the book?",o:["Two siblings compete to earn money, but what they need is to understand each other","Lemonade tastes good","Megan is kind","The town center is busy"],a:0,why:"It covers the contest and the real problem underneath."},
+  {q:"Which is a theme of the book?",o:["Honesty can heal a broken relationship.","Lemonade","Evan sets up a stand.","Jessie likes numbers."],a:0,why:"It is a full-sentence life lesson."},
+  {q:"How does the lemonade war end?",o:["Evan and Jessie tell the truth and make peace","Jessie moves away","Evan wins and never talks to Jessie again","Mrs. Treski ends the contest"],a:0,why:"The siblings admit what they did and forgive each other."},
+  {q:"What does Jessie do that makes the war worse?",o:["Spoils Evan's lemonade","Gives Evan her money","Helps Evan sell","Stops selling lemonade"],a:0,why:"Jessie ruins Evan's lemonade on purpose."},
+  {q:"What does Evan do that is unfair?",o:["Takes Jessie's money","Lowers his price","Moves to the town center","Makes a sign"],a:0,why:"Evan takes money that belongs to Jessie."},
+  {q:"Because the weather is very hot...",o:["lemonade sells well","nobody goes outside","school is canceled","the stands melt"],a:0,why:"Hot days mean thirsty customers."},
+  {q:"What role does Mrs. Treski play in the fight?",o:["She lets her kids work it out themselves","She picks a winner","She sells lemonade too","She takes the money"],a:0,why:"She does not fix the fight; Evan and Jessie must solve it."}
+];
+
+/* ================= HELPERS ================= */
 const $=s=>document.querySelector(s);
 function el(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e}
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const keyOf=n=>n.toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,50);
+const app=()=>$("#app");
+const needToPass=n=>Math.ceil(n*PASS-1e-9);
+const fmtDate=t=>t?new Date(t).toLocaleString([], {month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}):"—";
+
+/* ================= STORAGE ================= */
+let db=null,cloudWrite=true,saveQ=Promise.resolve();
+const lsAll=()=>{try{return JSON.parse(localStorage.getItem(LS)||"{}")}catch(e){return{}}};
+const lsPut=(k,r)=>{try{const a=lsAll();if(r)a[k]=r;else delete a[k];localStorage.setItem(LS,JSON.stringify(a))}catch(e){}};
+const timeout=(p,ms)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej({code:"timeout"}),ms))]);
+const clone=o=>JSON.parse(JSON.stringify(o));
+const init=(async()=>{try{if(window.claude&&window.claude.use){db=await window.claude.use("db")}}catch(e){db=null}})();
+function save(r){r=r||rec;r.updated=Date.now();lsPut(r.key,r);
+  if(db&&cloudWrite){const body=clone(r);saveQ=saveQ.then(()=>db.doc("students/"+r.key).set(body)).catch(e=>{if(e&&e.code!=="unavailable")cloudWrite=false})}}
+async function loadRec(key){await Promise.race([init,new Promise(r=>setTimeout(r,1500))]);
+  if(db){try{const s=await timeout(db.doc("students/"+key).get(),8000);if(s.exists)return clone(s.data())}catch(e){}}
+  return lsAll()[key]||null}
+async function loadAll(){await Promise.race([init,new Promise(r=>setTimeout(r,1500))]);
+  const all=lsAll();let src="this device only";
+  if(db){try{const q=await timeout(db.collection("students").get(),10000);q.docs.forEach(d=>{const x=d.data();if(!all[d.id]||(x.updated||0)>=(all[d.id].updated||0))all[d.id]=x});src="this device and all signed-in devices"}catch(e){src="this device only (shared scores could not be reached)"}}
+  return{all,src}}
+async function removeRec(key){lsPut(key,null);if(db){try{await db.doc("students/"+key).delete()}catch(e){}}}
+
+function blankRec(name){
+  const r={key:keyOf(name),name:name.trim(),created:Date.now(),updated:Date.now(),earned:[],writes:{},sec:{},final:{attempts:[],passed:false}};
+  SECTIONS.forEach(S=>r.sec[S.id]={attempts:[],passed:false});return r}
+function fix(r){if(!r.earned)r.earned=[];if(!r.writes)r.writes={};if(!r.sec)r.sec={};
+  SECTIONS.forEach(S=>{if(!r.sec[S.id])r.sec[S.id]={attempts:[],passed:false}});
+  if(!r.final)r.final={attempts:[],passed:false};return r}
+
+/* ================= STATE ================= */
+let rec=null,view=null,quiz=null;
+const practiceDone=(r,id)=>r.earned.filter(k=>k.startsWith(id+":")).length;
+const practiceComplete=(r,id)=>practiceDone(r,id)>=PRACTICE[id].length;
+const unlocked=(r,i)=>i===0||r.sec[SECTIONS[i-1].id].passed;
+const finalUnlocked=r=>SECTIONS.every(S=>r.sec[S.id].passed);
+const best=a=>a.length?a.reduce((b,x)=>x.score/x.total>b.score/b.total?x:b):null;
+function currentSpot(r){const i=SECTIONS.findIndex(S=>!r.sec[S.id].passed);return i<0?(r.final.passed?"Finished":"Final quiz"):SECTIONS[i].label}
 
 function updateJar(){
-  const money=earned.size*PER;
+  const money=Math.min(100,rec.earned.length*PER);
   $("#amt").textContent="$"+money;
-  $("#bar").style.width=Math.min(100,money)+"%";
+  $("#bar").style.width=money+"%";
   $("#note").textContent=money>=100?"You earned $100. You win the lemonade war!":
-    money===0?"Evan and Jessie raced to earn $100. You can too. Every correct answer puts $4 in your jar.":
-    "$"+(100-money)+" to go. Every correct answer puts $4 in your jar.";
-  TABS.forEach(t=>{
-    const done=[...earned].filter(k=>k.startsWith(t.id+":")).length;
-    document.getElementById("c-"+t.id).textContent=done+"/"+totals[t.id];
-  });
-}
-function earn(key){earned.add(key);updateJar()}
-
-function renderQuestions(){
-  TABS.forEach(t=>{
-    const box=document.getElementById("q-"+t.id);
-    box.innerHTML="";
-    QUESTIONS[t.id].forEach((item,i)=>{
-      const q=el("div","q");
-      q.appendChild(el("div","q-text",(i+1)+". "+item.q));
-      const opts=el("div","opts");
-      const fb=el("div","fb");fb.setAttribute("role","status");
-      item.o.forEach((label,j)=>{
-        const b=el("button","opt",label);b.type="button";
-        b.addEventListener("click",()=>{
-          if(j===item.a){
-            b.classList.add("right");
-            opts.querySelectorAll("button").forEach(x=>x.disabled=true);
-            fb.className="fb good";fb.textContent="Correct! "+item.why;
-            earn(t.id+":"+i);
-          }else{
-            b.classList.add("wrong");b.disabled=true;
-            fb.className="fb bad";fb.textContent="Not yet. "+item.hint;
-          }
-        });
-        opts.appendChild(b);
-      });
-      q.appendChild(opts);q.appendChild(fb);box.appendChild(q);
-    });
-  });
+    money===0?"Evan and Jessie raced to earn $100. You can too. Every correct practice answer puts $"+PER+" in your jar.":
+    "$"+(100-money)+" to go. Every correct practice answer puts $"+PER+" in your jar.";
 }
 
-let order=[];
-function shuffleSeq(){
-  order=SEQ.map((_,i)=>i);
-  do{for(let i=order.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[order[i],order[j]]=[order[j],order[i]]}}
-  while(order.every((v,i)=>v===i));
-}
-function renderSeq(done){
-  const ol=$("#seq");ol.innerHTML="";ol.classList.toggle("done",!!done);
-  order.forEach((idx,pos)=>{
-    const li=el("li");
-    li.appendChild(el("span","num",String(pos+1)));
-    li.appendChild(el("span","txt",SEQ[idx]));
-    if(!done){
-      const mv=el("span","mv");
-      const up=el("button",null,"▲");up.type="button";up.setAttribute("aria-label","Move up");up.disabled=pos===0;
-      const dn=el("button",null,"▼");dn.type="button";dn.setAttribute("aria-label","Move down");dn.disabled=pos===order.length-1;
-      up.addEventListener("click",()=>{[order[pos-1],order[pos]]=[order[pos],order[pos-1]];renderSeq()});
-      dn.addEventListener("click",()=>{[order[pos+1],order[pos]]=[order[pos],order[pos+1]];renderSeq()});
-      mv.appendChild(up);mv.appendChild(dn);li.appendChild(mv);
-    }
-    ol.appendChild(li);
+/* ================= LOGIN ================= */
+function showLogin(){
+  rec=null;quiz=null;$("#who").hidden=true;$("#jar").hidden=true;
+  app().innerHTML=`<div class="card login">
+    <span class="eyebrow">Open your stand</span>
+    <h2>Sign in to start</h2>
+    <p>Type your first and last name. Use the same name every time so your work is saved.</p>
+    <form id="login-form" class="field" autocomplete="off">
+      <label for="nm"><b>Your name</b></label>
+      <input id="nm" maxlength="40" required placeholder="First and last name">
+      <div class="fb bad" id="login-fb" role="status"></div>
+      <button class="btn" type="submit">Let's read!</button>
+    </form>
+    <p class="small">You will work through 5 sections in order. Pass each section's 10-question mastery check with ${needToPass(QUIZ_LEN)} or more correct to unlock the next one. Then take the final book quiz.</p>
+  </div>`;
+  $("#login-form").addEventListener("submit",async e=>{
+    e.preventDefault();
+    const name=$("#nm").value.replace(/\s+/g," ").trim();
+    const fb=$("#login-fb");
+    if(name.length<2||!/[a-z]/i.test(name)){fb.textContent="Please type your name.";return}
+    if(name.split(" ").length<2){fb.textContent="Please type your first AND last name.";return}
+    fb.textContent="";
+    const btn=e.target.querySelector("button");btn.disabled=true;btn.textContent="Opening your stand...";
+    const key=keyOf(name);
+    let r=await loadRec(key);
+    if(!r){r=blankRec(name);save(r)}
+    rec=fix(r);
+    try{sessionStorage.setItem("lw-who",key)}catch(e){}
+    startApp();
   });
-  $("#seq-check").style.display=done?"none":"";
+  $("#nm").focus();
 }
-$("#seq-check").addEventListener("click",()=>{
-  const fb=$("#seq-fb");
-  const right=order.filter((v,i)=>v===i).length;
-  if(right===SEQ.length){
-    fb.className="fb good";fb.textContent="Correct! Notice how each event causes the next one.";
-    renderSeq(true);earn("structure:seq");
-  }else{
-    fb.className="fb bad";fb.textContent="Not yet. "+right+" of "+SEQ.length+" events are in the right spot. Think about what caused the bet, and how the war ended.";
-  }
-});
 
-function show(id){
-  if(!TABS.some(t=>t.id===id))id=TABS[0].id;
-  TABS.forEach(t=>{
-    document.getElementById("p-"+t.id).classList.toggle("on",t.id===id);
-    document.getElementById("t-"+t.id).setAttribute("aria-selected",t.id===id?"true":"false");
-  });
-}
-TABS.forEach(t=>{
-  const b=el("button","tab");b.type="button";b.id="t-"+t.id;b.setAttribute("role","tab");
-  b.appendChild(el("span",null,t.label));
-  const c=el("span","count");c.id="c-"+t.id;b.appendChild(c);
-  b.addEventListener("click",()=>{location.hash=t.id;show(t.id)});
-  $("#tabs").appendChild(b);
-});
-window.addEventListener("hashchange",()=>show(location.hash.slice(1)));
-
-function start(){
-  earned.clear();renderQuestions();shuffleSeq();renderSeq();
-  $("#seq-fb").className="fb";$("#seq-fb").textContent="";
+function startApp(){
+  $("#who").hidden=false;$("#who-name").textContent=rec.name;$("#jar").hidden=false;
   updateJar();
+  const i=SECTIONS.findIndex(S=>!rec.sec[S.id].passed);
+  view=i<0?"final":SECTIONS[i].id;
+  render();
 }
-$("#reset").addEventListener("click",start);
-start();show(location.hash.slice(1));
+
+/* ================= MAIN RENDER ================= */
+function renderTabs(){
+  const nav=el("nav","tabs noprint");nav.setAttribute("role","tablist");nav.setAttribute("aria-label","Reading sections");
+  SECTIONS.forEach((S,i)=>{
+    const ok=unlocked(rec,i),st=rec.sec[S.id];
+    const b=el("button","tab");b.type="button";b.setAttribute("role","tab");
+    b.setAttribute("aria-selected",view===S.id?"true":"false");b.disabled=!ok;
+    b.appendChild(el("span",null,(ok?"":"🔒 ")+(i+1)+". "+S.label));
+    b.appendChild(el("span","count",st.passed?"✓":practiceDone(rec,S.id)+"/"+PRACTICE[S.id].length));
+    if(!ok)b.title="Pass "+SECTIONS[i-1].label+" first";
+    b.addEventListener("click",()=>{if(quiz&&!confirm("Leave the quiz? Your answers on this try will not count."))return;quiz=null;view=S.id;render();window.scrollTo(0,0)});
+    nav.appendChild(b);
+  });
+  const fu=finalUnlocked(rec);
+  const f=el("button","tab");f.type="button";f.setAttribute("role","tab");f.setAttribute("aria-selected",view==="final"?"true":"false");f.disabled=!fu;
+  f.appendChild(el("span",null,(fu?"":"🔒 ")+"Final book quiz"));
+  if(rec.final.passed)f.appendChild(el("span","count","✓"));
+  f.addEventListener("click",()=>{if(quiz&&!confirm("Leave the quiz? Your answers on this try will not count."))return;quiz=null;view="final";render();window.scrollTo(0,0)});
+  nav.appendChild(f);
+  return nav;
+}
+
+function render(){
+  const a=app();a.innerHTML="";
+  a.appendChild(renderTabs());
+  if(quiz){a.appendChild(renderQuiz());return}
+  if(view==="final"){renderFinal(a);return}
+  renderSection(a,view);
+}
+
+function renderSection(a,id){
+  const S=SECTIONS.find(x=>x.id===id),idx=SECTIONS.indexOf(S),st=rec.sec[id];
+  a.appendChild(document.getElementById("learn-"+id).content.cloneNode(true));
+
+  /* practice */
+  const pc=el("div","card practice");
+  pc.appendChild(el("span","eyebrow","Practice · "+practiceDone(rec,id)+" of "+PRACTICE[id].length+" done"));
+  pc.appendChild(el("h2",null,"Practice: "+S.label));
+  pc.appendChild(el("p",null,"Answer all "+PRACTICE[id].length+" practice questions to unlock the mastery check. If you miss, read the hint and try again."));
+  const box=el("div");box.style.cssText="display:flex;flex-direction:column;gap:14px";
+  PRACTICE[id].forEach((item,i)=>box.appendChild(item.seq?renderSeqItem(id,i):renderPracticeItem(id,i,item)));
+  pc.appendChild(box);a.appendChild(pc);
+
+  /* think and write */
+  const w=el("div","card write");
+  w.appendChild(el("span","eyebrow","Think and write"));
+  w.appendChild(el("p",null,S.write));
+  const ta=el("textarea");ta.value=rec.writes[id]||"";ta.setAttribute("aria-label","Your written response");
+  const saved=el("span","small","");
+  let t=null;ta.addEventListener("input",()=>{saved.textContent="Saving...";clearTimeout(t);t=setTimeout(()=>{rec.writes[id]=ta.value.slice(0,3000);save();saved.textContent="Saved for Mr. Echols."},700)});
+  w.appendChild(ta);w.appendChild(saved);a.appendChild(w);
+
+  /* mastery check */
+  a.appendChild(masteryCard(id,idx,st));
+}
+
+function masteryCard(id,idx,st){
+  const S=SECTIONS[idx];
+  const done=practiceComplete(rec,id);
+  const c=el("div","card"+(done?"":" lockbox"));
+  c.id="mastery";
+  c.appendChild(el("span","eyebrow","Mastery check"));
+  c.appendChild(el("h2",null,(done?"":"🔒 ")+S.label+" mastery check"));
+  const b=best(st.attempts);
+  if(st.passed){
+    const p=el("p");p.innerHTML=`<span class="passed-badge">Mastered ✓</span> Best score: <b>${b.score}/${b.total}</b>.`;c.appendChild(p);
+    const row=el("div","row");
+    if(idx<SECTIONS.length-1){const nx=el("button","btn","Go to "+SECTIONS[idx+1].label+" →");nx.type="button";nx.addEventListener("click",()=>{view=SECTIONS[idx+1].id;render();window.scrollTo(0,0)});row.appendChild(nx)}
+    else{const nx=el("button","btn pink","Go to the final book quiz →");nx.type="button";nx.addEventListener("click",()=>{view="final";render();window.scrollTo(0,0)});row.appendChild(nx)}
+    const again=el("button","btn alt","Take it again for practice");again.type="button";again.addEventListener("click",()=>startQuiz(id));row.appendChild(again);
+    c.appendChild(row);
+  }else if(!done){
+    c.appendChild(el("p",null,"Finish all the practice questions above to unlock this check. You have "+practiceDone(rec,id)+" of "+PRACTICE[id].length+" done."));
+  }else{
+    c.appendChild(el("p",null,"Answer "+QUIZ_LEN+" questions. Get "+needToPass(QUIZ_LEN)+" or more right to show mastery and unlock the next section. You can try as many times as you need, and you get a new mix of questions each time."));
+    if(st.attempts.length){const last=st.attempts[st.attempts.length-1];c.appendChild(el("p","small","Tries so far: "+st.attempts.length+". Last score: "+last.score+"/"+last.total+". Review the Learn card at the top before you try again."))}
+    const go=el("button","btn pink",st.attempts.length?"Try the mastery check again":"Start the mastery check");go.type="button";go.addEventListener("click",()=>startQuiz(id));
+    c.appendChild(go);
+  }
+  return c;
+}
+
+function renderPracticeItem(id,i,item){
+  const key=id+":"+i,isDone=rec.earned.includes(key);
+  const q=el("div","q");
+  q.appendChild(el("div","q-text",(i+1)+". "+item.q));
+  const opts=el("div","opts"),fb=el("div","fb");fb.setAttribute("role","status");
+  item.o.forEach((label,j)=>{
+    const b=el("button","opt",label);b.type="button";
+    if(isDone){b.disabled=true;if(j===item.a)b.classList.add("right")}
+    b.addEventListener("click",()=>{
+      if(j===item.a){
+        b.classList.add("right");opts.querySelectorAll("button").forEach(x=>x.disabled=true);
+        fb.className="fb good";fb.textContent="Correct! +$"+PER+". "+item.why;
+        earn(id,key);
+      }else{b.classList.add("wrong");b.disabled=true;fb.className="fb bad";fb.textContent="Not yet. "+item.hint}
+    });
+    opts.appendChild(b);
+  });
+  if(isDone){fb.className="fb good";fb.textContent="Correct! "+item.why}
+  q.appendChild(opts);q.appendChild(fb);return q;
+}
+
+function renderSeqItem(id,i){
+  const key=id+":"+i,isDone=rec.earned.includes(key);
+  const q=el("div","q");
+  q.appendChild(el("div","q-text",(i+1)+". Put the events in time order. Use the arrows to move each event, then check your order."));
+  const ol=el("ol","seq"),fb=el("div","fb");fb.setAttribute("role","status");
+  const chk=el("button","btn","Check my order");chk.type="button";
+  let order=SEQ.map((_,k)=>k);
+  if(!isDone){do{order=shuffle(order)}while(order.every((v,k)=>v===k))}
+  function draw(done){
+    ol.innerHTML="";ol.classList.toggle("done",!!done);
+    order.forEach((ix,pos)=>{
+      const li=el("li");li.appendChild(el("span","num",String(pos+1)));li.appendChild(el("span","txt",SEQ[ix]));
+      if(!done){
+        const mv=el("span","mv");
+        const up=el("button",null,"▲");up.type="button";up.setAttribute("aria-label","Move up");up.disabled=pos===0;
+        const dn=el("button",null,"▼");dn.type="button";dn.setAttribute("aria-label","Move down");dn.disabled=pos===order.length-1;
+        up.addEventListener("click",()=>{[order[pos-1],order[pos]]=[order[pos],order[pos-1]];draw()});
+        dn.addEventListener("click",()=>{[order[pos+1],order[pos]]=[order[pos],order[pos+1]];draw()});
+        mv.appendChild(up);mv.appendChild(dn);li.appendChild(mv);
+      }
+      ol.appendChild(li);
+    });
+    chk.hidden=!!done;
+  }
+  chk.addEventListener("click",()=>{
+    const right=order.filter((v,k)=>v===k).length;
+    if(right===SEQ.length){fb.className="fb good";fb.textContent="Correct! +$"+PER+". Notice how each event causes the next one.";draw(true);earn(id,key)}
+    else{fb.className="fb bad";fb.textContent="Not yet. "+right+" of "+SEQ.length+" events are in the right spot. Think about what caused the bet, and how the war ended."}
+  });
+  draw(isDone);
+  if(isDone){fb.className="fb good";fb.textContent="Correct! Each event causes the next one."}
+  q.appendChild(ol);q.appendChild(chk);q.appendChild(fb);return q;
+}
+
+function earn(id,key){
+  if(rec.earned.includes(key))return;
+  rec.earned.push(key);save();updateJar();
+  // refresh tab counts + mastery card without losing scroll
+  const nav=app().querySelector("nav.tabs");if(nav)nav.replaceWith(renderTabs());
+  const idx=SECTIONS.findIndex(S=>S.id===id);
+  const old=$("#mastery");if(old)old.replaceWith(masteryCard(id,idx,rec.sec[id]));
+  const eb=app().querySelector(".practice .eyebrow");if(eb)eb.textContent="Practice · "+practiceDone(rec,id)+" of "+PRACTICE[id].length+" done";
+  if(practiceComplete(rec,id)&&!rec.sec[id].passed){setTimeout(()=>{const m=$("#mastery");if(m)m.scrollIntoView({behavior:"smooth",block:"center"})},600)}
+}
+
+/* ================= QUIZ ENGINE ================= */
+function prepQ(item){
+  const idx=item.o.map((_,j)=>j);const order=item.o.length===4?shuffle(idx):idx;
+  return{q:item.q,o:order.map(j=>item.o[j]),a:order.indexOf(item.a),why:item.why};
+}
+function startQuiz(id){
+  const bank=id==="final"?FINAL:QUIZ[id];
+  const n=id==="final"?FINAL_LEN:QUIZ_LEN;
+  // prefer questions not seen on the last try
+  const st=id==="final"?rec.final:rec.sec[id];
+  const last=st.attempts.length?new Set((st.attempts[st.attempts.length-1].asked||[])):new Set();
+  const fresh=shuffle(bank.filter(x=>!last.has(x.q))),seen=shuffle(bank.filter(x=>last.has(x.q)));
+  const pick=shuffle(fresh.concat(seen).slice(0,n)).map(prepQ);
+  quiz={id,items:pick,i:0,ans:new Array(pick.length).fill(null),done:false};
+  render();window.scrollTo(0,0);
+}
+function quizTitle(id){return id==="final"?"Final book quiz":SECTIONS.find(S=>S.id===id).label+" mastery check"}
+
+function renderQuiz(){
+  const c=el("div","card");
+  const Q=quiz;
+  if(Q.done)return renderResults();
+  const it=Q.items[Q.i];
+  c.appendChild(el("span","eyebrow",quizTitle(Q.id)));
+  c.appendChild(el("h2",null,"Question "+(Q.i+1)+" of "+Q.items.length));
+  const pr=el("div","progress");const bar=el("i");bar.style.width=(Q.i/Q.items.length*100)+"%";pr.appendChild(bar);c.appendChild(pr);
+  c.appendChild(el("p","q-text",it.q));
+  const opts=el("div","opts stack");
+  it.o.forEach((label,j)=>{
+    const b=el("button","opt"+(Q.ans[Q.i]===j?" pick":""),label);b.type="button";b.setAttribute("aria-pressed",Q.ans[Q.i]===j?"true":"false");
+    b.addEventListener("click",()=>{Q.ans[Q.i]=j;render()});
+    opts.appendChild(b);
+  });
+  c.appendChild(opts);
+  const row=el("div","row");
+  if(Q.i>0){const bk=el("button","btn alt","← Back");bk.type="button";bk.addEventListener("click",()=>{Q.i--;render()});row.appendChild(bk)}
+  const last=Q.i===Q.items.length-1;
+  const nx=el("button","btn"+(last?" pink":""),last?"Finish and score my quiz":"Next →");nx.type="button";nx.disabled=Q.ans[Q.i]==null;
+  nx.addEventListener("click",()=>{
+    if(!last){Q.i++;render();return}
+    if(Q.ans.some(x=>x==null)){alert("Answer every question first.");return}
+    finishQuiz();
+  });
+  row.appendChild(nx);c.appendChild(row);
+  c.appendChild(el("p","small","You will see your score and the answers after you finish."));
+  return c;
+}
+
+function finishQuiz(){
+  const Q=quiz;
+  const score=Q.items.reduce((t,it,k)=>t+(Q.ans[k]===it.a?1:0),0),total=Q.items.length;
+  const passed=score>=needToPass(total);
+  const st=Q.id==="final"?rec.final:rec.sec[Q.id];
+  const wasPassed=st.passed;
+  st.attempts.push({at:Date.now(),score,total,passed,asked:Q.items.map(x=>x.q),
+    missed:Q.items.map((it,k)=>Q.ans[k]===it.a?null:{q:it.q,chose:it.o[Q.ans[k]],right:it.o[it.a]}).filter(Boolean)});
+  if(passed)st.passed=true;
+  save();
+  Q.done=true;Q.score=score;Q.passed=passed;Q.newPass=passed&&!wasPassed;
+  render();window.scrollTo(0,0);
+}
+
+function renderResults(){
+  const Q=quiz,c=el("div","card");
+  const need=needToPass(Q.items.length);
+  c.appendChild(el("span","eyebrow",quizTitle(Q.id)+" · results"));
+  c.appendChild(el("div","score-big",Q.score+" / "+Q.items.length));
+  if(Q.passed){
+    c.appendChild(el("p","fb good",Q.id==="final"?"You passed the final book quiz! You are a Lemonade War reading expert.":
+      "Mastery shown! "+(Q.newPass?"The next section is now unlocked.":"Nice work.")));
+  }else{
+    c.appendChild(el("p","fb bad","You need "+need+" or more to show mastery. Read the answers below, review the Learn card, and try again. You will get a new mix of questions."));
+  }
+  c.appendChild(el("h3",null,"Check your answers"));
+  Q.items.forEach((it,k)=>{
+    const ok=Q.ans[k]===it.a;
+    const d=el("div","missed"+(ok?" ok":""));
+    d.innerHTML=`<b>${k+1}. ${esc(it.q)}</b><br>${ok?"✓ You chose: "+esc(it.o[Q.ans[k]]):"✗ You chose: "+esc(it.o[Q.ans[k]])+"<br>Correct answer: <b>"+esc(it.o[it.a])+"</b>"}<br><span class="small">${esc(it.why)}</span>`;
+    c.appendChild(d);
+  });
+  const row=el("div","row");
+  if(Q.passed){
+    const idx=SECTIONS.findIndex(S=>S.id===Q.id);
+    if(Q.id==="final"){const b=el("button","btn pink","See my certificate");b.type="button";b.addEventListener("click",()=>{quiz=null;view="final";render()});row.appendChild(b)}
+    else if(idx<SECTIONS.length-1){const b=el("button","btn","Go to "+SECTIONS[idx+1].label+" →");b.type="button";b.addEventListener("click",()=>{quiz=null;view=SECTIONS[idx+1].id;render();window.scrollTo(0,0)});row.appendChild(b)}
+    else{const b=el("button","btn pink","Go to the final book quiz →");b.type="button";b.addEventListener("click",()=>{quiz=null;view="final";render();window.scrollTo(0,0)});row.appendChild(b)}
+  }else{
+    const b=el("button","btn","Review the lesson");b.type="button";b.addEventListener("click",()=>{const id=Q.id;quiz=null;view=id;render();window.scrollTo(0,0)});row.appendChild(b);
+  }
+  c.appendChild(row);
+  return c;
+}
+
+/* ================= FINAL ================= */
+function renderFinal(a){
+  if(!finalUnlocked(rec)){const c=el("div","card lockbox");c.appendChild(el("h2",null,"🔒 Final book quiz"));c.appendChild(el("p",null,"Master all five sections to unlock the final quiz."));a.appendChild(c);return}
+  const st=rec.final,b=best(st.attempts);
+  if(st.passed){
+    const c=el("div","card cert");
+    c.innerHTML=`<span class="eyebrow" style="color:var(--ink)">Certificate of Mastery</span>
+      <h2 style="font-size:2rem">${esc(rec.name)}</h2>
+      <p>mastered characters, setting, text structure, main idea, and theme in<br><b>The Lemonade War</b> by Jacqueline Davies</p>
+      <p>Final quiz score: <b>${b.score}/${b.total}</b> · Money jar: <b>$${Math.min(100,rec.earned.length*PER)}</b></p>
+      <p class="small" style="color:var(--ink)">Mr. Echols' Room 2 · ${new Date(st.attempts.find(x=>x.passed).at).toLocaleDateString()}</p>`;
+    a.appendChild(c);
+    const row=el("div","row noprint");
+    const p=el("button","btn alt","Print certificate");p.type="button";p.addEventListener("click",()=>window.print());row.appendChild(p);
+    const again=el("button","btn alt","Take the final quiz again");again.type="button";again.addEventListener("click",()=>startQuiz("final"));row.appendChild(again);
+    a.appendChild(row);return;
+  }
+  const c=el("div","card");
+  c.appendChild(el("span","eyebrow","Final book quiz"));
+  c.appendChild(el("h2",null,"Show what you know about the whole book"));
+  c.appendChild(el("p",null,"Answer "+FINAL_LEN+" questions from all five sections. Get "+needToPass(FINAL_LEN)+" or more right to earn your certificate."));
+  if(st.attempts.length){const l=st.attempts[st.attempts.length-1];c.appendChild(el("p","small","Tries so far: "+st.attempts.length+". Last score: "+l.score+"/"+l.total+"."))}
+  const go=el("button","btn pink",st.attempts.length?"Try again":"Start the final quiz");go.type="button";go.addEventListener("click",()=>startQuiz("final"));
+  c.appendChild(go);a.appendChild(c);
+}
+
+/* ================= TEACHER DASHBOARD ================= */
+function teacherGate(){
+  const code=prompt("Teacher lock code:");
+  if(code===null)return;
+  if(code.trim()!==TEACHER_CODE){alert("That code is not correct.");return}
+  try{sessionStorage.setItem("lw-teacher","1")}catch(e){}
+  showDashboard();
+}
+async function showDashboard(){
+  quiz=null;$("#who").hidden=true;$("#jar").hidden=true;
+  app().innerHTML=`<div class="card"><h2>Teacher dashboard</h2><p>Loading scores...</p></div>`;
+  const {all,src}=await loadAll();
+  const list=Object.values(all).map(fix).sort((x,y)=>x.name.localeCompare(y.name));
+  const a=app();a.innerHTML="";
+  const top=el("div","card");
+  top.innerHTML=`<span class="eyebrow">Mr. Echols' Room 2</span><h2>Teacher dashboard</h2>
+    <p class="small">Showing scores from <b>${esc(src)}</b>. Mastery = ${Math.round(PASS*100)}% (${needToPass(QUIZ_LEN)}/${QUIZ_LEN} on each section check, ${needToPass(FINAL_LEN)}/${FINAL_LEN} on the final). ${list.length} reader${list.length===1?"":"s"}.</p>`;
+  const row=el("div","row noprint");
+  const csv=el("button","btn alt","Download CSV");csv.type="button";csv.addEventListener("click",()=>downloadCSV(list));row.appendChild(csv);
+  const rf=el("button","btn alt","Refresh");rf.type="button";rf.addEventListener("click",showDashboard);row.appendChild(rf);
+  const out=el("button","btn","Lock dashboard");out.type="button";out.addEventListener("click",()=>{try{sessionStorage.removeItem("lw-teacher")}catch(e){}showLogin()});row.appendChild(out);
+  top.appendChild(row);a.appendChild(top);
+
+  const tc=el("div","card");
+  if(!list.length){tc.appendChild(el("p",null,"No students have signed in yet."));a.appendChild(tc);return}
+  const wrap=el("div","tscroll");
+  const cell=st=>{const b=best(st.attempts);if(!b)return`<span class="pill wait">—</span>`;
+    return`<span class="pill ${st.passed?"ok":"no"}">${b.score}/${b.total}${st.passed?" ✓":""}</span><br><span class="small">${st.attempts.length} tr${st.attempts.length===1?"y":"ies"}</span>`};
+  let h=`<table><thead><tr><th>Student</th><th>Now on</th>${SECTIONS.map(S=>`<th>${esc(S.label)}</th>`).join("")}<th>Final</th><th>Practice</th><th>Last active</th></tr></thead><tbody>`;
+  list.forEach(r=>{
+    h+=`<tr class="click" data-k="${esc(r.key)}"><td><b>${esc(r.name)}</b></td><td>${esc(currentSpot(r))}</td>${SECTIONS.map(S=>`<td class="num">${cell(r.sec[S.id])}</td>`).join("")}<td class="num">${cell(r.final)}</td><td class="num">${r.earned.length}/50<br><span class="small">$${Math.min(100,r.earned.length*PER)}</span></td><td class="num small">${fmtDate(r.updated)}</td></tr>`;
+  });
+  h+="</tbody></table>";wrap.innerHTML=h;tc.appendChild(el("p","small","Click a student to see every quiz try, missed questions, and written responses."));tc.appendChild(wrap);a.appendChild(tc);
+  wrap.querySelectorAll("tr.click").forEach(tr=>tr.addEventListener("click",()=>showStudent(all[tr.dataset.k])));
+  window.scrollTo(0,0);
+}
+function showStudent(r){
+  const a=app();a.innerHTML="";
+  const c=el("div","card");
+  c.innerHTML=`<span class="eyebrow">Student detail</span><h2>${esc(r.name)}</h2>
+    <p class="small">Started ${fmtDate(r.created)} · Last active ${fmtDate(r.updated)} · Now on: <b>${esc(currentSpot(r))}</b> · Practice ${r.earned.length}/50</p>`;
+  const row=el("div","row noprint");
+  const back=el("button","btn alt","← All students");back.type="button";back.addEventListener("click",showDashboard);row.appendChild(back);
+  const rs=el("button","btn alt","Reset this student's progress");rs.type="button";rs.addEventListener("click",()=>{if(!confirm("Erase all of "+r.name+"'s progress and scores?"))return;const n=blankRec(r.name);n.created=r.created;save(n);showDashboard()});row.appendChild(rs);
+  const del=el("button","btn alt","Remove student");del.type="button";del.addEventListener("click",async()=>{if(!confirm("Remove "+r.name+" from the dashboard completely?"))return;await removeRec(r.key);showDashboard()});row.appendChild(del);
+  c.appendChild(row);a.appendChild(c);
+  const parts=SECTIONS.map(S=>({label:S.label,st:r.sec[S.id],write:r.writes[S.id],prac:practiceDone(r,S.id)+"/"+PRACTICE[S.id].length})).concat([{label:"Final book quiz",st:r.final}]);
+  parts.forEach(p=>{
+    const d=el("div","card");
+    let h=`<h3>${esc(p.label)} ${p.st.passed?'<span class="pill ok">Mastered</span>':'<span class="pill wait">Not yet</span>'}</h3>`;
+    if(p.prac)h+=`<p class="small">Practice answered: ${p.prac}</p>`;
+    if(!p.st.attempts.length)h+=`<p class="small">No quiz tries yet.</p>`;
+    p.st.attempts.forEach((t,k)=>{
+      h+=`<div class="missed ${t.passed?"ok":""}"><b>Try ${k+1}: ${t.score}/${t.total} ${t.passed?"✓":""}</b> <span class="small">${fmtDate(t.at)}</span>`;
+      if(t.missed&&t.missed.length)h+=`<ul class="plain small">${t.missed.map(m=>`<li>${esc(m.q)}<br>Chose: ${esc(m.chose)} · Correct: <b>${esc(m.right)}</b></li>`).join("")}</ul>`;
+      h+=`</div>`;
+    });
+    if(p.write!=null)h+=`<p><b>Think and write:</b></p><p style="white-space:pre-wrap;background:#E9F6EE;border-radius:8px;padding:8px 12px">${p.write?esc(p.write):'<span class="small">(blank)</span>'}</p>`;
+    d.innerHTML=h;a.appendChild(d);
+  });
+  window.scrollTo(0,0);
+}
+function downloadCSV(list){
+  const q=v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"';
+  const head=["Student","Now on","Practice"].concat(SECTIONS.flatMap(S=>[S.label+" best",S.label+" tries",S.label+" mastered"]),["Final best","Final tries","Final mastered","Last active"]);
+  const rows=list.map(r=>{
+    const f=st=>{const b=best(st.attempts);return[b?b.score+"/"+b.total:"",st.attempts.length,st.passed?"yes":"no"]};
+    return[r.name,currentSpot(r),r.earned.length+"/50"].concat(SECTIONS.flatMap(S=>f(r.sec[S.id])),f(r.final),[new Date(r.updated).toLocaleString()]);
+  });
+  const text=[head].concat(rows).map(x=>x.map(q).join(",")).join("\r\n");
+  const blob=new Blob([text],{type:"text/csv"});const u=URL.createObjectURL(blob);
+  const l=document.createElement("a");l.href=u;l.download="lemonade-war-scores.csv";document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(u),1000);
+}
+
+/* ================= BOOT ================= */
+$("#signout").addEventListener("click",()=>{if(quiz&&!confirm("Leave the quiz? Your answers on this try will not count."))return;try{sessionStorage.removeItem("lw-who")}catch(e){}showLogin()});
+$("#teacher-btn").addEventListener("click",()=>{let ok=false;try{ok=sessionStorage.getItem("lw-teacher")==="1"}catch(e){}ok?showDashboard():teacherGate()});
+(async()=>{
+  let k=null;try{k=sessionStorage.getItem("lw-who")}catch(e){}
+  if(k){const r=await loadRec(k);if(r){rec=fix(r);startApp();return}}
+  showLogin();
+})();
 </script>
 </body>
 </html>
