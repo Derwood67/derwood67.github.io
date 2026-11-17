@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Text Analyzer for Teachers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f7f4ee; --panel:#ffffff; --ink:#1f2328; --muted:#5f6670; --line:#e4ded3;
+    --accent:#2f6f5e; --accent-ink:#ffffff; --soft:#eaf3ef; --warn:#a14a1f;
+    --c1:#2f6f5e; --c2:#3b5ea8; --c3:#8a4fa3; --c4:#b5651d; --c5:#a63d4f; --c6:#2b7a8c; --c7:#6b6b1f; --c8:#4f5b66;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 Inter,system-ui,sans-serif}
+  header{padding:28px 24px 8px;max-width:1180px;margin:0 auto}
+  h1{font-family:Fraunces,Georgia,serif;font-size:30px;margin:0 0 4px;letter-spacing:-.01em}
+  header p{margin:0;color:var(--muted)}
+  main{max-width:1180px;margin:0 auto;padding:16px 24px 48px;display:grid;grid-template-columns:minmax(320px,420px) 1fr;gap:22px;align-items:start}
+  @media (max-width:880px){main{grid-template-columns:1fr}}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+  .input-panel{position:sticky;top:16px}
+  @media (max-width:880px){.input-panel{position:static}}
+  label{display:block;font-weight:600;font-size:13px;margin:0 0 6px}
+  input[type=text],select,textarea{width:100%;font:inherit;color:inherit;border:1px solid var(--line);border-radius:10px;padding:9px 11px;background:#fffdfa}
+  textarea{min-height:300px;resize:vertical;line-height:1.5}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+  .field{margin-bottom:12px}
+  .hint{font-size:12px;color:var(--muted);margin-top:4px;display:flex;justify-content:space-between;gap:8px}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+  button{font:inherit;font-weight:600;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--ink);padding:9px 14px;cursor:pointer}
+  button:hover{background:#faf8f3}
+  button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);flex:1}
+  button.primary:hover{filter:brightness(1.07)}
+  button:disabled{opacity:.55;cursor:not-allowed}
+  .linkish{background:none;border:none;color:var(--accent);padding:0;font-size:12px;font-weight:600;text-decoration:underline;cursor:pointer}
+  .file-label{font-size:12px;color:var(--accent);font-weight:600;cursor:pointer;text-decoration:underline}
+  #fileIn{display:none}
+
+  .empty{color:var(--muted);text-align:center;padding:60px 20px}
+  .empty h2{font-family:Fraunces,Georgia,serif;color:var(--ink);font-size:22px;margin:0 0 8px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:14px}
+  .chip{font-size:12px;padding:4px 10px;border-radius:99px;background:var(--soft);color:var(--accent);font-weight:600}
+
+  .status{display:flex;align-items:center;gap:10px;color:var(--muted);padding:14px 4px}
+  .spin{width:18px;height:18px;border:3px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:s 0.9s linear infinite}
+  @keyframes s{to{transform:rotate(360deg)}}
+  .error{background:#fff4ee;border:1px solid #f0cdb9;color:var(--warn);border-radius:12px;padding:12px 14px;margin-bottom:14px}
+
+  .results-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+  .results-head h2{font-family:Fraunces,Georgia,serif;font-size:24px;margin:0}
+  .meta{color:var(--muted);font-size:13px}
+  .genre{display:inline-block;font-size:12px;font-weight:600;padding:3px 10px;border-radius:99px;background:#1f2328;color:#fff;margin-left:6px;vertical-align:middle}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media (max-width:1100px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;border-top:5px solid var(--c);position:relative}
+  .card.wide{grid-column:1/-1}
+  .card h3{margin:0 0 2px;font-family:Fraunces,Georgia,serif;font-size:18px;color:var(--c)}
+  .std{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.02em;margin-bottom:8px}
+  .big{font-size:16px;font-weight:600;margin:4px 0 8px}
+  .tag{display:inline-block;background:color-mix(in srgb,var(--c) 12%,white);color:var(--c);font-weight:700;border-radius:8px;padding:3px 9px;font-size:14px;margin-bottom:8px}
+  .card p{margin:6px 0}
+  .card ul{margin:6px 0;padding-left:20px}
+  .card li{margin:3px 0}
+  .quote{border-left:3px solid color-mix(in srgb,var(--c) 45%,white);padding:4px 10px;color:#3a3f46;font-style:italic;margin:8px 0;background:color-mix(in srgb,var(--c) 5%,white);border-radius:0 8px 8px 0}
+  .sub{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-top:10px}
+  .na{color:var(--muted);font-style:italic}
+  .copy{position:absolute;top:12px;right:12px;font-size:11px;padding:4px 8px;border-radius:7px;color:var(--muted)}
+  .chars{display:grid;gap:10px}
+  .char{border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+  .char b{font-size:15px}
+  .role{font-size:11px;font-weight:700;text-transform:uppercase;color:var(--c);margin-left:6px;letter-spacing:.04em}
+  .traits{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0}
+  .traits span{font-size:12px;background:#f2efe8;border-radius:99px;padding:2px 9px}
+  .words{display:flex;flex-wrap:wrap;gap:5px}
+  .words span{font-size:12px;background:color-mix(in srgb,var(--c) 10%,white);color:var(--c);border-radius:6px;padding:2px 8px;font-weight:600}
+  ol.q{padding-left:20px;margin:6px 0}
+  .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#1f2328;color:#fff;padding:8px 14px;border-radius:10px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none}
+  .toast.on{opacity:1}
+  .keybox{background:#fff8e6;border:1px solid #efdca5;border-radius:12px;padding:12px 14px;margin-bottom:14px;display:none}
+  .keybox.ok{background:var(--soft);border-color:#cfe3da}
+</style>
+</head>
+<body>
+<header>
+  <h1>Text Analyzer</h1>
+  <p>Paste a story, poem, or article. Get the summary, main idea, text structure, theme, point of view, narrator, characters, and setting — with evidence from the text.</p>
+</header>
+
+<main>
+  <section class="panel input-panel">
+    <div class="keybox" id="keybox">
+      <label for="apiKey">Anthropic API key</label>
+      <div style="display:flex;gap:6px">
+        <input type="password" id="apiKey" placeholder="sk-ant-…" autocomplete="off">
+        <button type="button" id="saveKey">Save</button>
+      </div>
+      <div class="hint"><span id="keyStatus">Saved only in this browser on this device. Never shared with students.</span><button class="linkish" type="button" id="forgetKey">Forget key</button></div>
+    </div>
+    <div class="row">
+      <div>
+        <label for="title">Title (optional)</label>
+        <input type="text" id="title" placeholder="e.g. The Lemonade War">
+      </div>
+      <div>
+        <label for="grade">Write results for</label>
+        <select id="grade">
+          <option value="4">Grade 4</option>
+          <option value="5">Grade 5</option>
+          <option value="4-5" selected>Grades 4–5</option>
+          <option value="3">Grade 3</option>
+          <option value="6">Grade 6</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label for="kind">Type of text</label>
+      <select id="kind">
+        <option value="auto" selected>Detect automatically</option>
+        <option value="Literature (fiction)">Literature / fiction</option>
+        <option value="Informational (nonfiction)">Informational / nonfiction</option>
+        <option value="Poetry">Poetry</option>
+        <option value="Drama">Drama / play</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="text">Passage</label>
+      <textarea id="text" placeholder="Paste the passage here…"></textarea>
+      <div class="hint">
+        <span id="count">0 words</span>
+        <span>
+          <label class="file-label" for="fileIn">Upload .txt</label>
+          <input type="file" id="fileIn" accept=".txt,text/plain">
+          &nbsp;·&nbsp;<button class="linkish" id="sampleBtn" type="button">Try a sample</button>
+        </span>
+      </div>
+    </div>
+    <div class="btns">
+      <button class="primary" id="go" type="button">Analyze text</button>
+      <button id="clear" type="button">Clear</button>
+    </div>
+  </section>
+
+  <section id="out">
+    <div class="panel empty" id="empty">
+      <h2>Results will appear here</h2>
+      <div>Each element comes with an explanation and text evidence you can use in a lesson.</div>
+      <div class="chips">
+        <span class="chip">Summary</span><span class="chip">Main idea</span><span class="chip">Text structure</span>
+        <span class="chip">Theme</span><span class="chip">Point of view</span><span class="chip">Narrator</span>
+        <span class="chip">Characters</span><span class="chip">Setting</span>
+      </div>
+    </div>
+  </section>
+</main>
+<div class="toast" id="toast">Copied</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let sample = null, lastResult = null, controller = null;
+
+const SAMPLE = `The Last Seed
+
+Every spring, Grandma Rosa planted sunflowers along the fence behind her small yellow house. This year, though, her hands shook too much to hold the tiny seeds, so she handed the paper packet to me.
+
+"There are only twelve," she said. "Make each one count."
+
+I was ten, and I was in a hurry. I poked the seeds into the dirt as fast as I could, then ran off to play soccer with my cousin Mateo. I forgot to water them. When the first hot week of June arrived, the ground beside the fence was cracked and bare.
+
+Grandma didn't scold me. She just sat on the porch step and looked at the empty dirt for a long time. That night I couldn't sleep. In the morning I dug through her kitchen drawer until I found one more seed, flat and striped, stuck in the corner of an old envelope.
+
+This time I went slowly. I loosened the soil with a spoon. I watered it every morning before school and every evening after dinner. I built a little fence of popsicle sticks so the neighbor's dog would stay away. Mateo laughed at me, but after a while he started bringing the watering can.
+
+By August, the sunflower was taller than me. On the day it opened, Grandma Rosa stood beside it with her hand on my shoulder. "One seed," she said, "and a patient gardener. That's all it ever takes."`;
+
+const STD = {
+  summary: g => `RL.${g}.2 · RI.${g}.2`,
+  main: g => `RI.${g}.2`,
+  structure: g => `RL.${g}.5 · RI.${g}.5`,
+  theme: g => `RL.${g}.2`,
+  pov: g => `RL.${g}.6 · RI.${g}.6`,
+  narrator: g => `RL.${g}.6`,
+  characters: g => `RL.${g}.3`,
+  setting: g => `RL.${g}.3`,
+  questions: g => `RL.${g}.1 · RI.${g}.1`
+};
+
+function words(t){ return (t.trim().match(/\S+/g)||[]).length; }
+$("#text").addEventListener("input", () => $("#count").textContent = words($("#text").value) + " words");
+$("#sampleBtn").onclick = () => { $("#text").value = SAMPLE; $("#title").value = "The Last Seed"; $("#text").dispatchEvent(new Event("input")); };
+$("#clear").onclick = () => { $("#text").value=""; $("#title").value=""; $("#text").dispatchEvent(new Event("input")); };
+$("#fileIn").onchange = async e => {
+  const f = e.target.files[0]; if(!f) return;
+  $("#text").value = await f.text();
+  if(!$("#title").value) $("#title").value = f.name.replace(/\.[^.]+$/,"");
+  $("#text").dispatchEvent(new Event("input")); e.target.value="";
+};
+
+function toast(m){ const t=$("#toast"); t.textContent=m; t.classList.add("on"); setTimeout(()=>t.classList.remove("on"),1400); }
+async function copy(text){ try{ await navigator.clipboard.writeText(text); toast("Copied"); }catch{ toast("Couldn't copy — select and copy instead"); } }
+
+function buildPrompt(text, title, grade, kind){
+  return `You are an expert elementary ELA teacher and literacy coach. Analyze the passage below for a teacher. Write every explanation in clear, teacher-ready language that could be read aloud to students in grade ${grade}. Base everything ONLY on the passage; do not invent events. Use short exact quotes (under 20 words) from the passage as evidence.
+
+Text type: ${kind === "auto" ? "Detect it (Literature, Informational, Poetry, or Drama)." : kind}
+${title ? "Title: " + title : ""}
+
+Return ONLY a JSON object with exactly this shape:
+{
+  "genre": "Literature" | "Informational" | "Poetry" | "Drama",
+  "title": string (given title, or a short descriptive one),
+  "summary": string (3-5 sentences, objective, in order, no opinions),
+  "somebody_wanted_but_so_then": string or null (one-sentence SWBST summary for literature; null for informational),
+  "main_idea": { "statement": string (one sentence), "key_details": [string, string, string] },
+  "text_structure": {
+    "type": one of "Chronological/Sequence", "Compare and Contrast", "Cause and Effect", "Problem and Solution", "Description", "Narrative (story structure)", "Poem structure (stanzas/lines)", "Drama structure (scenes/dialogue)",
+    "explanation": string (how the author organized the text and how you can tell),
+    "signal_words": [string] (words/phrases from the text that signal the structure; may be empty),
+    "plot": { "beginning": string, "problem": string, "rising_action": string, "climax": string, "resolution": string } or null (fill for stories/drama; null for informational)
+  },
+  "theme": { "statement": string (a complete sentence lesson/message, not one word) or null if informational, "topic_word": string (one-word topic, e.g. "patience"), "explanation": string, "evidence": [string] (1-3 quotes) },
+  "point_of_view": { "type": one of "First person", "Second person", "Third person limited", "Third person omniscient", "Third person objective", "Author's point of view (informational)", "explanation": string (which pronouns and what the reader can/can't know), "evidence": string (one quote) },
+  "narrator": { "who": string (who is telling it, e.g. "the granddaughter, a 10-year-old character in the story" or "an outside narrator not in the story" or "the author"), "inside_or_outside": "Character in the story" | "Outside the story" | "Author (informational)" | "Speaker (poem)", "explanation": string },
+  "characters": [ { "name": string, "role": "Main character" | "Supporting character" | "Antagonist" | "Narrator character" | "Person/group (informational)", "traits": [string] (2-4 single-word traits), "evidence": string (how we know: actions, words, thoughts), "changes": string or null (how the character changes) } ],
+  "setting": { "place": string, "time": string, "importance": string (why the setting matters), "evidence": string (one quote) or null },
+  "discussion_questions": [string, string, string, string] (text-dependent questions, mix of literal and inferential)
+}
+If an element doesn't apply (for example, characters in an article with no people), use an empty list or a short explanation saying so instead of guessing.
+
+PASSAGE:
+"""
+${text}
+"""`;
+}
+
+async function run(){
+  const text = $("#text").value.trim();
+  if(words(text) < 15){ showError("Paste a passage of at least a few sentences first."); return; }
+  if(!sample && !getKey()){ $("#keybox").style.display="block"; showError("Enter your Anthropic API key at the top left, then click Analyze."); $("#apiKey").focus(); return; }
+  const grade = $("#grade").value, kind = $("#kind").value, title = $("#title").value.trim();
+  if(controller) controller.abort();
+  controller = new AbortController();
+  $("#go").disabled = true; $("#go").textContent = "Analyzing…";
+  $("#out").innerHTML = `<div class="panel"><div class="status"><div class="spin"></div><span id="stat">Reading the passage…</span></div></div>`;
+  const msgs = ["Reading the passage…","Finding the main idea…","Tracing the theme…","Checking point of view…","Gathering evidence…"];
+  let i=0; const tick = setInterval(()=>{ const s=$("#stat"); if(s) s.textContent = msgs[++i % msgs.length]; }, 2200);
+  try{
+    const prompt = buildPrompt(text, title, grade, kind);
+    let data;
+    if(!sample){
+      data = await callApi(prompt, controller.signal);
+    } else if(typeof sample.json === "function"){
+      data = await sample.json(prompt, { signal: controller.signal, modelTier: "default" });
+    } else {
+      const r = await sample(prompt, { signal: controller.signal, modelTier: "default" });
+      const m = r.text.match(/\{[\s\S]*\}/); data = JSON.parse(m ? m[0] : r.text);
+    }
+    if(typeof data === "string"){ const m=data.match(/\{[\s\S]*\}/); data = JSON.parse(m?m[0]:data); }
+    lastResult = data;
+    render(data, grade);
+  }catch(err){
+    if(err && err.name === "AbortError") return;
+    const code = err && err.code;
+    let msg = "Something went wrong analyzing the text. Please try again.";
+    if(code === "bad_key") msg = "That API key didn't work. Check it, save it again, and retry.";
+    else if(code === "api") msg = "The analysis service returned an error: " + (err.message||"") ;
+    else if(code === "not_granted") msg = "Permission to analyze wasn't granted. Click Analyze again and allow it when asked.";
+    else if(code === "rate_limited") msg = "Too many requests right now. Wait a minute, then try again.";
+    $("#out").innerHTML = ""; showError(msg);
+  }finally{
+    clearInterval(tick);
+    $("#go").disabled = false; $("#go").textContent = "Analyze text";
+  }
+}
+$("#go").onclick = run;
+
+function showError(m){
+  const d = document.createElement("div"); d.className="error"; d.textContent=m;
+  const out=$("#out"); const old=out.querySelector(".error"); if(old) old.remove();
+  out.prepend(d);
+}
+
+const list = arr => (arr && arr.length) ? `<ul>${arr.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>` : "";
+const q = s => s ? `<div class="quote">“${esc(String(s).replace(/^["“]|["”]$/g,""))}”</div>` : "";
+const gnum = g => g.includes("-") ? g.split("-")[0] : g;
+
+function card(key, title, color, body, plain, wide){
+  return `<article class="card${wide?" wide":""}" style="--c:var(${color})" data-key="${key}">
+    <button class="copy" data-copy="${esc(plain)}">Copy</button>
+    <h3>${title}</h3>
+    <div class="std">${STD[key](gnum($("#grade").value))}</div>
+    ${body}
+  </article>`;
+}
+
+function render(d, grade){
+  const ts = d.text_structure||{}, th=d.theme||{}, pov=d.point_of_view||{}, nar=d.narrator||{}, st=d.setting||{}, mi=d.main_idea||{};
+  const chars = Array.isArray(d.characters)?d.characters:[];
+  const informational = /inform/i.test(d.genre||"");
+  let html = `<div class="results-head">
+      <div><h2>${esc(d.title||"Analysis")}<span class="genre">${esc(d.genre||"")}</span></h2>
+      <div class="meta">${words($("#text").value)} words · written for grade ${esc(grade)}</div></div>
+      <div class="btns"><button id="copyAll">Copy all</button><button id="again">Re-analyze</button></div>
+    </div><div class="grid">`;
+
+  html += card("summary","Summary","--c1",
+    `<p>${esc(d.summary)}</p>${d.somebody_wanted_but_so_then?`<div class="sub">Somebody–Wanted–But–So–Then</div><p>${esc(d.somebody_wanted_but_so_then)}</p>`:""}`,
+    `Summary: ${d.summary||""}${d.somebody_wanted_but_so_then?"\nSWBST: "+d.somebody_wanted_but_so_then:""}`, true);
+
+  html += card("main","Main Idea","--c2",
+    `<p class="big">${esc(mi.statement)}</p>${mi.key_details&&mi.key_details.length?`<div class="sub">Key details</div>${list(mi.key_details)}`:""}`,
+    `Main idea: ${mi.statement||""}\nKey details:\n${(mi.key_details||[]).map(x=>"- "+x).join("\n")}`);
+
+  const plot = ts.plot;
+  html += card("structure","Text Structure","--c3",
+    `<span class="tag">${esc(ts.type)}</span><p>${esc(ts.explanation)}</p>
+     ${ts.signal_words&&ts.signal_words.length?`<div class="sub">Signal words</div><div class="words">${ts.signal_words.map(w=>`<span>${esc(w)}</span>`).join("")}</div>`:""}
+     ${plot?`<div class="sub">Plot</div><ul>
+        ${plot.beginning?`<li><b>Beginning:</b> ${esc(plot.beginning)}</li>`:""}
+        ${plot.problem?`<li><b>Problem:</b> ${esc(plot.problem)}</li>`:""}
+        ${plot.rising_action?`<li><b>Rising action:</b> ${esc(plot.rising_action)}</li>`:""}
+        ${plot.climax?`<li><b>Climax:</b> ${esc(plot.climax)}</li>`:""}
+        ${plot.resolution?`<li><b>Resolution:</b> ${esc(plot.resolution)}</li>`:""}</ul>`:""}`,
+    `Text structure: ${ts.type||""}\n${ts.explanation||""}${ts.signal_words&&ts.signal_words.length?"\nSignal words: "+ts.signal_words.join(", "):""}${plot?`\nBeginning: ${plot.beginning||""}\nProblem: ${plot.problem||""}\nRising action: ${plot.rising_action||""}\nClimax: ${plot.climax||""}\nResolution: ${plot.resolution||""}`:""}`);
+
+  html += card("theme", informational ? "Theme / Author's Message" : "Theme","--c4",
+    `${th.topic_word?`<span class="tag">${esc(th.topic_word)}</span>`:""}
+     ${th.statement?`<p class="big">${esc(th.statement)}</p>`:`<p class="na">Informational texts usually have a main idea instead of a theme.</p>`}
+     <p>${esc(th.explanation)}</p>${(th.evidence||[]).map(q).join("")}`,
+    `Theme: ${th.statement||th.topic_word||""}\n${th.explanation||""}\nEvidence: ${(th.evidence||[]).map(e=>`"${e}"`).join(" ")}`);
+
+  html += card("pov","Point of View","--c5",
+    `<span class="tag">${esc(pov.type)}</span><p>${esc(pov.explanation)}</p>${q(pov.evidence)}`,
+    `Point of view: ${pov.type||""}\n${pov.explanation||""}${pov.evidence?`\nEvidence: "${pov.evidence}"`:""}`);
+
+  html += card("narrator","Narrator","--c6",
+    `<span class="tag">${esc(nar.inside_or_outside)}</span><p class="big">${esc(nar.who)}</p><p>${esc(nar.explanation)}</p>`,
+    `Narrator: ${nar.who||""} (${nar.inside_or_outside||""})\n${nar.explanation||""}`);
+
+  html += card("characters", informational ? "People & Groups" : "Characters","--c7",
+    chars.length ? `<div class="chars">${chars.map(c=>`<div class="char"><b>${esc(c.name)}</b><span class="role">${esc(c.role)}</span>
+      ${c.traits&&c.traits.length?`<div class="traits">${c.traits.map(t=>`<span>${esc(t)}</span>`).join("")}</div>`:""}
+      <div>${esc(c.evidence)}</div>${c.changes?`<div style="margin-top:4px"><b>Changes:</b> ${esc(c.changes)}</div>`:""}</div>`).join("")}</div>`
+      : `<p class="na">No characters or people are named in this text.</p>`,
+    `Characters:\n${chars.map(c=>`- ${c.name} (${c.role}): ${(c.traits||[]).join(", ")}. ${c.evidence||""}${c.changes?" Changes: "+c.changes:""}`).join("\n")}`, chars.length>2);
+
+  html += card("setting","Setting","--c8",
+    `<ul><li><b>Place:</b> ${esc(st.place)}</li><li><b>Time:</b> ${esc(st.time)}</li></ul><p>${esc(st.importance)}</p>${q(st.evidence)}`,
+    `Setting — Place: ${st.place||""}; Time: ${st.time||""}\n${st.importance||""}`);
+
+  const dq = d.discussion_questions||[];
+  if(dq.length) html += card("questions","Discussion Questions","--c2",
+    `<ol class="q">${dq.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>`,
+    `Discussion questions:\n${dq.map((x,i)=>`${i+1}. ${x}`).join("\n")}`, true);
+
+  html += `</div>`;
+  $("#out").innerHTML = html;
+  $("#out").querySelectorAll("[data-copy]").forEach(b => b.onclick = () => copy(b.dataset.copy));
+  $("#copyAll").onclick = () => copy(`${d.title||""} (${d.genre||""})\n\n` + [...$("#out").querySelectorAll("[data-copy]")].map(b=>b.dataset.copy).join("\n\n"));
+  $("#again").onclick = run;
+  window.scrollTo({top: $("#out").getBoundingClientRect().top + window.scrollY - 10, behavior:"smooth"});
+}
+
+const KEY_NAME = "textAnalyzer.apiKey";
+function getKey(){ try{ return localStorage.getItem(KEY_NAME) || ""; }catch{ return window.__key || ""; } }
+function setKey(k){ try{ k ? localStorage.setItem(KEY_NAME,k) : localStorage.removeItem(KEY_NAME); }catch{} window.__key = k; refreshKeyUI(); }
+function refreshKeyUI(){
+  const has = !!getKey();
+  $("#keybox").classList.toggle("ok", has);
+  $("#apiKey").value = "";
+  $("#apiKey").placeholder = has ? "Key saved ✓ (paste a new one to replace)" : "sk-ant-…";
+}
+$("#saveKey").onclick = () => { const k = $("#apiKey").value.trim(); if(k){ setKey(k); toast("Key saved on this device"); } };
+$("#apiKey").addEventListener("keydown", e => { if(e.key === "Enter") $("#saveKey").click(); });
+$("#forgetKey").onclick = () => { setKey(""); toast("Key removed"); };
+
+async function callApi(prompt, signal){
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST", signal,
+    headers: {
+      "content-type": "application/json",
+      "x-api-key": getKey(),
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true"
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-5-5",
+      max_tokens: 4000,
+      messages: [{ role: "user", content: prompt }]
+    })
+  });
+  if(res.status === 401 || res.status === 403) throw { code: "bad_key" };
+  if(res.status === 429) throw { code: "rate_limited" };
+  const body = await res.json().catch(() => ({}));
+  if(!res.ok) throw { code: "api", message: body?.error?.message || ("HTTP " + res.status) };
+  const text = (body.content || []).filter(b => b.type === "text").map(b => b.text).join("");
+  const m = text.match(/\{[\s\S]*\}/);
+  return JSON.parse(m ? m[0] : text);
+}
+
+(async () => {
+  try{ sample = window.claude && window.claude.use ? await window.claude.use("sample") : null; }catch{ sample = null; }
+  if(!sample){ $("#keybox").style.display = "block"; refreshKeyUI(); }
+})();
+</script>
+</body>
+</html>
