@@ -130,7 +130,7 @@ textarea{width:100%;min-height:120px;font:13px monospace}
 </style>
 </head>
 <body>
-<!-- Class sign-in gate: first-name sign-in, blocked names, teacher unlock (code 8531) -->
+<!-- Class sign-in gate: first-name sign-in, blocked names, teacher unlock -->
 <style>
 #cg-ov{position:fixed;inset:0;z-index:2147483000;background:#141c24;display:flex;align-items:center;justify-content:center;padding:16px;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
 #cg-ov *{box-sizing:border-box}
@@ -152,7 +152,17 @@ textarea{width:100%;min-height:120px;font:13px monospace}
 <script>
 (function(){
   var BLOCKED=["james","ravi"];          /* first names that may not use this app */
-  var CODE="8531";                       /* teacher code to unlock a device */
+  var CODE_HASH="cf2d0fe7ea0a7780592080ef0bf415a6043a3d59aa5d72ace64d39c6e0837285";  /* scrambled teacher code; the code itself is not stored in this page */
+  var TRY_KEY="echols-classgate-tries";
+  function sha(t){return crypto.subtle.digest("SHA-256",new TextEncoder().encode(t)).then(function(b){return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0")}).join("")})}
+  /* Checks a teacher code. Three wrong tries locks code entry on this device for 10 minutes. Resolves "ok", "wrong" or "wait". */
+  function checkCode(code){var t={};try{t=JSON.parse(lsGet(TRY_KEY))||{}}catch(x){}
+    if(t.until&&Date.now()<t.until)return Promise.resolve("wait");
+    return sha("echols-room2:"+String(code||"").trim()).then(function(h){
+      if(h===CODE_HASH){lsSet(TRY_KEY,null);return "ok"}
+      t.n=(t.n||0)+1;if(t.n>=3){t={n:0,until:Date.now()+600000};lsSet(TRY_KEY,JSON.stringify(t));return "wait"}
+      lsSet(TRY_KEY,JSON.stringify(t));return "wrong"},function(){return "wrong"})}
+  var CODE_MSG={wrong:"That code is not right.",wait:"Too many tries. Wait 10 minutes and try again."};
   var LOCK_KEY="echols-classgate-lock", NAME_KEY="echols-classgate-name";
   var me=document.currentScript, needLogin=!!(me&&me.getAttribute("data-login")!==null);
   function first(n){return String(n||"").trim().split(/\s+/)[0].toLowerCase().replace(/[^a-z]/g,"")}
@@ -169,9 +179,9 @@ textarea{width:100%;min-height:120px;font:13px monospace}
   function showBlocked(){
     var o=overlay('<h2>This activity is not available</h2><p>This app is not open to you right now. Please check with Mr. Echols.</p>'+
       '<details><summary>Teacher unlock</summary><form id="cg-unlock" style="margin-top:10px"><label for="cg-code">Teacher code</label><input id="cg-code" type="password" inputmode="numeric" autocomplete="off"><button type="submit">Unlock this device</button><p class="cg-msg" id="cg-umsg"></p></form></details>');
-    o.querySelector("#cg-unlock").onsubmit=function(e){e.preventDefault();
-      if(o.querySelector("#cg-code").value.trim()===CODE){lsSet(LOCK_KEY,null);ssSet(NAME_KEY,null);location.reload()}
-      else o.querySelector("#cg-umsg").textContent="That code is not right."};
+    o.querySelector("#cg-unlock").onsubmit=function(e){e.preventDefault();var c=o.querySelector("#cg-code");
+      checkCode(c.value).then(function(r){if(r==="ok"){lsSet(LOCK_KEY,null);ssSet(NAME_KEY,null);location.reload();return}
+        c.value="";o.querySelector("#cg-umsg").textContent=CODE_MSG[r]})};
   }
   function lock(){lsSet(LOCK_KEY,"1");ssSet(NAME_KEY,null);var b=document.getElementById("cg-badge");if(b)b.remove();showBlocked()}
   function showLogin(){
@@ -187,7 +197,9 @@ textarea{width:100%;min-height:120px;font:13px monospace}
   window.ClassGate={
     /* Apps with their own sign-in call this; returns false (and locks the device) for a blocked name. */
     check:function(n){if(lsGet(LOCK_KEY)){showBlocked();return false}if(isBlocked(n)){lock();return false}return true},
-    name:function(){return ssGet(NAME_KEY)||""}
+    name:function(){return ssGet(NAME_KEY)||""},
+    /* Teacher code check for in-app teacher tools: resolves "ok", "wrong" or "wait". */
+    checkCode:checkCode, codeMsg:function(r){return CODE_MSG[r]||""}
   };
   function start(){
     if(lsGet(LOCK_KEY)){showBlocked();return}
