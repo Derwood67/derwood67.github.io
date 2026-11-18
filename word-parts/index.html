@@ -142,6 +142,13 @@ mark{background:transparent;color:var(--k);font-weight:700;text-decoration:under
 .opt.wrong{background:var(--bad-bg);border-color:var(--bad)}
 .opt:disabled{cursor:default}
 .tally{color:var(--muted);font-size:.95rem}
+.lock{display:flex;flex-direction:column;gap:14px}
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.steps li{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;background:var(--bg);border:2px solid var(--line);border-radius:12px;padding:10px 14px}
+.steps li.met{border-color:var(--good);background:var(--good-bg)}
+.steps .what{flex:1 1 220px;min-width:0}
+.steps .num{font-family:var(--display);font-weight:600;font-variant-numeric:tabular-nums}
+.steps li.met .num{color:var(--good)}
 /* write */
 .bar{height:10px;background:var(--base-bg);border-radius:999px;overflow:hidden}
 .bar i{display:block;height:100%;width:0;background:var(--good);transition:width .3s}
@@ -201,8 +208,8 @@ label.help{font-weight:700}
   <nav class="tabs" role="tablist">
     <button role="tab" id="tab-explore" data-view="explore" aria-selected="true">Explore</button>
     <button role="tab" id="tab-build" data-view="build" aria-selected="false">Build a Word</button>
-    <button role="tab" id="tab-quiz" data-view="quiz" aria-selected="false">Quiz</button>
     <button role="tab" id="tab-write" data-view="write" aria-selected="false">Write a Paragraph</button>
+    <button role="tab" id="tab-quiz" data-view="quiz" aria-selected="false">Quiz</button>
   </nav>
 
   <!-- EXPLORE -->
@@ -251,6 +258,14 @@ label.help{font-weight:700}
 
   <!-- QUIZ -->
   <section class="panel" id="view-quiz" role="tabpanel" aria-labelledby="tab-quiz" hidden>
+    <div class="stage lock" id="q-lock" hidden>
+      <div>
+        <div class="eyebrow">Quiz locked</div>
+        <div class="clue">Finish your work first, then the quiz opens.</div>
+        <p class="help" style="margin-top:6px">Your work is saved on this device.</p>
+      </div>
+      <ul class="steps" id="q-steps"></ul>
+    </div>
     <div class="row" id="q-filters">
       <span class="help">Quiz me on:</span>
       <button class="chip k-prefix" data-kind="prefix" aria-pressed="true">Prefixes</button>
@@ -775,6 +790,9 @@ function breakdownHTML(word){
 
 /* ---------- tabs ---------- */
 const VIEWS=['explore','build','quiz','write'];
+const PROG_KEY='wpw-progress-v1';let PROG={};
+try{PROG=JSON.parse(localStorage.getItem(PROG_KEY))||{}}catch(e){}
+function pSave(){try{localStorage.setItem(PROG_KEY,JSON.stringify(PROG))}catch(e){}}
 function show(view){
   if(!VIEWS.includes(view))view='explore';
   VIEWS.forEach(v=>{
@@ -848,6 +866,7 @@ function sCheck(card){
   card.querySelector('.okmark').hidden=!ok;ta.classList.toggle('passed',ok);
   if(ok&&!card.querySelector('.done'))card.querySelector('.kind').insertAdjacentHTML('beforeend','<span class="done">✓ Sentence written</span>');
   if(ok)addStar();
+  updateLock();
   const n=PARTS.filter(x=>sDone(x.id)).length;
   $('#ex-count').textContent=$('#ex-count').textContent.replace(/You have written .*$/,'You have written '+n+' sentence'+(n===1?'':'s')+'.');
 }
@@ -920,7 +939,7 @@ function newBuild(){
   }
   B.tiles=shuffle(mine.concat(picked));
   B.slots=B.word.parts.map(()=>null);
-  B.solved=false;B.busy=false;
+  B.solved=false;B.busy=false;B.hinted=false;
   $('#b-clue').textContent=B.word.def;
   setMsg('#b-msg','');
   $('#b-break').hidden=true;$('#b-next').hidden=true;
@@ -940,6 +959,7 @@ function checkBuild(){
   const made=B.slots.map(i=>B.tiles[i].text).join('');
   if(made===B.word.w){
     B.solved=true;addStar();
+    if(!B.hinted){PROG.built=(PROG.built||0)+1;pSave();updateLock()}
     setMsg('#b-msg','Yes! You built "'+B.word.w+'."','good');
     const bd=$('#b-break');bd.innerHTML=breakdownHTML(B.word);bd.hidden=false;
     $('#b-next').hidden=false;$('#b-hint').hidden=true;$('#b-skip').hidden=true;
@@ -964,6 +984,7 @@ $('#b-slots').addEventListener('click',e=>{
 });
 $('#b-hint').addEventListener('click',()=>{
   if(B.solved||B.busy)return;
+  B.hinted=true;
   // find the first spot that is empty or wrong, and place the right part there
   for(let i=0;i<B.word.parts.length;i++){
     const want=B.word.parts[i].text,cur=B.slots[i];
@@ -1308,7 +1329,7 @@ $('#w-turnin').addEventListener('click',()=>{
     rootCount:r.roots.length,rootWords:r.roots.join(', '),mistakes:r.fixes.length,
     feedback:r.fixes.map(f=>(f.n?'Sentence '+f.n:'Paragraph')+': '+f.msg).join(' | '),checks:W.checks,paragraph:W.text.trim()});
   W.pending=W.pending.slice(-5);
-  addStar();wSave();wShowSent();wFlush();
+  addStar();wSave();wShowSent();wFlush();updateLock();
   $('#w-sent').scrollIntoView({block:'nearest'});
 });
 $('#w-copy').addEventListener('click',()=>{
@@ -1326,7 +1347,32 @@ $('#w-name').value=W.name;$('#w-text').value=W.text;
 $('#w-bank').innerHTML=PARTS.filter(p=>USE[p.id]).map(p=>`<div class="bankrow k-${p.kind}"><span class="tile k-${p.kind}">${esc(p.label)}</span><span><b>${esc(p.meaning)}</b><br>${USE[p.id].map(esc).join(', ')}</span></div>`).join('');
 wCounts();wShowSent();wFlush();
 
-renderExplore();newBuild();startQuiz();
+/* ---------- quiz lock: the work in every section comes first ---------- */
+const NEED={sentences:5,built:10};
+function lockState(){
+  const sentences=PARTS.filter(p=>sDone(p.id)).length,built=PROG.built||0,para=!!W.sent;
+  return {sentences,built,para,open:sentences>=NEED.sentences&&built>=NEED.built&&para};
+}
+function updateLock(){
+  const st=lockState(),view=$('#view-quiz');
+  $('#tab-quiz').textContent=st.open?'Quiz':'Quiz (locked)';
+  [...view.children].forEach(c=>{c.hidden=c.id==='q-lock'?st.open:!st.open});
+  const step=(met,what,num,view,go)=>`<li class="${met?'met':''}"><span class="num">${met?'✓':num}</span><span class="what">${what}</span>${met?'':`<button class="btn sm ghost" data-go="${view}">${go}</button>`}</li>`;
+  $('#q-steps').innerHTML=
+    step(st.sentences>=NEED.sentences,'Write '+NEED.sentences+' sentences that pass the check in Explore. Open any card to write one.',Math.min(st.sentences,NEED.sentences)+' of '+NEED.sentences,'explore','Go to Explore')+
+    step(st.built>=NEED.built,'Build '+NEED.built+' words in Build a Word on your own. Words where you use Hint or Skip do not count.',Math.min(st.built,NEED.built)+' of '+NEED.built,'build','Go to Build a Word')+
+    step(st.para,'Turn in your paragraph in Write a Paragraph.',st.para?'':'Not yet','write','Go to Write a Paragraph');
+  if(st.open&&!LOCK_WAS_OPEN&&LOCK_READY)startQuiz();
+  LOCK_WAS_OPEN=st.open;
+}
+let LOCK_WAS_OPEN=false,LOCK_READY=false;
+$('#q-steps').addEventListener('click',e=>{
+  const b=e.target.closest('[data-go]');if(!b)return;
+  show(b.dataset.go);try{history.replaceState(null,'','#'+b.dataset.go)}catch(_){location.hash=b.dataset.go}
+  scrollTo({top:0});
+});
+
+renderExplore();newBuild();startQuiz();updateLock();LOCK_READY=true;
 show(location.hash.slice(1));
 </script>
 </body>
