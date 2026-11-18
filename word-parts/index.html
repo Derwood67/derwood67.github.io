@@ -168,7 +168,7 @@ label.help{font-weight:700}
   <header class="top">
     <div class="intro">
       <h1>Word Parts Workshop</h1>
-      <p>Prefixes, suffixes, and Greek and Latin roots. Learn the parts, then use them to figure out big words.</p>
+      <p>Over 300 prefixes, suffixes, and Greek and Latin roots. Learn the parts, then use them to figure out big words.</p>
     </div>
     <div class="stars" aria-live="polite"><b>★</b> <span id="stars">0</span> stars</div>
   </header>
@@ -206,7 +206,7 @@ label.help{font-weight:700}
       <button class="chip k-latin" data-kind="latin" aria-pressed="false">Latin roots</button>
       <input class="search" id="ex-search" type="search" placeholder="Search a part or a meaning" aria-label="Search word parts">
     </div>
-    <p class="help">Tap a card to see words that use that part.</p>
+    <p class="help"><span id="ex-count"></span> Tap a card to see words that use that part.</p>
     <div class="grid" id="ex-grid"></div>
   </section>
 
@@ -410,8 +410,269 @@ const PARTS=[
 ['cred','latin','cred','believe',['in[cred]ible','[cred]it','[cred]ible'],'incredible = hard to believe'],
 ['fract','latin','fract / frag','break',['[fract]ion','[fract]ure','[frag]ile'],'fraction = a broken piece of a whole','break'],
 ['voc','latin','voc','voice; call',['[voc]al','[voc]abulary','[voc]alist'],'vocal = related to the voice'],
-['mot','latin','mot / mov','move',['[mot]ion','[mot]or','re[mov]e'],'motor = a machine that makes things move']
-].map(a=>({id:a[0],kind:a[1],label:a[2],meaning:a[3],ex:a[4],gloss:a[5],group:a[6]||a[0]}));
+['mot','latin','mot / mov','move',['[mot]ion','[mot]or','re[mov]e'],'motor = a machine that makes things move'],
+['ab','prefix','ab-','away from',['[ab]sent', '[ab]normal', '[ab]sorb'],"abnormal = away from normal"],
+['ad','prefix','ad-','to; toward',['[ad]join', '[ad]here', '[ad]verb'],"adverb = a word added to a verb"],
+['ante','prefix','ante-','before; in front of',['[ante]room', '[ante]date', '[ante]cedent'],"anteroom = a small room in front of a bigger room"],
+['circum','prefix','circum-','around',['[circum]ference', '[circum]navigate', '[circum]stance'],"circumnavigate = sail all the way around"],
+['co','prefix','co-','together; with',['[co]operate', '[co]worker', '[co]pilot'],"copilot = a pilot who flies with the main pilot"],
+['com','prefix','com- / con-','with; together',['[com]bine', '[con]nect', '[com]panion'],"connect = join together"],
+['contra','prefix','contra-','against; opposite',['[contra]dict', '[contra]st', '[contra]ry'],"contradict = say the opposite"],
+['counter','prefix','counter-','against; opposite',['[counter]clockwise', '[counter]act', '[counter]attack'],"counterclockwise = the opposite way a clock turns"],
+['ex','prefix','ex-','out; out of',['[ex]it', '[ex]hale', '[ex]port'],"exhale = breathe out"],
+['extra','prefix','extra-','beyond; outside',['[extra]ordinary', '[extra]terrestrial', '[extra]curricular'],"extraordinary = beyond ordinary"],
+['hyper','prefix','hyper-','over; too much',['[hyper]active', '[hyper]sensitive', '[hyper]ventilate'],"hyperactive = too active"],
+['hypo','prefix','hypo-','under; below normal',['[hypo]thermia', '[hypo]dermic', '[hypo]thesis'],"hypothermia = body heat below normal"],
+['il','prefix','il- / ir-','not',['[il]legal', '[il]logical', '[ir]regular'],"illegal = not legal"],
+['inn','prefix','in- / im- (into)','in; into',['[in]side', '[in]hale', '[im]port'],"inhale = breathe in"],
+['infra','prefix','infra-','below; beneath',['[infra]red', '[infra]structure', '[infra]sonic'],"infrared = light just below red that we cannot see"],
+['intra','prefix','intra-','within; inside',['[intra]mural', '[intra]venous', '[intra]state'],"intramural = within the walls of one school"],
+['intro','prefix','intro-','into; inward',['[intro]duce', '[intro]vert', '[intro]spection'],"introduce = lead someone into a group"],
+['mal','prefix','mal-','bad; badly',['[mal]function', '[mal]nutrition', '[mal]practice'],"malfunction = work badly"],
+['meta','prefix','meta-','change; beyond',['[meta]morphosis', '[meta]phor', '[meta]bolism'],"metamorphosis = a change of shape"],
+['mini','prefix','mini-','small',['[mini]van', '[mini]bus', '[mini]golf'],"minibus = a small bus"],
+['ob','prefix','ob- / op-','against; in the way',['[ob]stacle', '[ob]struct', '[op]pose'],"obstacle = something in the way"],
+['out','prefix','out-','more than; better than',['[out]run', '[out]grow', '[out]number'],"outrun = run faster than"],
+['para','prefix','para-','beside; alongside',['[para]llel', '[para]graph', '[para]medic'],"parallel = lines running beside each other"],
+['per','prefix','per-','through; completely',['[per]spire', '[per]forate', '[per]sist'],"perforate = make holes all the way through"],
+['peri','prefix','peri-','around',['[peri]meter', '[peri]scope', '[peri]od'],"perimeter = the distance around a shape"],
+['post','prefix','post-','after',['[post]pone', '[post]script', '[post]war'],"postpone = put off until after"],
+['pro','prefix','pro-','forward; for',['[pro]ceed', '[pro]pel', '[pro]gress'],"propel = push forward"],
+['retro','prefix','retro-','backward',['[retro]spect', '[retro]grade', '[retro]rocket'],"retrospect = looking backward"],
+['syn','prefix','syn- / sym-','together; same',['[syn]onym', '[sym]phony', '[sym]metry'],"synonym = a word with the same meaning"],
+['ultra','prefix','ultra-','beyond; extremely',['[ultra]violet', '[ultra]sound', '[ultra]light'],"ultrasound = sound beyond what people can hear"],
+['up','prefix','up-','up; higher',['[up]hill', '[up]stairs', '[up]grade'],"uphill = going up a hill"],
+['with','prefix','with-','back; away; against',['[with]draw', '[with]hold', '[with]stand'],"withdraw = draw back"],
+['be','prefix','be-','to make; all over',['[be]friend', '[be]little', '[be]calm'],"befriend = make a friend of"],
+['ambi','prefix','ambi-','both',['[ambi]dextrous', '[ambi]guous', '[ambi]valent'],"ambidextrous = able to use both hands well"],
+['homo','prefix','homo-','same',['[homo]phone', '[homo]graph', '[homo]geneous'],"homophone = a word with the same sound as another"],
+['epi','prefix','epi-','upon; on top of',['[epi]center', '[epi]dermis', '[epi]logue'],"epidermis = the layer of skin on top"],
+['dia','prefix','dia-','across; through',['[dia]meter', '[dia]gonal', '[dia]logue'],"diagonal = a line across from corner to corner"],
+['sur','prefix','sur-','over; above',['[sur]face', '[sur]pass', '[sur]charge'],"surpass = go above or beyond"],
+['quad','prefix','quad- / quadr-','four',['[quad]rilateral', '[quad]ruple', '[quad]rant'],"quadrilateral = a shape with four sides"],
+['penta','prefix','penta-','five',['[penta]gon', '[penta]thlon', '[penta]meter'],"pentagon = a shape with five angles"],
+['hexa','prefix','hex- / hexa-','six',['[hexa]gon', '[hex]apod', '[hexa]meter'],"hexagon = a shape with six angles"],
+['oct','prefix','oct- / octo-','eight',['[oct]agon', '[octo]pus', '[oct]ave'],"octopus = an animal with eight feet"],
+['dec','prefix','dec- / deca-','ten',['[dec]ade', '[dec]imal', '[deca]thlon'],"decade = ten years"],
+['cent','prefix','cent- / centi-','hundred; one hundredth',['[cent]ury', '[centi]pede', '[centi]meter'],"century = one hundred years"],
+['kilo','prefix','kilo-','thousand',['[kilo]meter', '[kilo]gram', '[kilo]watt'],"kilometer = one thousand meters"],
+['milli','prefix','milli-','one thousandth',['[milli]meter', '[milli]liter', '[milli]second'],"millimeter = one thousandth of a meter"],
+['poly','prefix','poly-','many',['[poly]gon', '[poly]hedron', '[poly]glot'],"polygon = a shape with many angles"],
+['omni','prefix','omni-','all; every',['[omni]vore', '[omni]present', '[omni]potent'],"omnivore = an animal that eats all kinds of food"],
+['pan','prefix','pan-','all; whole',['[pan]orama', '[pan]demic', '[pan]acea'],"panorama = a view of the whole area"],
+['ance','suffix','-ance / -ence','the act or state of',['import[ance]', 'differ[ence]', 'perform[ance]'],"performance = the act of performing"],
+['ant','suffix','-ant / -ent','a person who; being',['assist[ant]', 'resid[ent]', 'serv[ant]'],"assistant = a person who assists"],
+['ary','suffix','-ary / -ory','a place for; related to',['diction[ary]', 'laborat[ory]', 'observat[ory]'],"observatory = a place for observing the sky"],
+['ate','suffix','-ate','to make; full of',['activ[ate]', 'captiv[ate]', 'passion[ate]'],"activate = make active"],
+['dom','suffix','-dom','the state or land of',['free[dom]', 'king[dom]', 'bore[dom]'],"kingdom = the land of a king"],
+['ed','suffix','-ed','happened in the past',['jump[ed]', 'walk[ed]', 'play[ed]'],"jumped = did jump in the past"],
+['ing','suffix','-ing','doing an action now',['jump[ing]', 'read[ing]', 'sing[ing]'],"reading = doing the action of reading"],
+['s','suffix','-s / -es','more than one',['cat[s]', 'box[es]', 'dish[es]'],"boxes = more than one box"],
+['er_c','suffix','-er (more)','more',['fast[er]', 'tall[er]', 'small[er]'],"taller = more tall"],
+['est','suffix','-est','most',['fast[est]', 'tall[est]', 'small[est]'],"tallest = the most tall"],
+['hood','suffix','-hood','the time or state of being',['child[hood]', 'neighbor[hood]', 'brother[hood]'],"childhood = the time of being a child"],
+['ify','suffix','-ify / -fy','to make',['simpl[ify]', 'magn[ify]', 'terr[ify]'],"simplify = make simple"],
+['ize','suffix','-ize','to make; to become',['modern[ize]', 'memor[ize]', 'organ[ize]'],"modernize = make modern"],
+['ish','suffix','-ish','somewhat; like',['child[ish]', 'green[ish]', 'fool[ish]'],"greenish = somewhat green"],
+['ism','suffix','-ism','a belief or practice',['hero[ism]', 'patriot[ism]', 'critic[ism]'],"heroism = acting like a hero"],
+['like','suffix','-like','similar to',['child[like]', 'life[like]', 'cat[like]'],"lifelike = similar to real life"],
+['ling','suffix','-ling','small; young',['duck[ling]', 'seed[ling]', 'sap[ling]'],"duckling = a young duck"],
+['let','suffix','-let','small',['book[let]', 'pig[let]', 'drop[let]'],"piglet = a small pig"],
+['ward','suffix','-ward','in the direction of',['back[ward]', 'home[ward]', 'up[ward]'],"homeward = in the direction of home"],
+['wise','suffix','-wise','in the manner of',['clock[wise]', 'like[wise]', 'other[wise]'],"clockwise = in the manner a clock turns"],
+['some','suffix','-some','tending to cause',['awe[some]', 'tire[some]', 'lone[some]'],"tiresome = tending to make you tired"],
+['ics','suffix','-ics','the study or skill of',['phys[ics]', 'athlet[ics]', 'phon[ics]'],"athletics = the skill of sports"],
+['ure','suffix','-ure','the act or result of',['fail[ure]', 'press[ure]', 'depart[ure]'],"departure = the act of departing"],
+['age','suffix','-age','an action or a collection',['pack[age]', 'post[age]', 'break[age]'],"breakage = the result of breaking"],
+['ee','suffix','-ee','a person who receives',['employ[ee]', 'train[ee]', 'interview[ee]'],"employee = a person who is employed"],
+['eer','suffix','-eer','a person who works with',['engin[eer]', 'volunt[eer]', 'mountain[eer]'],"mountaineer = a person who climbs mountains"],
+['ess','suffix','-ess','a female',['lion[ess]', 'host[ess]', 'heir[ess]'],"lioness = a female lion"],
+['ian','suffix','-ian','a person skilled in',['librar[ian]', 'music[ian]', 'magic[ian]'],"musician = a person skilled in music"],
+['ade','suffix','-ade','a drink or an action',['lemon[ade]', 'orange[ade]', 'block[ade]'],"lemonade = a drink made from lemons"],
+['ery','suffix','-ery / -ry','a place for; the act of',['bak[ery]', 'brav[ery]', 'nurs[ery]'],"bakery = a place for baking"],
+['ty','suffix','-ty','the quality of',['safe[ty]', 'loyal[ty]', 'cruel[ty]'],"safety = the quality of being safe"],
+['tude','suffix','-tude','the quality or state of',['grati[tude]', 'soli[tude]', 'magni[tude]'],"solitude = the state of being alone"],
+['ar','suffix','-ar','related to; like',['sol[ar]', 'lun[ar]', 'circul[ar]'],"lunar = related to the moon"],
+['ile','suffix','-ile','able to be; related to',['frag[ile]', 'mob[ile]', 'tact[ile]'],"fragile = able to be broken easily"],
+['ency','suffix','-ancy / -ency','the state or quality of',['emerg[ency]', 'urg[ency]', 'vac[ancy]'],"vacancy = the state of being empty"],
+['fold','suffix','-fold','times as many',['two[fold]', 'ten[fold]', 'hundred[fold]'],"tenfold = ten times as many"],
+['ster','suffix','-ster','a person who',['young[ster]', 'prank[ster]', 'song[ster]'],"prankster = a person who plays pranks"],
+['ette','suffix','-ette','small',['kitchen[ette]', 'statu[ette]', 'novel[ette]'],"kitchenette = a small kitchen"],
+['anthrop','greek','anthrop','human',['[anthrop]ology', 'phil[anthrop]ist', '[anthrop]oid'],"anthropology = the study of humans"],
+['arch','greek','arch','ruler; chief',['mon[arch]', '[arch]itect', 'matri[arch]'],"monarch = one ruler"],
+['biblio','greek','biblio / bibl','book',['[biblio]graphy', '[biblio]phile', '[bibl]e'],"bibliography = a written list of books"],
+['cardi','greek','cardi','heart',['[cardi]ac', '[cardi]ologist', 'electro[cardi]ogram'],"cardiologist = a heart doctor"],
+['chrom','greek','chrom','color',['mono[chrom]e', '[chrom]osome', '[chrom]atic'],"monochrome = one color"],
+['cosm','greek','cosm','universe; order',['[cosm]os', 'micro[cosm]', '[cosm]onaut'],"cosmonaut = a sailor of the universe"],
+['crat','greek','crat / cracy','rule; power',['demo[cracy]', 'auto[crat]', 'aristo[crat]'],"democracy = rule by the people"],
+['dem','greek','dem / demo','people',['[demo]cracy', '[dem]ographic', 'epi[dem]ic'],"epidemic = a disease spreading among people"],
+['derm','greek','derm','skin',['[derm]atologist', 'epi[derm]is', 'hypo[derm]ic'],"dermatologist = a skin doctor"],
+['dynam','greek','dynam','power',['[dynam]ite', '[dynam]ic', '[dynam]o'],"dynamite = a powerful explosive"],
+['eco','greek','eco','house; environment',['[eco]logy', '[eco]system', '[eco]nomy'],"ecosystem = living things and their home"],
+['electr','greek','electr','electric',['[electr]ic', '[electr]on', '[electr]icity'],"electricity = electric power"],
+['gen','greek','gen','birth; kind; origin',['[gen]esis', '[gen]eration', 'hydro[gen]'],"generation = people born around the same time"],
+['gon','greek','gon','angle',['penta[gon]', 'octa[gon]', 'poly[gon]'],"octagon = a shape with eight angles"],
+['gram','greek','gram','something written or drawn',['tele[gram]', 'dia[gram]', 'pro[gram]'],"diagram = a drawing that explains"],
+['hemo','greek','hem / hemo','blood',['[hemo]globin', '[hem]orrhage', '[hemo]philia'],"hemoglobin = the part of blood that carries oxygen"],
+['helio','greek','helio / heli','sun',['[heli]um', '[helio]centric', '[helio]trope'],"heliocentric = centered on the sun"],
+['iso','greek','iso','equal',['[iso]sceles', '[iso]metric', '[iso]tope'],"isosceles = a triangle with two equal sides"],
+['kine','greek','kine / cine','motion',['[kine]tic', '[cine]ma', '[kine]sthetic'],"kinetic = related to motion"],
+['lith','greek','lith','stone',['mono[lith]', '[lith]ograph', 'paleo[lith]ic'],"monolith = one huge stone"],
+['log','greek','log / logue','word; speech',['dia[logue]', 'pro[logue]', 'cata[log]'],"dialogue = words spoken between people"],
+['lys','greek','lys','break apart; loosen',['ana[lys]is', 'para[lys]is', 'cata[lys]t'],"analysis = breaking something apart to study it"],
+['macro','greek','macro','large',['[macro]scopic', '[macro]cosm', '[macro]biotic'],"macroscopic = large enough to see"],
+['mech','greek','mech','machine',['[mech]anic', '[mech]anism', '[mech]anical'],"mechanic = a person who fixes machines"],
+['mega','greek','mega','huge; million',['[mega]phone', '[mega]byte', '[mega]lith'],"megaphone = a tool that makes a huge sound"],
+['mono','greek','mono','one; alone',['[mono]logue', '[mono]rail', '[mono]tone'],"monorail = a train on one rail"],
+['morph','greek','morph','shape; form',['meta[morph]osis', 'a[morph]ous', '[morph]ology'],"metamorphosis = a change of shape"],
+['naut','greek','naut','sailor; ship',['astro[naut]', 'aero[naut]', 'aqua[naut]'],"astronaut = a star sailor"],
+['neo','greek','neo','new',['[neo]n', '[neo]natal', '[neo]classical'],"neonatal = related to newborn babies"],
+['nym','greek','nym / onym','name; word',['syn[onym]', 'ant[onym]', 'pseud[onym]'],"antonym = a word with the opposite meaning"],
+['ortho','greek','ortho','straight; correct',['[ortho]dontist', '[ortho]pedic', '[ortho]graphy'],"orthodontist = a dentist who straightens teeth"],
+['paleo','greek','paleo','old; ancient',['[paleo]ntologist', '[paleo]lithic', '[paleo]zoic'],"paleontologist = a scientist who studies ancient life"],
+['path','greek','path','feeling; suffering',['sym[path]y', 'em[path]y', 'a[path]y'],"empathy = feeling what others feel"],
+['paed','greek','ped (child)','child',['[ped]iatrician', 'encyclo[ped]ia', '[ped]agogy'],"pediatrician = a doctor for children"],
+['phil','greek','phil / phile','love',['[phil]osophy', '[phil]anthropy', 'audio[phile]'],"philosophy = the love of wisdom"],
+['phob','greek','phob','fear',['claustro[phob]ia', 'arachno[phob]ia', 'hydro[phob]ia'],"arachnophobia = a fear of spiders"],
+['phys','greek','phys','nature; body',['[phys]ics', '[phys]ical', '[phys]ician'],"physical = related to the body"],
+['pod','greek','pod','foot',['tri[pod]', '[pod]iatrist', 'arthro[pod]'],"tripod = a stand with three feet"],
+['polis','greek','polis / polit','city; citizen',['metro[polis]', '[polit]ics', 'cosmo[polit]an'],"metropolis = a large city"],
+['psych','greek','psych','mind; soul',['[psych]ology', '[psych]ic', '[psych]iatrist'],"psychology = the study of the mind"],
+['pyr','greek','pyr / pyro','fire',['[pyro]technics', '[pyr]e', '[pyr]ite'],"pyrotechnics = fireworks"],
+['soph','greek','soph','wise; wisdom',['philo[soph]y', '[soph]omore', '[soph]isticated'],"sophisticated = wise about the world"],
+['sphere','greek','sphere','ball; globe',['atmo[sphere]', 'hemi[sphere]', 'bio[sphere]'],"hemisphere = half of a globe"],
+['techn','greek','techn','skill; art',['[techn]ology', '[techn]ique', '[techn]ical'],"technique = a way of doing something with skill"],
+['top','greek','top','place',['[top]ic', '[top]ography', 'u[top]ia'],"topography = the shape of the land in a place"],
+['tox','greek','tox','poison',['[tox]ic', '[tox]in', 'anti[tox]in'],"toxic = poisonous"],
+['zoo','greek','zoo / zo','animal',['[zoo]logy', '[zoo]plankton', '[zo]diac'],"zoology = the study of animals"],
+['aero','greek','aero','air',['[aero]bics', '[aero]sol', '[aero]space'],"aerospace = the air and space around Earth"],
+['acro','greek','acro','high; top',['[acro]bat', '[acro]phobia', '[acro]polis'],"acrophobia = a fear of high places"],
+['lex','greek','lex','word',['[lex]icon', 'dys[lex]ia', '[lex]ical'],"lexicon = a list of words"],
+['nom','greek','nom / nomy','law; system of rules',['astro[nomy]', 'eco[nomy]', 'auto[nomy]'],"astronomy = the laws of the stars"],
+['odont','greek','odont','tooth',['orth[odont]ist', 'peri[odont]ist', '[odont]ology'],"orthodontist = a dentist who straightens teeth"],
+['opt','greek','opt','eye; sight',['[opt]ical', '[opt]ometrist', '[opt]ician'],"optometrist = an eye doctor"],
+['proto','greek','proto','first',['[proto]type', '[proto]n', '[proto]col'],"prototype = the first model of something"],
+['pseudo','greek','pseudo','false; fake',['[pseudo]nym', '[pseudo]science', '[pseudo]code'],"pseudonym = a false name"],
+['gyro','greek','gyro / gyr','spin; circle',['[gyro]scope', '[gyr]ate', '[gyro]compass'],"gyroscope = a spinning tool for balance"],
+['chlor','greek','chlor','green',['[chlor]ophyll', '[chlor]ine', '[chlor]oplast'],"chlorophyll = the green color in leaves"],
+['saur','greek','saur','lizard',['dino[saur]', 'bronto[saur]us', 'stego[saur]us'],"dinosaur = a terrible lizard"],
+['ptero','greek','pter / ptero','wing',['[ptero]dactyl', 'helico[pter]', '[ptero]saur'],"helicopter = a machine with spinning wings"],
+['gastr','greek','gastr','stomach',['[gastr]ic', '[gastr]itis', '[gastr]onomy'],"gastric = related to the stomach"],
+['neur','greek','neur','nerve',['[neur]on', '[neur]ologist', '[neur]al'],"neurologist = a nerve doctor"],
+['crypt','greek','crypt','hidden; secret',['[crypt]ic', 'en[crypt]', '[crypt]ogram'],"cryptic = hidden or hard to understand"],
+['hippo','greek','hipp / hippo','horse',['[hippo]potamus', '[hippo]drome', '[hippo]campus'],"hippopotamus = a river horse"],
+['rhino','greek','rhin / rhino','nose',['[rhino]ceros', '[rhin]itis', '[rhino]plasty'],"rhinoceros = an animal with a horn on its nose"],
+['act','latin','act / ag','do; drive',['[act]or', 're[act]', '[ag]ent'],"actor = a person who acts"],
+['alt','latin','alt','high',['[alt]itude', '[alt]imeter', 'ex[alt]'],"altitude = how high something is"],
+['am','latin','am / ami','love; friend',['[ami]able', '[am]ateur', '[ami]cable'],"amateur = someone who does something for love, not money"],
+['ann','latin','ann / enn','year',['[ann]ual', '[ann]iversary', 'cent[enn]ial'],"annual = happening every year"],
+['anim','latin','anim','life; spirit',['[anim]al', '[anim]ate', '[anim]ation'],"animate = give life to"],
+['bene','latin','bene','good; well',['[bene]fit', '[bene]factor', '[bene]volent'],"benefit = something good"],
+['brev','latin','brev / brief','short',['[brev]ity', 'ab[brev]iate', '[brief]case'],"abbreviate = make shorter"],
+['capt','latin','cap / capt','take; seize',['[capt]ure', '[capt]ive', '[cap]able'],"capture = take and hold"],
+['capit','latin','capit','head',['[capit]al', 'de[capit]ate', '[capit]ol'],"capital = the head city of a state"],
+['carn','latin','carn','flesh; meat',['[carn]ivore', '[carn]ival', '[carn]ation'],"carnivore = an animal that eats meat"],
+['ced','latin','ced / ceed / cess','go; yield',['pro[ceed]', 'ex[ceed]', 're[cess]'],"proceed = go forward"],
+['cide','latin','cide','kill',['insecti[cide]', 'pesti[cide]', 'herbi[cide]'],"pesticide = something that kills pests"],
+['cept','latin','cept / cip','take; receive',['ac[cept]', 'ex[cept]', 're[cip]ient'],"recipient = a person who receives"],
+['circ','latin','circ','ring; around',['[circ]le', '[circ]us', '[circ]ulate'],"circulate = move around"],
+['clam','latin','clam / claim','shout; call out',['ex[claim]', 'pro[claim]', '[clam]or'],"exclaim = shout out"],
+['clud','latin','clud / clus','close; shut',['in[clud]e', 'ex[clud]e', 'con[clus]ion'],"exclude = shut out"],
+['cogn','latin','cogn','know',['re[cogn]ize', '[cogn]itive', 'in[cogn]ito'],"recognize = know again"],
+['corp','latin','corp','body',['[corp]oration', '[corp]s', '[corp]oral'],"corps = a body of people working together"],
+['cur','latin','cur / cour','run',['[cur]rent', 'ex[cur]sion', '[cour]ier'],"current = water or air that runs along"],
+['dent','latin','dent','tooth',['[dent]ist', '[dent]al', '[dent]ures'],"dentist = a tooth doctor"],
+['doc','latin','doc / doct','teach',['[doct]or', '[doc]ument', '[doc]ile'],"document = a paper that teaches or proves something"],
+['domin','latin','domin','master; rule',['[domin]ate', '[domin]ant', '[domin]ion'],"dominate = rule over"],
+['duc','latin','duc / duct','lead',['intro[duc]e', 'aque[duct]', 'con[duct]or'],"conductor = a person who leads"],
+['equ','latin','equ / equi','equal',['[equ]al', '[equ]ation', '[equi]lateral'],"equilateral = having equal sides"],
+['fac','latin','fac / fact','make; do',['[fact]ory', 'manu[fact]ure', 'arti[fact]'],"factory = a place where things are made"],
+['fer','latin','fer','carry; bring',['trans[fer]', '[fer]ry', 're[fer]'],"transfer = carry across"],
+['fid','latin','fid','faith; trust',['con[fid]ent', '[fid]elity', 'con[fid]ential'],"confident = full of trust in yourself"],
+['fin','latin','fin','end; limit',['[fin]al', '[fin]ish', 'in[fin]ite'],"infinite = without an end"],
+['flu','latin','flu / flux','flow',['[flu]id', '[flu]ent', 'in[flux]'],"fluent = speaking so the words flow"],
+['fort','latin','fort','strong',['[fort]ress', '[fort]ify', 'com[fort]'],"fortress = a strong building"],
+['fus','latin','fus','pour; melt',['[fus]e', 'trans[fus]ion', 'con[fus]ion'],"transfusion = pouring blood into someone"],
+['grad','latin','grad / gress','step; go',['[grad]e', '[grad]ual', 'pro[gress]'],"progress = step forward"],
+['grat','latin','grat','pleasing; thankful',['[grat]eful', '[grat]itude', 'con[grat]ulate'],"grateful = thankful"],
+['hab','latin','hab / hibit','have; hold; live',['[hab]itat', 'ex[hibit]', 'in[hab]it'],"habitat = the place where an animal lives"],
+['jud','latin','jud / jur / jus','law; right',['[jud]ge', '[jus]tice', '[jur]y'],"justice = what is right and fair"],
+['junct','latin','junct','join',['[junct]ion', 'con[junct]ion', '[junct]ure'],"junction = a place where things join"],
+['lab','latin','lab','work',['[lab]or', '[lab]oratory', 'e[lab]orate'],"laboratory = a place where scientists work"],
+['lect','latin','lect / leg','read; choose',['[lect]ure', 'se[lect]', '[leg]ible'],"legible = able to be read"],
+['liber','latin','liber','free',['[liber]ty', '[liber]ate', '[liber]al'],"liberty = freedom"],
+['loc','latin','loc','place',['[loc]ation', '[loc]al', 're[loc]ate'],"relocate = move to a new place"],
+['loqu','latin','loqu / locut','speak',['ventri[loqu]ist', 'e[loqu]ent', 'e[locut]ion'],"ventriloquist = a person who speaks without moving their lips"],
+['luc','latin','luc / lum','light',['trans[luc]ent', '[luc]id', 'il[lum]inate'],"illuminate = light up"],
+['magn','latin','magn','great; large',['[magn]ify', '[magn]ificent', '[magn]itude'],"magnify = make larger"],
+['mar','latin','mar','sea',['[mar]ine', 'sub[mar]ine', '[mar]iner'],"marine = related to the sea"],
+['mater','latin','mater / matr','mother',['[mater]nal', '[mater]nity', '[matr]iarch'],"maternal = related to a mother"],
+['pater','latin','pater / patr','father',['[pater]nal', '[patr]iot', '[patr]iarch'],"paternal = related to a father"],
+['medi','latin','medi','middle',['[medi]um', '[medi]an', 'inter[medi]ate'],"median = the middle number"],
+['mem','latin','mem','remember',['[mem]ory', '[mem]orize', 're[mem]ber'],"memorize = learn so you remember"],
+['migr','latin','migr','move; wander',['[migr]ate', '[migr]ant', 'im[migr]ant'],"migrate = move from place to place"],
+['min','latin','min','small; less',['[min]imum', '[min]us', '[min]or'],"minimum = the smallest amount"],
+['mort','latin','mort','death',['[mort]al', 'im[mort]al', '[mort]ality'],"immortal = never dying"],
+['nat','latin','nat','born',['[nat]ive', '[nat]ion', 'pre[nat]al'],"native = born in a place"],
+['nav','latin','nav','ship; sail',['[nav]y', '[nav]igate', '[nav]al'],"navigate = steer a ship"],
+['nov','latin','nov','new',['[nov]el', '[nov]ice', 'in[nov]ate'],"novice = someone new at something"],
+['noct','latin','noct / nox','night',['[noct]urnal', 'equi[nox]', '[noct]urne'],"nocturnal = active at night"],
+['numer','latin','numer','number',['[numer]al', '[numer]ator', '[numer]ous'],"numerous = a large number of"],
+['oper','latin','oper','work',['[oper]ate', 'co[oper]ate', '[oper]ation'],"cooperate = work together"],
+['pac','latin','pac','peace',['[pac]ify', '[pac]ifist', '[pac]ific'],"pacify = bring peace"],
+['pel','latin','pel / puls','push; drive',['pro[pel]', 're[pel]', 'im[puls]e'],"repel = push back"],
+['pend','latin','pend / pens','hang; weigh',['[pend]ulum', 'sus[pend]', 'de[pend]'],"pendulum = a weight that hangs and swings"],
+['plic','latin','plic / ply','fold',['multi[ply]', 're[ply]', 'com[plic]ate'],"multiply = fold many times"],
+['pon','latin','pon / pos','put; place',['[pos]ition', 'de[pos]it', 'op[pon]ent'],"deposit = put down"],
+['pop','latin','pop','people',['[pop]ular', '[pop]ulation', '[pop]ulate'],"population = the number of people"],
+['prim','latin','prim','first',['[prim]ary', '[prim]e', '[prim]itive'],"primary = first"],
+['ques','latin','ques / quir','ask; seek',['[ques]tion', '[ques]t', 'in[quir]e'],"inquire = ask"],
+['rad','latin','rad','ray',['[rad]io', '[rad]ius', '[rad]iate'],"radius = a ray from the center of a circle"],
+['rect','latin','rect / reg','straight; rule',['[rect]angle', 'cor[rect]', '[reg]ulate'],"rectangle = a shape with straight sides and right angles"],
+['rid','latin','rid / ris','laugh',['[rid]iculous', '[rid]icule', 'de[ris]ion'],"ridiculous = so silly it makes you laugh"],
+['rot','latin','rot','turn; wheel',['[rot]ate', '[rot]ation', '[rot]ary'],"rotate = turn around"],
+['sci','latin','sci','know',['[sci]ence', 'con[sci]ous', 'omni[sci]ent'],"science = knowing about the world"],
+['sect','latin','sect / sec','cut',['dis[sect]', '[sect]ion', 'inter[sect]'],"intersect = cut across"],
+['sed','latin','sed / sid','sit; settle',['[sed]iment', 'pre[sid]ent', 're[sid]e'],"sediment = bits that settle to the bottom"],
+['sens','latin','sens / sent','feel',['[sens]e', '[sens]itive', 'con[sent]'],"sensitive = able to feel things easily"],
+['sequ','latin','sequ / secu','follow',['[sequ]el', '[sequ]ence', 'con[secu]tive'],"sequel = a story that follows another"],
+['sign','latin','sign','mark',['[sign]al', '[sign]ature', 'de[sign]'],"signature = your name as a mark"],
+['simil','latin','simil / simul','like; same',['[simil]ar', '[simil]e', '[simul]ate'],"similar = alike"],
+['sol','latin','sol','sun',['[sol]ar', '[sol]stice', 'para[sol]'],"solar = related to the sun"],
+['solv','latin','solv / solu','loosen; free',['dis[solv]e', 're[solv]e', '[solu]tion'],"dissolve = loosen into a liquid"],
+['son','latin','son','sound',['[son]ic', '[son]ar', 'super[son]ic'],"supersonic = faster than sound"],
+['spir','latin','spir','breathe',['[spir]it', 'in[spir]e', 're[spir]ation'],"respiration = breathing"],
+['sta','latin','sta / stat','stand',['[stat]ue', '[stat]ion', 'ob[sta]cle'],"statue = a figure that stands"],
+['tact','latin','tact / tang','touch',['[tact]ile', 'con[tact]', '[tang]ible'],"contact = touch"],
+['temp','latin','temp','time',['[temp]orary', '[temp]o', 'con[temp]orary'],"temporary = for a short time"],
+['ten','latin','ten / tain','hold',['con[tain]', 're[tain]', '[ten]ant'],"contain = hold inside"],
+['tend','latin','tend / tens','stretch',['ex[tend]', '[tens]ion', '[tend]on'],"extend = stretch out"],
+['termin','latin','termin','end; limit',['[termin]al', '[termin]ate', 'de[termin]e'],"terminate = bring to an end"],
+['tort','latin','tort','twist',['dis[tort]', 'con[tort]ionist', 're[tort]'],"distort = twist out of shape"],
+['urb','latin','urb','city',['[urb]an', 'sub[urb]', '[urb]anize'],"suburb = a town near a city"],
+['vac','latin','vac','empty',['[vac]ant', '[vac]uum', 'e[vac]uate'],"vacant = empty"],
+['val','latin','val','strong; worth',['[val]ue', '[val]iant', 'e[val]uate'],"value = what something is worth"],
+['ven','latin','ven / vent','come',['in[vent]', 'pre[vent]', 'con[ven]tion'],"convention = people coming together"],
+['ver','latin','ver','true',['[ver]ify', '[ver]dict', '[ver]ity'],"verify = prove something is true"],
+['vert','latin','vert / vers','turn',['re[vers]e', 'con[vert]', 'in[vert]'],"reverse = turn back"],
+['vict','latin','vict / vinc','conquer',['[vict]ory', '[vict]or', 'in[vinc]ible'],"invincible = not able to be conquered"],
+['viv','latin','viv / vit','live; life',['[viv]id', 'sur[viv]e', '[vit]al'],"survive = stay alive"],
+['vol','latin','vol','wish; will',['[vol]unteer', 'bene[vol]ent', '[vol]untary'],"volunteer = someone who helps because they want to"],
+['volv','latin','volv / volu','roll; turn',['re[volv]e', 'e[volv]e', 're[volu]tion'],"revolve = roll or turn around"],
+['vor','latin','vor','eat',['carni[vor]e', 'herbi[vor]e', 'omni[vor]e'],"herbivore = an animal that eats plants"],
+['don','latin','don / dat','give',['[don]ate', '[don]or', 'par[don]'],"donate = give"],
+['cert','latin','cert','sure',['[cert]ain', '[cert]ify', '[cert]ificate'],"certain = sure"],
+['cord','latin','cord','heart',['[cord]ial', 'ac[cord]', 'dis[cord]'],"cordial = warm and from the heart"],
+['fug','latin','fug','flee; run away',['re[fug]ee', '[fug]itive', 'centri[fug]e'],"refugee = someone who flees danger"],
+['pict','latin','pict','paint; picture',['[pict]ure', 'de[pict]', '[pict]orial'],"depict = show in a picture"],
+['punct','latin','punct','point',['[punct]uation', '[punct]ual', '[punct]ure'],"puncture = a hole made by a point"],
+['sal','latin','sal','salt',['[sal]ad', '[sal]ary', '[sal]ine'],"saline = salty"],
+['sat','latin','sat','enough',['[sat]isfy', '[sat]urate', 'in[sat]iable'],"satisfy = give enough"],
+['serv','latin','serv','save; keep',['con[serv]e', 'pre[serv]e', 're[serv]e'],"preserve = keep safe"],
+['strict','latin','strict / string','draw tight',['re[strict]', 'con[strict]', '[string]ent'],"restrict = keep within tight limits"],
+['trib','latin','trib','give; pay',['con[trib]ute', 'dis[trib]ute', '[trib]ute'],"contribute = give to help"]
+].map(a=>({id:a[0],kind:a[1],label:a[2],meaning:a[3],ex:a[4],gloss:a[5],group:a[6]||a[0]}))
+ .sort((a,b)=>['prefix','suffix','greek','latin'].indexOf(a.kind)-['prefix','suffix','greek','latin'].indexOf(b.kind));
 
 // [word, meaning, level, parts[[text, partId?]]] — a part with no id is a base word
 const WORDS=[
@@ -521,6 +782,7 @@ function renderExplore(){
   const q=EX.q.trim().toLowerCase();
   const list=PARTS.filter(p=>(EX.kind==='all'||p.kind===EX.kind)&&
     (!q||p.label.toLowerCase().includes(q)||p.meaning.toLowerCase().includes(q)||p.ex.join(' ').replace(/[\[\]]/g,'').includes(q)));
+  $('#ex-count').textContent='Showing '+list.length+' of '+PARTS.length+' word parts.';
   $('#ex-grid').innerHTML=list.length?list.map(p=>{
     const open=EX.open.has(p.id);
     return `<button class="card k-${p.kind}" data-id="${p.id}" aria-expanded="${open}">
@@ -651,6 +913,9 @@ function finishQuiz(){
   bd.hidden=!Q.missed.length;
   $('#q-next').textContent='Start a new quiz';$('#q-next').hidden=false;
 }
+const STOP=new Set('a an the to of or and that in on for from with who is be being it its something someone thing can done does do way you what'.split(' '));
+const keyWords=m=>m.toLowerCase().split(/[^a-z]+/).filter(w=>w&&!STOP.has(w)).map(w=>w.replace(/s$/,''));
+function sameMeaning(a,b){const k=new Set(keyWords(a));return keyWords(b).some(w=>k.has(w))}
 function newQuestion(){
   if(Q.tried>=Q.len){finishQuiz();return}
   $('#q-count').textContent='Question '+(Q.tried+1)+' of '+Q.len;
@@ -662,10 +927,13 @@ function newQuestion(){
     $('#q-eyebrow').textContent=KIND[p.kind];
     $('#q-prompt').innerHTML=`What does <span class="tile k-${p.kind}">${esc(p.label)}</span> mean?`;
     $('#q-sub').innerHTML='You see it in: '+p.ex.map(e=>`<span class="k-${p.kind}">${hl(e)}</span>`).join(', ');
-    const seen=new Set([p.meaning]),wrong=[];
-    shuffle(PARTS.filter(o=>o.kind===p.kind&&o.group!==p.group)).forEach(o=>{
-      if(wrong.length<3&&!seen.has(o.meaning)){seen.add(o.meaning);wrong.push(o.meaning)}
+    // wrong answers must not share a key word with the right answer or with each other
+    const used=[p.meaning],wrong=[];
+    const pick=pool=>shuffle(pool).forEach(o=>{
+      if(wrong.length<3&&o.group!==p.group&&!used.some(m=>sameMeaning(m,o.meaning))){used.push(o.meaning);wrong.push(o.meaning)}
     });
+    pick(PARTS.filter(o=>o.kind===p.kind));
+    if(wrong.length<3)pick(PARTS.filter(o=>o.kind!==p.kind));
     q.answer=p.meaning;opts=shuffle(wrong.concat(p.meaning));
   }else{
     const w=q.w;
@@ -761,6 +1029,8 @@ fract:['fraction','fracture','fragile','fragment','refract'],
 voc:['vocal','vocabulary','vocalist','advocate','vocation'],
 mot:['motion','motor','remove','move','movie','promote','remote','emotion']
 };
+// every Greek and Latin root's example words also count as word bank words
+PARTS.forEach(p=>{if(p.kind!=='greek'&&p.kind!=='latin')return;const s=new Set(USE[p.id]||[]);p.ex.forEach(e=>s.add(e.replace(/[\[\]]/g,'').toLowerCase()));USE[p.id]=[...s]});
 function stem(w){w=w.toLowerCase();if(/[^s]s$/.test(w))w=w.slice(0,-1);if(/[ey]$/.test(w)&&w.length>3)w=w.slice(0,-1);return w}
 const TO_PL={is:'are',was:'were',has:'have',does:'do',"doesn't":"don't","isn't":"aren't","wasn't":"weren't","hasn't":"haven't"};
 const TO_SG={are:'is',were:'was',have:'has',do:'does',"don't":"doesn't","aren't":"isn't","weren't":"wasn't","haven't":"hasn't"};
