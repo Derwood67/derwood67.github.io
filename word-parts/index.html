@@ -101,7 +101,16 @@ button.tile:disabled{opacity:.3;cursor:default}
 
 /* explore cards */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:12px;align-items:start}
-.card{display:flex;flex-direction:column;gap:4px;text-align:left;background:var(--k-bg);border:2px solid var(--k);border-radius:14px;padding:12px 14px;min-width:0}
+.card{display:flex;flex-direction:column;background:var(--k-bg);border:2px solid var(--k);border-radius:14px;padding:12px 14px;min-width:0}
+.card.open{grid-column:1/-1}
+.cardtop{display:flex;flex-direction:column;gap:4px;text-align:left;background:transparent;border:0;padding:0;width:100%}
+.card .done{color:var(--good);letter-spacing:0;text-transform:none;margin-left:6px}
+.card .sbox{display:flex;flex-direction:column;gap:8px;margin-top:10px;max-width:640px}
+.card textarea{width:100%;min-height:64px;resize:vertical;background:var(--surface);border:2px solid var(--line);border-radius:10px;padding:8px 12px;line-height:1.45}
+.card textarea.passed{border-color:var(--good)}
+.btn.sm{font-size:.95rem;padding:6px 16px}
+.okmark{color:var(--good);font-weight:700}
+.issues{margin:0;padding-left:22px;color:var(--bad);font-weight:700;display:flex;flex-direction:column;gap:4px}
 .card .kind{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--k);font-weight:700}
 .card .part{font-family:var(--display);font-size:1.5rem;font-weight:600;line-height:1.1;overflow-wrap:anywhere}
 .card .mean{font-size:.98rem}
@@ -204,9 +213,10 @@ label.help{font-weight:700}
       <button class="chip k-suffix" data-kind="suffix" aria-pressed="false">Suffixes</button>
       <button class="chip k-greek" data-kind="greek" aria-pressed="false">Greek roots</button>
       <button class="chip k-latin" data-kind="latin" aria-pressed="false">Latin roots</button>
+      <button class="chip" data-kind="mine" aria-pressed="false">My sentences</button>
       <input class="search" id="ex-search" type="search" placeholder="Search a part or a meaning" aria-label="Search word parts">
     </div>
-    <p class="help"><span id="ex-count"></span> Tap a card to see words that use that part.</p>
+    <p class="help"><span id="ex-count"></span> Tap a card to see example words and write your own sentence.</p>
     <div class="grid" id="ex-grid"></div>
   </section>
 
@@ -778,26 +788,86 @@ addEventListener('hashchange',()=>show(location.hash.slice(1)));
 
 /* ---------- explore ---------- */
 const EX={kind:'all',q:'',open:new Set()};
-function renderExplore(){
-  const q=EX.q.trim().toLowerCase();
-  const list=PARTS.filter(p=>(EX.kind==='all'||p.kind===EX.kind)&&
-    (!q||p.label.toLowerCase().includes(q)||p.meaning.toLowerCase().includes(q)||p.ex.join(' ').replace(/[\[\]]/g,'').includes(q)));
-  $('#ex-count').textContent='Showing '+list.length+' of '+PARTS.length+' word parts.';
-  $('#ex-grid').innerHTML=list.length?list.map(p=>{
-    const open=EX.open.has(p.id);
-    return `<button class="card k-${p.kind}" data-id="${p.id}" aria-expanded="${open}">
-      <span class="kind">${KIND[p.kind]}</span>
+// sentences students write for each word part, kept in this browser
+const S_KEY='wpw-sentences-v1';let SENT={};
+try{SENT=JSON.parse(localStorage.getItem(S_KEY))||{}}catch(e){}
+function sSave(){try{localStorage.setItem(S_KEY,JSON.stringify(SENT))}catch(e){}}
+const sDone=id=>!!(SENT[id]&&SENT[id].done);
+function variants(p){return p.label.replace(/\(.*?\)/g,'').split('/').map(v=>v.trim().replace(/^-|-$/g,'').toLowerCase()).filter(Boolean)}
+function usesPart(p,text){
+  const vs=variants(p),words=text.toLowerCase().match(/[a-z]+/g)||[];
+  return words.some(w=>vs.some(v=>p.kind==='prefix'?w.startsWith(v)&&w.length>=v.length+3
+    :p.kind==='suffix'?w.indexOf(v,1)>0&&w.length>=v.length+2
+    :w.includes(v)));
+}
+function checkOne(p,raw){
+  const t=raw.replace(/[‘’]/g,"'").replace(/[“”]/g,'"').trim();
+  if(!t)return ['Write a sentence first.'];
+  const out=[],n=(t.match(/[A-Za-z][A-Za-z'-]*/g)||[]).length;
+  if(splitSentences(t).length>1)out.push('Write just one sentence here.');
+  if(n<5)out.push('Add more detail. Use at least 5 words.');
+  sentenceIssues(t).forEach(x=>{if(!(n<5&&/very short/.test(x.msg)))out.push(x.msg)});
+  if(!usesPart(p,t))out.push('Use a word with "'+p.label+'" in your sentence. You could try '+p.ex.map(e=>e.replace(/[\[\]]/g,'')).join(', ')+'.');
+  return out;
+}
+function cardHTML(p){
+  const open=EX.open.has(p.id),rec=SENT[p.id]||{},done=sDone(p.id);
+  return `<div class="card k-${p.kind}${open?' open':''}" data-id="${p.id}">
+    <button class="cardtop" aria-expanded="${open}">
+      <span class="kind">${KIND[p.kind]}${done?'<span class="done">✓ Sentence written</span>':''}</span>
       <span class="part">${esc(p.label)}</span>
       <span class="mean">${esc(p.meaning)}</span>
-      <span class="more"${open?'':' hidden'}>${p.ex.map(e=>`<span>${hl(e)}</span>`).join('')}<em>${esc(p.gloss)}</em></span>
-    </button>`}).join(''):'<p class="empty">No word parts match that search. Try a shorter word.</p>';
+    </button>
+    <div class="more"${open?'':' hidden'}>${p.ex.map(e=>`<span>${hl(e)}</span>`).join('')}<em>${esc(p.gloss)}</em>
+      <div class="sbox">
+        <label class="eyebrow" for="s-${p.id}">Write a sentence using ${esc(p.label)}</label>
+        <textarea id="s-${p.id}" rows="2" maxlength="400" placeholder="Write your sentence here."${done?' class="passed"':''}>${esc(rec.text||'')}</textarea>
+        <div class="row"><button class="btn sm" data-act="scheck">Check my sentence</button><span class="okmark"${done?'':' hidden'}>✓ Passed</span></div>
+        <ul class="issues" aria-live="polite" hidden></ul>
+      </div>
+    </div>
+  </div>`;
+}
+function renderExplore(){
+  const q=EX.q.trim().toLowerCase();
+  const list=PARTS.filter(p=>(EX.kind==='all'||p.kind===EX.kind||(EX.kind==='mine'&&sDone(p.id)))&&
+    (!q||p.label.toLowerCase().includes(q)||p.meaning.toLowerCase().includes(q)||p.ex.join(' ').replace(/[\[\]]/g,'').includes(q)));
+  const n=PARTS.filter(p=>sDone(p.id)).length;
+  $('#ex-count').textContent='Showing '+list.length+' of '+PARTS.length+' word parts. You have written '+n+' sentence'+(n===1?'':'s')+'.';
+  $('#ex-grid').innerHTML=list.length?list.map(cardHTML).join('')
+    :EX.kind==='mine'?'<p class="empty">No sentences yet. Open a card, write a sentence, and tap Check my sentence.</p>'
+    :'<p class="empty">No word parts match that search. Try a shorter word.</p>';
+}
+function sCheck(card){
+  const p=BY_ID[card.dataset.id],ta=card.querySelector('textarea'),ul=card.querySelector('.issues');
+  const issues=checkOne(p,ta.value),ok=!issues.length;
+  SENT[p.id]={text:ta.value,done:ok};sSave();
+  ul.innerHTML=issues.map(x=>'<li>'+esc(x)+'</li>').join('');ul.hidden=ok;
+  card.querySelector('.okmark').hidden=!ok;ta.classList.toggle('passed',ok);
+  if(ok&&!card.querySelector('.done'))card.querySelector('.kind').insertAdjacentHTML('beforeend','<span class="done">✓ Sentence written</span>');
+  if(ok)addStar();
+  const n=PARTS.filter(x=>sDone(x.id)).length;
+  $('#ex-count').textContent=$('#ex-count').textContent.replace(/You have written .*$/,'You have written '+n+' sentence'+(n===1?'':'s')+'.');
 }
 $('#ex-grid').addEventListener('click',e=>{
   const c=e.target.closest('.card');if(!c)return;
+  if(e.target.closest('[data-act=scheck]')){sCheck(c);return}
+  if(!e.target.closest('.cardtop'))return;
   const id=c.dataset.id,open=!EX.open.has(id);
   open?EX.open.add(id):EX.open.delete(id);
-  c.setAttribute('aria-expanded',open);
+  c.classList.toggle('open',open);
+  c.querySelector('.cardtop').setAttribute('aria-expanded',open);
   c.querySelector('.more').hidden=!open;
+  if(open)c.querySelector('textarea').focus({preventScroll:true});
+});
+$('#ex-grid').addEventListener('input',e=>{
+  const c=e.target.closest('.card');if(!c||e.target.tagName!=='TEXTAREA')return;
+  const id=c.dataset.id,was=sDone(id);
+  SENT[id]={text:e.target.value,done:false};sSave();
+  if(was){e.target.classList.remove('passed');c.querySelector('.okmark').hidden=true;const d=c.querySelector('.done');if(d)d.remove()}
+});
+$('#ex-grid').addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&e.target.tagName==='TEXTAREA'){e.preventDefault();sCheck(e.target.closest('.card'))}
 });
 $('#ex-filters').addEventListener('click',e=>{
   const b=e.target.closest('.chip');if(!b)return;
