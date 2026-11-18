@@ -149,6 +149,26 @@ mark{background:transparent;color:var(--k);font-weight:700;text-decoration:under
 .steps .what{flex:1 1 220px;min-width:0}
 .steps .num{font-family:var(--display);font-weight:600;font-variant-numeric:tabular-nums}
 .steps li.met .num{color:var(--good)}
+/* sentence ladder */
+.ladder{display:flex;flex-wrap:wrap;gap:6px}
+.ladder button{font-size:.88rem;border-radius:999px;padding:5px 12px;background:var(--bg);border:2px solid var(--line);color:var(--muted)}
+.ladder button.done{border-color:var(--good);color:var(--good)}
+.ladder button[aria-current="step"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:700}
+.ladder button:disabled{opacity:.45;cursor:default}
+.dots{display:flex;gap:6px;align-items:center;font-size:.9rem;color:var(--muted)}
+.dots i{width:16px;height:16px;border-radius:50%;border:2px solid var(--good)}
+.dots i.f{background:var(--good)}
+.lwords{display:flex;flex-wrap:wrap;gap:12px}
+.lword{display:flex;flex-direction:column;gap:8px;background:var(--bg);border:2px solid var(--line);border-radius:14px;padding:12px 14px;flex:1 1 260px;min-width:0}
+.lword.got{border-color:var(--good);background:var(--good-bg)}
+.lword strong{font-family:var(--display);font-size:1.6rem;font-weight:600;line-height:1.1}
+.lword .breakdown{gap:6px}
+.lword .tile{font-size:1rem;padding:6px 9px}
+.lword small{font-size:.8rem}
+#l-text.short{min-height:110px}
+.llog{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.llog div{display:flex;gap:12px;align-items:baseline;border-bottom:2px solid var(--line);padding-bottom:8px}
+.llog span:first-child{font-size:.8rem;color:var(--muted);white-space:nowrap;min-width:7.5em}
 /* write */
 .bar{height:10px;background:var(--base-bg);border-radius:999px;overflow:hidden}
 .bar i{display:block;height:100%;width:0;background:var(--good);transition:width .3s}
@@ -208,6 +228,7 @@ label.help{font-weight:700}
   <nav class="tabs" role="tablist">
     <button role="tab" id="tab-explore" data-view="explore" aria-selected="true">Explore</button>
     <button role="tab" id="tab-build" data-view="build" aria-selected="false">Build a Word</button>
+    <button role="tab" id="tab-sent" data-view="sent" aria-selected="false">Write Sentences</button>
     <button role="tab" id="tab-write" data-view="write" aria-selected="false">Write a Paragraph</button>
     <button role="tab" id="tab-quiz" data-view="quiz" aria-selected="false">Quiz</button>
   </nav>
@@ -254,6 +275,35 @@ label.help{font-weight:700}
         <button class="btn ghost" id="b-skip">Skip</button>
       </div>
     </div>
+  </section>
+
+  <!-- SENTENCE LADDER -->
+  <section class="panel" id="view-sent" role="tabpanel" aria-labelledby="tab-sent" hidden>
+    <div class="stage">
+      <div class="row" style="justify-content:space-between">
+        <div class="eyebrow" id="l-level"></div>
+        <div class="dots" id="l-dots"></div>
+      </div>
+      <div class="ladder" id="l-ladder" aria-label="Levels"></div>
+      <div>
+        <div class="clue" id="l-task"></div>
+        <p class="help" id="l-sub" style="margin-top:6px"></p>
+      </div>
+      <div class="lwords" id="l-words"></div>
+      <label class="eyebrow" for="l-text">My writing</label>
+      <textarea class="para" id="l-text" maxlength="1500" placeholder="Write here." spellcheck="true"></textarea>
+      <div class="row tally"><span id="l-count"></span></div>
+      <div class="row">
+        <button class="btn" id="l-check">Check my writing</button>
+        <button class="btn ghost" id="l-new">New words</button>
+      </div>
+      <div class="msg" id="l-msg" aria-live="polite"></div>
+      <ul class="issues" id="l-issues" hidden aria-live="polite"></ul>
+    </div>
+    <details class="stage bank">
+      <summary>My sentences (<span id="l-n">0</span>)</summary>
+      <div class="llog" id="l-log"></div>
+    </details>
   </section>
 
   <!-- QUIZ -->
@@ -305,7 +355,7 @@ label.help{font-weight:700}
       <div>
         <div class="eyebrow">Your assignment</div>
         <div class="clue">Write one paragraph with at least 5 sentences. Use at least 5 root words.</div>
-        <p class="help" style="margin-top:6px">Choose a topic you know well. Pick root words from the word bank. Tap Check to get feedback, fix your writing, and then turn it in.</p>
+        <p class="help" style="margin-top:6px">Choose a topic you know well. Pick root words from the word bank. Keep the whole paragraph in one tense (all past or all present), and check your capitals, commas, and end marks. Tap Check to get feedback, fix your writing, and then turn it in.</p>
       </div>
       <ul class="rubric" aria-label="How your paragraph is scored">
         <li><b>3</b> 5 or more sentences, 5 or more root words, and no more than 1 mistake</li>
@@ -789,7 +839,7 @@ function breakdownHTML(word){
 }
 
 /* ---------- tabs ---------- */
-const VIEWS=['explore','build','quiz','write'];
+const VIEWS=['explore','build','sent','quiz','write'];
 const PROG_KEY='wpw-progress-v1';let PROG={};
 try{PROG=JSON.parse(localStorage.getItem(PROG_KEY))||{}}catch(e){}
 function pSave(){try{localStorage.setItem(PROG_KEY,JSON.stringify(PROG))}catch(e){}}
@@ -1239,8 +1289,116 @@ function sentenceIssues(t){
     if(low[i]==='an'&&(/^[bcdfgjklmnpqrstvwxyz]/.test(n)||/^(uni|use|usu|eu|one)/.test(n))&&words[i+1]!==words[i+1].toUpperCase())add('other','Use "a" before "'+n+'."');
   }
   agreement(low).forEach(x=>add('agree',x));
+  tenseIssues(t).forEach(x=>add('tense',x));
+  compoundComma(t).forEach(x=>add('comma',x));
   m=t.match(/^(Because|Although|Unless|If)\b/);
   if(m&&!t.includes(',')&&!/\?["')]?$/.test(t))add('other','A sentence that starts with "'+m[1]+'" needs two parts joined by a comma. Example: "Because it rained, we stayed inside."');
+  return out;
+}
+/* ---- verb tense ---- */
+const IRR={was:'be',were:'be',had:'have',did:'do',went:'go',saw:'see',came:'come',ran:'run',sat:'sit',got:'get',said:'say',made:'make',ate:'eat',took:'take',found:'find',gave:'give',told:'tell',thought:'think',knew:'know',felt:'feel',kept:'keep',slept:'sleep',swam:'swim',sang:'sing',drank:'drink',fell:'fall',flew:'fly',grew:'grow',drew:'draw',wrote:'write',rode:'ride',broke:'break',spoke:'speak',woke:'wake',stood:'stand',brought:'bring',bought:'buy',caught:'catch',taught:'teach',fought:'fight',won:'win',hid:'hide',dug:'dig',fed:'feed',met:'meet',slid:'slide',threw:'throw',blew:'blow',wore:'wear',chose:'choose',froze:'freeze',stole:'steal',drove:'drive',shook:'shake',forgot:'forget',sent:'send',spent:'spend',built:'build',lost:'lose',heard:'hear',sold:'sell',paid:'pay',held:'hold',began:'begin',became:'become',understood:'understand',led:'lead'};
+const PAST_OF=Object.fromEntries(Object.entries(IRR).filter(([p,b])=>b!=='be').map(([p,b])=>[b,p]));
+const VERBS=new Set(Object.values(IRR).filter(b=>b!=='be').concat('like love want play jump walk look help need live use watch learn try move work visit talk call ask open start stop study climb cook clean finish laugh smile cry hope plan pick pull push kick wish fix mix enjoy explore travel listen carry measure predict transport interrupt reject subtract transform transmit inspect describe protect invent create discover collect wonder decide happen'.split(' ')));
+const tps=v=>v==='have'?'has':v==='do'?'does':v==='go'?'goes':/(s|x|z|ch|sh)$/.test(v)?v+'es':/[^aeiou]y$/.test(v)?v.slice(0,-1)+'ies':v+'s';
+const VS=new Map([...VERBS].map(v=>[tps(v),v]));
+const pastOf=v=>PAST_OF[v]||(/e$/.test(v)?v+'d':/[^aeiou]y$/.test(v)?v.slice(0,-1)+'ied':/^[^aeiou]*[aeiou][bdgmnpt]$/.test(v)?v+v.slice(-1)+'ed':v+'ed');
+const ED_NOT=/^(bed|red|fed|led|wed|sled|shed|shred|bred|fled|sped|need|feed|seed|weed|reed|speed|bleed|breed|greed|hundred|naked|wicked|sacred|ragged|rugged|jagged|crooked|beloved|tired|scared|excited|bored|interested|worried|surprised|amazed|confused|named|used|supposed)$/;
+const PRONOUN=/^(i|you|he|she|it|we|they)$/;
+const BE=/^(am|is|are|was|were|be|been|being|get|gets|got|getting|seem|seems|seemed|look|looks|looked|feel|feels|felt|become|became|stay|stayed|very|so|too|really)$/;
+const DET=/^(the|a|an|my|your|his|her|its|our|their|this|that|these|those|every|each|some)$/;
+const MODAL=/^(will|can|could|would|should|must|may|might|did|didn't|don't|doesn't|won't|can't|couldn't|wouldn't|shouldn't|to)$/;
+const PART={seen:'saw',done:'did',gone:'went',been:'was',taken:'took',eaten:'ate',written:'wrote',broken:'broke',given:'gave',known:'knew',drunk:'drank',swum:'swam',sung:'sang',begun:'began',flown:'flew',drawn:'drew',ridden:'rode',chosen:'chose',stolen:'stole',driven:'drove'};
+const OVER=(()=>{const m={},real=/^(singed|seed|wined|leaved|flied|hanged|teared|payed|feeded|spinned|bitted)$/;
+  Object.entries(PAST_OF).forEach(([b,p])=>{[b+'ed',/e$/.test(b)?b+'d':'',/^[^aeiou]*[aeiou][bdgmnpt]$/.test(b)?b+b.slice(-1)+'ed':''].forEach(f=>{if(f&&f!==p&&!real.test(f))m[f]=b})});
+  Object.assign(m,{brang:'bring',brung:'bring',buyed:'buy',throwed:'throw',catched:'catch',teached:'teach'});return m})();
+const PAST_TIME=/\b(yesterday|last (night|week|weekend|month|year|summer|winter|spring|fall|time|monday|tuesday|wednesday|thursday|friday|saturday|sunday)|ago|long ago|once upon a time|in (1[0-9]|20)[0-9]{2}|back then|earlier today)\b/i;
+const FUT_TIME=/\b(tomorrow|next (week|weekend|month|year|summer|winter|spring|fall|time|monday|tuesday|wednesday|thursday|friday|saturday|sunday)|someday|in the future)\b/i;
+const NOW_TIME=/\b(now|today|right now|these days|every day|always|usually|sometimes|often|never)\b/i;
+const isVerbish=w=>VERBS.has(w)||VS.has(w)||!!IRR[w]||isEdPast(w)||/ing$/.test(w);
+const SHIFT_OK=/\b(will|before|once|used to|anymore|still|when (i|we|he|she|they) (was|were)|when (i|we) (was|were) little)\b/i;
+function isEdPast(w){return /[a-z]{2}ed$/.test(w)&&!ED_NOT.test(w)}
+function edBase(w){let b=w.slice(0,-2);if(VERBS.has(b+'e')||/(at|it|iv|ag|ok|ar|ur|ik|ov|uz|ac|ad)$/.test(b)&&!VERBS.has(b))b+='e';else if(/([bdgmnpt])\1$/.test(b))b=b.slice(0,-1);else if(/i$/.test(b))b=b.slice(0,-1)+'y';return b}
+// Finds the verbs that show tense: [{i, t:'past'|'pres', w}]
+function verbMarks(low){
+  const out=[];
+  low.forEach((w,i)=>{
+    const p=low[i-1]||'',pp=low[i-2]||'';
+    if(/^(am|is|are|has|does|goes|says|isn't|aren't|doesn't|don't|hasn't)$/.test(w))out.push({i,t:'pres',w});
+    else if(/^(wasn't|weren't|didn't|hadn't)$/.test(w))out.push({i,t:'past',w});
+    else if(IRR[w]&&!BE.test(p)&&!(w==='had'&&BE.test(p)))out.push({i,t:'past',w});
+    else if(isEdPast(w)&&!BE.test(p)&&!/^(have|has|had)$/.test(p)&&(PRONOUN.test(p)||/^(and|then)$/.test(p)||(DET.test(pp)&&!DET.test(p))))out.push({i,t:'past',w});
+    else if(VS.has(w)&&(/^(he|she|it)$/.test(p)&&!(p==='it'&&isVerbish(pp))||i>=2&&i<=3&&DET.test(low[0])&&!low.slice(1,i).some(x=>BE.test(x)||isVerbish(x)||DET.test(x))))out.push({i,t:'pres',w});
+    else if(VERBS.has(w)&&/^(i|you|we|they)$/.test(p)&&!MODAL.test(pp)&&!/^(and|or|let|make|help|see|saw|watch|watched|hear|heard)$/.test(pp))out.push({i,t:'pres',w});
+  });
+  return out;
+}
+const tenseOf=m=>{const s=new Set(m.map(x=>x.t));return s.size===1?[...s][0]:s.size?'mixed':''};
+const TNAME={past:'past',pres:'present'};
+// mistakes with verb tense inside one sentence
+function tenseIssues(t){
+  const out=[],plain=t.replace(/"[^"]*"/g,' ');
+  const low=(plain.toLowerCase().match(/[a-z]+(?:'[a-z]+)?/g)||[]);
+  for(let i=0;i<low.length;i++){
+    const w=low[i],p=low[i-1]||'',pp=low[i-2]||'';
+    if(OVER[w])out.push('"'+w+'" is not a word. The past tense of "'+OVER[w]+'" is "'+pastOf(OVER[w])+'."');
+    if(MODAL.test(p)&&!(p==='to'&&/^(saw|found|felt|left)$/.test(w))&&(IRR[w]&&!(p==='to'&&w==='saw')||isEdPast(w))){
+      const b=IRR[w]||edBase(w);
+      out.push('After "'+p+'," use the plain verb without -ed: "'+p+' '+(b==='be'?'be':b)+'," not "'+p+' '+w+'."');
+    }
+    if(PART[w]&&PRONOUN.test(p)){const s=p==='i'?'I':p;out.push('"'+s+' '+w+'" is not correct. Write "'+s+' '+(w==='been'?(/^(i|he|she|it)$/.test(p)?'was':'were'):PART[w])+'" or "'+s+' '+(/^(he|she|it)$/.test(p)?'has':'have')+' '+w+'."')}
+    if(/^(he|she|it)$/.test(p)&&VERBS.has(w)&&!/^(have|do)$/.test(w)&&!AUX.test(pp)&&!/^(and|or)$/.test(pp)&&!(p==='it'&&(OBJ.test(pp)||isVerbish(pp))))
+      out.push('Check your verb. "'+p+' '+w+'" should be "'+p+' '+tps(w)+'" (now) or "'+p+' '+pastOf(w)+'" (in the past).');
+    if(/^(i|you|we|they)$/.test(p)&&VS.has(w)&&!/^(has|does)$/.test(w)&&!AUX.test(pp)&&!(p==='you'&&(OBJ.test(pp)||isVerbish(pp)))){const s=p==='i'?'I':p;out.push('Check your verb. "'+s+' '+w+'" should be "'+s+' '+VS.get(w)+'."')}
+  }
+  const marks=verbMarks(low),pres=marks.filter(x=>x.t==='pres'),past=marks.filter(x=>x.t==='past');
+  const tw=(plain.match(PAST_TIME)||[])[0];
+  if(tw&&pres.length)out.push('This sentence says "'+tw.toLowerCase()+'," so it happened in the past. Change "'+pres[0].w+'" to the past tense.');
+  const fw=(plain.match(FUT_TIME)||[])[0];
+  if(fw&&past.length&&!/\b(will|going to|gonna)\b/i.test(plain))out.push('This sentence says "'+fw.toLowerCase()+'," so it has not happened yet. Use "will," like "will '+(IRR[past[0].w]||edBase(past[0].w))+'."');
+  // "I went to the store and buy milk": verbs joined by and/but/or/then should match
+  if(!tw&&!fw&&marks.length){
+    const first=marks[0];
+    for(let i=first.i+1;i<low.length-1;i++){
+      if(!/^(and|but|or|then)$/.test(low[i]))continue;
+      const v=low[i+1];let t2='';
+      if(VS.has(v)||/^(is|are|am|has)$/.test(v))t2='pres';
+      else if(IRR[v]&&v!=='saw'||isEdPast(v))t2='past';
+      else if(VERBS.has(v)&&first.t==='past'&&!low.slice(first.i,i).some((x,j)=>x==='to'?VERBS.has(low[first.i+j+1]):MODAL.test(x)))t2='pres';
+      if(t2&&t2!==first.t){
+        const base=VS.get(v)||(IRR[v]&&IRR[v]!=='be'?IRR[v]:isEdPast(v)?edBase(v):v);
+        const fix=first.t==='past'?({is:'was',am:'was',are:'were',has:'had'}[v]||pastOf(base)):({was:'is',were:'are',had:'has'}[v]||(VS.has(first.w)||/^(is|has|does|doesn't|isn't)$/.test(first.w)?tps(base):base));
+        out.push('Keep your verbs in the same tense. You wrote "'+first.w+'" ('+TNAME[first.t]+' tense) and then "'+v+'" ('+TNAME[t2]+' tense). Change "'+v+'" to "'+fix+'."');
+        break;
+      }
+    }
+  }
+  return out;
+}
+// across sentences: a paragraph or story stays in one tense unless a time word says the time changed
+function tenseShift(sents){
+  const info=sents.map(s=>{const plain=s.replace(/"[^"]*"/g,' ');return {t:tenseOf(verbMarks(plain.toLowerCase().match(/[a-z]+(?:'[a-z]+)?/g)||[])),time:PAST_TIME.test(plain)||FUT_TIME.test(plain)||NOW_TIME.test(plain)||SHIFT_OK.test(plain)}});
+  const c={past:0,pres:0};info.forEach(x=>{if(c[x.t]!==undefined)c[x.t]++});
+  if(!c.past||!c.pres)return [];
+  const main=c.past>=c.pres?'past':'pres',other=main==='past'?'pres':'past',out=[];
+  info.forEach((x,i)=>{if(x.t===other&&!x.time)out.push({n:i+1,cat:'tense',msg:'This sentence is in the '+TNAME[other]+' tense, but most of your writing is in the '+TNAME[main]+' tense. Change it to the '+TNAME[main]+' tense. If it really is about a different time, add a time word like "yesterday," "now," or "every day."'})});
+  return out;
+}
+// comma before and/but/so/or when it joins two complete sentences
+function compoundComma(t){
+  const words=t.split(/\s+/),out=[];
+  for(let i=1;i<words.length-2;i++){
+    const c=words[i].toLowerCase();if(!/^(and|but|so|or|yet)$/.test(c))continue;
+    if(/,$/.test(words[i-1]))continue;
+    const subj=words[i+1].toLowerCase().replace(/[^a-z]/g,'');
+    const okSubj=/^(i|he|she|we|they|it)$/.test(subj)||(/^(but|so)$/.test(c)&&/^(the|my|his|her|our|their|there|you)$/.test(subj));
+    if(!okSubj)continue;
+    let k=i-1,n=0;while(k>=0&&!/[,.;!?]$/.test(words[k])){n++;k--}
+    if(k<0&&/^(and|or)$/.test(c)&&n<4)continue; // "My mom and I went" is one subject
+    if(n<3||words.length-i-2<2)continue;
+    const bit=a=>a.join(' ').replace(/[^A-Za-z' ]/g,'');
+    out.push('Put a comma before "'+c+'." It joins two complete sentences: "...'+bit(words.slice(Math.max(0,i-2),i))+', '+c+' '+bit(words.slice(i+1,i+3))+'..."');
+    break;
+  }
   return out;
 }
 function gradeOf(sentences,roots,mistakes){return sentences>=5&&roots>=5&&mistakes<=1?3:sentences>=5&&roots>=3&&mistakes<=4?2:1}
@@ -1250,6 +1408,7 @@ function checkParagraph(raw){
   sents.forEach((x,i)=>sentenceIssues(x).forEach(y=>fixes.push({n:i+1,cat:y.cat,msg:y.msg})));
   if(/\n\s*\S/.test(text))fixes.push({n:0,cat:'other',msg:'Keep all your sentences together in one paragraph. Do not press Enter between sentences.'});
   if(/\S {2,}\S/.test(text))fixes.push({n:0,cat:'other',msg:'Use only one space between words.'});
+  tenseShift(sents).forEach(f=>fixes.push(f));
   const norm=x=>x.toLowerCase().replace(/[^a-z]/g,''),seen=new Set();
   sents.forEach((x,i)=>{const k=norm(x);if(seen.has(k))fixes.push({n:i+1,cat:'other',msg:'You already wrote this sentence. Write a new one.'});seen.add(k)});
   const roots=findRoots(text),starts={};
@@ -1262,6 +1421,8 @@ function checkParagraph(raw){
   if(sents.length&&!has('cap'))goods.push('Your capital letters are correct.');
   if(sents.length&&!has('end'))goods.push('Every sentence has an end mark.');
   if(sents.length>=3&&!has('agree'))goods.push('Your subjects and verbs agree.');
+  if(sents.length>=3&&!has('tense'))goods.push('Your verb tenses match.');
+  if(sents.length>=3&&!has('comma')&&!has('end'))goods.push('Your commas and end marks are in the right places.');
   return {sents,count:sents.length,roots,fixes,tips,goods,grade:gradeOf(sents.length,roots.length,fixes.length)};
 }
 //--CHECK END--
@@ -1346,6 +1507,103 @@ wLoad();
 $('#w-name').value=W.name;$('#w-text').value=W.text;
 $('#w-bank').innerHTML=PARTS.filter(p=>USE[p.id]).map(p=>`<div class="bankrow k-${p.kind}"><span class="tile k-${p.kind}">${esc(p.label)}</span><span><b>${esc(p.meaning)}</b><br>${USE[p.id].map(esc).join(', ')}</span></div>`).join('');
 wCounts();wShowSent();wFlush();
+
+/* ---------- sentence ladder: short sentences first, longer as the student gets better ---------- */
+const LADDER=[
+  {name:'Short sentence',words:1,min:4,sents:[1,1],pool:'affix',up:3,task:'Write one short sentence that uses this word.',sub:'4 words or more. Start with a capital letter and end with a period, question mark, or exclamation point.'},
+  {name:'Longer sentence',words:1,min:9,sents:[1,1],pool:'affix',up:3,task:'Write one longer sentence that uses this word.',sub:'9 words or more. Add a detail that tells who, where, when, or why.'},
+  {name:'Two-word sentence',words:2,min:10,sents:[1,1],pool:'mix',up:3,task:'Write one sentence that uses both words.',sub:'10 words or more. Keep all your verbs in the same tense.'},
+  {name:'Joined sentence',words:2,min:12,sents:[1,1],pool:'mix',join:true,up:3,task:'Write one sentence that uses both words and a joining word.',sub:'12 words or more. Use and, but, so, because, or when. Put a comma before and, but, or so when it joins two complete sentences.'},
+  {name:'Two sentences',words:2,min:16,sents:[2,2],pool:'mix',up:3,task:'Write two sentences that go together. Use both words.',sub:'16 words or more in all. Keep both sentences in the same tense: both past or both present.'},
+  {name:'Mini paragraph',words:3,min:30,sents:[3,4],pool:'root',join:true,up:2,task:'Write a mini paragraph: 3 or 4 sentences about one topic. Use all three words.',sub:'30 words or more, at least one joining word, and the same tense the whole way through.'}
+];
+const JOIN=/\b(and|but|so|because|when|although|while|if|after|before|since|unless|until|or)\b/i;
+const L_KEY='wpw-ladder-v1';
+let L={lvl:0,max:0,streak:0,words:[],text:'',tries:0,recent:[],log:[]};
+try{const d=JSON.parse(localStorage.getItem(L_KEY));if(d&&Array.isArray(d.log))Object.assign(L,d)}catch(e){}
+function lSave(){try{localStorage.setItem(L_KEY,JSON.stringify(L))}catch(e){}}
+const wordObj=w=>WORDS.find(x=>x.w===w);
+function wordForms(w){
+  const f=new Set([w,w+'s',w+'es',w+'ed',w+'d',w+'ing',w+'er',w+'ers']);
+  if(/e$/.test(w)){f.add(w.slice(0,-1)+'ing');f.add(w+'r')}
+  if(/[^aeiou]y$/.test(w)){const b=w.slice(0,-1);['ies','ied','ier','iest','ily'].forEach(x=>f.add(b+x))}
+  if(/^[^aeiou]*[aeiou][bdgmnprt]$/.test(w)){const d=w+w.slice(-1);['ed','ing','er'].forEach(x=>f.add(d+x))}
+  return f;
+}
+const usesWord=(w,low)=>{const f=wordForms(w);return low.some(x=>f.has(x))};
+function lPick(){
+  const lv=LADDER[L.lvl];
+  let pool=WORDS.filter(w=>lv.pool==='mix'||w.level===lv.pool);
+  const fresh=pool.filter(w=>!L.recent.includes(w.w));if(fresh.length>=lv.words)pool=fresh;
+  L.words=shuffle(pool).slice(0,lv.words).map(w=>w.w);
+  L.recent=L.recent.concat(L.words).slice(-24);L.tries=0;lSave();
+}
+function lRender(){
+  const lv=LADDER[L.lvl];
+  if(L.words.length!==lv.words||!L.words.every(wordObj))lPick();
+  $('#l-level').textContent='Level '+(L.lvl+1)+' of '+LADDER.length+' · '+lv.name;
+  $('#l-ladder').innerHTML=LADDER.map((x,i)=>`<button data-l="${i}" class="${i<L.max?'done':''}"${i===L.lvl?' aria-current="step"':''}${i>L.max?' disabled':''}>${i<L.max?'✓ ':''}${i+1} · ${esc(x.name)}</button>`).join('');
+  $('#l-dots').innerHTML=(L.lvl<LADDER.length-1?'<span>Next level:</span>':'<span>Great ones:</span>')+Array.from({length:lv.up},(_,i)=>`<i class="${i<L.streak?'f':''}"></i>`).join('');
+  $('#l-dots').setAttribute('aria-label',L.streak+' of '+lv.up+' toward the next level');
+  $('#l-task').textContent=lv.task;$('#l-sub').textContent=lv.sub;
+  $('#l-text').classList.toggle('short',lv.sents[1]===1);
+  $('#l-text').value=L.text;
+  lWords();lCount();
+  $('#l-n').textContent=L.log.length;
+  $('#l-log').innerHTML=L.log.length?L.log.slice().reverse().map(x=>`<div><span>Level ${x.lvl+1}${x.first?' · ★ first try':''}</span><span>${esc(x.text)}</span></div>`).join(''):'<p class="help">Sentences you finish show up here.</p>';
+}
+function lWords(){
+  const low=(L.text.toLowerCase().match(/[a-z]+/g)||[]);
+  $('#l-words').innerHTML=L.words.map(w=>{const o=wordObj(w),got=usesWord(w,low);
+    return `<div class="lword${got?' got':''}"><strong>${got?'✓ ':''}${esc(w)}</strong><span>${esc(o.def)}</span><div class="breakdown">${breakdownHTML(o)}</div></div>`}).join('');
+}
+function lCount(){
+  const lv=LADDER[L.lvl],n=(L.text.match(/[A-Za-z][A-Za-z'-]*/g)||[]).length,ns=L.text.trim()?splitSentences(L.text).length:0;
+  $('#l-count').textContent='Words: '+n+' of '+lv.min+(lv.sents[1]>1?' · Sentences: '+ns+' of '+lv.sents[0]+(lv.sents[1]>lv.sents[0]?' to '+lv.sents[1]:''):'');
+}
+function lCheck(raw){
+  const lv=LADDER[L.lvl],t=raw.replace(/[‘’]/g,"'").replace(/[“”]/g,'"').replace(/\s+/g,' ').trim(),out=[];
+  if(!t)return ['Write your sentence first.'];
+  const sents=splitSentences(t),n=(t.match(/[A-Za-z][A-Za-z'-]*/g)||[]).length,low=(t.toLowerCase().match(/[a-z]+/g)||[]);
+  if(sents.length<lv.sents[0])out.push('Write '+lv.sents[0]+' sentences for this level. I count '+sents.length+'.');
+  if(sents.length>lv.sents[1])out.push(lv.sents[1]===1?'Write just one sentence for this level. I count '+sents.length+'.':'Write no more than '+lv.sents[1]+' sentences for this level. I count '+sents.length+'.');
+  if(n<lv.min)out.push('Add more detail. Use at least '+lv.min+' words. You have '+n+'.');
+  L.words.forEach(w=>{if(!usesWord(w,low))out.push('Use the word "'+w+'." It means '+wordObj(w).def+'.')});
+  if(lv.join&&!JOIN.test(t))out.push('Use a joining word like and, but, so, because, or when.');
+  sents.forEach((x,i)=>sentenceIssues(x).forEach(y=>{
+    if(/very short/.test(y.msg)&&n<lv.min)return;
+    out.push((sents.length>1?'Sentence '+(i+1)+': ':'')+y.msg);
+  }));
+  tenseShift(sents).forEach(f=>out.push('Sentence '+f.n+': '+f.msg));
+  const norm=x=>x.toLowerCase().replace(/[^a-z]/g,'');
+  if(L.log.some(x=>norm(x.text)===norm(t)))out.push('You already wrote this. Write something new.');
+  return [...new Set(out)];
+}
+$('#l-text').addEventListener('input',e=>{L.text=e.target.value;lSave();lWords();lCount()});
+$('#l-text').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&LADDER[L.lvl].sents[1]===1){e.preventDefault();$('#l-check').click()}});
+$('#l-check').addEventListener('click',()=>{
+  L.tries++;
+  const issues=lCheck(L.text),ul=$('#l-issues'),lv=LADDER[L.lvl];
+  ul.innerHTML=issues.map(x=>'<li>'+esc(x)+'</li>').join('');ul.hidden=!issues.length;
+  if(issues.length){setMsg('#l-msg',issues.length===1?'Almost! Fix this one thing:':'Fix these '+issues.length+' things, then check again:','bad');lSave();return}
+  L.log.push({lvl:L.lvl,text:L.text.replace(/\s+/g,' ').trim(),first:L.tries===1,d:Date.now()});L.log=L.log.slice(-200);
+  addStar();if(L.tries===1)addStar();
+  L.streak++;let msg=(L.tries===1?'Perfect on the first try! ':'Nice fixing! ')+'Your writing is correct.';
+  if(L.streak>=lv.up){
+    if(L.lvl<LADDER.length-1){L.lvl++;L.max=Math.max(L.max,L.lvl);msg='Level up! You are ready for Level '+(L.lvl+1)+': '+LADDER[L.lvl].name+'.'}
+    else msg='You finished every level! You are ready for Write a Paragraph. You can keep practicing here too.';
+    L.streak=0;
+  }
+  L.text='';lPick();lRender();setMsg('#l-msg',msg,'good');
+  $('#l-text').focus();
+});
+$('#l-new').addEventListener('click',()=>{lPick();lRender();setMsg('#l-msg','');$('#l-issues').hidden=true});
+$('#l-ladder').addEventListener('click',e=>{
+  const b=e.target.closest('[data-l]');if(!b||b.disabled)return;
+  const n=+b.dataset.l;if(n===L.lvl)return;
+  L.lvl=n;L.streak=0;lPick();lRender();setMsg('#l-msg','');$('#l-issues').hidden=true;
+});
+lRender();
 
 /* ---------- quiz lock: the work in every section comes first ---------- */
 const NEED={sentences:5,built:10};
