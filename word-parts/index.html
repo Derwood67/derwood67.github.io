@@ -761,13 +761,15 @@ const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&qu
 const hl=s=>esc(s).replace(/\[(.+?)\]/g,'<mark>$1</mark>');
 const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 const kindOf=p=>p.id?BY_ID[p.id].kind:'base';
+// prefix tiles show "dis-", suffix tiles show "-able", so students can see where each part goes
+const tileText=(text,kind)=>kind==='prefix'?text+'-':kind==='suffix'?'-'+text:text;
 let stars=0;
 function addStar(){stars++;$('#stars').textContent=stars}
 
 function breakdownHTML(word){
   return word.parts.map(p=>{
     const part=p.id&&BY_ID[p.id];
-    return `<div class="piece"><span class="tile k-${kindOf(p)}">${esc(p.text)}</span><small>${part?esc(part.meaning):'base word'}</small></div>`;
+    return `<div class="piece"><span class="tile k-${kindOf(p)}">${esc(tileText(p.text,kindOf(p)))}</span><small>${part?esc(part.meaning):'base word'}</small></div>`;
   }).join('');
 }
 
@@ -880,6 +882,29 @@ $('#ex-search').addEventListener('input',e=>{EX.q=e.target.value;renderExplore()
 /* ---------- build ---------- */
 const B={level:'affix',queue:[],word:null,tiles:[],slots:[],solved:false,busy:false};
 function buildPool(){return WORDS.filter(w=>B.level==='mix'||w.level===B.level)}
+// real words students might know: the Build words plus every example word in Explore
+const KNOWN=new Set(WORDS.map(w=>w.w).concat(...PARTS.map(p=>p.ex.map(e=>e.replace(/[\[\]]/g,''))),
+  'disable enable unable report import export deport reform inform perform redo undo unkind dislike display rewind react enact unwrap rename refill replace remind'.split(' ')));
+function makesOtherWord(tiles,n,target){
+  const used=new Array(tiles.length).fill(false);
+  const go=(depth,acc)=>{
+    if(depth===n)return acc!==target&&KNOWN.has(acc);
+    for(let i=0;i<tiles.length;i++){if(used[i])continue;used[i]=true;const hit=go(depth+1,acc+tiles[i].text);used[i]=false;if(hit)return true}
+    return false;
+  };
+  return go(0,'');
+}
+function buildMistake(made){
+  const ks=B.slots.map(i=>B.tiles[i].kind),why=[];
+  for(let i=0;i<ks.length;i++){
+    const t=B.tiles[B.slots[i]];
+    if(ks[i]==='prefix'&&ks.slice(0,i).some(k=>k!=='prefix')){why.push('A prefix like "'+t.text+'-" goes at the front of a word.');break}
+    if(ks[i]==='suffix'&&ks.slice(i+1).some(k=>k!=='suffix')){why.push('A suffix like "-'+t.text+'" goes at the end of a word.');break}
+  }
+  if(ks.every(k=>k==='prefix'||k==='suffix'))why.push('Every word needs a base word or root in the middle. Find the main part.');
+  if(KNOWN.has(made))why.unshift('"'+made+'" is a real word, but it does not match this meaning.');
+  return why.length?why.join(' '):'"'+made+'" is not the word. Read the meaning again and try other parts.';
+}
 function newBuild(){
   if(!B.queue.length)B.queue=shuffle(buildPool()).filter(w=>w!==B.word);
   B.word=B.queue.pop();
@@ -888,7 +913,12 @@ function newBuild(){
   shuffle(buildPool()).forEach(w=>w.parts.forEach(p=>{
     if(!own.has(p.text)&&!seen.has(p.text)){seen.add(p.text);extra.push({text:p.text,kind:kindOf(p)})}
   }));
-  B.tiles=shuffle(B.word.parts.map(p=>({text:p.text,kind:kindOf(p)})).concat(shuffle(extra).slice(0,3)));
+  const mine=B.word.parts.map(p=>({text:p.text,kind:kindOf(p)})),picked=[];
+  for(const t of shuffle(extra)){
+    if(picked.length===3)break;
+    if(!makesOtherWord(mine.concat(picked,[t]),mine.length,B.word.w))picked.push(t);
+  }
+  B.tiles=shuffle(mine.concat(picked));
   B.slots=B.word.parts.map(()=>null);
   B.solved=false;B.busy=false;
   $('#b-clue').textContent=B.word.def;
@@ -901,9 +931,9 @@ function setMsg(sel,text,cls){const m=$(sel);m.textContent=text;m.className='msg
 function renderBuild(){
   $('#b-slots').innerHTML=B.slots.map((t,i)=>t===null
     ?`<span class="slot" aria-label="Empty spot ${i+1}"></span>`
-    :`<button class="slot filled" data-slot="${i}" ${B.solved?'disabled':''} aria-label="Remove ${esc(B.tiles[t].text)}"><span class="tile k-${B.tiles[t].kind}">${esc(B.tiles[t].text)}</span></button>`).join('');
+    :`<button class="slot filled" data-slot="${i}" ${B.solved?'disabled':''} aria-label="Remove ${esc(tileText(B.tiles[t].text,B.tiles[t].kind))}"><span class="tile k-${B.tiles[t].kind}">${esc(tileText(B.tiles[t].text,B.tiles[t].kind))}</span></button>`).join('');
   $('#b-tray').innerHTML=B.tiles.map((t,i)=>
-    `<button class="tile k-${t.kind}" data-tile="${i}" ${B.slots.includes(i)||B.solved?'disabled':''}>${esc(t.text)}</button>`).join('');
+    `<button class="tile k-${t.kind}" data-tile="${i}" ${B.slots.includes(i)||B.solved?'disabled':''}>${esc(tileText(t.text,t.kind))}</button>`).join('');
 }
 function checkBuild(){
   if(B.slots.includes(null))return;
@@ -918,7 +948,7 @@ function checkBuild(){
     $('#b-next').focus();
   }else{
     B.busy=true;
-    setMsg('#b-msg','"'+made+'" is not the word. Read the meaning again and try other parts.','bad');
+    setMsg('#b-msg',buildMistake(made),'bad');
     $('#b-slots').classList.add('shake');
     setTimeout(()=>{$('#b-slots').classList.remove('shake');B.slots=B.slots.map(()=>null);B.busy=false;renderBuild()},900);
   }
@@ -943,7 +973,7 @@ $('#b-hint').addEventListener('click',()=>{
     if(t<0){t=B.tiles.findIndex(x=>x.text===want);B.slots[B.slots.indexOf(t)]=null}
     B.slots[i]=t;
     const part=B.word.parts[i].id&&BY_ID[B.word.parts[i].id];
-    setMsg('#b-msg','Hint: part '+(i+1)+' is "'+want+'"'+(part?' ('+part.meaning+').':'.'));
+    setMsg('#b-msg','Hint: part '+(i+1)+' is "'+tileText(want,kindOf(B.word.parts[i]))+'"'+(part?' ('+part.meaning+').':'.'));
     break;
   }
   renderBuild();checkBuild();
