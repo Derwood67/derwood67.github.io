@@ -264,7 +264,17 @@ tr.click:hover td{background:#FFFBE6}
 
 <script>
 /* ================= SETTINGS ================= */
-const TEACHER_CODE="8531";
+const TEACHER_HASH="cf2d0fe7ea0a7780592080ef0bf415a6043a3d59aa5d72ace64d39c6e0837285"; /* scrambled teacher code; the code itself is not stored in this page */
+const CODE_TRIES="echols-classgate-tries";
+/* Resolves true for the right code, otherwise a message. Three wrong tries pause code entry on this device for 10 minutes. */
+async function checkTeacherCode(v){let t={};try{t=JSON.parse(localStorage.getItem(CODE_TRIES))||{}}catch(e){}
+  const wait="Too many tries. Wait 10 minutes and try again.";
+  if(t.until&&Date.now()<t.until)return wait;
+  let h="";try{const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode("echols-room2:"+String(v||"").trim()));h=Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,"0")).join("")}catch(e){}
+  const put=o=>{try{o?localStorage.setItem(CODE_TRIES,JSON.stringify(o)):localStorage.removeItem(CODE_TRIES)}catch(e){}};
+  if(h===TEACHER_HASH){put(null);return true}
+  t.n=(t.n||0)+1;if(t.n>=3){put({n:0,until:Date.now()+600000});return wait}
+  put(t);return "That code is not correct."}
 const QUIZ_LEN=10;         // questions per section mastery check
 const PASS=0.8;            // 80% = mastery
 const FINAL_LEN=12;        // questions on the final book quiz
@@ -504,7 +514,7 @@ function ask(msg,opt){opt=opt||{};return new Promise(res=>{
   const done=v=>{m.remove();res(v)};
   no.addEventListener("click",()=>done(opt.input?null:false));
   m.addEventListener("keydown",e=>{if(e.key==="Escape")done(opt.input?null:false)});
-  c.addEventListener("submit",e=>{e.preventDefault();if(opt.check&&!opt.check(inp.value)){err.textContent=opt.bad||"Try again.";inp.value="";inp.focus();return}done(opt.input?inp.value:true)});
+  c.addEventListener("submit",async e=>{e.preventDefault();if(opt.check){const r=await opt.check(inp.value);if(r!==true){err.textContent=typeof r==="string"?r:(opt.bad||"Try again.");inp.value="";inp.focus();return}}done(opt.input?inp.value:true)});
   m.appendChild(c);document.body.appendChild(m);(inp||ok).focus();
 })}
 const leaveOk=()=>quiz?ask("Leave the quiz? Your answers on this try will not count.",{ok:"Leave",cancel:"Stay"}):Promise.resolve(true);
@@ -837,7 +847,7 @@ function renderFinal(a){
 
 /* ================= TEACHER DASHBOARD ================= */
 async function teacherGate(){
-  const code=await ask("Teacher lock code:",{input:true,ok:"Open dashboard",check:v=>v.trim()===TEACHER_CODE,bad:"That code is not correct."});
+  const code=await ask("Teacher lock code:",{input:true,ok:"Open dashboard",check:checkTeacherCode});
   if(code===null)return;
   try{sessionStorage.setItem("lw-teacher","1")}catch(e){}
   showDashboard();
