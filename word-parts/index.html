@@ -1233,11 +1233,6 @@ function agreement(low){
     else if(sub==='there'){ if((v==='is'||v==='was')&&COUNT.test(low[i+1]||''))say(sub,v,TO_PL[v]); }
     if(sub==="there's"&&COUNT.test(v))out.push('Check your subject and verb. "There\'s '+v+'" should be "There are '+v+'."');
   }
-  const L=low.join(' ');
-  let m=L.match(/^(?:the|my|our|your|his|her|their|these|those|some|many|most|all|two|three|four|five|both|several) (?:[a-z'-]+ )?([a-z-]+s) (is|was|has|does|doesn't|isn't|wasn't|hasn't)(?: |$)/);
-  if(m&&!S_EXC.test(m[1]))say(m[1],m[2],TO_PL[m[2]]);
-  m=L.match(/^(?:the|my|a|an|this|that|our|his|her|your|their|each|every|one) (?:([a-z'-]+) )?([a-z'-]+) (are|were|have|don't|aren't|weren't|haven't)(?: |$)/);
-  if(m&&!NOT_SG.test(m[2])&&!(m[1]&&/[^s]s$/.test(m[1]))&&!/^(and|or)$/.test(m[1]||''))say(m[2],m[3],TO_SG[m[3]]);
   return out;
 }
 
@@ -1256,7 +1251,7 @@ function splitSentences(text){
   return (safe.match(/[^.?!]+[.?!]+["')]*|[^.?!]+$/g)||[]).map(x=>x.trim()).filter(x=>/[A-Za-z]/.test(x));
 }
 function sentenceIssues(t){
-  const out=[],add=(cat,msg)=>out.push({cat,msg});
+  const out=[],add=(cat,msg)=>{if(!out.some(x=>x.msg===msg))out.push({cat,msg})};
   const words=(t.match(/[A-Za-z][A-Za-z'-]*/g)||[]).map(w=>w.replace(/['-]+$/,''));
   const low=words.map(w=>w.toLowerCase());
   if(!/^["'(]?[A-Z0-9]/.test(t))add('cap','Start this sentence with a capital letter.');
@@ -1289,6 +1284,8 @@ function sentenceIssues(t){
     if(low[i]==='an'&&(/^[bcdfgjklmnpqrstvwxyz]/.test(n)||/^(uni|use|usu|eu|one)/.test(n))&&words[i+1]!==words[i+1].toUpperCase())add('other','Use "a" before "'+n+'."');
   }
   agreement(low).forEach(x=>add('agree',x));
+  nounAgreement(t).forEach(x=>add('agree',x));
+  helperVerbs(t).forEach(x=>add('tense',x));
   tenseIssues(t).forEach(x=>add('tense',x));
   compoundComma(t).forEach(x=>add('comma',x));
   m=t.match(/^(Because|Although|Unless|If)\b/);
@@ -1298,7 +1295,7 @@ function sentenceIssues(t){
 /* ---- verb tense ---- */
 const IRR={was:'be',were:'be',had:'have',did:'do',went:'go',saw:'see',came:'come',ran:'run',sat:'sit',got:'get',said:'say',made:'make',ate:'eat',took:'take',found:'find',gave:'give',told:'tell',thought:'think',knew:'know',felt:'feel',kept:'keep',slept:'sleep',swam:'swim',sang:'sing',drank:'drink',fell:'fall',flew:'fly',grew:'grow',drew:'draw',wrote:'write',rode:'ride',broke:'break',spoke:'speak',woke:'wake',stood:'stand',brought:'bring',bought:'buy',caught:'catch',taught:'teach',fought:'fight',won:'win',hid:'hide',dug:'dig',fed:'feed',met:'meet',slid:'slide',threw:'throw',blew:'blow',wore:'wear',chose:'choose',froze:'freeze',stole:'steal',drove:'drive',shook:'shake',forgot:'forget',sent:'send',spent:'spend',built:'build',lost:'lose',heard:'hear',sold:'sell',paid:'pay',held:'hold',began:'begin',became:'become',understood:'understand',led:'lead'};
 const PAST_OF=Object.fromEntries(Object.entries(IRR).filter(([p,b])=>b!=='be').map(([p,b])=>[b,p]));
-const VERBS=new Set(Object.values(IRR).filter(b=>b!=='be').concat('like love want play jump walk look help need live use watch learn try move work visit talk call ask open start stop study climb cook clean finish laugh smile cry hope plan pick pull push kick wish fix mix enjoy explore travel listen carry measure predict transport interrupt reject subtract transform transmit inspect describe protect invent create discover collect wonder decide happen'.split(' ')));
+const VERBS=new Set(Object.values(IRR).filter(b=>b!=='be').concat('act add agree allow answer appear arrive ask bake bark beg belong blink blow boil borrow bounce bow breathe bring brush build bump burn call camp care carry catch change chase cheer chew chop clap clean climb close collect color compare complete connect contain continue cook count cover crawl create cross cry dance decide decorate deliver depend describe destroy dig discover dive divide dream dress drink drive drop dry earn eat enjoy enter erupt escape exercise explain explore fail feel fight fill find finish fit fix float flow fly fold follow forget freeze fry gather giggle glow grab grow guard guess hammer hang happen hate hear help hide hike hold hop hope hug hum hunt hurry imagine include inspect interrupt invent join juggle jump kick kiss kneel knock know laugh learn leave lend lick lift like listen live load lock look lose love make march marry mean measure meet melt miss mix mop move multiply nap need notice obey observe offer open own pack paint pass pause pay peek perform pet pick pinch plan plant play pour practice pray predict prepare press pretend print produce promise protect provide pull pump push race rain reach receive reflect reject relax remember remove repair repeat reply rescue return ride ring rise roar roll rub run rush sail save say scare scratch scream search see seem sell send serve shake share shine shiver shoot shop shout show shrink sing sit skate ski skip sleep slide slip smell smile sneeze sniff snow solve sort speak spell spend spill spin splash spray spread squeeze stack stand stare start stay steal step stick sting stir stop stretch study subtract support surprise sweep swim swing take talk taste teach tear tease tell thank think throw tickle tie touch trace trade train transform transmit transport travel treat trust try turn twist understand unlock use vanish visit wait wake walk wander want warn wash waste watch wave wear weigh whisper whistle win wink wipe wish wonder work worry wrap write yawn yell zoom'.split(' ')));
 const tps=v=>v==='have'?'has':v==='do'?'does':v==='go'?'goes':/(s|x|z|ch|sh)$/.test(v)?v+'es':/[^aeiou]y$/.test(v)?v.slice(0,-1)+'ies':v+'s';
 const VS=new Map([...VERBS].map(v=>[tps(v),v]));
 const pastOf=v=>PAST_OF[v]||(/e$/.test(v)?v+'d':/[^aeiou]y$/.test(v)?v.slice(0,-1)+'ied':/^[^aeiou]*[aeiou][bdgmnpt]$/.test(v)?v+v.slice(-1)+'ed':v+'ed');
@@ -1330,7 +1327,12 @@ function verbMarks(low){
     else if(VS.has(w)&&(/^(he|she|it)$/.test(p)&&!(p==='it'&&isVerbish(pp))||i>=2&&i<=3&&DET.test(low[0])&&!low.slice(1,i).some(x=>BE.test(x)||isVerbish(x)||DET.test(x))))out.push({i,t:'pres',w});
     else if(VERBS.has(w)&&/^(i|you|we|they)$/.test(p)&&!MODAL.test(pp)&&!/^(and|or|let|make|help|see|saw|watch|watched|hear|heard)$/.test(pp))out.push({i,t:'pres',w});
   });
-  return out;
+  clauses(low,low).forEach(c=>{
+    if(out.some(x=>x.i===c.vi))return;
+    const v=c.v,t=SG_V.test(v)||PL_V.test(v)||VS.has(v)||VERBS.has(v)?'pres':IRR[v]||isEdPast(v)?'past':'';
+    if(t)out.push({i:c.vi,t,w:v});
+  });
+  return out.sort((a,b)=>a.i-b.i);
 }
 const tenseOf=m=>{const s=new Set(m.map(x=>x.t));return s.size===1?[...s][0]:s.size?'mixed':''};
 const TNAME={past:'past',pres:'present'};
@@ -1398,6 +1400,85 @@ function compoundComma(t){
     const bit=a=>a.join(' ').replace(/[^A-Za-z' ]/g,'');
     out.push('Put a comma before "'+c+'." It joins two complete sentences: "...'+bit(words.slice(Math.max(0,i-2),i))+', '+c+' '+bit(words.slice(i+1,i+3))+'..."');
     break;
+  }
+  return out;
+}
+/* ---- subject finder: who or what the sentence is about, and its verb ---- */
+const PREP=/^(of|with|in|on|at|from|near|by|under|behind|for|about|inside|outside|beside|between|around|without|across|like)$/;
+const TIMEW=/^(yesterday|today|tonight|tomorrow|now|then|later|sometimes|usually|always|often|never|also|first|next|finally|soon|once|still|suddenly)$/;
+const SG_PRON=/^(everyone|everybody|someone|somebody|nobody|anyone|anybody|each|every|one|neither|either|nothing|everything|something|anything)$/;
+const PL_IRR=/^(people|children|men|women|mice|teeth|feet|geese|police|cattle|oxen|both|few|many|several|others)$/;
+const QTY=/^(lots|lot|most|some|all|half|none|plenty|more|rest|part|majority|any)$/;
+const SG_V=/^(is|was|has|does|doesn't|isn't|wasn't|hasn't)$/,PL_V=/^(are|were|have|do|don't|aren't|weren't|haven't)$/;
+const HELP=/^(will|can|could|would|should|must|may|might|did|didn't|don't|doesn't|won't|can't|couldn't|wouldn't|shouldn't|to|not|never)$/;
+const STARTS=/^(and|but|so|or|because|when|if|while|until|unless|although|since|after|before|that|think|thinks|thought|know|knows|knew|said|says|hope|hopes|guess|believe|believes)$/;
+const verbish=w=>SG_V.test(w)||PL_V.test(w)||VS.has(w)||VERBS.has(w)||!!IRR[w]||isEdPast(w)||/^(will|can|could|would|should|must|may|might|had|am)$/.test(w);
+// Returns [{head, plural, vi, v}] for each clause whose subject is a noun or a name (pronouns are checked elsewhere).
+function clauses(low,words){
+  const starts=[0],out=[];let reach=-1;
+  for(let i=1;i<low.length;i++)if(/,$/.test(words[i-1]||'')||STARTS.test(low[i-1]))starts.push(i);
+  starts.forEach(s=>{
+    if(s<=reach)return; // this word is still inside an earlier subject ("Sam and Mia are")
+    let i=s;
+    while(i<low.length&&(TIMEW.test(low[i])||(/^(last|next|every|this)$/.test(low[i])&&/^(night|week|weekend|month|year|day|morning|summer|winter|spring|fall|time)$/.test(low[i+1]||''))))i+=TIMEW.test(low[i])?1:2;
+    const t0=low[i];
+    if(!t0||PRONOUN.test(t0)||/^(there|here|what|where|why|how|who|which|when|this|that|these|those|me|him|us|them)$/.test(t0)||(verbish(t0)&&!DET.test(t0))||HELP.test(t0)||/ing$/.test(t0))return;
+    let head=null,hw='',hi=-1,plural=false,and=false,pp=false,sgFix=false,qty=false;
+    for(let j=i;j<Math.min(low.length,i+10);j++){
+      const w=low[j],prev=low[j-1]||'';
+      if(j>i&&/,$/.test(words[j-1])&&!and)return;
+      if(/^(that|who|which|whose|whom|where|because|if|when|or)$/.test(w))return;
+      if(!pp&&/^(i|you|he|she|it|we|they|me|him|us|them)$/.test(w))return;
+      if((SG_PRON.test(w)||QTY.test(w)||PL_IRR.test(w))&&low[j+1]==='of'&&!head){head=w;hw=words[j];hi=j;continue}
+      if(w==='and'){if(head&&!pp){and=true;continue}return}
+      if(PREP.test(w)&&head){pp=true;continue}
+      if(DET.test(w)||/^(a|an)$/.test(w))continue;
+      const cand=verbish(w)&&head&&!DET.test(prev)&&!/^(a|an)$/.test(prev)&&!PREP.test(prev)&&prev!=='and';
+      // a verb-looking word followed by another verb is really a noun ("the bus stop is")
+      if(cand&&(VERBS.has(w)||VS.has(w))&&!pp&&(SG_V.test(low[j+1]||'')||PL_V.test(low[j+1]||'')||VS.has(low[j+1])||!!IRR[low[j+1]]||isEdPast(low[j+1]||'')||/^(will|can|could|would|should|must|may|might)$/.test(low[j+1]||''))){head=w;hw=words[j];hi=j;continue}
+      if(cand){
+        if(and)plural=true;
+        else if(SG_PRON.test(head))plural=false;
+        else if(QTY.test(head)&&low[hi+1]==='of')return;
+        else if(/^(fish|sheep|deer|moose|bison|salmon|trout|series|species|aircraft|offspring|shrimp|squid)$/.test(head))return; // same word for one or many
+        else if(PL_IRR.test(head))plural=true;
+        else if(hi>0&&/^[A-Z]/.test(hw)&&!/^[A-Z]+$/.test(hw))plural=false;
+        else plural=/s$/.test(head)&&!/(ss|us|is|os|ics)$/.test(head)&&!/^(news|lens|gas|bus|series|species|mathematics|physics)$/.test(head);
+        out.push({head,hw,plural,vi:j,v:w,and,si:i});reach=j;
+        return;
+      }
+      if(!pp){head=w;hw=words[j];hi=j}
+    }
+  });
+  return out;
+}
+const PP_OF={went:'gone',ate:'eaten',saw:'seen',took:'taken',ran:'run',came:'come',gave:'given',wrote:'written',broke:'broken',drove:'driven',rode:'ridden',fell:'fallen',flew:'flown',grew:'grown',drew:'drawn',threw:'thrown',blew:'blown',wore:'worn',chose:'chosen',stole:'stolen',froze:'frozen',spoke:'spoken',woke:'woken',began:'begun',swam:'swum',sang:'sung',drank:'drunk',knew:'known',did:'done',shook:'shaken',forgot:'forgotten',hid:'hidden',became:'become',was:'been',were:'been',bit:'bitten'};
+function nounAgreement(t){
+  const out=[],plain=t.replace(/"[^"]*"/g,' ');
+  const words=plain.match(/[A-Za-z][A-Za-z'-]*,?/g)||[];
+  const low=words.map(w=>w.replace(/,$/,'').toLowerCase());
+  clauses(low,words).forEach(c=>{
+    const v=c.v,subj='"'+(c.and?words.slice(c.si,c.vi).join(' ').replace(/,/g,''):c.hw.replace(/,$/,''))+'"';
+    if(VERBS.has(v)&&!VS.has(v)&&!PL_V.test(v)&&PAST_TIME.test(plain))return; // the past-tense message covers it
+    if(c.plural&&(SG_V.test(v)||VS.has(v))){
+      const fix=TO_PL[v]||VS.get(v);
+      out.push('Check your subject and verb. '+subj+(c.and?' are more than one, so':' is more than one, so')+' use "'+fix+'," not "'+v+'."');
+    }else if(!c.plural&&(PL_V.test(v)||VERBS.has(v)&&!VS.has(v))){
+      const fix=TO_SG[v]||tps(v);
+      out.push('Check your subject and verb. '+subj+' is just one, so use "'+fix+'"'+(VERBS.has(v)?' (now) or "'+pastOf(v)+'" (in the past)':'')+', not "'+v+'."');
+    }
+  });
+  return out;
+}
+function helperVerbs(t){
+  const out=[],low=(t.replace(/"[^"]*"/g,' ').toLowerCase().match(/[a-z]+(?:'[a-z]+)?/g)||[]);
+  for(let i=1;i<low.length;i++){
+    const w=low[i];let k=i-1;
+    while(k>0&&/^(not|never|already|just|ever|always|also|really|all)$/.test(low[k]))k--;
+    const h=low[k];
+    if(/^(has|have|had|having|i've|you've|we've|they've)$/.test(h)&&PP_OF[w])out.push('After "'+h+'," write "'+PP_OF[w]+'," not "'+w+'." Example: "'+h+' '+PP_OF[w]+'."');
+    if(k<i-1&&/^(will|can|could|would|should|must|may|might|did|do|does)$/.test(h)&&(IRR[w]||isEdPast(w))){const b=IRR[w]||edBase(w);out.push('After "'+h+' '+low.slice(k+1,i).join(' ')+'," use the plain verb: "'+(b==='be'?'be':b)+'," not "'+w+'."')}
+    if(k===i-1&&/^(will|can|could|would|should|must|may|might|did|didn't|don't|doesn't|won't|can't|couldn't|wouldn't|shouldn't|to)$/.test(h)&&VS.has(w))out.push('After "'+h+'," use the plain verb: "'+h+' '+VS.get(w)+'," not "'+h+' '+w+'."');
   }
   return out;
 }
