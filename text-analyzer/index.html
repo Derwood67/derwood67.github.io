@@ -88,6 +88,14 @@
   .info-src{font-size:12px;color:#666;margin-top:8px}
   .tags{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0}.tags span{font-size:12px;background:var(--soft);border-radius:99px;padding:2px 9px}
   .booklist button{font-size:12px;padding:5px 10px;border-radius:99px;background:var(--soft);color:var(--accent);border-color:#cfe3da}
+  .src{font-size:12px;color:var(--accent);font-weight:600;margin-top:2px}
+  details.chap{border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin:6px 0;background:#fff}
+  details.chap summary{cursor:pointer;list-style:none}
+  details.chap summary::-webkit-details-marker{display:none}
+  details.chap summary span{display:block;font-size:13px;color:var(--muted);margin-top:2px}
+  details.chap[open] summary b{color:var(--c)}
+  details.chap ul{margin:8px 0 2px}
+  .cq{font-size:12px;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -164,6 +172,7 @@
 <script src="books3.js"></script>
 <script src="books4.js"></script>
 <script src="poems2.js"></script>
+<script src="from-artifacts.js"></script>
 <script>
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -179,7 +188,8 @@ const STD = {
   characters: g => `RL.${g}.3`,
   setting: g => `RL.${g}.3`,
   questions: g => `RL.${g}.1 · RI.${g}.1`,
-  poem: g => `RL.${g}.5 · RL.${g}.4 · L.${g}.5`
+  poem: g => `RL.${g}.5 · RL.${g}.4 · L.${g}.5`,
+  chapters: g => `RL.${g}.1 · RL.${g}.2 · RL.${g}.3 · RL.${g}.5 · RL.${g}.6`
 };
 
 document.querySelectorAll(".ex").forEach(b => b.onclick = () => {
@@ -305,7 +315,7 @@ function render(d, grade){
     ? `<div class="error" style="background:#fff8e6;border-color:#efdca5;color:#6b4e0e"><b>Teacher note:</b> ${esc(d.note || "Some details may be less certain for this text.")}${d.confidence==="low"?" (low confidence)":""}</div>` : "";
   let html = warn + `<div class="results-head">
       <div><h2>${esc(d.title||"Analysis")}<span class="genre">${esc(d.genre||"")}</span></h2>
-      <div class="meta">${d.author?"by "+esc(d.author)+" · ":""}${$("#part").value.trim()?esc($("#part").value.trim())+" · ":""}written for grade ${esc(grade)}</div></div>
+      <div class="meta">${d.author?"by "+esc(d.author)+" · ":""}${$("#part").value.trim()?esc($("#part").value.trim())+" · ":""}written for grade ${esc(grade)}</div>${d.source?`<div class="src">✓ ${esc(d.source)}</div>`:""}</div>
       <div class="btns"><button id="copyAll">Copy all</button><button id="again" class="live-only">Re-analyze</button></div>
     </div><div class="grid">`;
 
@@ -360,6 +370,12 @@ function render(d, grade){
   html += card("setting","Setting","--c8",
     `<ul><li><b>Place:</b> ${esc(st.place)}</li><li><b>Time:</b> ${esc(st.time)}</li></ul><p>${esc(st.importance)}</p>${q(st.evidence)}`,
     `Setting — Place: ${st.place||""}; Time: ${st.time||""}\n${st.importance||""}`);
+
+  const chs = Array.isArray(d.chapters) ? d.chapters : [];
+  if(chs.length) html += card("chapters","Chapter by Chapter","--c3",
+    `<p class="hint" style="margin:0 0 8px">Tap a chapter to see its structure, point of view, voice, setting, and character focus.</p>` +
+    chs.map(c=>`<details class="chap"><summary><b>Ch. ${c.n}: ${esc(c.title)}</b><span>${esc(c.main_idea)}</span></summary><ul>${(c.qa||[]).map(x=>`<li><b>${esc(x.k)}:</b> ${esc(x.a)}<div class="cq">${esc(x.q)}</div></li>`).join("")}</ul></details>`).join(""),
+    `Chapter by chapter:\n${chs.map(c=>`Ch. ${c.n}: ${c.title}\nMain idea: ${c.main_idea}\n${(c.qa||[]).map(x=>"- "+x.k+": "+x.a).join("\n")}`).join("\n\n")}`, true);
 
   const dq = d.discussion_questions||[];
   if(dq.length) html += card("questions","Discussion Questions","--c2",
