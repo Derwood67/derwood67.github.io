@@ -158,6 +158,14 @@ mark{background:transparent;color:var(--k);font-weight:700;text-decoration:under
 .hostname{font-family:var(--display);font-weight:600;font-size:1.25rem}
 .hostsay{flex:1 1 220px;min-width:0}
 .host select{max-width:14em}
+#t-dash{border:2px solid var(--line);border-radius:18px;padding:0;max-width:640px;width:calc(100% - 24px);background:var(--surface);color:var(--ink)}
+#t-dash::backdrop{background:rgba(10,14,20,.6)}
+#t-dash .tbox{display:flex;flex-direction:column;gap:16px;padding:20px}
+#t-dash h2{margin:0;font-family:var(--display);font-size:1.5rem}
+#t-dash h3{margin:0 0 4px;font-family:var(--display);font-size:1.15rem}
+#t-dash .tsec{display:flex;flex-direction:column;gap:8px;border-top:2px solid var(--line);padding-top:14px}
+#t-dash label[for=t-code]{font-weight:700}
+#t-dash select{max-width:18em}
 /* bingo */
 .bnum{flex:0 1 9em;width:9em;min-width:0}
 .bcode{font-family:var(--display);font-size:1.6rem;font-weight:600;letter-spacing:.06em}
@@ -334,8 +342,60 @@ label.help{font-weight:700}
       <h1>Word Parts Workshop</h1>
       <p>Over 300 prefixes, suffixes, and Greek and Latin roots. Learn the parts, then use them to figure out big words.</p>
     </div>
-    <div class="stars" aria-live="polite"><b>★</b> <span id="stars">0</span> stars</div>
+    <div class="row" style="gap:10px">
+      <div class="stars" aria-live="polite"><b>★</b> <span id="stars">0</span> stars</div>
+      <button class="btn sm ghost" id="t-open" type="button">Teacher</button>
+    </div>
   </header>
+
+  <dialog id="t-dash" aria-labelledby="t-title">
+    <div class="tbox">
+      <div class="row" style="justify-content:space-between">
+        <h2 id="t-title">Teacher dashboard</h2>
+        <button class="btn sm ghost" type="button" data-tclose>Close</button>
+      </div>
+      <form id="t-form" class="tsec">
+        <label for="t-code">Teacher code</label>
+        <div class="row">
+          <input class="search" id="t-code" type="password" inputmode="numeric" autocomplete="off" maxlength="12">
+          <button class="btn">Open dashboard</button>
+        </div>
+        <div class="msg" id="t-msg" aria-live="polite"></div>
+      </form>
+      <div id="t-panel" hidden>
+        <section class="tsec">
+          <h3>Monifa's voice</h3>
+          <p class="help">Only you can change these. Students do not see them, and the voice you pick stays set on this computer.</p>
+          <div class="row">
+            <label class="help" for="host-voice">Voice</label>
+            <select class="search" id="host-voice"></select>
+            <button class="btn sm ghost" type="button" id="t-test">Test voice</button>
+          </div>
+          <div class="row">
+            <label class="help" for="host-rate">Speed</label>
+            <select class="search" id="host-rate" style="max-width:12em">
+              <option value="0.85">Slower</option><option value="1">Normal</option><option value="1.12">Faster</option>
+            </select>
+            <label class="help"><input type="checkbox" id="host-on" checked> Monifa talks</label>
+          </div>
+          <p class="help" id="host-tip" hidden>For a real 10-year-old girl’s voice, open this page in Microsoft Edge and Monifa will use Ana automatically.</p>
+        </section>
+        <section class="tsec">
+          <h3>Word Parts Bingo</h3>
+          <p class="help">Calling the game is for you only. Students see only “Play on screen.” The caller stays open on this computer until you lock the teacher tools or close the browser.</p>
+          <div class="row"><button class="btn sm" type="button" id="t-call">Call a bingo game</button></div>
+        </section>
+        <section class="tsec">
+          <h3>Student work</h3>
+          <div class="row"><a class="btn sm ghost" href="teacher.html" target="_blank" rel="noopener">Open paragraph results</a></div>
+        </section>
+        <div class="row" style="justify-content:space-between;border-top:2px solid var(--line);padding-top:14px;margin-top:14px">
+          <button class="btn sm ghost" type="button" id="t-lock">Lock teacher tools</button>
+          <button class="btn sm" type="button" data-tclose>Done</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
 
   <section class="equation" aria-label="Example: how word parts add up">
     <div class="piece"><span class="tile k-prefix">in</span><small>not</small></div>
@@ -534,7 +594,7 @@ label.help{font-weight:700}
     <div class="row">
       <div class="seg" id="bg-mode">
         <button data-mode="play" aria-pressed="true">Play on screen</button>
-        <button data-mode="teacher" aria-pressed="false">Call the game (teacher)</button>
+        <button data-mode="teacher" aria-pressed="false" id="bg-callbtn" hidden>Call the game (teacher)</button>
       </div>
     </div>
 
@@ -589,12 +649,9 @@ label.help{font-weight:700}
             <div class="help" id="host-say" aria-live="polite">Monifa reads every clue and answer out loud.</div>
           </div>
           <div class="row">
-            <label class="help"><input type="checkbox" id="host-on" checked> Monifa talks</label>
             <button class="btn sm ghost" id="host-again">Say it again</button>
-            <label class="help" for="host-voice">Voice</label>
-            <select class="search" id="host-voice"></select>
+            <span class="help" id="host-now"></span>
           </div>
-          <p class="help" id="host-tip" hidden style="flex-basis:100%;margin:0">For a real 10-year-old girl’s voice, open this page in Microsoft Edge and Monifa will use Ana automatically.</p>
         </div>
       </div>
       <div class="stage">
@@ -2021,8 +2078,13 @@ const lineWords=wins=>[...new Set(wins.map(l=>l.name))].join(' and ');
 // (Microsoft Ana, a girl's voice in Microsoft Edge) and otherwise the clearest natural
 // female voice at close to normal pitch. Long lines are spoken a sentence at a time,
 // which keeps Chrome from cutting a voice off partway through.
+/* ---------- teacher tools: unlocked with the teacher code, for this browser session only ---------- */
+const T={key:'wpw-teacher-session',
+  on(){try{return sessionStorage.getItem(this.key)==='1'}catch(e){return false}},
+  set(v){try{v?sessionStorage.setItem(this.key,'1'):sessionStorage.removeItem(this.key)}catch(e){}},
+  fresh:0}; // time of the last code entry; the dashboard asks again after 10 minutes
 const HOST={last:'',key:'wpw-monifa-v2'};
-let HOST_PREF={on:true,voice:''};
+let HOST_PREF={on:true,voice:'',rate:1};
 try{HOST_PREF=Object.assign(HOST_PREF,JSON.parse(localStorage.getItem(HOST.key))||{})}catch(e){}
 const hostSave=()=>{try{localStorage.setItem(HOST.key,JSON.stringify(HOST_PREF))}catch(e){}};
 const HAS_TTS='speechSynthesis' in window&&'SpeechSynthesisUtterance' in window;
@@ -2047,6 +2109,7 @@ function hostFillVoices(){
   if(!vs.length){sel.innerHTML='<option>Default voice</option>';return}
   sel.innerHTML=vs.map(v=>`<option value="${esc(v.name)}"${cur&&v.name===cur.name?' selected':''}>${esc(voiceLabel(v))}</option>`).join('');
   $('#host-tip').hidden=vs.some(isKid);
+  $('#host-now').textContent=cur?'Voice: '+voiceLabel(cur)+' (set in the Teacher dashboard)':'';
 }
 let HOST_RUN=0;
 function hostSay(text){
@@ -2062,7 +2125,7 @@ function hostSay(text){
     if(k>=parts.length){host.classList.remove('talk');return}
     const u=new SpeechSynthesisUtterance(parts[k]);
     if(v){u.voice=v;u.lang=v.lang}
-    u.pitch=t.pitch;u.rate=t.rate;u.volume=1;
+    u.pitch=t.pitch;u.rate=Math.min(1.4,t.rate*(+HOST_PREF.rate||1));u.volume=1;
     let done=false;const go=()=>{if(done)return;done=true;setTimeout(()=>next(k+1),350)};
     u.onend=go;u.onerror=go;
     speechSynthesis.speak(u);
@@ -2085,9 +2148,13 @@ function hostAnswer(p){
 }
 const hostHello=()=>hostSay("Hi, everybody! I'm Monifa, and welcome to Word Parts Bingo! Get your cards ready, and let's play!");
 $('#host-on').checked=HOST_PREF.on;
-$('#host-on').addEventListener('change',e=>{HOST_PREF.on=e.target.checked;hostSave();if(!HOST_PREF.on&&HAS_TTS){HOST_RUN++;speechSynthesis.cancel();$('#host').classList.remove('talk')}});
+$('#host-on').addEventListener('change',e=>{if(!T.on()){e.target.checked=HOST_PREF.on;return}HOST_PREF.on=e.target.checked;hostSave();if(!HOST_PREF.on&&HAS_TTS){HOST_RUN++;speechSynthesis.cancel();$('#host').classList.remove('talk')}});
 $('#host-again').addEventListener('click',()=>{if(HOST.last)hostSay(HOST.last);else hostHello()});
-$('#host-voice').addEventListener('change',e=>{HOST_PREF.voice=e.target.value;hostSave();hostSay("Hi! It's me, Monifa! Do you like my voice?")});
+// Voice, speed and on/off live in the Teacher dashboard, which needs the teacher code.
+$('#host-voice').addEventListener('change',e=>{if(!T.on())return;HOST_PREF.voice=e.target.value;hostSave();hostFillVoices();hostSay("Hi! It's me, Monifa! Do you like my voice?")});
+$('#host-rate').value=String(HOST_PREF.rate||1);
+$('#host-rate').addEventListener('change',e=>{if(!T.on())return;HOST_PREF.rate=+e.target.value;hostSave();hostSay("Hi! It's me, Monifa! Is this a good speed?")});
+$('#t-test').addEventListener('click',()=>hostSay("Hi, everybody! I'm Monifa. This is how I will sound when we play Word Parts Bingo!"));
 if(HAS_TTS){hostFillVoices();speechSynthesis.addEventListener?.('voiceschanged',hostFillVoices)}
 else{$('#host-say').textContent='This browser cannot speak, so read the clues aloud yourself.';$('#host-voice').hidden=true}
 
@@ -2103,6 +2170,8 @@ if(!BG||!parseCode(BG.code)||!Array.isArray(BG.called))bgNew('PSGL');
 BG_PEND=parseCode(BG.code).letters;
 
 function bgMode(m){
+  if(m==='teacher'&&!T.on())m='play';
+  $('#bg-callbtn').hidden=!T.on();
   BG_MODE=m;try{localStorage.setItem(BM_KEY,m)}catch(e){}
   document.querySelectorAll('#bg-mode button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.mode===m));
   $('#bg-play').hidden=m!=='play';$('#bg-teacher').hidden=m!=='teacher';
@@ -2211,6 +2280,34 @@ let bingoGame=0;
 $('#bp-clear').addEventListener('click',()=>{bingoGame++;BP.marks=[];bpSave();bpRender()});
 $('#bp-code').value=BP.code||'';$('#bp-card').value=BP.card||'';
 bgMode(BG_MODE);bgRender();bpRender();
+
+/* ---------- Teacher dashboard (code 8531) ---------- */
+const TD=$('#t-dash');
+function tShow(){
+  const open=T.on()&&Date.now()-T.fresh<600000;
+  $('#t-form').hidden=open;$('#t-panel').hidden=!open;
+  $('#t-msg').textContent='';$('#t-code').value='';
+  if(open){hostFillVoices();$('#host-on').checked=HOST_PREF.on;$('#host-rate').value=String(HOST_PREF.rate||1)}
+  if(typeof TD.showModal==='function'){if(!TD.open)TD.showModal()}else TD.setAttribute('open','');
+  setTimeout(()=>(open?$('#host-voice'):$('#t-code')).focus(),30);
+}
+function tClose(){if(TD.close)TD.close();else TD.removeAttribute('open')}
+$('#t-open').addEventListener('click',tShow);
+TD.querySelectorAll('[data-tclose]').forEach(b=>b.addEventListener('click',tClose));
+$('#t-form').addEventListener('submit',e=>{
+  e.preventDefault();
+  const code=$('#t-code').value;
+  const check=window.ClassGate&&ClassGate.checkCode?ClassGate.checkCode(code):Promise.resolve('wrong');
+  check.then(r=>{
+    if(r==='ok'){T.set(true);T.fresh=Date.now();bgMode(BG_MODE);tShow();return}
+    $('#t-code').value='';
+    $('#t-msg').textContent=(window.ClassGate&&ClassGate.codeMsg(r))||'That code is not right.';
+    $('#t-msg').className='msg bad';
+  });
+});
+$('#t-call').addEventListener('click',()=>{tClose();show('bingo');bgMode('teacher');$('#view-bingo').scrollIntoView({behavior:'smooth',block:'start'})});
+$('#t-lock').addEventListener('click',()=>{T.set(false);T.fresh=0;if(HAS_TTS){HOST_RUN++;speechSynthesis.cancel()}bgMode('play');tClose()});
+document.addEventListener('classgate:signin',()=>{T.set(false);bgMode('play')});
 
 renderExplore();newBuild();startQuiz();updateLock();LOCK_READY=true;
 show(location.hash.slice(1));
