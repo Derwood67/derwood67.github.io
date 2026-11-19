@@ -191,6 +191,8 @@ mark{background:transparent;color:var(--k);font-weight:700;text-decoration:under
 /* bingo */
 .bnum{flex:0 1 9em;width:9em;min-width:0}
 .bcode{font-family:var(--display);font-size:1.6rem;font-weight:600;letter-spacing:.06em}
+.bcall.rolling{color:var(--muted)}
+@media (prefers-reduced-motion: no-preference){.bcall.rolling,#bg-answer.rolling{animation:drumpulse .18s ease-in-out infinite alternate}@keyframes drumpulse{from{transform:translateX(-2px)}to{transform:translateX(2px)}}}
 .bcall{font-family:var(--display);font-size:clamp(1.6rem,5vw,2.6rem);font-weight:600;line-height:1.15;text-wrap:balance}
 .bgrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;max-width:560px;width:100%}
 .bhead{font-family:var(--display);font-weight:600;text-align:center;font-size:1.5rem;color:var(--accent)}
@@ -702,6 +704,7 @@ label.help{font-weight:700}
           <button class="btn" id="bg-next">Call next</button>
           <button class="btn ghost" id="bg-show">Show answer</button>
           <button class="btn ghost" id="bg-undo">Undo last call</button>
+          <label class="help" for="bg-drum"><input type="checkbox" id="bg-drum" checked> Drum roll</label>
         </div>
         <details>
           <summary class="help">Called so far (shows the answers)</summary>
@@ -2255,9 +2258,9 @@ function hostClue(p,n){
   hostSay(pickOne([`Here comes clue number ${n}!`,`Okay, friends, clue number ${n}!`,`Eyes on your cards! Clue number ${n}!`,`Are you ready? Clue number ${n}!`,`Ooh, I love this one! Clue number ${n}!`])+
     ` Find the word part that means: ${sayMeaning(p)}. One more time: ${sayMeaning(p)}.`);
 }
-function hostAnswer(p){
+function hostAnswer(p,afterDrum){
   const ex=(p.ex[0]||'').replace(/[\[\]]/g,'');
-  hostSay(pickOne(['Did you get it? ','Drumroll, please! ','Here is the answer! ',"Let's see if you were right! "])+
+  hostSay(pickOne(afterDrum?['Did you get it? ','Here is the answer! ',"Let's see if you were right! ",'Ta-da! ']:['Did you get it? ','Drumroll, please! ','Here is the answer! ',"Let's see if you were right! "])+
     `It's ${sayKind(p)}: ${spellPart(p)}. It means ${sayMeaning(p)}.`+(ex?` Like in the word ${ex}!`:''));
 }
 const hostHello=()=>hostSay("Hi, everybody! I'm Monifa, and welcome to Word Parts Bingo! Get your cards ready, and let's play!");
@@ -2323,14 +2326,63 @@ $('#bg-new').addEventListener('click',e=>{
   hostHello();
   setMsg('#bg-newmsg','New game '+BG.code+' started. Print new cards for this game.','good');
 });
-$('#bg-next').addEventListener('click',()=>{
+/* drum roll: a snare roll that speeds up and gets louder, then a cymbal crash.
+   Made with the browser's Web Audio, so there is no sound file to load. */
+let DRUM_CTX=null,DRUM_ON=true,BG_ROLLING=false;
+try{DRUM_ON=localStorage.getItem('wpw-bingo-drum')!=='off'}catch(e){}
+$('#bg-drum').checked=DRUM_ON;
+$('#bg-drum').addEventListener('change',e=>{DRUM_ON=e.target.checked;try{localStorage.setItem('wpw-bingo-drum',DRUM_ON?'on':'off')}catch(_){}});
+function drumRoll(ms){
+  return new Promise(done=>{
+    try{
+      const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return done();
+      DRUM_CTX=DRUM_CTX||new AC();const c=DRUM_CTX;if(c.state==='suspended')c.resume();
+      const t0=c.currentTime+0.03,dur=ms/1000,end=t0+dur;
+      const noise=(sec,shape)=>{const n=Math.floor(c.sampleRate*sec),b=c.createBuffer(1,n,c.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/n,shape);return b};
+      const out=c.createGain();out.gain.value=0.7;out.connect(c.destination);
+      const snare=c.createBiquadFilter();snare.type='bandpass';snare.frequency.value=1900;snare.Q.value=0.8;snare.connect(out);
+      const hit=noise(0.09,2);
+      for(let t=t0,i=0;t<end;i++){
+        const f=(t-t0)/dur,s=c.createBufferSource(),g=c.createGain();
+        s.buffer=hit;g.gain.value=(0.18+0.6*f*f)*(i%2?0.8:1);s.connect(g);g.connect(snare);s.start(t);
+        t+=0.075-0.04*f;
+      }
+      const crash=c.createBufferSource(),hp=c.createBiquadFilter(),cg=c.createGain();
+      crash.buffer=noise(1.4,3);hp.type='highpass';hp.frequency.value=4500;cg.gain.value=0.8;
+      crash.connect(hp);hp.connect(cg);cg.connect(out);crash.start(end);
+      const boom=c.createOscillator(),bg=c.createGain();
+      boom.frequency.setValueAtTime(120,end);boom.frequency.exponentialRampToValueAtTime(45,end+0.45);
+      bg.gain.setValueAtTime(0.9,end);bg.gain.exponentialRampToValueAtTime(0.001,end+0.55);
+      boom.connect(bg);bg.connect(out);boom.start(end);boom.stop(end+0.6);
+      setTimeout(done,ms+80);
+    }catch(e){done()}
+  });
+}
+function bgRollStart(text,el){
+  BG_ROLLING=true;['#bg-next','#bg-show','#bg-undo'].forEach(x=>$(x).disabled=true);
+  if(HAS_TTS){HOST_RUN++;speechSynthesis.cancel()}
+  el.textContent=text;el.hidden=false;el.classList.add('rolling');
+}
+function bgRollEnd(el){BG_ROLLING=false;el.classList.remove('rolling');['#bg-show','#bg-undo'].forEach(x=>$(x).disabled=false)}
+$('#bg-next').addEventListener('click',async()=>{
+  if(BG_ROLLING)return;
   const left=bingoPool(BG.code).filter(p=>!BG.called.includes(p.id));if(!left.length)return;
-  BG.called.push(left[Math.floor(Math.random()*left.length)].id);BG.show=false;bgSave();bgRender();
+  const pick=left[Math.floor(Math.random()*left.length)].id;
+  if(DRUM_ON){
+    $('#bg-answer').hidden=true;$('#bg-count').textContent='Clue '+(BG.called.length+1)+' of '+bingoPool(BG.code).length;
+    bgRollStart('Drum roll, please…',$('#bg-clue'));await drumRoll(1200);bgRollEnd($('#bg-clue'));
+  }
+  BG.called.push(pick);BG.show=false;bgSave();bgRender();
   const n=BG.called.length;hostClue(BY_ID[BG.called[n-1]],n);
 });
-$('#bg-undo').addEventListener('click',()=>{BG.called.pop();BG.show=false;bgSave();bgRender()});
-$('#bg-show').addEventListener('click',()=>{BG.show=!BG.show;bgSave();bgRender();
-  if(BG.show&&BG.called.length)hostAnswer(BY_ID[BG.called[BG.called.length-1]]);});
+$('#bg-undo').addEventListener('click',()=>{if(BG_ROLLING)return;BG.called.pop();BG.show=false;bgSave();bgRender()});
+$('#bg-show').addEventListener('click',async()=>{
+  if(BG_ROLLING)return;
+  if(BG.show||!BG.called.length){BG.show=false;bgSave();bgRender();return}
+  if(DRUM_ON){bgRollStart('Drum roll…',$('#bg-answer'));await drumRoll(1700);bgRollEnd($('#bg-answer'))}
+  BG.show=true;bgSave();bgRender();
+  hostAnswer(BY_ID[BG.called[BG.called.length-1]],DRUM_ON);
+});
 $('#bg-checkform').addEventListener('submit',e=>{
   e.preventDefault();
   const n=Math.round(+$('#bg-checknum').value);
