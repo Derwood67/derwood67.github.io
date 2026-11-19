@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fraction Bingo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: top bar with three modes (Caller, My Card, Check Winner); each mode is one focused panel. */
+:root{
+  --bg:#eef4f3; --surface:#ffffff; --ink:#122b2a; --muted:#4f6664; --line:#d3e0de;
+  --accent:#0d7a6f; --accent-ink:#ffffff; --daub:#f2a516; --daub-ink:#2a1b00; --win:#c2185b;
+  --font-display:"Baloo 2","Trebuchet MS",system-ui,sans-serif;
+  --font-body:"Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0d1a1a; --surface:#152626; --ink:#e4f1ef; --muted:#9db6b3; --line:#244040;
+  --accent:#3cc4b4; --accent-ink:#06201d; --daub:#f5b83d; --daub-ink:#2a1b00; --win:#ff6fa3; color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#0d1a1a; --surface:#152626; --ink:#e4f1ef; --muted:#9db6b3; --line:#244040;
+  --accent:#3cc4b4; --accent-ink:#06201d; --daub:#f5b83d; --daub-ink:#2a1b00; --win:#ff6fa3; color-scheme:dark;}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:17px;line-height:1.5}
+:focus-visible{outline:3px solid var(--daub);outline-offset:2px}
+h1,h2,h3{font-family:var(--font-display);margin:0;line-height:1.1;text-wrap:balance}
+.wrap{max-width:1100px;margin:0 auto;padding:0 16px}
+header{background:var(--surface);border-bottom:1px solid var(--line)}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:12px 16px;max-width:1100px;margin:0 auto}
+.brand h1{font-size:1.7rem;font-weight:800}
+.brand p{margin:0;color:var(--muted);font-size:.85rem}
+nav{display:flex;gap:6px;flex-wrap:wrap}
+.tab{font:inherit;font-weight:700;padding:8px 14px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+.tab[aria-selected="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+main{padding:20px 0 48px}
+.panel{display:none}.panel.on{display:block}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+label{font-weight:700;font-size:.9rem}
+select,input[type=text]{font:inherit;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.btn{font:inherit;font-weight:700;padding:9px 16px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.muted{color:var(--muted)}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px}
+
+/* fractions */
+.fr{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1;margin:0 .1em;font-variant-numeric:tabular-nums}
+.fr>span:first-child{border-bottom:.08em solid currentColor;padding:0 .12em .06em}
+.fr>span:last-child{padding:.06em .12em 0}
+.w{margin-right:.08em}
+
+/* caller */
+.caller{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-top:16px}
+.stage{text-align:center;padding:28px 18px;min-height:280px;display:flex;flex-direction:column;justify-content:center;gap:14px}
+.stage .num{font-family:var(--font-display);color:var(--muted);font-weight:600}
+.stage .q{font-size:clamp(1.6rem,3.6vw,2.6rem);font-weight:700;line-height:1.35}
+.stage .tag{display:inline-block;font-size:.8rem;font-weight:700;padding:2px 10px;border-radius:999px;background:var(--bg);border:1px solid var(--line);color:var(--muted)}
+.stage .ans{font-size:1.8rem;font-family:var(--font-display);font-weight:800;color:var(--accent)}
+.hist{max-height:430px;overflow:auto;margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+.hist li{display:grid;grid-template-columns:2.2em 1fr auto;gap:8px;align-items:center;padding:6px 8px;border-radius:8px;background:var(--bg);font-size:.92rem}
+.hist .a{font-weight:700;color:var(--accent);font-size:1.05rem}
+.hist .n{color:var(--muted);font-variant-numeric:tabular-nums}
+
+/* card */
+.cardwrap{display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start;margin-top:16px}
+.card{background:var(--surface);border:2px solid var(--ink);border-radius:14px;padding:10px;width:min(100%,460px)}
+.card .head,.card .grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.card .head div{text-align:center;font-family:var(--font-display);font-weight:800;font-size:1.8rem;color:var(--accent)}
+.cell{aspect-ratio:1;border:1px solid var(--line);border-radius:8px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:clamp(1rem,3.4vw,1.35rem);font-weight:700;cursor:pointer;color:var(--ink);font-family:var(--font-body);padding:2px;text-align:center}
+.cell.free{background:var(--accent);color:var(--accent-ink);font-family:var(--font-display);font-size:1rem;cursor:default}
+.cell.daub{background:var(--daub);color:var(--daub-ink);border-color:var(--daub)}
+.cell.win{outline:3px solid var(--win);outline-offset:-3px}
+.cell.miss{opacity:.45}
+.cardid{text-align:center;font-weight:700;color:var(--muted);margin-top:8px;font-variant-numeric:tabular-nums}
+.verdict{font-family:var(--font-display);font-size:1.6rem;font-weight:800}
+.verdict.yes{color:var(--win)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.88rem;color:var(--muted);margin-top:8px}
+.sw{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:5px}
+.stds{margin:0;padding-left:18px;font-size:.92rem}
+.stds li{margin:3px 0}
+@media (max-width:820px){.caller{grid-template-columns:1fr}}
+</style>
+<!-- Class sign-in gate: first-name sign-in, blocked names, teacher unlock -->
+<style>
+#cg-ov{position:fixed;inset:0;z-index:2147483000;background:#141c24;display:flex;align-items:center;justify-content:center;padding:16px;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+#cg-ov *{box-sizing:border-box}
+#cg-ov .cg-card{background:#fff;color:#1b2420;border-radius:14px;max-width:420px;width:100%;padding:24px;display:flex;flex-direction:column;gap:12px;box-shadow:0 12px 32px rgba(0,0,0,.35);font-size:18px;line-height:1.45}
+#cg-ov h2{margin:0;font-size:1.45rem;line-height:1.2}
+#cg-ov p{margin:0}
+#cg-ov label{font-weight:700}
+#cg-ov input{font:inherit;width:100%;padding:12px;border:2px solid #c9d1cc;border-radius:8px;background:#f6f8f6;color:#1b2420}
+#cg-ov input:focus{outline:3px solid #f2c230;outline-offset:1px}
+#cg-ov button{font:inherit;font-weight:700;border:0;border-radius:8px;padding:12px 16px;background:#0b6b4a;color:#fff;cursor:pointer}
+#cg-ov .cg-msg{min-height:1.4em;color:#a83226;font-size:.95rem}
+#cg-ov .cg-small{font-size:.9rem;color:#55625b}
+#cg-ov details{border-top:1px solid #e1e6e2;padding-top:10px}
+#cg-ov summary{cursor:pointer;font-size:.9rem;color:#55625b}
+#cg-ov form{display:flex;flex-direction:column;gap:10px;margin:0}
+#cg-badge{position:fixed;right:10px;bottom:10px;z-index:2147482000;background:#1b2430;color:#fff;font:600 14px/1.2 system-ui,-apple-system,"Segoe UI",Arial,sans-serif;border-radius:999px;padding:7px 8px 7px 14px;display:flex;gap:10px;align-items:center;box-shadow:0 3px 10px rgba(0,0,0,.25)}
+#cg-badge button{font:inherit;background:#f2c230;color:#1b1b1b;border:0;border-radius:999px;padding:4px 10px;cursor:pointer}
+</style>
+<script data-login>
+(function(){
+  var BLOCKED=["james","ravi"];          /* first names that may not use this app */
+  var CODE_HASH="cf2d0fe7ea0a7780592080ef0bf415a6043a3d59aa5d72ace64d39c6e0837285";  /* scrambled teacher code; the code itself is not stored in this page */
+  var TRY_KEY="echols-classgate-tries";
+  function sha(t){return crypto.subtle.digest("SHA-256",new TextEncoder().encode(t)).then(function(b){return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0")}).join("")})}
+  /* Checks a teacher code. Three wrong tries locks code entry on this device for 10 minutes. Resolves "ok", "wrong" or "wait". */
+  function checkCode(code){var t={};try{t=JSON.parse(lsGet(TRY_KEY))||{}}catch(x){}
+    if(t.until&&Date.now()<t.until)return Promise.resolve("wait");
+    return sha("echols-room2:"+String(code||"").trim()).then(function(h){
+      if(h===CODE_HASH){lsSet(TRY_KEY,null);return "ok"}
+      t.n=(t.n||0)+1;if(t.n>=3){t={n:0,until:Date.now()+600000};lsSet(TRY_KEY,JSON.stringify(t));return "wait"}
+      lsSet(TRY_KEY,JSON.stringify(t));return "wrong"},function(){return "wrong"})}
+  var CODE_MSG={wrong:"That code is not right.",wait:"Too many tries. Wait 10 minutes and try again."};
+  var LOCK_KEY="echols-classgate-lock", NAME_KEY="echols-classgate-name";
+  var me=document.currentScript, needLogin=!!(me&&me.getAttribute("data-login")!==null);
+  function first(n){return String(n||"").trim().split(/\s+/)[0].toLowerCase().replace(/[^a-z]/g,"")}
+  function isBlocked(n){return BLOCKED.indexOf(first(n))>-1}
+  function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
+  function lsSet(k,v){try{v===null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}}
+  function ssGet(k){try{return sessionStorage.getItem(k)}catch(e){return null}}
+  function ssSet(k,v){try{v===null?sessionStorage.removeItem(k):sessionStorage.setItem(k,v)}catch(e){}}
+  function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+  function tidy(n){return String(n).replace(/\s+/g," ").trim().split(" ").map(function(w){return w.charAt(0).toUpperCase()+w.slice(1)}).join(" ")}
+  function overlay(html){var o=document.getElementById("cg-ov");if(!o){o=document.createElement("div");o.id="cg-ov";o.setAttribute("role","dialog");o.setAttribute("aria-modal","true");document.body.appendChild(o)}o.innerHTML='<div class="cg-card">'+html+'</div>';var i=o.querySelector("input");if(i)setTimeout(function(){i.focus()},30);return o}
+  function close(){var o=document.getElementById("cg-ov");if(o)o.remove()}
+  function badge(){var b=document.getElementById("cg-badge");if(b)b.remove();var n=ssGet(NAME_KEY);if(!needLogin||!n)return;b=document.createElement("div");b.id="cg-badge";b.innerHTML='<span>'+esc(n)+'</span><button type="button">Sign out</button>';b.querySelector("button").onclick=function(){ssSet(NAME_KEY,null);location.reload()};document.body.appendChild(b)}
+  function showBlocked(){
+    var o=overlay('<h2>This activity is not available</h2><p>This app is not open to you right now. Please check with Mr. Echols.</p>'+
+      '<details><summary>Teacher unlock</summary><form id="cg-unlock" style="margin-top:10px"><label for="cg-code">Teacher code</label><input id="cg-code" type="password" inputmode="numeric" autocomplete="off"><button type="submit">Unlock this device</button><p class="cg-msg" id="cg-umsg"></p></form></details>');
+    o.querySelector("#cg-unlock").onsubmit=function(e){e.preventDefault();var c=o.querySelector("#cg-code");
+      checkCode(c.value).then(function(r){if(r==="ok"){lsSet(LOCK_KEY,null);ssSet(NAME_KEY,null);location.reload();return}
+        c.value="";o.querySelector("#cg-umsg").textContent=CODE_MSG[r]})};
+  }
+  function lock(){lsSet(LOCK_KEY,"1");ssSet(NAME_KEY,null);var b=document.getElementById("cg-badge");if(b)b.remove();showBlocked()}
+  function showLogin(){
+    var o=overlay('<h2>Sign in</h2><p class="cg-small">Mr. Echols’ Room 2</p><form id="cg-form"><label for="cg-name">Type your first name</label><input id="cg-name" type="text" maxlength="30" autocomplete="off" autocapitalize="words" placeholder="First name"><button type="submit">Start</button><p class="cg-msg" id="cg-msg"></p></form>');
+    o.querySelector("#cg-form").onsubmit=function(e){e.preventDefault();
+      var raw=o.querySelector("#cg-name").value.replace(/\s+/g," ").trim();
+      if(!/^[A-Za-zÀ-ɏ][A-Za-zÀ-ɏ .'\-]{0,29}$/.test(raw)){o.querySelector("#cg-msg").textContent="Please type your first name using letters.";return}
+      if(isBlocked(raw)){lock();return}
+      var n=tidy(raw);ssSet(NAME_KEY,n);close();badge();
+      try{document.dispatchEvent(new CustomEvent("classgate:signin",{detail:{name:n}}))}catch(err){}
+    };
+  }
+  window.ClassGate={
+    /* Apps with their own sign-in call this; returns false (and locks the device) for a blocked name. */
+    check:function(n){if(lsGet(LOCK_KEY)){showBlocked();return false}if(isBlocked(n)){lock();return false}return true},
+    name:function(){return ssGet(NAME_KEY)||""},
+    /* Teacher code check for in-app teacher tools: resolves "ok", "wrong" or "wait". */
+    checkCode:checkCode, codeMsg:function(r){return CODE_MSG[r]||""}
+  };
+  function start(){
+    if(lsGet(LOCK_KEY)){showBlocked();return}
+    var n=ssGet(NAME_KEY);
+    if(needLogin&&(!n||isBlocked(n))){ssSet(NAME_KEY,null);showLogin()}else badge();
+  }
+  if(document.body)start();else document.addEventListener("DOMContentLoaded",start);
+})();
+</script>
+<!-- /Class sign-in gate -->
+</head>
+<body>
+<header>
+  <div class="bar">
+    <div class="brand"><h1>Fraction Bingo</h1><p>Grades 4–5 · Eureka Math² fraction topics · NC fraction standards</p></div>
+    <nav role="tablist" aria-label="Game mode">
+      <button class="tab" role="tab" id="t-caller" aria-selected="true" data-p="caller">Teacher Caller</button>
+      <button class="tab" role="tab" id="t-card" aria-selected="false" data-p="card">My Card</button>
+      <button class="tab" role="tab" id="t-check" aria-selected="false" data-p="check">Check a Winner</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- CALLER -->
+  <section class="panel on" id="p-caller" aria-labelledby="t-caller">
+    <div class="row">
+      <label for="c-grade">Game</label>
+      <select id="c-grade">
+        <option value="4">Grade 4 fractions</option>
+        <option value="5">Grade 5 fractions</option>
+        <option value="M">Mixed 4 &amp; 5</option>
+      </select>
+      <button class="btn" id="c-new">New game</button>
+      <span class="muted" id="c-info"></span>
+    </div>
+    <div class="caller">
+      <div class="box stage" aria-live="polite">
+        <div class="num" id="c-num">Press "Call next" to start</div>
+        <div class="q" id="c-q">Students solve each problem, then find the answer on their card.</div>
+        <div><span class="tag" id="c-tag" hidden></span></div>
+        <div class="ans" id="c-ans" hidden></div>
+        <div class="row" style="justify-content:center">
+          <button class="btn" id="c-reveal" disabled>Show answer</button>
+          <button class="btn primary" id="c-next">Call next</button>
+        </div>
+      </div>
+      <div class="box">
+        <h3>Called so far <span class="muted" id="c-count" style="font-family:var(--font-body);font-size:1rem"></span></h3>
+        <ol class="hist" id="c-hist" reversed></ol>
+      </div>
+    </div>
+    <details class="box" style="margin-top:16px">
+      <summary><b>Standards in this game</b></summary>
+      <ul class="stds" id="c-stds"></ul>
+    </details>
+  </section>
+
+  <!-- STUDENT CARD -->
+  <section class="panel" id="p-card" aria-labelledby="t-card">
+    <div class="row">
+      <label for="s-grade">Game</label>
+      <select id="s-grade">
+        <option value="4">Grade 4 fractions</option>
+        <option value="5">Grade 5 fractions</option>
+        <option value="M">Mixed 4 &amp; 5</option>
+      </select>
+      <label for="s-num">Card #</label>
+      <input type="text" id="s-num" inputmode="numeric" size="5" placeholder="1–999">
+      <button class="btn primary" id="s-load">Show my card</button>
+      <button class="btn" id="s-rand">Give me a card</button>
+      <button class="btn" id="s-clear">Clear marks</button>
+    </div>
+    <div class="cardwrap">
+      <div>
+        <div class="card" id="s-card"></div>
+        <div class="cardid" id="s-id"></div>
+      </div>
+      <div class="box" style="flex:1;min-width:240px">
+        <h3>How to play</h3>
+        <ol style="margin:8px 0 0;padding-left:20px">
+          <li>Write your card number on your whiteboard or paper.</li>
+          <li>Solve each problem the teacher calls. Show your work.</li>
+          <li>If your answer is on your card, tap it to mark it.</li>
+          <li>Five in a row across, down, or corner to corner? Call <b>BINGO!</b></li>
+        </ol>
+        <p class="muted" style="margin-top:10px">Answers are written the way you'd find them after solving. Some answers are not simplified, so look for the exact form.</p>
+        <p class="verdict yes" id="s-bingo" hidden>BINGO! Raise your hand.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CHECK WINNER -->
+  <section class="panel" id="p-check" aria-labelledby="t-check">
+    <p class="muted" style="margin-top:0">Checks the card against the problems called in the current Teacher Caller game.</p>
+    <div class="row">
+      <label for="k-num">Card #</label>
+      <input type="text" id="k-num" inputmode="numeric" size="5">
+      <button class="btn primary" id="k-go">Check card</button>
+      <span class="muted" id="k-game"></span>
+    </div>
+    <div class="cardwrap">
+      <div>
+        <div class="card" id="k-card"></div>
+        <div class="cardid" id="k-id"></div>
+      </div>
+      <div class="box" style="flex:1;min-width:240px">
+        <div class="verdict" id="k-verdict">Enter a card number.</div>
+        <p id="k-detail" class="muted"></p>
+        <div class="legend">
+          <span><span class="sw" style="background:var(--daub)"></span>Called</span>
+          <span><span class="sw" style="outline:3px solid var(--win);outline-offset:-3px;background:var(--bg)"></span>Winning line</span>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- TEACHER LOCK (GitHub version only) -->
+  <section class="panel" id="p-lock">
+    <div class="box" style="max-width:420px">
+      <h2>Teacher only</h2>
+      <p class="muted">The caller and winner check are for Mr. Echols.</p>
+      <form id="l-form" class="row">
+        <label for="l-code">Teacher code</label>
+        <input type="password" id="l-code" inputmode="numeric" autocomplete="off" size="8">
+        <button class="btn primary" type="submit">Unlock</button>
+      </form>
+      <p id="l-msg" style="color:var(--win);min-height:1.4em"></p>
+    </div>
+  </section>
+</main>
+
+<script>
+/* ---------- Question bank ----------
+   {a/b} renders as a stacked fraction; {w a/b} as a mixed number.
+   Each answer must be unique within a grade so every card square matches exactly one problem. */
+const STD = {
+  "NC.4.NF.1":"Explain and generate equivalent fractions.",
+  "NC.4.NF.2":"Compare two fractions with different numerators and denominators.",
+  "NC.4.NF.3":"Add and subtract fractions and mixed numbers with like denominators; decompose fractions.",
+  "NC.4.NF.4":"Multiply a fraction by a whole number.",
+  "NC.4.NF.5":"Add tenths and hundredths using equivalent fractions.",
+  "NC.4.NF.6":"Use decimal notation for tenths and hundredths.",
+  "NC.4.NF.7":"Compare decimals to hundredths.",
+  "NC.5.NF.1":"Add and subtract fractions and mixed numbers with unlike denominators.",
+  "NC.5.NF.2":"Solve word problems adding and subtracting fractions.",
+  "NC.5.NF.3":"Interpret a fraction as division.",
+  "NC.5.NF.4":"Multiply fractions and whole numbers by fractions.",
+  "NC.5.NF.7":"Divide unit fractions by whole numbers and whole numbers by unit fractions."
+};
+const Q4 = [
+  ["NC.4.NF.1","{1/2} = <b>?</b> eighths. Write the fraction.","4/8"],
+  ["NC.4.NF.1","{2/3} = {?/12}. Write the fraction.","8/12"],
+  ["NC.4.NF.1","{3/4} = {9/?}. Write the fraction.","9/12"],
+  ["NC.4.NF.1","{2/5} = <b>?</b> tenths. Write the fraction.","4/10"],
+  ["NC.4.NF.1","Write {6/8} with a denominator of 4.","3/4"],
+  ["NC.4.NF.1","Write {4/12} with a denominator of 3.","1/3"],
+  ["NC.4.NF.1","{1/4} = <b>?</b> hundredths. Write the fraction.","25/100"],
+  ["NC.4.NF.1","Write {5/10} with a denominator of 2.","1/2"],
+  ["NC.4.NF.1","{5/6} = <b>?</b> twelfths. Write the fraction.","10/12"],
+  ["NC.4.NF.2","Which is greater: {3/8} or {3/5}?","3/5"],
+  ["NC.4.NF.2","Which is greater: {5/8} or {2/5}? Use {1/2} as a benchmark.","5/8"],
+  ["NC.4.NF.2","Which is greater: {7/12} or {1/3}?","7/12"],
+  ["NC.4.NF.2","Which is greater: {9/10} or {7/8}? Think about the missing piece.","9/10"],
+  ["NC.4.NF.2","Which is less: {1/6} or {1/4}?","1/6"],
+  ["NC.4.NF.2","Which is greater: {2/3} or {5/12}?","2/3"],
+  ["NC.4.NF.3","{3/8} + {4/8} =","7/8"],
+  ["NC.4.NF.3","{5/6} − {2/6} = (do not simplify)","3/6"],
+  ["NC.4.NF.3","{1 1/4} + {2 2/4} =","3 3/4"],
+  ["NC.4.NF.3","4 − {1/3} = (mixed number)","3 2/3"],
+  ["NC.4.NF.3","{7/10} + {6/10} = (mixed number)","1 3/10"],
+  ["NC.4.NF.3","{2 3/5} − {1 4/5} =","4/5"],
+  ["NC.4.NF.3","{5/8} = {2/8} + <b>?</b>","3/8"],
+  ["NC.4.NF.3","{9/12} − {4/12} =","5/12"],
+  ["NC.4.NF.3","Write {11/4} as a mixed number.","2 3/4"],
+  ["NC.4.NF.3","{3 5/6} − {1 1/6} = (do not simplify)","2 4/6"],
+  ["NC.4.NF.4","3 × {2/5} = (fraction greater than 1)","6/5"],
+  ["NC.4.NF.4","4 × {1/6} = (do not simplify)","4/6"],
+  ["NC.4.NF.4","5 × {3/4} = (fraction greater than 1)","15/4"],
+  ["NC.4.NF.4","6 × {2/3} = (whole number)","4"],
+  ["NC.4.NF.4","3 friends each eat {3/8} of a pizza. How much pizza in all? (fraction greater than 1)","9/8"],
+  ["NC.4.NF.4","2 × {5/6} = (mixed number, do not simplify)","1 4/6"],
+  ["NC.4.NF.5","{3/10} + {4/100} = <b>?</b> hundredths. Write the fraction.","34/100"],
+  ["NC.4.NF.5","{6/10} + {25/100} = <b>?</b> hundredths. Write the fraction.","85/100"],
+  ["NC.4.NF.5","{7/10} = <b>?</b> hundredths. Write the fraction.","70/100"],
+  ["NC.4.NF.6","Write {3/10} as a decimal.","0.3"],
+  ["NC.4.NF.6","Write {45/100} as a decimal.","0.45"],
+  ["NC.4.NF.6","Write {7/100} as a decimal.","0.07"],
+  ["NC.4.NF.6","Write {2 9/10} as a decimal.","2.9"],
+  ["NC.4.NF.7","Which is greater: 0.6 or 0.58?","0.6"],
+  ["NC.4.NF.7","Which is less: 0.4 or 0.39?","0.39"],
+  ["NC.4.NF.7","Which is greater: 0.8 or 0.79?","0.8"]
+];
+const Q5 = [
+  ["NC.5.NF.1","{1/2} + {1/3} =","5/6"],
+  ["NC.5.NF.1","{3/4} − {1/3} =","5/12"],
+  ["NC.5.NF.1","{2/5} + {1/2} =","9/10"],
+  ["NC.5.NF.1","{5/6} − {1/4} =","7/12"],
+  ["NC.5.NF.1","{1 1/2} + {2/3} =","2 1/6"],
+  ["NC.5.NF.1","{3 1/4} − {1 2/3} =","1 7/12"],
+  ["NC.5.NF.1","{7/8} − {1/2} =","3/8"],
+  ["NC.5.NF.1","{1/4} + {3/10} =","11/20"],
+  ["NC.5.NF.1","{4/5} − {1/3} =","7/15"],
+  ["NC.5.NF.1","{2 1/3} + {1 1/2} =","3 5/6"],
+  ["NC.5.NF.1","{5/6} + {1/3} = (mixed number)","1 1/6"],
+  ["NC.5.NF.2","Ana walks {2/3} mile, then {1/4} mile more. How far in all?","11/12"],
+  ["NC.5.NF.2","A ribbon is {5/6} yard. Ty cuts off {1/3} yard. How much is left? (simplest form)","1/2"],
+  ["NC.5.NF.2","A recipe uses {3/4} cup of flour and {1/8} cup of sugar. How much in all?","7/8"],
+  ["NC.5.NF.2","Mia ran {1 3/4} miles and Leo ran {1 1/2} miles. How much farther did Mia run?","1/4"],
+  ["NC.5.NF.2","A jug has {2 1/2} liters. {3/4} liter is poured out. How much is left?","1 3/4"],
+  ["NC.5.NF.3","3 ÷ 4 =","3/4"],
+  ["NC.5.NF.3","5 pizzas are shared equally by 8 students. How much does each get?","5/8"],
+  ["NC.5.NF.3","7 ÷ 2 = (mixed number)","3 1/2"],
+  ["NC.5.NF.3","2 ÷ 5 =","2/5"],
+  ["NC.5.NF.3","9 ÷ 4 = (mixed number)","2 1/4"],
+  ["NC.5.NF.3","5 friends share 4 yards of rope equally. How many yards does each get?","4/5"],
+  ["NC.5.NF.4","{1/2} × {1/3} =","1/6"],
+  ["NC.5.NF.4","{2/3} × {3/4} = (do not simplify)","6/12"],
+  ["NC.5.NF.4","2 × {3/5} = (fraction greater than 1)","6/5"],
+  ["NC.5.NF.4","4 × {2/3} = (fraction greater than 1)","8/3"],
+  ["NC.5.NF.4","{3/4} × {2/5} = (do not simplify)","6/20"],
+  ["NC.5.NF.4","A rectangle is {2/3} ft by {4/5} ft. What is its area in square feet?","8/15"],
+  ["NC.5.NF.4","{1/4} of 12 =","3"],
+  ["NC.5.NF.4","{2/3} of 9 =","6"],
+  ["NC.5.NF.4","{3/5} × {1/3} = (do not simplify)","3/15"],
+  ["NC.5.NF.7","{1/3} ÷ 4 =","1/12"],
+  ["NC.5.NF.7","4 ÷ {1/3} =","12"],
+  ["NC.5.NF.7","{1/2} ÷ 5 =","1/10"],
+  ["NC.5.NF.7","6 ÷ {1/4} =","24"],
+  ["NC.5.NF.7","{1/5} ÷ 3 =","1/15"],
+  ["NC.5.NF.7","3 ÷ {1/5} =","15"],
+  ["NC.5.NF.7","{1/4} ÷ 5 =","1/20"],
+  ["NC.5.NF.7","How many {1/2}-cup servings are in 5 cups of rice?","10"],
+  ["NC.5.NF.7","{1/2} of a pan of brownies is shared equally by 4 friends. What fraction of the pan does each get?","1/8"]
+];
+
+/* ---------- helpers ---------- */
+const $=id=>document.getElementById(id);
+const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+function frHTML(s){
+  const m=String(s).match(/^(?:(\d+) )?([\d?]+)\/([\d?]+)$/);
+  if(!m) return s;
+  return (m[1]?`<span class="w">${m[1]}</span>`:"")+`<span class="fr"><span>${m[2]}</span><span>${m[3]}</span></span>`;
+}
+const fmt=t=>t.replace(/\{([^}]+)\}/g,(_,x)=>frHTML(x));
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function hash(str){let h=2166136261;for(const c of str){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
+function shuffle(arr,seed){const r=mulberry32(seed),a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+const MODE_NAME={"4":"Grade 4","5":"Grade 5","M":"Mixed 4 & 5"};
+function pool(mode){
+  const src=mode==="4"?Q4:mode==="5"?Q5:Q4.concat(Q5);
+  const seen=new Set(),out=[];
+  src.forEach(([std,q,a])=>{if(!seen.has(a)){seen.add(a);out.push({std,q,a})}});
+  return out;
+}
+function makeCard(mode,n){
+  const ans=shuffle(pool(mode).map(p=>p.a),hash(mode+"#"+n)).slice(0,24);
+  ans.splice(12,0,"FREE");
+  return ans;
+}
+const LINES=[];
+for(let i=0;i<5;i++){LINES.push([0,1,2,3,4].map(j=>i*5+j));LINES.push([0,1,2,3,4].map(j=>j*5+i))}
+LINES.push([0,6,12,18,24],[4,8,12,16,20]);
+function winLines(marked){return LINES.filter(l=>l.every(i=>marked[i]))}
+function renderCard(el,cells,marked,opts={}){
+  const wins=new Set(winLines(marked).flat());
+  el.innerHTML=`<div class="head">${"BINGO".split("").map(c=>`<div>${c}</div>`).join("")}</div>
+  <div class="grid">${cells.map((a,i)=>{
+    const free=a==="FREE";
+    const cls=["cell",free?"free":"",marked[i]&&!free?"daub":"",wins.has(i)?"win":"",opts.dimUnmarked&&!marked[i]?"miss":""].join(" ");
+    return `<button class="${cls}" data-i="${i}" ${free||opts.readonly?'tabindex="-1"':""} aria-pressed="${!!marked[i]}" aria-label="${free?"Free space":a}">${free?"FREE":frHTML(a)}</button>`;
+  }).join("")}</div>`;
+}
+function cardNum(v){const n=parseInt(String(v).trim(),10);return n>=1&&n<=999?n:null}
+
+/* ---------- tabs ---------- */
+const TEACHER_TABS=["caller","check"];
+function teacherOK(){if(!window.ClassGate)return true;try{return sessionStorage.getItem("fb-teacher")==="1"}catch(e){return false}}
+function showTeacherLock(tab){
+  const panel=$("p-lock");panel.dataset.want=tab;
+  document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("on",p.id==="p-lock"));
+  $("l-code").value="";$("l-msg").textContent="";setTimeout(()=>$("l-code").focus(),30);
+}
+function openTab(name){
+  if(TEACHER_TABS.includes(name)&&!teacherOK()){document.querySelectorAll(".tab").forEach(x=>x.setAttribute("aria-selected",x.dataset.p===name));showTeacherLock(name);return}
+  document.querySelectorAll(".tab").forEach(x=>x.setAttribute("aria-selected",x.dataset.p===name));
+  document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("on",p.id==="p-"+name));
+  if(name==="check") $("k-game").textContent=`Current game: ${MODE_NAME[C.mode]}, ${C.idx} called`;
+}
+$("l-form").addEventListener("submit",e=>{e.preventDefault();
+  ClassGate.checkCode($("l-code").value).then(r=>{
+    if(r==="ok"){try{sessionStorage.setItem("fb-teacher","1")}catch(x){}openTab($("p-lock").dataset.want||"caller")}
+    else{$("l-msg").textContent=ClassGate.codeMsg(r);$("l-code").value=""}})});
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>openTab(t.dataset.p)));
+if(window.ClassGate&&!teacherOK())openTab("card");
+if(false)document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{
+  document.querySelectorAll(".tab").forEach(x=>x.setAttribute("aria-selected",x===t));
+  document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("on",p.id==="p-"+t.dataset.p));
+  if(t.dataset.p==="check") $("k-game").textContent=`Current game: ${MODE_NAME[C.mode]}, ${C.idx} called`;
+}));
+
+/* ---------- caller ---------- */
+let C=store.get("fb-caller")||{mode:"4",seed:Date.now()>>>0,idx:0};
+let revealed=false;
+function order(){return shuffle(pool(C.mode),C.seed)}
+function renderCaller(){
+  const o=order(),total=o.length;
+  $("c-grade").value=C.mode;
+  $("c-info").textContent=`${total} problems in this game`;
+  $("c-count").textContent=`(${C.idx} of ${total})`;
+  $("c-next").disabled=C.idx>=total;
+  if(C.idx===0){
+    $("c-num").textContent='Press "Call next" to start';
+    $("c-q").textContent="Students solve each problem, then find the answer on their card.";
+    $("c-tag").hidden=true;$("c-ans").hidden=true;$("c-reveal").disabled=true;
+  }else{
+    const cur=o[C.idx-1];
+    $("c-num").textContent=`Problem ${C.idx}`;
+    $("c-q").innerHTML=fmt(cur.q);
+    $("c-tag").hidden=false;$("c-tag").textContent=cur.std;$("c-tag").title=STD[cur.std];
+    $("c-ans").innerHTML="Answer: "+frHTML(cur.a);
+    $("c-ans").hidden=!revealed;$("c-reveal").disabled=false;
+    $("c-reveal").textContent=revealed?"Hide answer":"Show answer";
+  }
+  $("c-hist").innerHTML=o.slice(0,C.idx).map((p,i)=>`<li value="${i+1}"><span class="n">${i+1}</span><span>${fmt(p.q)}</span><span class="a">${frHTML(p.a)}</span></li>`).reverse().join("");
+  const stds=[...new Set(pool(C.mode).map(p=>p.std))];
+  $("c-stds").innerHTML=stds.map(s=>`<li><b>${s}</b> ${STD[s]}</li>`).join("");
+  store.set("fb-caller",C);
+}
+$("c-next").onclick=()=>{C.idx++;revealed=false;renderCaller()};
+$("c-reveal").onclick=()=>{revealed=!revealed;renderCaller()};
+const newGame=()=>{C={mode:$("c-grade").value,seed:(Math.random()*2**32)>>>0,idx:0};revealed=false;renderCaller()};
+$("c-new").onclick=()=>{
+  if(C.idx>0&&$("c-new").dataset.confirm!=="1"){$("c-new").dataset.confirm="1";$("c-new").textContent="Click again to start over";setTimeout(()=>{$("c-new").dataset.confirm="";$("c-new").textContent="New game"},3000);return}
+  $("c-new").dataset.confirm="";$("c-new").textContent="New game";newGame();
+};
+$("c-grade").onchange=()=>{if(C.idx===0)newGame();else{$("c-grade").value=C.mode;$("c-info").textContent='Finish or press "New game" to switch grade.'}};
+renderCaller();
+
+/* ---------- student card ---------- */
+let S=store.get("fb-student")||{mode:"4",n:null};
+function marksKey(){return `fb-marks-${S.mode}-${S.n}`}
+function renderStudent(){
+  $("s-grade").value=S.mode;
+  if(!S.n){$("s-card").innerHTML='<p class="muted" style="padding:20px;text-align:center">Pick your game and enter your card number, or tap "Give me a card".</p>';$("s-id").textContent="";$("s-bingo").hidden=true;return}
+  $("s-num").value=S.n;
+  const cells=makeCard(S.mode,S.n);
+  const m=store.get(marksKey())||Array(25).fill(false);m[12]=true;
+  renderCard($("s-card"),cells,m);
+  $("s-id").textContent=`${MODE_NAME[S.mode]} · Card #${S.n}`;
+  $("s-bingo").hidden=winLines(m).length===0;
+  store.set("fb-student",S);
+}
+$("s-card").addEventListener("click",e=>{
+  const b=e.target.closest(".cell");if(!b||b.classList.contains("free"))return;
+  const m=store.get(marksKey())||Array(25).fill(false);const i=+b.dataset.i;m[i]=!m[i];m[12]=true;
+  store.set(marksKey(),m);renderStudent();
+  const nb=$("s-card").querySelector(`[data-i="${i}"]`);if(nb)nb.focus();
+});
+$("s-load").onclick=()=>{const n=cardNum($("s-num").value);if(!n){$("s-id").textContent="Enter a card number from 1 to 999.";return}S={mode:$("s-grade").value,n};renderStudent()};
+$("s-rand").onclick=()=>{S={mode:$("s-grade").value,n:1+Math.floor(Math.random()*999)};renderStudent()};
+$("s-clear").onclick=()=>{if(S.n){store.set(marksKey(),null);renderStudent()}};
+$("s-grade").onchange=()=>{if(S.n){S.mode=$("s-grade").value;renderStudent()}};
+renderStudent();
+
+/* ---------- check winner ---------- */
+function check(){
+  const n=cardNum($("k-num").value);
+  if(!n){$("k-verdict").textContent="Enter a card number from 1 to 999.";$("k-verdict").className="verdict";return}
+  const cells=makeCard(C.mode,n);
+  const called=new Set(order().slice(0,C.idx).map(p=>p.a));
+  const m=cells.map((a,i)=>i===12||called.has(a));
+  renderCard($("k-card"),cells,m,{readonly:true,dimUnmarked:true});
+  $("k-id").textContent=`${MODE_NAME[C.mode]} · Card #${n}`;
+  const w=winLines(m);
+  $("k-verdict").textContent=w.length?"BINGO! It's a winner.":"Not yet.";
+  $("k-verdict").className="verdict"+(w.length?" yes":"");
+  const best=Math.max(...LINES.map(l=>l.filter(i=>m[i]).length));
+  $("k-detail").textContent=w.length?`${w.length} winning line${w.length>1?"s":""}, outlined. ${C.idx} problems called.`:`Best line has ${best} of 5. ${C.idx} problems called. Check that the student's card uses the ${MODE_NAME[C.mode]} game.`;
+}
+$("k-go").onclick=check;
+$("k-num").addEventListener("keydown",e=>{if(e.key==="Enter")check()});
+$("s-num").addEventListener("keydown",e=>{if(e.key==="Enter")$("s-load").click()});
+</script>
+</body>
+</html>
