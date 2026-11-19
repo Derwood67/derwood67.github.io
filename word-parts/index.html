@@ -110,6 +110,28 @@ button.tile:disabled{opacity:.3;cursor:default}
 .card textarea.passed{border-color:var(--good)}
 .btn.sm{font-size:.95rem;padding:6px 16px}
 .okmark{color:var(--good);font-weight:700}
+.rate.r4{color:var(--good)}.rate.r3{color:var(--star)}.rate.r2,.rate.r1{color:var(--bad)}
+#print-area{display:none}
+@media print{
+  body.printing>*:not(#print-area){display:none!important}
+  body.printing #print-area{display:block;color:#000;background:#fff;font:12pt/1.45 Georgia,"Times New Roman",serif}
+  body.printing{background:#fff}
+  .pr-student{break-after:page;page-break-after:always}
+  .pr-student:last-child{break-after:auto;page-break-after:auto}
+  .pr-head{border-bottom:2px solid #000;padding-bottom:6px;margin-bottom:10px}
+  .pr-head small{font:10pt system-ui,Arial,sans-serif;color:#333}
+  .pr-head h1{font:700 20pt system-ui,Arial,sans-serif;margin:2px 0}
+  .pr-sum{font:10.5pt system-ui,Arial,sans-serif;margin:4px 0 0}
+  .pr-item{border:1px solid #999;border-radius:6px;padding:8px 10px;margin:0 0 10px;break-inside:avoid;page-break-inside:avoid}
+  .pr-item h2{font:700 13pt system-ui,Arial,sans-serif;margin:0 0 4px}
+  .pr-item h3{font:700 10.5pt system-ui,Arial,sans-serif;margin:8px 0 2px;text-transform:uppercase;letter-spacing:.03em}
+  .pr-task{font:10.5pt system-ui,Arial,sans-serif;color:#333}
+  .pr-rate{font:700 11pt system-ui,Arial,sans-serif;float:right}
+  .pr-wrote{margin:2px 0;padding:4px 8px;border-left:3px solid #000;background:#f3f3f3}
+  .pr-fixed{margin:2px 0;padding:4px 8px;border-left:3px solid #2a7a2a}
+  .pr-item ul{margin:2px 0;padding-left:20px}
+  .pr-note{font:9pt system-ui,Arial,sans-serif;color:#444;margin:2px 0}
+}
 .issues{margin:0;padding-left:22px;color:var(--bad);font-weight:700;display:flex;flex-direction:column;gap:4px}
 .card .kind{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--k);font-weight:700}
 .card .part{font-family:var(--display);font-size:1.5rem;font-weight:600;line-height:1.1;overflow-wrap:anywhere}
@@ -384,6 +406,24 @@ label.help{font-weight:700}
           <h3>Word Parts Bingo</h3>
           <p class="help">Calling the game is for you only. Students see only “Play on screen.” The caller stays open on this computer until you lock the teacher tools or close the browser.</p>
           <div class="row"><button class="btn sm" type="button" id="t-call">Call a bingo game</button></div>
+        </section>
+        <section class="tsec">
+          <h3>Print student work</h3>
+          <p class="help">Prints each student on their own page: what they wrote, their rating (⭐ Mastery only when everything is correct), what to fix, a corrected version, and suggestions.</p>
+          <p class="help" id="pr-src"></p>
+          <div class="row">
+            <label class="help" for="pr-who">Student</label>
+            <select class="search" id="pr-who" style="max-width:16em"></select>
+            <label class="help" for="pr-when">Work from</label>
+            <select class="search" id="pr-when" style="max-width:10em"><option value="today">Today</option><option value="week" selected>Last 7 days</option><option value="all">All work</option></select>
+          </div>
+          <div class="row">
+            <label class="help"><input type="checkbox" id="pr-para" checked> Paragraphs</label>
+            <label class="help"><input type="checkbox" id="pr-sent" checked> Sentences</label>
+            <label class="help"><input type="checkbox" id="pr-fix" checked> Corrected versions</label>
+          </div>
+          <div class="row"><button class="btn sm" type="button" id="pr-go">Print</button><button class="btn sm ghost" type="button" id="pr-reload">Refresh list</button></div>
+          <div class="msg" id="pr-msg" aria-live="polite"></div>
         </section>
         <section class="tsec">
           <h3>Student work</h3>
@@ -1221,7 +1261,7 @@ function cardHTML(p){
   const open=EX.open.has(p.id),rec=SENT[p.id]||{},done=sDone(p.id);
   return `<div class="card k-${p.kind}${open?' open':''}" data-id="${p.id}">
     <button class="cardtop" aria-expanded="${open}">
-      <span class="kind">${KIND[p.kind]}${done?'<span class="done">✓ Sentence written</span>':''}</span>
+      <span class="kind">${KIND[p.kind]}${done?'<span class="done">⭐ Mastery</span>':''}</span>
       <span class="part">${esc(p.label)}</span>
       <span class="mean">${esc(p.meaning)}</span>
     </button>
@@ -1229,7 +1269,7 @@ function cardHTML(p){
       <div class="sbox">
         <label class="eyebrow" for="s-${p.id}">Write a sentence using ${esc(p.label)}</label>
         <textarea id="s-${p.id}" rows="2" maxlength="400" placeholder="Write your sentence here."${done?' class="passed"':''}>${esc(rec.text||'')}</textarea>
-        <div class="row"><button class="btn sm" data-act="scheck">Check my sentence</button><span class="okmark"${done?'':' hidden'}>✓ Passed</span></div>
+        <div class="row"><button class="btn sm" data-act="scheck">Check my sentence</button><span class="okmark rate r${done?4:rec.rate||1}"${rec.text&&rec.rate||done?'':' hidden'}>${done?rateText(4):rec.rate?rateText(rec.rate):''}</span></div>
         <ul class="issues" aria-live="polite" hidden></ul>
       </div>
     </div>
@@ -1247,11 +1287,12 @@ function renderExplore(){
 }
 function sCheck(card){
   const p=BY_ID[card.dataset.id],ta=card.querySelector('textarea'),ul=card.querySelector('.issues');
-  const issues=checkOne(p,ta.value),ok=!issues.length;
-  SENT[p.id]={text:ta.value,done:ok};sSave();
+  const issues=checkOne(p,ta.value),ok=!issues.length,g=rateIssues(issues.length,ta.value);
+  SENT[p.id]={text:ta.value,done:ok,rate:g,d:Date.now()};sSave();
+  if(ta.value.trim())outSend({activity:'Explore',key:p.id,task:'Word part '+p.label+' ('+p.meaning+')',text:ta.value.trim(),passed:ok,feedback:issues.join(' | ')});
   ul.innerHTML=issues.map(x=>'<li>'+esc(x)+'</li>').join('');ul.hidden=ok;
-  card.querySelector('.okmark').hidden=!ok;ta.classList.toggle('passed',ok);
-  if(ok&&!card.querySelector('.done'))card.querySelector('.kind').insertAdjacentHTML('beforeend','<span class="done">✓ Sentence written</span>');
+  const mk=card.querySelector('.okmark');mk.hidden=false;mk.textContent=rateText(g)+(ok?'':g===1?' Try again.':'');mk.className='okmark rate r'+g;ta.classList.toggle('passed',ok);
+  if(ok&&!card.querySelector('.done'))card.querySelector('.kind').insertAdjacentHTML('beforeend','<span class="done">⭐ Mastery</span>');
   if(ok)addStar('sent-'+p.id);
   updateLock();
   const n=PARTS.filter(x=>sDone(x.id)).length;
@@ -1271,7 +1312,7 @@ $('#ex-grid').addEventListener('click',e=>{
 $('#ex-grid').addEventListener('input',e=>{
   const c=e.target.closest('.card');if(!c||e.target.tagName!=='TEXTAREA')return;
   const id=c.dataset.id,was=sDone(id);
-  SENT[id]={text:e.target.value,done:false};sSave();
+  SENT[id]={text:e.target.value,done:false};sSave();c.querySelector('.okmark').hidden=true;
   if(was){e.target.classList.remove('passed');c.querySelector('.okmark').hidden=true;const d=c.querySelector('.done');if(d)d.remove()}
 });
 $('#ex-grid').addEventListener('keydown',e=>{
@@ -1825,8 +1866,19 @@ function helperVerbs(t){
   }
   return out;
 }
+/* Ratings: Mastery only when everything is correct. */
+const RATE={4:{name:'Mastery',face:'⭐'},3:{name:'Almost',face:'🙂'},2:{name:'Not yet',face:'😐'},1:{name:'Sorry',face:'☹️'}};
+const rateText=g=>RATE[g]?RATE[g].face+' '+RATE[g].name:'';
+// rating for one sentence: 0 things to fix = Mastery, 1-2 = Almost, 3-5 = Not yet, 6+ or no real writing = Sorry
+function rateIssues(n,text){if(text!=null&&realCount(String(text))<3)return 1;return n===0?4:n<=2?3:n<=5?2:1}
 const HARD=/^(spell|agree|tense)$/; // a 3 needs every word spelled right, verbs in the right tense, and subjects and verbs that agree
-function gradeOf(sentences,roots,mistakes,hard){return sentences>=5&&roots>=5&&mistakes<=1&&!hard?3:sentences>=5&&roots>=3&&mistakes<=4?2:1}
+// paragraph rating: Mastery needs 5+ sentences, 5+ root words, and no mistakes at all
+function gradeOf(sentences,roots,mistakes){
+  if(sentences<3)return 1;
+  if(sentences>=5&&roots>=5&&mistakes===0)return 4;
+  const n=mistakes+(sentences<5?1:0)+(roots<5?(roots<3?2:1):0);
+  return n<=2?3:n<=5?2:1;
+}
 function realCount(t){return window.RealWords?RealWords.countReal(t):(t.match(/[A-Za-z][A-Za-z'-]*/g)||[]).length}
 /* a sentence counts only if most of its words are real words */
 function realSentence(x){const all=(x.match(/[A-Za-z0-9][A-Za-z0-9'-]*/g)||[]).length;return all>=3&&realCount(x)/all>=0.8}
@@ -1854,11 +1906,28 @@ function checkParagraph(raw){
   if(sents.length>=3&&!has('agree'))goods.push('Your subjects and verbs agree.');
   if(sents.length>=3&&!has('tense'))goods.push('Your verb tenses match.');
   if(sents.length>=3&&!has('comma')&&!has('end'))goods.push('Your commas and end marks are in the right places.');
-  return {sents,count:realN,roots,fixes,tips,goods,grade:gradeOf(realN,roots.length,fixes.length,fixes.some(f=>HARD.test(f.cat)))};
+  return {sents,count:realN,roots,fixes,tips,goods,grade:gradeOf(realN,roots.length,fixes.length)};
 }
 //--CHECK END--
 
 const SHEET_URL=(window.WORD_PARTS_SHEET_URL||'').trim();
+/* Sentences students check (Explore cards and Write Sentences) go to the Sentences tab of the Sheet. */
+const OUT={key:'wpw-outbox-v1',q:[],last:'',busy:false};
+try{OUT.q=JSON.parse(localStorage.getItem(OUT.key))||[]}catch(e){}
+function outSave(){try{localStorage.setItem(OUT.key,JSON.stringify(OUT.q.slice(-80)))}catch(e){}}
+function outSend(row){
+  if(!SHEET_URL)return;
+  const k=row.activity+'|'+row.key+'|'+row.text;if(k===OUT.last)return;OUT.last=k;
+  OUT.q.push(Object.assign({type:'sentence',time:new Date().toISOString(),student:(window.ClassGate&&ClassGate.name())||W.name.trim()||'(no name)'},row));
+  outSave();outFlush();
+}
+function outFlush(){
+  if(!SHEET_URL||OUT.busy||!OUT.q.length)return;
+  OUT.busy=true;const row=OUT.q[0];
+  fetch(SHEET_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(row)})
+    .then(()=>{OUT.q=OUT.q.filter(x=>x!==row);outSave();OUT.busy=false;outFlush()},()=>{OUT.busy=false});
+}
+setTimeout(outFlush,3000);
 const W={name:'',text:'',secs:0,checks:0,sent:null,pending:[]},W_KEY='wpw-para-v1';
 let wActive=0;
 function wSave(){try{localStorage.setItem(W_KEY,JSON.stringify(W))}catch(e){}}
@@ -1874,11 +1943,10 @@ function wFeedback(r){
   const need=[];
   if(r.count<5)need.push('write '+(5-r.count)+' more sentence'+(5-r.count===1?'':'s'));
   if(r.roots.length<5)need.push('use '+(5-r.roots.length)+' more root word'+(5-r.roots.length===1?'':'s'));
-  if(r.fixes.some(f=>HARD.test(f.cat)))need.push('fix every spelling, verb tense, and subject-verb mistake below');
-  else if(r.fixes.length>1)need.push('fix the mistakes below');
+  if(r.fixes.length)need.push('fix every mistake below');
   $('#w-fb').innerHTML=`<div><div class="eyebrow">Feedback</div>
-    <div class="score">${r.count<5?'Not ready to turn in yet':'Score right now: '+r.grade+' of 3'}</div>
-    <p class="help" style="margin-top:4px">${r.grade===3?'This paragraph meets the goal. Read it one more time, then turn it in.':'To reach a 3: '+need.join(', ')+'.'}</p></div>
+    <div class="score rate r${r.grade}">${rateText(r.grade)}${r.count<5?' · not ready to turn in yet':''}</div>
+    <p class="help" style="margin-top:4px">${r.grade===4?'Everything is correct. Read it one more time, then turn it in.':'To reach Mastery: '+need.join(', ')+'.'}</p></div>
     <div class="fbgroup">
     ${r.goods.length?'<div class="good"><h3>What you did well</h3><ul>'+li(r.goods.map(esc))+'</ul></div>':''}
     ${r.fixes.length?'<div class="fix"><h3>Fix these ('+r.fixes.length+')</h3><ul>'+li(r.fixes.map(f=>'<b>'+(f.n?'Sentence '+f.n:'Paragraph')+':</b> '+esc(f.msg)))+'</ul></div>':'<div class="good"><h3>Mistakes</h3><ul><li>No mistakes found.</li></ul></div>'}
@@ -1895,13 +1963,13 @@ function wFlush(){
 }
 function wShowSent(){
   const on=!!W.sent;$('#w-sent').hidden=!on;if(!on)return;
-  $('#w-sentline').textContent='Score: '+W.sent.grade+' of 3 · Time: '+fmtTime(W.sent.secs);
+  $('#w-sentline').textContent='Rating: '+rateText(W.sent.grade)+' · Time: '+fmtTime(W.sent.secs);
   $('#w-sentnote').textContent=(SHEET_URL?'Your paragraph was sent to your teacher at '+W.sent.at+'. ':'This page is not connected to your teacher yet. Copy your paragraph and give it to your teacher. ')+'You can fix your paragraph and turn it in again.';
   $('#w-turnin').textContent='Turn in again';
 }
 function wText(){
   const d=new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
-  return 'Root Word Paragraph\nName: '+(W.name.trim()||'(no name)')+'\nDate: '+d+(W.sent?'\nScore: '+W.sent.grade+' of 3\nTime: '+fmtTime(W.sent.secs):'')+'\n\n'+W.text.trim();
+  return 'Root Word Paragraph\nName: '+(W.name.trim()||'(no name)')+'\nDate: '+d+(W.sent?'\nRating: '+(RATE[W.sent.grade]||{name:''}).name+'\nTime: '+fmtTime(W.sent.secs):'')+'\n\n'+W.text.trim();
 }
 $('#w-text').addEventListener('input',e=>{W.text=e.target.value;wActive=Date.now();wCounts();wSave()});
 $('#view-write').addEventListener('click',()=>{if(W.text)wActive=Date.now()});
@@ -1962,6 +2030,7 @@ function wordForms(w){
   if(/e$/.test(w)){f.add(w.slice(0,-1)+'ing');f.add(w+'r')}
   if(/[^aeiou]y$/.test(w)){const b=w.slice(0,-1);['ies','ied','ier','iest','ily'].forEach(x=>f.add(b+x))}
   if(/^[^aeiou]*[aeiou][bdgmnprt]$/.test(w)){const d=w+w.slice(-1);['ed','ing','er'].forEach(x=>f.add(d+x))}
+  if(PAST_OF[w]){f.add(PAST_OF[w]);if(PP_OF[PAST_OF[w]])f.add(PP_OF[PAST_OF[w]])} // rebuild -> rebuilt, rewrite -> rewrote, rewritten
   return f;
 }
 const usesWord=(w,low)=>{const f=wordForms(w);return low.some(x=>f.has(x))};
@@ -1984,7 +2053,7 @@ function lRender(){
   $('#l-text').value=L.text;
   lWords();lCount();
   $('#l-n').textContent=L.log.length;
-  $('#l-log').innerHTML=L.log.length?L.log.slice().reverse().map(x=>`<div><span>Level ${x.lvl+1}${x.first?' · ★ first try':''}</span><span>${esc(x.text)}</span></div>`).join(''):'<p class="help">Sentences you finish show up here.</p>';
+  $('#l-log').innerHTML=L.log.length?L.log.slice().reverse().map(x=>`<div><span>Level ${x.lvl+1}${' · ⭐ Mastery'+(x.first?' (first try)':'')}</span><span>${esc(x.text)}</span></div>`).join(''):'<p class="help">Sentences you finish show up here.</p>';
 }
 function lWords(){
   const low=(L.text.toLowerCase().match(/[a-z]+/g)||[]);
@@ -1995,14 +2064,14 @@ function lCount(){
   const lv=LADDER[L.lvl],n=(L.text.match(/[A-Za-z][A-Za-z'-]*/g)||[]).length,ns=L.text.trim()?splitSentences(L.text).length:0;
   $('#l-count').textContent='Words: '+n+' of '+lv.min+(lv.sents[1]>1?' · Sentences: '+ns+' of '+lv.sents[0]+(lv.sents[1]>lv.sents[0]?' to '+lv.sents[1]:''):'');
 }
-function lCheck(raw){
-  const lv=LADDER[L.lvl],t=raw.replace(/[‘’]/g,"'").replace(/[“”]/g,'"').replace(/\s+/g,' ').trim(),out=[];
+function lCheck(raw,lvl=L.lvl,words=L.words,log=L.log){
+  const lv=LADDER[lvl],t=raw.replace(/[‘’]/g,"'").replace(/[“”]/g,'"').replace(/\s+/g,' ').trim(),out=[];
   if(!t)return ['Write your sentence first.'];
   const sents=splitSentences(t),n=realCount(t),low=(t.toLowerCase().match(/[a-z]+/g)||[]);
   if(sents.length<lv.sents[0])out.push('Write '+lv.sents[0]+' sentences for this level. I count '+sents.length+'.');
   if(sents.length>lv.sents[1])out.push(lv.sents[1]===1?'Write just one sentence for this level. I count '+sents.length+'.':'Write no more than '+lv.sents[1]+' sentences for this level. I count '+sents.length+'.');
   if(n<lv.min)out.push('Add more detail. Use at least '+lv.min+' real words. You have '+n+'.');
-  L.words.forEach(w=>{if(!usesWord(w,low))out.push('Use the word "'+w+'." It means '+wordObj(w).def+'.')});
+  words.forEach(w=>{if(!usesWord(w,low))out.push('Use the word "'+w+'."'+(wordObj(w)?' It means '+wordObj(w).def+'.':''))});
   if(lv.join&&!JOIN.test(t))out.push('Use a joining word like and, but, so, because, or when.');
   sents.forEach((x,i)=>sentenceIssues(x).forEach(y=>{
     if(/very short/.test(y.msg)&&n<lv.min)return;
@@ -2010,7 +2079,7 @@ function lCheck(raw){
   }));
   tenseShift(sents).forEach(f=>out.push('Sentence '+f.n+': '+f.msg));
   const norm=x=>x.toLowerCase().replace(/[^a-z]/g,'');
-  if(L.log.some(x=>norm(x.text)===norm(t)))out.push('You already wrote this. Write something new.');
+  if(log.some(x=>norm(x.text)===norm(t)))out.push('You already wrote this. Write something new.');
   return [...new Set(out)];
 }
 $('#l-text').addEventListener('input',e=>{L.text=e.target.value;lSave();lWords();lCount()});
@@ -2019,12 +2088,14 @@ $('#l-check').addEventListener('click',()=>{
   L.tries++;
   const issues=lCheck(L.text),ul=$('#l-issues'),lv=LADDER[L.lvl];
   ul.innerHTML=issues.map(x=>'<li>'+esc(x)+'</li>').join('');ul.hidden=!issues.length;
-  if(issues.length){setMsg('#l-msg',issues.length===1?'Almost! Fix this one thing:':'Fix these '+issues.length+' things, then check again:','bad');lSave();return}
-  L.log.push({lvl:L.lvl,text:L.text.replace(/\s+/g,' ').trim(),first:L.tries===1,d:Date.now()});L.log=L.log.slice(-200);
+  const g=rateIssues(issues.length,L.text);
+  if(L.text.trim())outSend({activity:'Write Sentences',key:L.words.join(', '),level:L.lvl+1,task:'Level '+(L.lvl+1)+': '+lv.name+' · words: '+L.words.join(', '),text:L.text.replace(/\s+/g,' ').trim(),passed:!issues.length,feedback:issues.join(' | ')});
+  if(issues.length){setMsg('#l-msg',rateText(g)+(g===1?'. Read the list and try again:':issues.length===1?'! Fix this one thing:':'. Fix these '+issues.length+' things, then check again:'),'bad');lSave();return}
+  L.log.push({lvl:L.lvl,w:L.words.slice(),text:L.text.replace(/\s+/g,' ').trim(),first:L.tries===1,d:Date.now()});L.log=L.log.slice(-200);
   addStar('ladder-'+L.log.length);
-  L.streak++;let msg=(L.tries===1?'Perfect on the first try! ':'Nice fixing! ')+'Your writing is correct.';
+  L.streak++;let msg=rateText(4)+'! '+(L.tries===1?'Perfect on the first try. ':'Nice fixing. ')+'Everything is correct.';
   if(L.streak>=lv.up){
-    if(L.lvl<LADDER.length-1){L.lvl++;L.max=Math.max(L.max,L.lvl);msg='Level up! You are ready for Level '+(L.lvl+1)+': '+LADDER[L.lvl].name+'.'}
+    if(L.lvl<LADDER.length-1){L.lvl++;L.max=Math.max(L.max,L.lvl);msg=rateText(4)+'! Level up! You are ready for Level '+(L.lvl+1)+': '+LADDER[L.lvl].name+'.'}
     else msg='You finished every level! You are ready for Write a Paragraph. You can keep practicing here too.';
     L.streak=0;
   }
@@ -2330,7 +2401,7 @@ function tShow(){
   const open=T.on()&&Date.now()-T.fresh<600000;
   $('#t-form').hidden=open;$('#t-panel').hidden=!open;
   $('#t-msg').textContent='';$('#t-code').value='';
-  if(open){hostFillVoices();$('#host-on').checked=HOST_PREF.on;$('#host-rate').value=String(HOST_PREF.rate||1)}
+  if(open){prInit();hostFillVoices();$('#host-on').checked=HOST_PREF.on;$('#host-rate').value=String(HOST_PREF.rate||1)}
   if(typeof TD.showModal==='function'){if(!TD.open)TD.showModal()}else TD.setAttribute('open','');
   setTimeout(()=>(open?$('#host-voice'):$('#t-code')).focus(),30);
 }
@@ -2342,18 +2413,187 @@ $('#t-form').addEventListener('submit',e=>{
   const code=$('#t-code').value;
   const check=window.ClassGate&&ClassGate.checkCode?ClassGate.checkCode(code):Promise.resolve('wrong');
   check.then(r=>{
-    if(r==='ok'){T.set(true);T.fresh=Date.now();bgMode(BG_MODE);tShow();return}
+    if(r==='ok'){T.set(true);T.fresh=Date.now();T.code=code.trim();bgMode(BG_MODE);tShow();prInit();return}
     $('#t-code').value='';
     $('#t-msg').textContent=(window.ClassGate&&ClassGate.codeMsg(r))||'That code is not right.';
     $('#t-msg').className='msg bad';
   });
 });
 $('#t-call').addEventListener('click',()=>{tClose();show('bingo');bgMode('teacher');$('#view-bingo').scrollIntoView({behavior:'smooth',block:'start'})});
-$('#t-lock').addEventListener('click',()=>{T.set(false);T.fresh=0;if(HAS_TTS){HOST_RUN++;speechSynthesis.cancel()}bgMode('play');tClose()});
+$('#t-lock').addEventListener('click',()=>{T.set(false);T.fresh=0;T.code='';if(HAS_TTS){HOST_RUN++;speechSynthesis.cancel()}bgMode('play');tClose()});
 document.addEventListener('classgate:signin',()=>{T.set(false);bgMode('play')});
+/* ---------- Print student work (teacher dashboard) ---------- */
+const PR={data:null,source:''};
+const keyName=n=>String(n||'').trim().toLowerCase();
+// Fixes the checker can make on its own, so the printout can show a corrected version.
+function fixSentence(s,msgs){
+  let t=s.trim();
+  const swap=(a,b)=>{ // replace phrase a with b once, whole words, any case
+    if(!a||!b)return;
+    const re=new RegExp('\\b'+a.replace(/[.*+?^${}()|[\]\\]/g,'\\$&').replace(/\s+/g,'\\s+')+'\\b','i');
+    const m=t.match(re);if(!m)return;
+    const keepCap=/^[A-Z]/.test(m[0])&&!/^[A-Z]/.test(b);
+    t=t.slice(0,m.index)+(keepCap?b[0].toUpperCase()+b.slice(1):b)+t.slice(m.index+m[0].length);
+  };
+  const strip=x=>x.replace(/[.,]+$/,'');
+  msgs.forEach(m=>{
+    let x;
+    if((x=m.match(/"([^"]+)" should be "([^"]+)"/)))swap(strip(x[1]),strip(x[2]));
+    else if((x=m.match(/"([^"]+)" (?:is|are) (?:just one|more than one), so use "([^"]+?)"[^"]*(?:"[^"]*"[^"]*)?not "([^"]+?)\.?"/))){
+      const subj=x[1],fix=strip(x[2]),bad=strip(x[3]),i=t.toLowerCase().indexOf(subj.toLowerCase());
+      if(i>=0){const head=t.slice(0,i+subj.length),rest=t.slice(i+subj.length),re=new RegExp('\\b'+bad+'\\b','i');t=head+rest.replace(re,fix)}else swap(bad,fix);
+    }
+    else if((x=m.match(/(?:write|use the plain verb:?) "([^"]+?),?" not "([^"]+?)\.?"/i)))swap(strip(x[2]),strip(x[1]));
+    else if((x=m.match(/Change "([^"]+)" to "([^"]+?)\.?"/)))swap(x[1],strip(x[2]));
+    else if((x=m.match(/Change "([^"]+)" to the past tense/))){
+      const w=x[1].toLowerCase(),p={is:'was',are:'were',am:'was',has:'had',does:'did',goes:'went',says:'said',"don't":"didn't","doesn't":"didn't"}[w]||pastOf(VS.get(w)||w);swap(x[1],p);
+    }
+    else if((x=m.match(/"([^"]+)" is not a real word\. Check the spelling\. Did you mean "([^"]+)"\?/)))swap(x[1],x[2]);
+    else if((x=m.match(/"([^"]+)" is not a word\. The past tense of "[^"]+" is "([^"]+?)\.?"/)))swap(x[1],x[2]);
+    else if((x=m.match(/Put a comma before "([a-z]+)\.?"[^"]*"\.\.\.(.*?), \1 (.*?)\.\.\."/))){
+      const before=x[2].trim().split(/\s+/).pop(),after=x[3].trim().split(/\s+/)[0];
+      t=t.replace(new RegExp('\\b('+before+')\\s+('+x[1]+')\\s+('+after+')\\b','i'),'$1, $2 $3');
+    }
+    else if((x=m.match(/"([^"]+)" needs an apostrophe\. Write "([^"]+?)\.?"/)))swap(x[1],x[2]);
+    else if((x=m.match(/Write "([^"]+?)" instead of "([^"]+?)\.?"/)))swap(x[2],x[1]);
+    else if((x=m.match(/Capitalize "([a-z]+)\.?"/)))swap(x[1],x[1][0].toUpperCase()+x[1].slice(1));
+    else if((x=m.match(/Use "(an?)" before "([^"]+?)\.?"/))){const re=new RegExp('\\b(an?)\\s+('+x[2]+')\\b','i');t=t.replace(re,(a,b,c)=>(/^A/.test(b)?x[1][0].toUpperCase()+x[1].slice(1):x[1])+' '+c)}
+    else if(/Always capitalize the word "I/.test(m))t=t.replace(/\bi\b/g,'I');
+    else if(/Put a space after each comma/.test(m))t=t.replace(/,(?=\S)/g,', ');
+    else if(/Do not put a space before a punctuation/.test(m))t=t.replace(/\s+([.,!?;:])/g,'$1');
+    else if(/Use only one punctuation mark at the end/.test(m))t=t.replace(/([.?!])[.?!]+(["')]*)$/,'$1$2');
+    else if(/question mark/.test(m)&&/looks like a question/.test(m))t=t.replace(/\.(["')]*)$/,'?$1');
+  });
+  if(msgs.some(m=>/Start this sentence with a capital letter/.test(m)))t=t.replace(/^(["'(]?)([a-z])/,(a,q,c)=>q+c.toUpperCase());
+  if(msgs.some(m=>/^End this sentence with/.test(m))&&!/[.?!]["')]*$/.test(t))t+='.';
+  return t;
+}
+function fixText(text,msgsFor){const sents=splitSentences(text);return sents.map((x,i)=>fixSentence(x,msgsFor(i))).join(' ')}
+const stripNum=m=>m.replace(/^Sentence \d+: /,'');
+
+function prExample(){
+  const ago=d=>new Date(Date.now()-d*36e5).toISOString();
+  return {paras:[
+    {student:'Ava (example)',time:ago(2),text:'My class took a field trip to the aquarium. A bus transported all of us across town. Our teacher told us to inspect every tank closely. I used my telephone to take a photograph of a huge turtle. The audience clapped when the divers fed the sharks.'},
+    {student:'Marcus (example)',time:ago(3),text:'we went to the aquarium on friday. They was feeding the sharks. I take a photograph with my telephone yesterday. The audience were loud and my friend clapped for the divers. It was a incredible trip.'}],
+   sents:[
+    {student:'Ava (example)',time:ago(5),activity:'Explore',key:'un',text:'I was unhappy when my team lost the game.'},
+    {student:'Ava (example)',time:ago(5),activity:'Write Sentences',key:'rebuild',level:1,text:'We rebuilt the fort.'},
+    {student:'Marcus (example)',time:ago(6),activity:'Explore',key:'un',text:'my uncle come to visit us'},
+    {student:'Marcus (example)',time:ago(6),activity:'Write Sentences',key:'teacher',level:2,text:'The teacher read us a story and smiles at the end'}]};
+}
+function prLocal(){
+  const who=(window.ClassGate&&ClassGate.name())||W.name.trim()||'This computer';
+  const paras=W.text.trim()?[{student:W.name.trim()||who,time:new Date().toISOString(),text:W.text.trim()}]:[];
+  const sents=[];
+  Object.keys(SENT).forEach(id=>{const r=SENT[id];if(r&&r.text&&r.text.trim()&&BY_ID[id])sents.push({student:who,time:new Date(r.d||Date.now()).toISOString(),activity:'Explore',key:id,text:r.text.trim()})});
+  L.log.forEach(x=>sents.push({student:who,time:new Date(x.d||Date.now()).toISOString(),activity:'Write Sentences',key:(x.w||[]).join(', '),level:x.lvl+1,text:x.text}));
+  return {paras,sents};
+}
+function prLoad(){
+  $('#pr-msg').textContent='Loading student work...';
+  const done=(d,src)=>{PR.data=d;PR.source=src;prFill()};
+  if(SHEET_URL){
+    return fetch(SHEET_URL+'?action=results&key='+encodeURIComponent(T.code||'')).then(r=>r.json()).then(j=>{
+      if(j.error){$('#pr-msg').textContent=j.message||'The Google Sheet did not accept the teacher code.';return done({paras:[],sents:[]},'sheet')}
+      done({paras:(j.results||[]).map(r=>({student:r.student,time:r.time,text:r.paragraph})),
+        sents:(j.sentences||[]).map(r=>{const id=r.activity==='Explore'?(BY_ID[r.key]?r.key:(PARTS.find(p=>r.task.includes(p.label))||{}).id):r.key;return {student:r.student,time:r.time,activity:r.activity,key:id||r.key,level:r.level,text:r.text}})},'sheet');
+    }).catch(()=>{$('#pr-msg').textContent='Could not reach the Google Sheet. Check the internet connection and try again.';done(prLocal(),'local')});
+  }
+  const loc=prLocal();
+  done(loc.paras.length||loc.sents.length?loc:prExample(),loc.paras.length||loc.sents.length?'local':'example');
+  return Promise.resolve();
+}
+function prFill(){
+  const names=new Map();
+  [...PR.data.paras,...PR.data.sents].forEach(x=>{const k=keyName(x.student);if(k&&!names.has(k))names.set(k,x.student.trim())});
+  const list=[...names.entries()].sort((a,b)=>a[0].localeCompare(b[0]));
+  const cur=$('#pr-who').value;
+  $('#pr-who').innerHTML='<option value="">All students ('+list.length+')</option>'+list.map(([k,n])=>`<option value="${esc(k)}">${esc(n)}</option>`).join('');
+  if(names.has(cur))$('#pr-who').value=cur;
+  $('#pr-src').textContent=PR.source==='sheet'?'Work comes from your Google Sheet: everything students checked or turned in.'
+    :PR.source==='local'?'This app is not connected to a Google Sheet yet, so only work saved on this computer can print. Connect the Sheet (see the results page) to print every student’s work.'
+    :'This app is not connected to a Google Sheet yet, and no work is saved on this computer, so the list shows example students. Connect the Sheet (see the results page) to print every student’s work.';
+  if(!/Could not|did not/.test($('#pr-msg').textContent))$('#pr-msg').textContent=list.length?'':'No student work found.';
+}
+function prInit(){if(!PR.data)prLoad()}
+function prRange(){const v=$('#pr-when').value;return v==='today'?new Date().setHours(0,0,0,0):v==='week'?Date.now()-7*864e5:0}
+
+function prSentenceItem(x){
+  let issues,task,proper='';
+  if(x.activity==='Explore'){
+    const p=BY_ID[x.key];
+    issues=p?checkOne(p,x.text):sentenceIssues(x.text).map(y=>y.msg);
+    task=p?'Explore · Write a sentence using '+p.label+' ('+p.meaning+')':'Explore';
+    if(p)proper='Words built with '+p.label+': '+p.ex.map(e=>e.replace(/[\[\]]/g,'')).join(', ')+(USE[p.id]?', '+USE[p.id].slice(0,5).join(', '):'')+'.';
+  }else{
+    const lvl=Math.max(0,Math.min(LADDER.length-1,(Number(x.level)||1)-1)),words=String(x.key||'').split(/,\s*/).filter(w=>wordObj(w));
+    issues=lCheck(x.text,lvl,words,[]);
+    task='Write Sentences · Level '+(lvl+1)+': '+LADDER[lvl].name+(words.length?' · words: '+words.join(', '):'');
+    if(words.length)proper=words.map(w=>w+' = '+wordObj(w).def).join('; ')+'.';
+  }
+  const g=rateIssues(issues.length,x.text),fixed=$('#pr-fix').checked&&issues.length?fixSentence(x.text,issues.map(stripNum)):'';
+  return `<div class="pr-item"><span class="pr-rate">${rateText(g)}</span><div class="pr-task">${esc(task)}${x.tries>1?' · '+x.tries+' tries':''}</div>
+    <h3>What the student wrote</h3><div class="pr-wrote">${esc(x.text)}</div>
+    ${issues.length?'<h3>What to fix</h3><ul>'+issues.map(m=>'<li>'+esc(m)+'</li>').join('')+'</ul>':'<p class="pr-note">Everything is correct.</p>'}
+    ${fixed&&fixed!==x.text.trim()?'<h3>Corrected version</h3><div class="pr-fixed">'+esc(fixed)+'</div><p class="pr-note">Made from the fixes above. Some fixes (like adding details or a word) are up to the student.</p>':''}
+    ${proper?'<h3>Proper answers</h3><p class="pr-note" style="font-size:10.5pt">'+esc(proper)+'</p>':''}
+  </div>`;
+}
+function prParagraphItem(x){
+  const r=checkParagraph(x.text),byN=i=>r.fixes.filter(f=>f.n===i+1).map(f=>f.msg);
+  const fixed=$('#pr-fix').checked&&r.fixes.length?fixText(x.text,byN):'';
+  return `<div class="pr-item"><span class="pr-rate">${rateText(r.grade)}</span><h2>Root word paragraph</h2>
+    <div class="pr-task">${esc(new Date(x.time).toLocaleDateString())} · ${r.count} sentences · ${r.roots.length} root words${x.tries>1?' · '+x.tries+' tries':''}</div>
+    <h3>What the student wrote</h3><div class="pr-wrote">${esc(x.text)}</div>
+    ${r.fixes.length?'<h3>What to fix</h3><ul>'+r.fixes.map(f=>'<li><b>'+(f.n?'Sentence '+f.n:'Paragraph')+':</b> '+esc(f.msg)+'</li>').join('')+'</ul>':'<p class="pr-note">No mistakes found.</p>'}
+    ${fixed&&fixed!==splitSentences(x.text).join(' ')?'<h3>Corrected version</h3><div class="pr-fixed">'+esc(fixed)+'</div><p class="pr-note">Made from the fixes above. Changing a whole sentence’s tense or adding sentences or root words is up to the student.</p>':''}
+    ${r.tips.length?'<h3>Suggestions</h3><ul>'+r.tips.map(t=>'<li>'+esc(t)+'</li>').join('')+'</ul>':''}
+    ${r.grade<4?'<h3>To reach Mastery</h3><ul>'+[r.count<5?'Write at least 5 sentences.':'',r.roots.length<5?'Use at least 5 root words (now '+r.roots.length+').':'',r.fixes.length?'Fix every mistake listed above.':''].filter(Boolean).map(t=>'<li>'+t+'</li>').join('')+'</ul>':''}
+    ${r.goods.length?'<h3>What went well</h3><ul>'+r.goods.map(t=>'<li>'+esc(t)+'</li>').join('')+'</ul>':''}
+    <h3>Root words used</h3><p class="pr-note" style="font-size:10.5pt">${r.roots.length?esc(r.roots.join(', ')):'None yet.'}</p>
+  </div>`;
+}
+function prBuild(){
+  const cut=prRange(),who=$('#pr-who').value,wantP=$('#pr-para').checked,wantS=$('#pr-sent').checked;
+  const inRange=x=>!cut||new Date(x.time).getTime()>=cut,mine=x=>!who||keyName(x.student)===who;
+  const by=new Map(),add=(x,kind)=>{const k=keyName(x.student);if(!k)return;if(!by.has(k))by.set(k,{name:x.student.trim(),paras:[],sents:[]});by.get(k)[kind].push(x)};
+  if(wantP)PR.data.paras.filter(x=>x.text&&inRange(x)&&mine(x)).forEach(x=>add(x,'paras'));
+  if(wantS)PR.data.sents.filter(x=>x.text&&inRange(x)&&mine(x)).forEach(x=>add(x,'sents'));
+  const latest=(arr,keyf)=>{const m=new Map();arr.slice().sort((a,b)=>new Date(a.time)-new Date(b.time)).forEach(x=>{const k=keyf(x),o=m.get(k);m.set(k,Object.assign({},x,{tries:(o?o.tries:0)+1}))});return [...m.values()]};
+  const stamp=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  const range={today:'today',week:'the last 7 days',all:'all dates'}[$('#pr-when').value];
+  const pages=[...by.values()].sort((a,b)=>a.name.localeCompare(b.name)).map(st=>{
+    const paras=latest(st.paras,()=>'p'),sents=latest(st.sents,x=>x.activity+'|'+x.key+'|'+(x.level||''));
+    sents.sort((a,b)=>(a.activity>b.activity?1:-1)||new Date(a.time)-new Date(b.time));
+    const rs=sents.map(x=>{const iss=x.activity==='Explore'&&BY_ID[x.key]?checkOne(BY_ID[x.key],x.text):lCheck(x.text,Math.max(0,(Number(x.level)||1)-1),String(x.key||'').split(/,\s*/).filter(w=>wordObj(w)),[]);return rateIssues(iss.length,x.text)});
+    const cnt=g=>rs.filter(r=>r===g).length;
+    const sum=[paras.length?'Paragraph: '+rateText(checkParagraph(paras[0].text).grade):'',
+      sents.length?'Sentences: '+[4,3,2,1].filter(g=>cnt(g)).map(g=>cnt(g)+' '+RATE[g].face+' '+RATE[g].name).join(', '):''].filter(Boolean).join(' · ');
+    return `<section class="pr-student"><div class="pr-head"><small>Mr. Echols’ Room 2 · Word Parts Workshop</small><h1>${esc(st.name)}</h1>
+      <small>Printed ${esc(stamp)} · Work from ${esc(range)} · ⭐ Mastery means everything is correct</small><p class="pr-sum">${esc(sum)}</p></div>
+      ${paras.map(prParagraphItem).join('')}${sents.length?'<h2 style="font:700 14pt system-ui,Arial,sans-serif;margin:12px 0 6px;break-after:avoid;page-break-after:avoid">Sentences</h2>'+sents.map(prSentenceItem).join(''):''}
+    </section>`;
+  });
+  return pages;
+}
+$('#pr-reload').addEventListener('click',()=>{if(T.on())prLoad()});
+$('#pr-go').addEventListener('click',()=>{
+  if(!T.on())return;
+  if(!PR.data){prLoad().then(()=>$('#pr-go').click());return}
+  if(!$('#pr-para').checked&&!$('#pr-sent').checked){$('#pr-msg').textContent='Choose Paragraphs, Sentences, or both.';return}
+  const pages=prBuild();
+  if(!pages.length){$('#pr-msg').textContent='No work to print for that student and date range.';return}
+  $('#print-area').innerHTML=pages.join('');$('#pr-msg').textContent='Printing '+pages.length+' student'+(pages.length===1?'':'s')+'.';
+  tClose();document.body.classList.add('printing');
+  setTimeout(()=>{window.print();},60);
+});
+addEventListener('afterprint',()=>{document.body.classList.remove('printing');$('#print-area').innerHTML=''});
+
 
 renderExplore();newBuild();startQuiz();updateLock();LOCK_READY=true;
 show(location.hash.slice(1));
 </script>
+<div id="print-area" aria-hidden="true"></div>
 </body>
 </html>

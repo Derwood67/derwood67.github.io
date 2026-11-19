@@ -57,9 +57,11 @@ th.n,td.n{text-align:right}
 tr.s{cursor:pointer} tr.s:hover td{background:var(--bg)}
 tr.s td:first-child{font-weight:700}
 .g{display:inline-block;min-width:2.2em;text-align:center;border-radius:8px;padding:2px 8px;font-family:var(--display);font-weight:600;border:2px solid}
-.g3{color:var(--good);background:var(--good-bg);border-color:var(--good)}
-.g2{color:var(--warn);background:var(--warn-bg);border-color:var(--warn)}
+.g4{color:var(--good);background:var(--good-bg);border-color:var(--good)}
+.g3{color:var(--warn);background:var(--warn-bg);border-color:var(--warn)}
+.g2{color:var(--bad);background:var(--bad-bg);border-color:var(--bad)}
 .g1{color:var(--bad);background:var(--bad-bg);border-color:var(--bad)}
+.g{white-space:nowrap}
 .detail td{background:var(--bg)}
 .detail .in{display:flex;flex-direction:column;gap:10px;max-width:75ch}
 .detail h3{margin:0;font-size:.78rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
@@ -69,40 +71,6 @@ tr.s td:first-child{font-weight:700}
 </style>
 </head>
 <body>
-<!-- Teacher lock: code 8531 (only a scrambled copy is stored in this page) -->
-<style>
-#tl-ov{position:fixed;inset:0;z-index:2147483000;background:#141c24;display:flex;align-items:center;justify-content:center;padding:16px;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
-#tl-ov form{background:#fff;color:#1b2420;border-radius:14px;max-width:400px;width:100%;padding:24px;display:flex;flex-direction:column;gap:12px;font-size:18px;box-shadow:0 12px 32px rgba(0,0,0,.35)}
-#tl-ov h2{margin:0;font-size:1.4rem}
-#tl-ov input{font:inherit;padding:12px;border:2px solid #c9d1cc;border-radius:8px}
-#tl-ov button{font:inherit;font-weight:700;border:0;border-radius:8px;padding:12px;background:#0b6b4a;color:#fff;cursor:pointer}
-#tl-ov p{margin:0;min-height:1.3em;color:#a83226;font-size:.95rem}
-body.tl-locked .wrap{display:none}
-</style>
-<script>
-(function(){
-  var HASH="cf2d0fe7ea0a7780592080ef0bf415a6043a3d59aa5d72ace64d39c6e0837285",S="wpw-teacher-session",TRY="echols-classgate-tries";
-  function g(st,k){try{return st.getItem(k)}catch(e){return null}}
-  function put(st,k,v){try{v===null?st.removeItem(k):st.setItem(k,v)}catch(e){}}
-  window.TEACHER_LOCK={code:""};
-  if(g(sessionStorage,S)==="1")return;
-  document.body.classList.add("tl-locked");
-  var o=document.createElement("div");o.id="tl-ov";o.setAttribute("role","dialog");o.setAttribute("aria-modal","true");
-  o.innerHTML='<form><h2>Teacher only</h2><label for="tl-code">Teacher code</label><input id="tl-code" type="password" inputmode="numeric" autocomplete="off"><button>Open</button><p id="tl-msg" aria-live="polite"></p></form>';
-  document.body.appendChild(o);setTimeout(function(){o.querySelector("input").focus()},30);
-  o.querySelector("form").onsubmit=function(e){e.preventDefault();
-    var t={};try{t=JSON.parse(g(localStorage,TRY))||{}}catch(x){}
-    var msg=o.querySelector("#tl-msg"),inp=o.querySelector("input"),c=inp.value.trim();
-    if(t.until&&Date.now()<t.until){msg.textContent="Too many tries. Wait 10 minutes and try again.";return}
-    crypto.subtle.digest("SHA-256",new TextEncoder().encode("echols-room2:"+c)).then(function(b){
-      var h=Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0")}).join("");
-      if(h===HASH){put(localStorage,TRY,null);put(sessionStorage,S,"1");window.TEACHER_LOCK.code=c;o.remove();document.body.classList.remove("tl-locked");document.dispatchEvent(new Event("teacher:unlocked"));return}
-      t.n=(t.n||0)+1;if(t.n>=3)t={n:0,until:Date.now()+600000};put(localStorage,TRY,JSON.stringify(t));
-      inp.value="";msg.textContent=t.until?"Too many tries. Wait 10 minutes and try again.":"That code is not right.";
-    });
-  };
-})();
-</script>
 <div class="wrap">
   <header class="top">
     <div>
@@ -145,15 +113,15 @@ body.tl-locked .wrap{display:none}
           <label class="muted" for="range">Show</label>
           <select class="field" id="range"><option value="all">All work</option><option value="today">Today</option><option value="week">Last 7 days</option></select>
           <label class="muted" for="sort">Sort by</label>
-          <select class="field" id="sort"><option value="new">Newest</option><option value="name">Name</option><option value="grade">Grade</option><option value="time">Time spent</option></select>
+          <select class="field" id="sort"><option value="new">Newest</option><option value="name">Name</option><option value="grade">Rating</option><option value="time">Time spent</option></select>
         </div>
       </div>
-      <p class="muted">Each row shows a student's latest paragraph. Select a row to read it. The grade is scored by the page, so read the paragraph before you record it.</p>
+      <p class="muted">Each row shows a student's latest paragraph. Select a row to read it. The rating is given by the page, so read the paragraph before you record it.</p>
       <div class="scroll"><table>
-        <thead><tr><th>Student</th><th>Grade</th><th class="n">Time spent</th><th class="n">Sentences</th><th class="n">Root words</th><th class="n">Mistakes</th><th>Turned in</th></tr></thead>
+        <thead><tr><th>Student</th><th>Rating</th><th class="n">Time spent</th><th class="n">Sentences</th><th class="n">Root words</th><th class="n">Mistakes</th><th>Turned in</th></tr></thead>
         <tbody id="rows"></tbody>
       </table></div>
-      <p class="muted">Grade 3: 5+ sentences, 5+ root words, 0 to 1 mistakes. Grade 2: 5+ sentences, 3+ root words, up to 4 mistakes. Grade 1: fewer root words or 5+ mistakes. Time counts while the student has the paragraph tab open and pauses after 2 minutes without typing.</p>
+      <p class="muted">⭐ Mastery: 5+ sentences, 5+ root words, and everything correct. 🙂 Almost: 1 or 2 things to fix. 😐 Not yet: 3 to 5 things to fix. ☹️ Sorry: 6 or more things to fix, or fewer than 3 real sentences. Time counts while the student has the paragraph tab open and pauses after 2 minutes without typing.</p>
     </section>
   </div>
 </div>
@@ -161,6 +129,9 @@ body.tl-locked .wrap{display:none}
 <script src="config.js"></script>
 <script>
 const $=id=>document.getElementById(id);
+/* Mastery only when everything is correct */
+const RATE={4:"⭐ Mastery",3:"🙂 Almost",2:"😐 Not yet",1:"☹️ Sorry"};
+const rate=g=>RATE[Number(g)]||"?";
 const URL_=(window.WORD_PARTS_SHEET_URL||"").trim(), demo=!URL_;
 let code="", results=[], open=new Set(), timer=null;
 try{code=localStorage.getItem("wordPartsTeacherCode")||""}catch(e){}
@@ -174,12 +145,12 @@ function setStatus(kind,text){$("status").className="pill "+kind;$("status").tex
 function sample(){
   const ago=m=>new Date(Date.now()-m*60000).toISOString();
   return [
-   {time:ago(12),student:"Ava (example)",grade:3,seconds:545,sentences:6,rootCount:7,rootWords:"aquarium, transport, inspect, telephone, photograph, audience, incredible",mistakes:0,feedback:"",checks:3,paragraph:"My class took a field trip to the aquarium on Friday. A bus had to transport all of us across town. Our teacher told us to inspect every tank closely. I used my telephone to take a photograph of a huge turtle. The audience clapped when the divers fed the sharks. It was an incredible day!"},
+   {time:ago(12),student:"Ava (example)",grade:4,seconds:545,sentences:6,rootCount:7,rootWords:"aquarium, transport, inspect, telephone, photograph, audience, incredible",mistakes:0,feedback:"",checks:3,paragraph:"My class took a field trip to the aquarium on Friday. A bus had to transport all of us across town. Our teacher told us to inspect every tank closely. I used my telephone to take a photograph of a huge turtle. The audience clapped when the divers fed the sharks. It was an incredible day!"},
    {time:ago(95),student:"Ava (example)",grade:2,seconds:310,sentences:5,rootCount:4,rootWords:"aquarium, transport, telephone, photograph",mistakes:2,feedback:"Sentence 1: Capitalize \"friday.\" Days and months start with a capital letter. | Sentence 4: Always capitalize the word \"I.\"",checks:1,paragraph:"My class took a field trip to the aquarium on friday. A bus had to transport all of us. We saw sharks. i used my telephone to take a photograph. It was fun."},
    {time:ago(20),student:"Marcus (example)",grade:2,seconds:402,sentences:6,rootCount:5,rootWords:"aquarium, photograph, telephone, audience, spectator",mistakes:4,feedback:"Sentence 1: Start this sentence with a capital letter. | Sentence 1: Capitalize \"friday.\" Days and months start with a capital letter. | Sentence 2: Check your subject and verb. \"they was\" should be \"they were.\" | Sentence 4: Check your subject and verb. \"audience were\" should be \"audience was.\"",checks:2,paragraph:"we went to the aquarium on friday. They was feeding the sharks. I took a photograph with my telephone. The audience were loud. My friend and I are spectators at the show. It was fun."},
    {time:ago(31),student:"Sofia (example)",grade:3,seconds:731,sentences:5,rootCount:5,rootWords:"bicycle, pedal, motion, flexible, report",mistakes:1,feedback:"Sentence 3: Put a space after each comma.",checks:4,paragraph:"I ride my bicycle to the park every Saturday. My feet push each pedal to keep the wheels in motion. When I turn,my body has to be flexible. I wrote a report about bike safety for school. Riding is my favorite way to move!"},
-   {time:ago(44),student:"Jordan (example)",grade:1,seconds:148,sentences:5,rootCount:1,rootWords:"tractor",mistakes:1,feedback:"Sentence 2: Check your subject and verb. \"he don't\" should be \"he doesn't.\"",checks:0,paragraph:"My grandpa has a tractor. He don't let me drive it. It is red. It is loud. I like the farm."},
-   {time:ago(52),student:"Priya (example)",grade:2,seconds:615,sentences:7,rootCount:3,rootWords:"telescope, astronaut, vision",mistakes:0,feedback:"",checks:2,paragraph:"I got a telescope for my birthday. At night I look at the moon. I can see the holes on it. My dad says an astronaut walked there. I want to go someday. You need good vision to find the planets. Mars looks like a tiny red dot."}
+   {time:ago(44),student:"Jordan (example)",grade:2,seconds:148,sentences:5,rootCount:1,rootWords:"tractor",mistakes:1,feedback:"Sentence 2: Check your subject and verb. \"he don't\" should be \"he doesn't.\"",checks:0,paragraph:"My grandpa has a tractor. He don't let me drive it. It is red. It is loud. I like the farm."},
+   {time:ago(52),student:"Priya (example)",grade:3,seconds:615,sentences:7,rootCount:3,rootWords:"telescope, astronaut, vision",mistakes:0,feedback:"",checks:2,paragraph:"I got a telescope for my birthday. At night I look at the moon. I can see the holes on it. My dad says an astronaut walked there. I want to go someday. You need good vision to find the planets. Mars looks like a tiny red dot."}
   ];
 }
 
@@ -199,13 +170,13 @@ function draw(){
   const tile=(label,val,sub)=>`<div class="tile"><span>${label}</span><b>${val}</b><small>${sub}</small></div>`;
   $("tiles").innerHTML=tile("Turned in",n,n===1?"student":"students")
     +tile("Average time",n?fmtDur(avg):"0:00","minutes:seconds")
-    +tile("Grade 3",cnt(3),"met the goal")+tile("Grade 2",cnt(2),"getting close")+tile("Grade 1",cnt(1),"needs support");
+    +tile("⭐ Mastery",cnt(4),"all correct")+tile("🙂 Almost",cnt(3),"1 or 2 to fix")+tile("😐 Not yet",cnt(2),"3 to 5 to fix")+tile("☹️ Sorry",cnt(1),"needs support");
   $("rows").innerHTML=n?list.map(({latest:r,all})=>{
     const k=keyOf(r.student), isOpen=open.has(k), g=Number(r.grade);
     const fb=String(r.feedback||"").split(" | ").filter(Boolean);
     return `<tr class="s" data-k="${esc(k)}" tabindex="0" aria-expanded="${isOpen}">
       <td>${esc(r.student)}${all.length>1?` <span class="muted" style="font-weight:400">(${all.length} tries)</span>`:""}</td>
-      <td><span class="g g${g}">${g||"?"}</span></td>
+      <td><span class="g g${g}">${rate(g)}</span></td>
       <td class="n">${fmtDur(r.seconds)}</td><td class="n">${esc(r.sentences)}</td><td class="n">${esc(r.rootCount)}</td><td class="n">${esc(r.mistakes)}</td>
       <td>${fmtWhen(r.time)}</td></tr>`
     +(isOpen?`<tr class="detail"><td colspan="7"><div class="in">
@@ -213,7 +184,7 @@ function draw(){
       <h3>Root words used</h3><div>${esc(r.rootWords)||'<span class="muted">None</span>'}</div>
       <h3>Feedback the student saw</h3>${fb.length?"<ul>"+fb.map(x=>"<li>"+esc(x)+"</li>").join("")+"</ul>":'<div class="muted">No mistakes found.</div>'}
       <div class="muted">Checked the paragraph ${esc(r.checks||0)} time${Number(r.checks)===1?"":"s"} before turning in.</div>
-      ${all.length>1?"<h3>Earlier tries</h3><ul>"+all.slice(1).map(x=>`<li>${fmtWhen(x.time)}: grade ${esc(x.grade)}, ${fmtDur(x.seconds)} spent, ${esc(x.mistakes)} mistakes</li>`).join("")+"</ul>":""}
+      ${all.length>1?"<h3>Earlier tries</h3><ul>"+all.slice(1).map(x=>`<li>${fmtWhen(x.time)}: ${esc(rate(x.grade))}, ${fmtDur(x.seconds)} spent, ${esc(x.mistakes)} mistakes</li>`).join("")+"</ul>":""}
     </div></td></tr>`:"");
   }).join(""):'<tr><td colspan="7" class="empty">No paragraphs turned in yet. When a student taps Turn in, their work appears here.</td></tr>';
 }
@@ -239,13 +210,8 @@ function start(){clearInterval(timer);load();timer=setInterval(load,30000)}
 $("refresh").onclick=load;
 $("codeForm").addEventListener("submit",e=>{e.preventDefault();code=$("code").value.trim();try{localStorage.setItem("wordPartsTeacherCode",code)}catch(_){};start()});
 $("changeCode").onclick=()=>{try{localStorage.removeItem("wordPartsTeacherCode")}catch(e){};code="";needCode("Type the new teacher code.")};
-/* nothing loads until the teacher code (8531) is entered */
-function init(){
-  if(!code&&window.TEACHER_LOCK&&TEACHER_LOCK.code)code=TEACHER_LOCK.code;
-  if(demo){$("demoNote").hidden=false;$("main").hidden=false;setStatus("demo","Example data");load()}
-  else if(code)start(); else needCode();
-}
-if(document.body.classList.contains("tl-locked"))document.addEventListener("teacher:unlocked",init,{once:true});else init();
+if(demo){$("demoNote").hidden=false;$("main").hidden=false;setStatus("demo","Example data");load()}
+else if(code)start(); else needCode();
 </script>
 </body>
 </html>

@@ -1,48 +1,68 @@
 // Word Parts Workshop → Google Sheet + teacher dashboard
 //
-// 1. Change TEACHER_CODE below to a code only you know (letters and numbers).
-//    The teacher dashboard asks for it, so students can't open everyone's work.
-// 2. Paste this into Extensions > Apps Script in a new Google Sheet, Save, then run "setup" once.
-// 3. Deploy > New deployment > Web app. Execute as: Me. Who has access: Anyone.
-// 4. Copy the web app URL into word-parts/config.js.
+// 1. Paste this into Extensions > Apps Script in a new Google Sheet, Save, then run "setup" once.
+// 2. Deploy > New deployment > Web app. Execute as: Me. Who has access: Anyone.
+// 3. Copy the web app URL into word-parts/config.js.
 //
-// Each time a student turns in a paragraph, one row is added to the "Paragraphs" tab.
+// The teacher dashboard and the results page open with the class teacher code.
+// Only a scrambled copy of that code is stored here (CODE_HASH), not the code itself.
+// To use a different code instead, type it in TEACHER_CODE.
+//
+// "Paragraphs" tab: one row each time a student turns in a paragraph.
+// "Sentences" tab:  one row each time a student checks a sentence (Explore cards and Write Sentences).
 
-const TEACHER_CODE = 'change-me';
+const TEACHER_CODE = '';
+const CODE_HASH = 'cf2d0fe7ea0a7780592080ef0bf415a6043a3d59aa5d72ace64d39c6e0837285';
 
-const HEADERS = ['Turned in', 'Student', 'Grade (1-3)', 'Time spent (sec)', 'Time spent (min)', 'Sentences',
+const HEADERS = ['Turned in', 'Student', 'Rating (4 Mastery, 3 Almost, 2 Not yet, 1 Sorry)', 'Time spent (sec)', 'Time spent (min)', 'Sentences',
                  'Root words', 'Root words used', 'Mistakes found', 'Feedback given', 'Times checked', 'Paragraph'];
+const S_HEADERS = ['Checked', 'Student', 'Activity', 'Task', 'Word part or words', 'Level', 'Sentence', 'Correct?', 'Feedback given'];
 
 function doPost(e) {
   const d = JSON.parse(e.postData.contents);
-  const secs = num_(d.seconds);
   const lock = LockService.getScriptLock();
   lock.waitLock(15000);
   try {
-    getSheet_().appendRow([
-      d.time ? new Date(d.time) : new Date(),
-      clean_(d.student, 60), grade_(d.grade), secs, secs === '' ? '' : Math.round(secs / 6) / 10,
-      num_(d.sentences), num_(d.rootCount), clean_(d.rootWords, 500), num_(d.mistakes),
-      clean_(d.feedback, 3000), num_(d.checks), clean_(d.paragraph, 3500)
-    ]);
+    if (d.type === 'sentence') {
+      getSheet_('Sentences', S_HEADERS).appendRow([
+        d.time ? new Date(d.time) : new Date(), clean_(d.student, 60), clean_(d.activity, 40), clean_(d.task, 300),
+        clean_(d.key, 200), num_(d.level), clean_(d.text, 1500), d.passed ? 'Yes' : 'No', clean_(d.feedback, 3000)
+      ]);
+    } else {
+      const secs = num_(d.seconds);
+      getSheet_('Paragraphs', HEADERS).appendRow([
+        d.time ? new Date(d.time) : new Date(),
+        clean_(d.student, 60), grade_(d.grade), secs, secs === '' ? '' : Math.round(secs / 6) / 10,
+        num_(d.sentences), num_(d.rootCount), clean_(d.rootWords, 500), num_(d.mistakes),
+        clean_(d.feedback, 3000), num_(d.checks), clean_(d.paragraph, 3500)
+      ]);
+    }
   } finally {
     lock.releaseLock();
   }
   return text_('ok');
 }
 
-// Teacher dashboard reads: ?action=results&key=TEACHER_CODE
+// Dashboard reads: ?action=results&key=CODE
 function doGet(e) {
   const p = e.parameter || {};
-  if (!TEACHER_CODE || TEACHER_CODE === 'change-me') return json_({ error: 'setup', message: 'Set TEACHER_CODE in the Apps Script and deploy a new version.' });
-  if (p.key !== TEACHER_CODE) return json_({ error: 'code', message: 'That teacher code is not right.' });
-  return json_({ now: Date.now(), results: getRows_() });
+  if (!keyOK_(p.key)) return json_({ error: 'code', message: 'That teacher code is not right.' });
+  return json_({ now: Date.now(), results: getRows_(), sentences: getSentenceRows_() });
 }
 
-function setup() { getSheet_(); }
+function keyOK_(k) {
+  k = String(k || '').trim();
+  if (!k) return false;
+  if (TEACHER_CODE && TEACHER_CODE !== 'change-me' && k === TEACHER_CODE) return true;
+  const bytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, 'echols-room2:' + k, Utilities.Charset.UTF_8);
+  const hex = bytes.map(function (b) { return ('0' + (b & 255).toString(16)).slice(-2); }).join('');
+  return hex === CODE_HASH;
+}
+
+function setup() { getSheet_('Paragraphs', HEADERS); getSheet_('Sentences', S_HEADERS); }
 
 function getRows_() {
-  const sheet = getSheet_();
+  const sheet = getSheet_('Paragraphs', HEADERS);
   const n = sheet.getLastRow();
   if (n < 2) return [];
   return sheet.getRange(2, 1, n - 1, HEADERS.length).getValues().map(function (r) {
@@ -52,13 +72,23 @@ function getRows_() {
   });
 }
 
-function getSheet_() {
+function getSentenceRows_() {
+  const sheet = getSheet_('Sentences', S_HEADERS);
+  const n = sheet.getLastRow();
+  if (n < 2) return [];
+  return sheet.getRange(2, 1, n - 1, S_HEADERS.length).getValues().map(function (r) {
+    return { time: r[0] instanceof Date ? r[0].toISOString() : String(r[0]), student: String(r[1]), activity: String(r[2]),
+      task: String(r[3]), key: String(r[4]), level: r[5], text: String(r[6]), passed: r[7] === 'Yes', feedback: String(r[8]) };
+  });
+}
+
+function getSheet_(name, headers) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  let sheet = ss.getSheetByName('Paragraphs');
-  if (!sheet) sheet = ss.insertSheet('Paragraphs', 0);
+  let sheet = ss.getSheetByName(name);
+  if (!sheet) sheet = ss.insertSheet(name);
   if (sheet.getLastRow() === 0) {
-    sheet.appendRow(HEADERS);
-    sheet.getRange(1, 1, 1, HEADERS.length).setFontWeight('bold');
+    sheet.appendRow(headers);
+    sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold');
     sheet.setFrozenRows(1);
   }
   return sheet;
@@ -67,7 +97,7 @@ function getSheet_() {
 function text_(s) { return ContentService.createTextOutput(s); }
 function json_(o) { return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function num_(v) { return v === '' || v == null || isNaN(Number(v)) ? '' : Number(v); }
-function grade_(v) { const n = Math.round(Number(v)); return n >= 1 && n <= 3 ? n : ''; }
+function grade_(v) { const n = Math.round(Number(v)); return n >= 1 && n <= 4 ? n : ''; }
 // Keeps text short and stops anything a student types from acting like a formula.
 function clean_(v, max) {
   let s = String(v == null ? '' : v).slice(0, max || 500);
