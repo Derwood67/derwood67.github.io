@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Darren Echols · Educator and Learning Designer</title>
+<meta name="description" content="Darren Echols is a North Carolina 4th and 5th grade teacher who designs and builds standards-aligned interactive learning tools.">
+<meta property="og:title" content="Darren Echols · Educator and Learning Designer">
+<meta property="og:description" content="Standards-aligned interactive learning tools, built for real classrooms.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#f4f6f8;--surface:#fff;--ink:#14213a;--muted:#55627a;--line:#dde3ea;--accent:#1f5fbf;--accent-ink:#fff;--pencil:#f2b705;
+    --ela:#7a3fb0;--math:#1f5fbf;--sci:#0f8a5f;--tool:#475569;
+    --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;--body:"Source Sans 3","Segoe UI",system-ui,sans-serif}
+  @media (prefers-color-scheme:dark){:root{--bg:#0e1524;--surface:#162036;--ink:#e8edf6;--muted:#9fb0c9;--line:#26324b;--accent:#6ea2ff;--accent-ink:#0e1524;--pencil:#f5c842;
+    --ela:#b48ae0;--math:#6ea2ff;--sci:#4cc79a;--tool:#9fb0c9}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 var(--body)}
+  a{color:var(--accent)}
+  :focus-visible{outline:3px solid var(--pencil);outline-offset:2px}
+  .wrap{max-width:1040px;margin:0 auto;padding:0 24px}
+  header.top{display:flex;justify-content:space-between;align-items:center;padding:22px 0}
+  .mark{font-family:var(--display);font-weight:800;font-size:1.15rem;text-decoration:none;color:var(--ink);letter-spacing:-.01em}
+  .mark span{color:var(--pencil)}
+  nav a{margin-left:20px;color:var(--muted);text-decoration:none;font-weight:600}
+  nav a:hover{color:var(--ink)}
+  @media (max-width:620px){nav a:not(.btn){display:none}}
+  .hero{padding:56px 0 64px;display:grid;grid-template-columns:1.4fr 1fr;gap:48px;align-items:center}
+  @media (max-width:820px){.hero{grid-template-columns:1fr;padding-top:24px}}
+  .eyebrow{font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:.8rem;color:var(--accent)}
+  h1{font-family:var(--display);font-size:clamp(2.4rem,6vw,3.8rem);line-height:1.02;margin:.25em 0 .35em;letter-spacing:-.02em;text-wrap:balance}
+  h1 em{font-style:normal;background:linear-gradient(transparent 62%,color-mix(in srgb,var(--pencil) 55%,transparent) 62%)}
+  .lead{font-size:1.2rem;color:var(--muted);max-width:36em;margin:0 0 28px}
+  .btns{display:flex;gap:12px;flex-wrap:wrap}
+  .btn{display:inline-block;padding:12px 22px;border-radius:999px;font-weight:700;text-decoration:none;border:2px solid var(--accent)}
+  .btn.primary{background:var(--accent);color:var(--accent-ink)}
+  .btn.ghost{color:var(--accent);background:transparent}
+  .stats{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:26px;display:grid;gap:18px}
+  .stat b{display:block;font-family:var(--display);font-size:2.4rem;line-height:1}
+  .stat span{color:var(--muted)}
+  section{padding:56px 0;border-top:1px solid var(--line)}
+  h2{font-family:var(--display);font-size:2rem;margin:0 0 8px;letter-spacing:-.01em}
+  .sub{color:var(--muted);margin:0 0 28px;max-width:40em}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px;display:flex;flex-direction:column}
+  .card h3{font-family:var(--display);font-size:1.25rem;margin:8px 0 6px}
+  .card p{margin:0 0 14px;color:var(--muted)}
+  .card a.go{margin-top:auto;font-weight:700;text-decoration:none}
+  .tag{align-self:flex-start;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:3px 10px;border-radius:999px;color:#fff}
+  .t-ela{background:var(--ela)}.t-math{background:var(--math)}.t-sci{background:var(--sci)}.t-tool{background:var(--tool)}
+  @media (prefers-color-scheme:dark){.tag{color:#0e1524}}
+  .skills{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:22px}
+  .skills h3{font-family:var(--display);font-size:1.1rem;margin:0 0 6px}
+  .skills p{margin:0;color:var(--muted)}
+  .contact{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:32px;display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap}
+  .contact h2{margin:0}
+  footer{padding:28px 0 40px;color:var(--muted);font-size:.9rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="mark" href="/">Darren Echols<span>.</span></a>
+    <nav aria-label="Main"><a href="#about">About</a><a href="#work">Work</a><a href="#skills">Skills</a><a href="/portfolio/">Portfolio</a></nav>
+  </header>
+
+  <main>
+    <div class="hero">
+      <div>
+        <div class="eyebrow">Educator · Learning designer · Builder</div>
+        <h1>I turn real classroom problems into <em>tools that work.</em></h1>
+        <p class="lead">I'm Darren Echols, a 4th and 5th grade teacher in North Carolina. I design and build interactive learning tools that start from a state standard and a real need: which students need more practice, who is ready to move on, and what the teacher needs to see.</p>
+        <div class="btns">
+          <a class="btn primary" href="/portfolio/">See the portfolio</a>
+          <a class="btn ghost" href="#contact">Get in touch</a>
+        </div>
+      </div>
+      <div class="stats" aria-label="At a glance">
+        <div class="stat"><b>39</b><span>interactive tools built and used with students</span></div>
+        <div class="stat"><b>4</b><span>core subjects: reading, writing, math and science</span></div>
+        <div class="stat"><b>NCDPI</b><span>every tool mapped to the NC Standard Course of Study</span></div>
+      </div>
+    </div>
+
+    <section id="about">
+      <h2>About</h2>
+      <p class="sub">I teach a combined 4th and 5th grade class in Mr. Echols' Room 2. When the resources I had didn't fit my students, I started building my own: reading apps for the novels we study, fraction games that lock the next level until a student shows mastery, writing tools that give instant feedback on tense and punctuation, and dashboards that show me exactly where each student stands.</p>
+      <p class="sub">The work sits where teaching, instructional design and product thinking meet. I plan from the standard, design for the student who is struggling and the one who is ahead, test with real kids, and keep improving from what the data shows.</p>
+    </section>
+
+    <section id="work">
+      <h2>Selected work</h2>
+      <p class="sub">A few highlights. The <a href="/portfolio/">full portfolio</a> has every tool, and each one opens a working version.</p>
+      <div class="grid">
+        <article class="card"><span class="tag t-ela">Reading</span><h3>Word Parts Workshop</h3><p>Prefixes, suffixes and Greek and Latin roots, with a word builder, quizzes, leveled sentence writing with grammar feedback, and a bingo game.</p><a class="go" href="/word-parts/">Open it →</a></article>
+        <article class="card"><span class="tag t-ela">Reading</span><h3>The Egypt Game: Chapter Quest</h3><p>A chapter-by-chapter novel study on text structure, point of view and main idea, with summaries, locked quizzes and a teacher dashboard.</p><a class="go" href="/egypt-game/">Open it →</a></article>
+        <article class="card"><span class="tag t-math">Math</span><h3>Fraction Summit</h3><p>A mastery-based fractions climb for NC.4.NF.1 and NC.5.NF.1. Each section is gated by a quiz, with a short lesson after a miss.</p><a class="go" href="/fraction-summit/">Open it →</a></article>
+        <article class="card"><span class="tag t-math">Math</span><h3>Frog Hop Fractions</h3><p>A playful number-line game that teaches students to build and use fraction models.</p><a class="go" href="/frog-hop-fractions/">Open it →</a></article>
+        <article class="card"><span class="tag t-ela">Writing</span><h3>Paragraph Quest</h3><p>Students get a unique writing prompt, write three paragraphs and receive standards-based red-pen feedback right away.</p><a class="go" href="/paragraph-quest/">Open it →</a></article>
+        <article class="card"><span class="tag t-tool">Teacher tool</span><h3>Text Analyzer</h3><p>A teacher reference that breaks a book down into summary, structure, theme, point of view, characters and setting.</p><a class="go" href="/text-analyzer/">Open it →</a></article>
+      </div>
+    </section>
+
+    <section id="skills">
+      <h2>What I bring</h2>
+      <p class="sub">Skills that carry over to instructional design, curriculum, education technology and training roles.</p>
+      <div class="skills">
+        <div><h3>Curriculum and standards</h3><p>Planning backward from state standards, writing aligned assessments and building mastery-based learning paths.</p></div>
+        <div><h3>Instructional design</h3><p>Turning learning goals into interactive practice, adaptive questions and clear, immediate feedback.</p></div>
+        <div><h3>Data for decisions</h3><p>Dashboards, score-by-standard reports and progress tracking that show who needs what next.</p></div>
+        <div><h3>Every learner</h3><p>Intervention groups, AIG extension work, read-aloud voices and offline and bilingual versions.</p></div>
+        <div><h3>Building with technology</h3><p>Web-based tools published on GitHub Pages and delivered to students through Google Classroom.</p></div>
+        <div><h3>Communication</h3><p>Daily work with students, families and colleagues, and shared tools that other teachers use with their own classes.</p></div>
+      </div>
+    </section>
+
+    <section id="contact" style="border-top:0">
+      <div class="contact">
+        <div><h2>Let's talk</h2><p class="sub" style="margin:6px 0 0">Open to conversations about instructional design, curriculum and education technology roles.</p></div>
+        <div class="btns"><a class="btn primary" href="https://github.com/derwood67">GitHub</a><a class="btn ghost" href="/portfolio/">Portfolio</a></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>© <span id="yr">2026</span> Darren Echols · darrenechols.com</footer>
+</div>
+<script>document.getElementById('yr').textContent=new Date().getFullYear()</script>
+</body>
+</html>
