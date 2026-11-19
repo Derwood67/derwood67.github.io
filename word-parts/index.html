@@ -2001,8 +2001,8 @@ const lineWords=wins=>[...new Set(wins.map(l=>l.name))].join(' and ');
 
 /* ---------- Monifa, the game show host (reads the bingo calls aloud) ---------- */
 // Uses the browser's built-in voices, so nothing is sent anywhere. A higher pitch and a
-// slightly quick, bouncy pace make an adult female voice sound like a 10-year-old girl.
-const HOST={pitch:1.75,rate:1.08,last:'',key:'wpw-monifa'};
+// slightly quick, bouncy pace make an adult female voice sound like a 14-year-old girl.
+const HOST={pitch:1.35,rate:1.04,last:'',key:'wpw-monifa'};
 let HOST_PREF={on:true,voice:''};
 try{HOST_PREF=Object.assign(HOST_PREF,JSON.parse(localStorage.getItem(HOST.key))||{})}catch(e){}
 const hostSave=()=>{try{localStorage.setItem(HOST.key,JSON.stringify(HOST_PREF))}catch(e){}};
