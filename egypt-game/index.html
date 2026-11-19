@@ -136,6 +136,7 @@ td .cell{display:inline-block;min-width:34px;border-radius:7px;padding:2px 5px;f
 #cg-badge{position:fixed;right:10px;bottom:10px;z-index:2147482000;background:#1b2430;color:#fff;font:600 14px/1.2 system-ui,-apple-system,"Segoe UI",Arial,sans-serif;border-radius:999px;padding:7px 8px 7px 14px;display:flex;gap:10px;align-items:center;box-shadow:0 3px 10px rgba(0,0,0,.25)}
 #cg-badge button{font:inherit;background:#f2c230;color:#1b1b1b;border:0;border-radius:999px;padding:4px 10px;cursor:pointer}
 </style>
+<script src="realwords.js"></script>
 <script>
 (function(){
   var BLOCKED=[];          /* first names that may not use this app */
@@ -216,7 +217,9 @@ function load(){try{const d=JSON.parse(localStorage.getItem(KEY));if(d&&d.studen
 function save(){try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){}}
 function shuf(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 function order(k,opts){return ord[k]||(ord[k]=shuf(opts))}
-const words=t=>(String(t||"").trim().match(/\S+/g)||[]).length;
+const words=t=>window.RealWords?RealWords.countReal(t):(String(t||"").trim().match(/\S+/g)||[]).length; /* only real words count */
+const fakes=t=>window.RealWords?RealWords.problems(t):[];
+const fakeList=t=>fakes(t).map(x=>"<li>"+esc(x)+"</li>").join("");
 const stu=()=>db.students[me];
 function rec(s,n){s.ch=s.ch||{};return s.ch[n]||(s.ch[n]={sk:[null,null,null,null,null,null],sum:{},qz:{}})}
 function status(s,n){const r=(s.ch||{})[n];if(!r)return{sk:0,skOk:0,sum:false,qz:null,done:false};
@@ -278,7 +281,8 @@ function vChapter(){const n=view.n,c=C[n-1],s=stu(),r=rec(s,n),st=status(s,n);
     <label for="sum">My summary of “${esc(c.t)}”</label>
     <textarea id="sum" spellcheck="true">${esc(t)}</textarea>
     <div class="row" style="justify-content:space-between;margin-top:10px"><span class="count${w>=MINW?" good":""}" id="wc">${w} words${w>=MINW?" ✓":" (need "+MINW+")"}</span>
-    <button class="btn" id="turnin" data-act="turnin" ${w>=MINW?"":"disabled"}>${r.sum.at?"Turn in again":"Turn in"}</button></div>
+    <button class="btn" id="turnin" data-act="turnin" ${w>=MINW&&!fakes(t).length?"":"disabled"}>${r.sum.at?"Turn in again":"Turn in"}</button></div>
+    <ul class="fb no" id="fakes" ${fakes(t).length?"":"hidden"} style="margin-top:8px">${fakeList(t)}</ul>
     ${r.sum.at?`<div class="fb ok">Your summary was turned in. You can fix it and turn it in again.${r.sum.score?" Your teacher's score: <b>"+r.sum.score+" out of 4</b>.":""}</div>`:""}</div>
     ${r.sum.at?`<div class="row" style="margin-top:14px"><button class="btn gold" data-act="tab" data-t="quiz">Next: take the quiz</button></div>`:""}`;
   }else{
@@ -346,7 +350,8 @@ document.addEventListener("submit",e=>{e.preventDefault();const f=e.target.datas
   if(f==="gate"){ClassGate.checkCode($("#code").value).then(r=>{if(r==="ok"){teacher=true;me=null;go({name:"dash"})}else{$("#msg").textContent=ClassGate.codeMsg(r);$("#code").value=""}})}
 });
 document.addEventListener("input",e=>{if(e.target.id==="sum"){view.draft=e.target.value;const w=words(view.draft),el=$("#wc");
-  el.textContent=w+" words"+(w>=MINW?" ✓":" (need "+MINW+")");el.className="count"+(w>=MINW?" good":"");$("#turnin").disabled=w<MINW;
+  el.textContent=w+" words"+(w>=MINW?" ✓":" (need "+MINW+")");el.className="count"+(w>=MINW?" good":"");const fk=fakes(view.draft),ul=$("#fakes");$("#turnin").disabled=w<MINW||fk.length>0;
+  if(ul){ul.innerHTML=fakeList(view.draft);ul.hidden=!fk.length}
   const r=rec(stu(),view.n);r.sum.draft=view.draft;save()}});
 document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(!b)return;const a=b.dataset.act,d=b.dataset;
   if(a==="signout"){me=null;teacher=false;ord={};return go({name:"signin"})}
@@ -360,7 +365,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(
   const c=view.n?C[view.n-1]:null;
   if(a==="skpick"){view.sel[d.i]=order(view.n+"s"+d.i,c.sk[d.i].slice(1,5))[d.j];return render()}
   if(a==="skcheck"){const i=+d.i,p=view.sel[i];if(p==null)return;const r=rec(stu(),view.n);if(!r.sk[i]){r.sk[i]={p,ok:p===c.sk[i][1],at:Date.now()};save()}return render()}
-  if(a==="turnin"){const t=$("#sum").value.trim();if(words(t)<MINW)return;const r=rec(stu(),view.n);
+  if(a==="turnin"){const t=$("#sum").value.trim();if(words(t)<MINW||fakes(t).length)return;const r=rec(stu(),view.n);
     const changed=r.sum.text!==t;r.sum.text=t;r.sum.at=Date.now();delete r.sum.draft;if(changed)delete r.sum.score;view.draft=null;save();return render()}
   if(a==="qstart"){view.quiz={id:Date.now(),order:shuf(c.qz.map((_,i)=>i)),i:0,sel:null,ans:null,res:[],missed:[],score:0,done:false};render();window.scrollTo(0,0);return}
   const z=view.quiz;

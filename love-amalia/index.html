@@ -181,6 +181,7 @@ nav button[aria-selected="true"]{background:var(--blue);border-color:var(--blue)
   <section id="tab-progress" class="panel hidden"></section>
 </main>
 
+<script src="realwords.js"></script>
 <script>
 /* ---------- storage (per student, on this device) ---------- */
 const KEY = "loveAmalia.v1";
@@ -358,6 +359,7 @@ function checkSentences(text, minSentences){
   if(/(^|[^\p{L}'])i(?=$|[^\p{L}])/u.test(t)) issues.push("Capitalize the word \"I.\"");
   if(/\s[.!?,]/.test(t)) issues.push("Don't put a space before a punctuation mark.");
   if(parts.length < minSentences) issues.push("Write at least " + minSentences + " complete sentences.");
+  if(window.RealWords) RealWords.problems(t).forEach(x => issues.push(x));   // no made-up words
   return issues;
 }
 
@@ -519,7 +521,8 @@ const CHECKS = [
  ["I told the problem (Martha moving away).", t => /martha/i.test(t)],
  ["I included Abuelita and what happens to her.", t => /abuelita|grandmother|grandma/i.test(t)],
  ["I told how the story ends.", t => /letter|writes?|wrote|writing|box/i.test(t)],
- ["My summary is 5 to 8 sentences long.", t => { const n = sentences(t); return n >= 5 && n <= 8; }]
+ ["My summary is 5 to 8 sentences long.", t => { const n = sentences(t); return n >= 5 && n <= 8; }],
+ ["Every word is a real word, spelled correctly.", t => !!t.trim() && (!window.RealWords || RealWords.nonWords(t).length === 0)]
 ];
 const words = t => (t.trim().match(/\S+/g) || []).length;
 const sentences = t => (t.match(/[^.!?]+[.!?]+/g) || []).length;

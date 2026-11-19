@@ -154,6 +154,7 @@ mark.great sup{color:var(--ok)} mark.almost sup{color:var(--warn)}
 <div id="modalRoot"></div>
 <div id="toastRoot"></div>
 
+<script src="realwords.js"></script>
 <script>
 /* ---------------- data ---------------- */
 const FONTS=[
@@ -313,6 +314,11 @@ function grade(texts,P){
       else if(SPELL[low]&&!(low==='lets'&&/\blets\s+(us|me|him|her|them)\b/i.test(text.slice(m.index,m.index+12))))
         add({...at(m.index,m[0].length),type:'fix',cat:'conv',kind:'spell',title:SPELL[low].includes("'")?'Contraction needs an apostrophe':'Spelling',suggestion:low==='im'||low==='ive'?SPELL[low]:caseLike(m[0],SPELL[low]),why:SPELL[low].includes("'")?`A contraction squeezes two words together. The apostrophe shows where letters were left out: "${SPELL[low]}."`:`This word is spelled "${SPELL[low]}." Try saying it slowly in parts and checking a word wall or dictionary.`,std:`L.${g}.2${g==4?'d':'e'}`});
     }
+    // made-up words and misspellings that are not real words
+    if(window.RealWords)for(const b of RealWords.nonWords(text)){
+      const low=b.word.toLowerCase();if(IRREG[low]||SPELL[low])continue;
+      add({...at(b.start,b.word.length),type:'fix',cat:'conv',kind:'spell',title:'Not a real word',suggestion:b.suggest?caseLike(b.word,b.suggest):'',why:b.suggest?`"${b.word}" is not a real word. Did you mean "${b.suggest}"? Check the spelling.`:`"${b.word}" is not a real word. Use real words that make sense, and check the spelling.`,std:`L.${g}.2${g==4?'d':'e'}`});
+    }
     // lowercase i
     for(const m of text.matchAll(/(?<![\w'’])i(?:'m|'ve|'ll|'d|’m|’ve|’ll|’d)?(?![\w'’])/g))
       add({...at(m.index,m[0].length),type:'fix',cat:'conv',kind:'cap',title:'Capitalize "I"',suggestion:'I'+m[0].slice(1),why:'When you write about yourself, the word "I" is always a capital letter, even in the middle of a sentence.',std:`L.${g}.2a`});
@@ -450,7 +456,7 @@ function grade(texts,P){
       else S('concl',{type:'almost',title:P.genre==='opinion'?'Restate your opinion':'Restate your main idea',why:'Remind the reader of your main idea from the introduction, using new words.',std:gs+'d'});
     }
   }
-  return {issues,trans:TRANSITIONS.filter(t=>new RegExp('\\b'+t+'\\b').test(all)).length,words:wordsOf(all).length};
+  return {issues,trans:TRANSITIONS.filter(t=>new RegExp('\\b'+t+'\\b').test(all)).length,words:window.RealWords?RealWords.countReal(all):wordsOf(all).length};
 }
 
 function score(res,P){

@@ -637,6 +637,7 @@ label.help{font-weight:700}
 
 <div id="print-area"></div>
 
+<script src="realwords.js"></script>
 <script src="config.js"></script>
 <script>
 const KIND={prefix:'Prefix',suffix:'Suffix',greek:'Greek root',latin:'Latin root'};
@@ -1109,7 +1110,7 @@ function usesPart(p,text){
 function checkOne(p,raw){
   const t=raw.replace(/[‘’]/g,"'").replace(/[“”]/g,'"').trim();
   if(!t)return ['Write a sentence first.'];
-  const out=[],n=(t.match(/[A-Za-z][A-Za-z'-]*/g)||[]).length;
+  const out=[],n=realCount(t);
   if(splitSentences(t).length>1)out.push('Write just one sentence here.');
   if(n<5)out.push('Add more detail. Use at least 5 words.');
   sentenceIssues(t).forEach(x=>{if(!(n<5&&/very short/.test(x.msg)))out.push(x.msg)});
@@ -1477,6 +1478,7 @@ function findRoots(text){
   const found=new Set();
   (text.toLowerCase().match(/[a-z][a-z'-]*/g)||[]).forEach(tok=>{
     const w=tok.replace(/[^a-z]/g,'');let best=null;
+    if(window.RealWords&&!RealWords.isWord(tok))return; /* made-up words do not count as root words */
     BANK.forEach(b=>{if(w.includes(b.stem)&&(!best||b.stem.length>best.stem.length))best=b});
     if(best)found.add(best.word);
   });
@@ -1490,6 +1492,7 @@ function sentenceIssues(t){
   const out=[],add=(cat,msg)=>{if(!out.some(x=>x.msg===msg))out.push({cat,msg})};
   const words=(t.match(/[A-Za-z][A-Za-z'-]*/g)||[]).map(w=>w.replace(/['-]+$/,''));
   const low=words.map(w=>w.toLowerCase());
+  if(window.RealWords)RealWords.problems(t).filter(x=>!/over and over/.test(x)).forEach(x=>add('spell',x));
   if(!/^["'(]?[A-Z0-9]/.test(t))add('cap','Start this sentence with a capital letter.');
   if(!/[.?!]["')]*$/.test(t))add('end','End this sentence with a period, question mark, or exclamation point.');
   else if(/[.?!]{2,}["')]*$/.test(t))add('end','Use only one punctuation mark at the end.');
@@ -1719,9 +1722,14 @@ function helperVerbs(t){
   return out;
 }
 function gradeOf(sentences,roots,mistakes){return sentences>=5&&roots>=5&&mistakes<=1?3:sentences>=5&&roots>=3&&mistakes<=4?2:1}
+function realCount(t){return window.RealWords?RealWords.countReal(t):(t.match(/[A-Za-z][A-Za-z'-]*/g)||[]).length}
+/* a sentence counts only if most of its words are real words */
+function realSentence(x){const all=(x.match(/[A-Za-z0-9][A-Za-z0-9'-]*/g)||[]).length;return all>=3&&realCount(x)/all>=0.8}
 function checkParagraph(raw){
   const text=raw.replace(/[‘’]/g,"'").replace(/[“”]/g,'"').trim();
   const sents=splitSentences(text),fixes=[],tips=[],goods=[];
+  const realN=sents.filter(realSentence).length;
+  if(realN<sents.length)fixes.push({n:0,cat:'spell',msg:(sents.length-realN)+' of your sentences use made-up words, so they do not count. Write real words that make sense.'});
   sents.forEach((x,i)=>sentenceIssues(x).forEach(y=>fixes.push({n:i+1,cat:y.cat,msg:y.msg})));
   if(/\n\s*\S/.test(text))fixes.push({n:0,cat:'other',msg:'Keep all your sentences together in one paragraph. Do not press Enter between sentences.'});
   if(/\S {2,}\S/.test(text))fixes.push({n:0,cat:'other',msg:'Use only one space between words.'});
@@ -1733,14 +1741,15 @@ function checkParagraph(raw){
   Object.keys(starts).forEach(w=>{if(starts[w]>=3)tips.push(starts[w]+' of your sentences start with "'+w[0].toUpperCase()+w.slice(1)+'." Try starting some of them a different way.')});
   sents.forEach((x,i)=>{const m=x.match(/^(And|But|So)\b/);if(m)tips.push('Sentence '+(i+1)+' starts with "'+m[1]+'." Try joining it to the sentence before it.')});
   const has=c=>fixes.some(f=>f.cat===c);
-  if(sents.length>=5)goods.push('You wrote '+sents.length+' sentences.');
+  if(realN>=5)goods.push('You wrote '+realN+' sentences.');
+  if(sents.length&&!has('spell'))goods.push('Every word is a real word.');
   if(roots.length>=5)goods.push('You used '+roots.length+' root words.');
   if(sents.length&&!has('cap'))goods.push('Your capital letters are correct.');
   if(sents.length&&!has('end'))goods.push('Every sentence has an end mark.');
   if(sents.length>=3&&!has('agree'))goods.push('Your subjects and verbs agree.');
   if(sents.length>=3&&!has('tense'))goods.push('Your verb tenses match.');
   if(sents.length>=3&&!has('comma')&&!has('end'))goods.push('Your commas and end marks are in the right places.');
-  return {sents,count:sents.length,roots,fixes,tips,goods,grade:gradeOf(sents.length,roots.length,fixes.length)};
+  return {sents,count:realN,roots,fixes,tips,goods,grade:gradeOf(realN,roots.length,fixes.length)};
 }
 //--CHECK END--
 
@@ -1883,10 +1892,10 @@ function lCount(){
 function lCheck(raw){
   const lv=LADDER[L.lvl],t=raw.replace(/[‘’]/g,"'").replace(/[“”]/g,'"').replace(/\s+/g,' ').trim(),out=[];
   if(!t)return ['Write your sentence first.'];
-  const sents=splitSentences(t),n=(t.match(/[A-Za-z][A-Za-z'-]*/g)||[]).length,low=(t.toLowerCase().match(/[a-z]+/g)||[]);
+  const sents=splitSentences(t),n=realCount(t),low=(t.toLowerCase().match(/[a-z]+/g)||[]);
   if(sents.length<lv.sents[0])out.push('Write '+lv.sents[0]+' sentences for this level. I count '+sents.length+'.');
   if(sents.length>lv.sents[1])out.push(lv.sents[1]===1?'Write just one sentence for this level. I count '+sents.length+'.':'Write no more than '+lv.sents[1]+' sentences for this level. I count '+sents.length+'.');
-  if(n<lv.min)out.push('Add more detail. Use at least '+lv.min+' words. You have '+n+'.');
+  if(n<lv.min)out.push('Add more detail. Use at least '+lv.min+' real words. You have '+n+'.');
   L.words.forEach(w=>{if(!usesWord(w,low))out.push('Use the word "'+w+'." It means '+wordObj(w).def+'.')});
   if(lv.join&&!JOIN.test(t))out.push('Use a joining word like and, but, so, because, or when.');
   sents.forEach((x,i)=>sentenceIssues(x).forEach(y=>{
