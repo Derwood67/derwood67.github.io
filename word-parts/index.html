@@ -1065,8 +1065,13 @@ const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(M
 const kindOf=p=>p.id?BY_ID[p.id].kind:'base';
 // prefix tiles show "dis-", suffix tiles show "-able", so students can see where each part goes
 const tileText=(text,kind)=>kind==='prefix'?text+'-':kind==='suffix'?'-'+text:text;
-let stars=0;
-function addStar(){stars++;$('#stars').textContent=stars}
+let stars=0,lastStar=0,starRound=0;const starKeys=new Set();
+/* one star per finished game: each key earns a star only once, and fast repeats (holding Enter) earn nothing */
+function addStar(key){
+  const now=Date.now();if(now-lastStar<1500)return;
+  if(key){if(starKeys.has(key))return;starKeys.add(key)}
+  lastStar=now;stars++;$('#stars').textContent=stars;
+}
 
 function breakdownHTML(word){
   return word.parts.map(p=>{
@@ -1152,7 +1157,7 @@ function sCheck(card){
   ul.innerHTML=issues.map(x=>'<li>'+esc(x)+'</li>').join('');ul.hidden=ok;
   card.querySelector('.okmark').hidden=!ok;ta.classList.toggle('passed',ok);
   if(ok&&!card.querySelector('.done'))card.querySelector('.kind').insertAdjacentHTML('beforeend','<span class="done">✓ Sentence written</span>');
-  if(ok)addStar();
+  if(ok)addStar('sent-'+p.id);
   updateLock();
   const n=PARTS.filter(x=>sDone(x.id)).length;
   $('#ex-count').textContent=$('#ex-count').textContent.replace(/You have written .*$/,'You have written '+n+' sentence'+(n===1?'':'s')+'.');
@@ -1245,7 +1250,7 @@ function checkBuild(){
   if(B.slots.includes(null))return;
   const made=B.slots.map(i=>B.tiles[i].text).join('');
   if(made===B.word.w){
-    B.solved=true;addStar();
+    B.solved=true;addStar('build-'+(++starRound));
     if(!B.hinted){PROG.built=(PROG.built||0)+1;pSave();updateLock()}
     setMsg('#b-msg','Yes! You built "'+B.word.w+'."','good');
     const bd=$('#b-break');bd.innerHTML=breakdownHTML(B.word);bd.hidden=false;
@@ -1308,6 +1313,7 @@ function startQuiz(){
   newQuestion();tally();
 }
 function finishQuiz(){
+  if(!Q.done){lastStar=0;addStar('quiz-'+(++starRound))}
   Q.done=true;
   const pct=Q.right/Q.len;
   $('#q-count').textContent='Quiz complete';
@@ -1361,7 +1367,7 @@ $('#q-opts').addEventListener('click',e=>{
   const b=e.target.closest('.opt');if(!b||b.disabled)return;
   const q=Q.cur,ok=b.textContent===q.answer;
   Q.tried++;
-  if(ok){Q.right++;Q.streak++;addStar()}else{
+  if(ok){Q.right++;Q.streak++}else{
     Q.streak=0;
     const m=q.type==='part'?{text:q.p.label,kind:q.p.kind,meaning:q.p.meaning}:{text:q.w.w,kind:'base',meaning:q.w.def};
     if(!Q.missed.some(x=>x.text===m.text))Q.missed.push(m);
@@ -1816,7 +1822,7 @@ $('#w-turnin').addEventListener('click',()=>{
     rootCount:r.roots.length,rootWords:r.roots.join(', '),mistakes:r.fixes.length,
     feedback:r.fixes.map(f=>(f.n?'Sentence '+f.n:'Paragraph')+': '+f.msg).join(' | '),checks:W.checks,paragraph:W.text.trim()});
   W.pending=W.pending.slice(-5);
-  addStar();wSave();wShowSent();wFlush();updateLock();
+  addStar('para-'+W.text.toLowerCase().replace(/[^a-z]/g,''));wSave();wShowSent();wFlush();updateLock();
   $('#w-sent').scrollIntoView({block:'nearest'});
 });
 $('#w-copy').addEventListener('click',()=>{
@@ -1908,14 +1914,14 @@ function lCheck(raw){
   return [...new Set(out)];
 }
 $('#l-text').addEventListener('input',e=>{L.text=e.target.value;lSave();lWords();lCount()});
-$('#l-text').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&LADDER[L.lvl].sents[1]===1){e.preventDefault();$('#l-check').click()}});
+$('#l-text').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.repeat){e.preventDefault();return}if(e.key==='Enter'&&!e.shiftKey&&LADDER[L.lvl].sents[1]===1){e.preventDefault();$('#l-check').click()}});
 $('#l-check').addEventListener('click',()=>{
   L.tries++;
   const issues=lCheck(L.text),ul=$('#l-issues'),lv=LADDER[L.lvl];
   ul.innerHTML=issues.map(x=>'<li>'+esc(x)+'</li>').join('');ul.hidden=!issues.length;
   if(issues.length){setMsg('#l-msg',issues.length===1?'Almost! Fix this one thing:':'Fix these '+issues.length+' things, then check again:','bad');lSave();return}
   L.log.push({lvl:L.lvl,text:L.text.replace(/\s+/g,' ').trim(),first:L.tries===1,d:Date.now()});L.log=L.log.slice(-200);
-  addStar();if(L.tries===1)addStar();
+  addStar('ladder-'+L.log.length);
   L.streak++;let msg=(L.tries===1?'Perfect on the first try! ':'Nice fixing! ')+'Your writing is correct.';
   if(L.streak>=lv.up){
     if(L.lvl<LADDER.length-1){L.lvl++;L.max=Math.max(L.max,L.lvl);msg='Level up! You are ready for Level '+(L.lvl+1)+': '+LADDER[L.lvl].name+'.'}
@@ -2199,9 +2205,10 @@ $('#bp-grid').addEventListener('click',e=>{
   BP.marks=had?BP.marks.filter(x=>x!==i):BP.marks.concat(i);bpSave();
   const before=winLines(new Set([12,...BP.marks.filter(x=>x!==i)])).length;
   bpRender();
-  if(!had&&!before&&winLines(new Set([12,...BP.marks])).length)addStar();
+  if(!had&&!before&&winLines(new Set([12,...BP.marks])).length)addStar('bingo-'+(BP.card||'')+'-'+bingoGame);
 });
-$('#bp-clear').addEventListener('click',()=>{BP.marks=[];bpSave();bpRender()});
+let bingoGame=0;
+$('#bp-clear').addEventListener('click',()=>{bingoGame++;BP.marks=[];bpSave();bpRender()});
 $('#bp-code').value=BP.code||'';$('#bp-card').value=BP.card||'';
 bgMode(BG_MODE);bgRender();bpRender();
 
