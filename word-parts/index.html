@@ -404,7 +404,7 @@ label.help{font-weight:700}
         </section>
         <section class="tsec">
           <h3>Word Parts Bingo</h3>
-          <p class="help">Calling the game is for you only. Students see only “Play on screen.” The caller stays open on this computer until you lock the teacher tools or close the browser.</p>
+          <p class="help">Anyone can open Bingo and choose “Play on screen” or “Call the game,” so a student can run a game for a group.</p>
           <div class="row"><button class="btn sm" type="button" id="t-call">Call a bingo game</button></div>
         </section>
         <section class="tsec">
@@ -634,7 +634,7 @@ label.help{font-weight:700}
     <div class="row">
       <div class="seg" id="bg-mode">
         <button data-mode="play" aria-pressed="true">Play on screen</button>
-        <button data-mode="teacher" aria-pressed="false" id="bg-callbtn" hidden>Call the game (teacher)</button>
+        <button data-mode="teacher" aria-pressed="false" id="bg-callbtn">Call the game (teacher)</button>
       </div>
     </div>
 
@@ -2284,8 +2284,6 @@ if(!BG||!parseCode(BG.code)||!Array.isArray(BG.called))bgNew('PSGL');
 BG_PEND=parseCode(BG.code).letters;
 
 function bgMode(m){
-  if(m==='teacher'&&!T.on())m='play';
-  $('#bg-callbtn').hidden=!T.on();
   BG_MODE=m;try{localStorage.setItem(BM_KEY,m)}catch(e){}
   document.querySelectorAll('#bg-mode button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.mode===m));
   $('#bg-play').hidden=m!=='play';$('#bg-teacher').hidden=m!=='teacher';
