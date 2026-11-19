@@ -1163,11 +1163,43 @@ try{SENT=JSON.parse(localStorage.getItem(S_KEY))||{}}catch(e){}
 function sSave(){try{localStorage.setItem(S_KEY,JSON.stringify(SENT))}catch(e){}}
 const sDone=id=>!!(SENT[id]&&SENT[id].done);
 function variants(p){return p.label.replace(/\(.*?\)/g,'').split('/').map(v=>v.trim().replace(/^-|-$/g,'').toLowerCase()).filter(Boolean)}
+// Words that look like they use a prefix or suffix but do not (uncle is not un + cle).
+const NOT_PART=new Set('really realize reason region ready reach repeat uncle under understand union unit unique universe until uniform discuss disk dish distance district inch insect interest press prey present pretty price butter flower early corner tower power dinner hammer summer supper letter better bitter matter batter ladder river never water paper finger sister brother mother father other over after winter number family only ugly belly jelly holly silly bully'.split(' '));
+const RW=w=>!window.RealWords||RealWords.isWord(w);
+// Plain forms of a word: teachers -> teacher, unlocked -> unlock, happier -> happy
+function plainForms(w){
+  const f=[w];
+  [['ies','y'],['ied','y'],['ier','y'],['iest','y'],['es',''],['s',''],['ed',''],['ed','e'],['d',''],['ing',''],['ing','e']].forEach(([a,b])=>{
+    if(w.length>a.length+2&&w.endsWith(a)){const x=w.slice(0,-a.length)+b;f.push(x);if(/([bdgmnprt])\1$/.test(x))f.push(x.slice(0,-1))}
+  });
+  return f;
+}
+// Is this real word truly built with word part p? (unhappy uses un-, uncle does not)
+function partWordOK(p,w){
+  if(!RW(w)||plainForms(w).some(x=>NOT_PART.has(x)))return false;
+  const known=new Set((USE[p.id]||[]).concat(p.ex.map(e=>e.replace(/[\[\]]/g,'').toLowerCase())));
+  if(plainForms(w).some(x=>known.has(x)))return true;
+  return variants(p).some(v=>plainForms(w).some(x=>{
+    if(NOT_PART.has(x))return false;
+    if(p.kind==='prefix'){
+      if(!x.startsWith(v))return false;
+      const rest=x.slice(v.length);
+      return rest.length>=3&&RW(rest);
+    }
+    if(p.kind==='suffix'){
+      const i=x.lastIndexOf(v);if(i<1||i+v.length!==x.length)return false;
+      const b=x.slice(0,i);
+      return [b,b+'e',/([bdgmnprt])\1$/.test(b)?b.slice(0,-1):'',/i$/.test(b)?b.slice(0,-1)+'y':''].some(c=>c.length>=3&&RW(c));
+    }
+    return x.includes(v)&&x.length>=v.length+2;
+  }));
+}
+// {ok, good, near}: good = real words built with the part; near = words that only look like they are
 function usesPart(p,text){
   const vs=variants(p),words=text.toLowerCase().match(/[a-z]+/g)||[];
-  return words.some(w=>vs.some(v=>p.kind==='prefix'?w.startsWith(v)&&w.length>=v.length+3
-    :p.kind==='suffix'?w.indexOf(v,1)>0&&w.length>=v.length+2
-    :w.includes(v)));
+  const look=words.filter(w=>vs.some(v=>p.kind==='prefix'?w.startsWith(v):p.kind==='suffix'?w.indexOf(v,1)>0:w.includes(v)));
+  const good=look.filter(w=>partWordOK(p,w));
+  return {ok:good.length>0,good,near:look.filter(w=>!good.includes(w))};
 }
 function checkOne(p,raw){
   const t=raw.replace(/[‘’]/g,"'").replace(/[“”]/g,'"').trim();
@@ -1176,7 +1208,13 @@ function checkOne(p,raw){
   if(splitSentences(t).length>1)out.push('Write just one sentence here.');
   if(n<5)out.push('Add more detail. Use at least 5 words.');
   sentenceIssues(t).forEach(x=>{if(!(n<5&&/very short/.test(x.msg)))out.push(x.msg)});
-  if(!usesPart(p,t))out.push('Use a word with "'+p.label+'" in your sentence. You could try '+p.ex.map(e=>e.replace(/[\[\]]/g,'')).join(', ')+'.');
+  const u=usesPart(p,t),ex=p.ex.map(e=>e.replace(/[\[\]]/g,'')).join(', ');
+  if(!u.ok){
+    const bad=u.near.find(w=>!RW(w)),nw=u.near.find(w=>RW(w));
+    if(bad)out.push('"'+bad+'" is not a real word, so it does not count for '+p.label+'. Check the spelling, or try '+ex+'.');
+    else if(nw)out.push('"'+nw+'" does not really use '+p.label+'. Use a word that is built with '+p.label+', like '+ex+'.');
+    else out.push('Use a word with "'+p.label+'" in your sentence. You could try '+ex+'.');
+  }
   return out;
 }
 function cardHTML(p){
@@ -1596,8 +1634,9 @@ function sentenceIssues(t){
 }
 /* ---- verb tense ---- */
 const IRR={was:'be',were:'be',had:'have',did:'do',went:'go',saw:'see',came:'come',ran:'run',sat:'sit',got:'get',said:'say',made:'make',ate:'eat',took:'take',found:'find',gave:'give',told:'tell',thought:'think',knew:'know',felt:'feel',kept:'keep',slept:'sleep',swam:'swim',sang:'sing',drank:'drink',fell:'fall',flew:'fly',grew:'grow',drew:'draw',wrote:'write',rode:'ride',broke:'break',spoke:'speak',woke:'wake',stood:'stand',brought:'bring',bought:'buy',caught:'catch',taught:'teach',fought:'fight',won:'win',hid:'hide',dug:'dig',fed:'feed',met:'meet',slid:'slide',threw:'throw',blew:'blow',wore:'wear',chose:'choose',froze:'freeze',stole:'steal',drove:'drive',shook:'shake',forgot:'forget',sent:'send',spent:'spend',built:'build',lost:'lose',heard:'hear',sold:'sell',paid:'pay',held:'hold',began:'begin',became:'become',understood:'understand',led:'lead'};
+Object.assign(IRR,{"rang":"ring","sank":"sink","shrank":"shrink","stung":"sting","swung":"swing","spun":"spin","hung":"hang","rose":"rise","shone":"shine","struck":"strike","swept":"sweep","wept":"weep","crept":"creep","knelt":"kneel","lent":"lend","bent":"bend","meant":"mean","fled":"flee","sprang":"spring","stank":"stink","bled":"bleed","bred":"breed","clung":"cling","flung":"fling","sought":"seek","spat":"spit","strove":"strive","tore":"tear","forgave":"forgive","forbade":"forbid","arose":"arise","awoke":"awake","withdrew":"withdraw","oversaw":"oversee","overcame":"overcome","reran":"rerun","overran":"overrun","outran":"outrun","remade":"remake","unmade":"unmake","overate":"overeat","retook":"retake","mistook":"mistake","overtook":"overtake","undertook":"undertake","retold":"retell","rethought":"rethink","overthought":"overthink","overslept":"oversleep","regrew":"regrow","overgrew":"overgrow","outgrew":"outgrow","redrew":"redraw","rewrote":"rewrite","overwrote":"overwrite","misspoke":"misspeak","overbought":"overbuy","retaught":"reteach","overfed":"overfeed","underfed":"underfeed","overthrew":"overthrow","refroze":"refreeze","unfroze":"unfreeze","misspent":"misspend","overspent":"overspend","rebuilt":"rebuild","overbuilt":"overbuild","reheard":"rehear","misheard":"mishear","overheard":"overhear","resold":"resell","oversold":"oversell","undersold":"undersell","outsold":"outsell","repaid":"repay","prepaid":"prepay","overpaid":"overpay","underpaid":"underpay","misunderstood":"misunderstand","misled":"mislead"}); // prefixed word-part verbs: rebuilt, mistook, outgrew
 const PAST_OF=Object.fromEntries(Object.entries(IRR).filter(([p,b])=>b!=='be').map(([p,b])=>[b,p]));
-const VERBS=new Set(Object.values(IRR).filter(b=>b!=='be').concat('act add agree allow answer appear arrive ask bake bark beg belong blink blow boil borrow bounce bow breathe bring brush build bump burn call camp care carry catch change chase cheer chew chop clap clean climb close collect color compare complete connect contain continue cook count cover crawl create cross cry dance decide decorate deliver depend describe destroy dig discover dive divide dream dress drink drive drop dry earn eat enjoy enter erupt escape exercise explain explore fail feel fight fill find finish fit fix float flow fly fold follow forget freeze fry gather giggle glow grab grow guard guess hammer hang happen hate hear help hide hike hold hop hope hug hum hunt hurry imagine include inspect interrupt invent join juggle jump kick kiss kneel knock know laugh learn leave lend lick lift like listen live load lock look lose love make march marry mean measure meet melt miss mix mop move multiply nap need notice obey observe offer open own pack paint pass pause pay peek perform pet pick pinch plan plant play pour practice pray predict prepare press pretend print produce promise protect provide pull pump push race rain reach receive reflect reject relax remember remove repair repeat reply rescue return ride ring rise roar roll rub run rush sail save say scare scratch scream search see seem sell send serve shake share shine shiver shoot shop shout show shrink sing sit skate ski skip sleep slide slip smell smile sneeze sniff snow solve sort speak spell spend spill spin splash spray spread squeeze stack stand stare start stay steal step stick sting stir stop stretch study subtract support surprise sweep swim swing take talk taste teach tear tease tell thank think throw tickle tie touch trace trade train transform transmit transport travel treat trust try turn twist understand unlock use vanish visit wait wake walk wander want warn wash waste watch wave wear weigh whisper whistle win wink wipe wish wonder work worry wrap write yawn yell zoom'.split(' ')));
+const VERBS=new Set(Object.values(IRR).filter(b=>b!=='be').concat('act add admit agree allow answer appear arrive ask attend attract autograph bake bark beg belong blink blow boil borrow bounce bow breathe bring brush build bump burn call camp care carry catch change chase cheer chew chop clap clean climb close collect color compare complete compose conclude conduct conform connect construct contain continue contradict cook corrupt count cover crawl create cross cry dance decide decorate deflect deliver demote depend deport describe destroy detain dictate dig disagree disallow disappear disclose discolor disconnect discontinue discount discover dislike dismiss disobey disown disrupt distract distrust dive divide dream dress drink drive drop dry earn eat eject emit enjoy enter erupt escape evolve exclude exercise expect explain explode explore export expose extend extract fail feel fight fill find finish fit fix float flow fly fold follow forget freeze fry gather giggle glow grab grow guard guess hammer hang happen hate hear help hide hike hold hop hope hug hum hunt hurry imagine import impose include induce inflect inform inject inscribe inspect interact intercept interrupt interview introduce invent involve join juggle jump kick kiss kneel knock know laugh learn leave lend lick lift like listen live load lock look lose love magnify maintain make march marry mean measure meet melt miscount mishear mislead misplay misprint miss misspeak misspell misspend mistake mistreat mistrust misunderstand misuse mix mop motivate move multiply nap need notice obey observe obtain offer omit open oppose outgrow outlive outperform outplay outrun outsell outshine outweigh outwork overact overbuild overbuy overcome overcook overdress overeat overfeed overfill overflow overgrow overhear overload overlook overpay overplay overprotect overreach overrun oversee oversell overshare oversleep overspend overstay overtake overthink overthrow overturn overuse overwork overwrite own pack paint pass pause pay peek perform permit pet photograph pick pinch plan plant play pour practice pray precook predict premix prepare prepay prescribe preserve preshrink presort press pretend print produce project promise promote propose protect provide pull pump push race rain reach react reappear reboil rebuild recall receive recollect recolor reconnect recook recount recover recreate recross redecorate redeliver rediscover redivide redraw reduce reenter reexplain refill refinish reflect refold reform refreeze regather regrow rehang rehear reinspect reinvent reject rejoin relax relearn relive reload remake remarry remeasure remelt remember remix remove reopen repack repaint repair repay repeat replant replay reply report reprint reproduce rerun rescue research resell resend reserve resit resolve respect respell restart restudy retain retake reteach retell rethink retie retouch retrace retract retrain retry return reuse revisit revive revolve rewash reweigh rework rewrite ride ring rise roar roll rub run rush sail save say scare scratch scream search see seem sell send serve shake share shine shiver shoot shop shout show shrink sing sit skate ski skip sleep slide slip smell smile sneeze sniff snow solve sort speak spell spend spill spin splash spray spread squeeze stack stand stare start stay steal step stick sting stir stop stretch study submerge submit subscribe subtract support suppose surprise survive suspend sustain sweep swim swing take talk taste teach tear tease telephone televise tell thank think throw tickle tie touch trace trade train transfer transform translate transmit transplant transport travel treat trust try turn twist uncover underfeed underpay undersell understand undertake undress unfold unfreeze unlearn unload unlock unmake unpack unroll untie untwist unwrap use vanish verify visit wait wake walk wander want warn wash waste watch wave wear weigh whisper whistle win wink wipe wish wonder work worry wrap write yawn yell zoom'.split(' ')));
 const tps=v=>v==='have'?'has':v==='do'?'does':v==='go'?'goes':/(s|x|z|ch|sh)$/.test(v)?v+'es':/[^aeiou]y$/.test(v)?v.slice(0,-1)+'ies':v+'s';
 const VS=new Map([...VERBS].map(v=>[tps(v),v]));
 const pastOf=v=>PAST_OF[v]||(/e$/.test(v)?v+'d':/[^aeiou]y$/.test(v)?v.slice(0,-1)+'ied':/^[^aeiou]*[aeiou][bdgmnpt]$/.test(v)?v+v.slice(-1)+'ed':v+'ed');
@@ -1624,7 +1663,7 @@ function verbMarks(low){
     const p=low[i-1]||'',pp=low[i-2]||'';
     if(/^(am|is|are|has|does|goes|says|isn't|aren't|doesn't|don't|hasn't)$/.test(w))out.push({i,t:'pres',w});
     else if(/^(wasn't|weren't|didn't|hadn't)$/.test(w))out.push({i,t:'past',w});
-    else if(IRR[w]&&!BE.test(p)&&!(w==='had'&&BE.test(p)))out.push({i,t:'past',w});
+    else if(IRR[w]&&!BE.test(p)&&!DET.test(p)&&!/^(a|an)$/.test(p))out.push({i,t:'past',w}); // "the rose", "a saw" are nouns
     else if(isEdPast(w)&&!BE.test(p)&&!/^(have|has|had)$/.test(p)&&(PRONOUN.test(p)||/^(and|then)$/.test(p)||(DET.test(pp)&&!DET.test(p))))out.push({i,t:'past',w});
     else if(VS.has(w)&&(/^(he|she|it)$/.test(p)&&!(p==='it'&&isVerbish(pp))||i>=2&&i<=3&&DET.test(low[0])&&!low.slice(1,i).some(x=>BE.test(x)||isVerbish(x)||DET.test(x))))out.push({i,t:'pres',w});
     else if(VERBS.has(w)&&/^(i|you|we|they)$/.test(p)&&!MODAL.test(pp)&&!/^(and|or|let|make|help|see|saw|watch|watched|hear|heard)$/.test(pp))out.push({i,t:'pres',w});
@@ -1714,7 +1753,7 @@ const QTY=/^(lots|lot|most|some|all|half|none|plenty|more|rest|part|majority|any
 const SG_V=/^(is|was|has|does|doesn't|isn't|wasn't|hasn't)$/,PL_V=/^(are|were|have|do|don't|aren't|weren't|haven't)$/;
 const HELP=/^(will|can|could|would|should|must|may|might|did|didn't|don't|doesn't|won't|can't|couldn't|wouldn't|shouldn't|to|not|never)$/;
 const STARTS=/^(and|but|so|or|because|when|if|while|until|unless|although|since|after|before|that|think|thinks|thought|know|knows|knew|said|says|hope|hopes|guess|believe|believes)$/;
-const verbish=w=>SG_V.test(w)||PL_V.test(w)||VS.has(w)||VERBS.has(w)||!!IRR[w]||isEdPast(w)||/^(will|can|could|would|should|must|may|might|had|am)$/.test(w);
+const verbish=w=>w==='used'||SG_V.test(w)||PL_V.test(w)||VS.has(w)||VERBS.has(w)||!!IRR[w]||isEdPast(w)||/^(will|can|could|would|should|must|may|might|had|am)$/.test(w);
 // Returns [{head, plural, vi, v}] for each clause whose subject is a noun or a name (pronouns are checked elsewhere).
 function clauses(low,words){
   const starts=[0],out=[];let reach=-1;
@@ -1729,7 +1768,7 @@ function clauses(low,words){
     for(let j=i;j<Math.min(low.length,i+10);j++){
       const w=low[j],prev=low[j-1]||'';
       if(j>i&&/,$/.test(words[j-1])&&!and)return;
-      if(/^(that|who|which|whose|whom|where|because|if|when|or)$/.test(w))return;
+      if(/^(that|who|which|whose|whom|where|because|if|when|or|to)$/.test(w))return;
       if(!pp&&/^(i|you|he|she|it|we|they|me|him|us|them)$/.test(w))return;
       if((SG_PRON.test(w)||QTY.test(w)||PL_IRR.test(w))&&low[j+1]==='of'&&!head){head=w;hw=words[j];hi=j;continue}
       if(w==='and'){if(head&&!pp){and=true;continue}return}
@@ -1754,7 +1793,9 @@ function clauses(low,words){
   });
   return out;
 }
-const PP_OF={went:'gone',ate:'eaten',saw:'seen',took:'taken',ran:'run',came:'come',gave:'given',wrote:'written',broke:'broken',drove:'driven',rode:'ridden',fell:'fallen',flew:'flown',grew:'grown',drew:'drawn',threw:'thrown',blew:'blown',wore:'worn',chose:'chosen',stole:'stolen',froze:'frozen',spoke:'spoken',woke:'woken',began:'begun',swam:'swum',sang:'sung',drank:'drunk',knew:'known',did:'done',shook:'shaken',forgot:'forgotten',hid:'hidden',became:'become',was:'been',were:'been',bit:'bitten'};
+const PP_OF={rang:'rung',sank:'sunk',shrank:'shrunk',sprang:'sprung',rose:'risen',tore:'torn',forgave:'forgiven',went:'gone',ate:'eaten',saw:'seen',took:'taken',ran:'run',came:'come',gave:'given',wrote:'written',broke:'broken',drove:'driven',rode:'ridden',fell:'fallen',flew:'flown',grew:'grown',drew:'drawn',threw:'thrown',blew:'blown',wore:'worn',chose:'chosen',stole:'stolen',froze:'frozen',spoke:'spoken',woke:'woken',began:'begun',swam:'swum',sang:'sung',drank:'drunk',knew:'known',did:'done',shook:'shaken',forgot:'forgotten',hid:'hidden',became:'become',was:'been',were:'been',bit:'bitten'};
+// has rewrote -> has rewritten, has mistook -> has mistaken
+['re','un','dis','mis','pre','over','under','out'].forEach(pre=>Object.entries(PP_OF).forEach(([past,pp])=>{if(IRR[pre+past]&&!PP_OF[pre+past])PP_OF[pre+past]=pre+pp}));
 function nounAgreement(t){
   const out=[],plain=t.replace(/"[^"]*"/g,' ');
   const words=plain.match(/[A-Za-z][A-Za-z'-]*,?/g)||[];
@@ -1784,7 +1825,8 @@ function helperVerbs(t){
   }
   return out;
 }
-function gradeOf(sentences,roots,mistakes){return sentences>=5&&roots>=5&&mistakes<=1?3:sentences>=5&&roots>=3&&mistakes<=4?2:1}
+const HARD=/^(spell|agree|tense)$/; // a 3 needs every word spelled right, verbs in the right tense, and subjects and verbs that agree
+function gradeOf(sentences,roots,mistakes,hard){return sentences>=5&&roots>=5&&mistakes<=1&&!hard?3:sentences>=5&&roots>=3&&mistakes<=4?2:1}
 function realCount(t){return window.RealWords?RealWords.countReal(t):(t.match(/[A-Za-z][A-Za-z'-]*/g)||[]).length}
 /* a sentence counts only if most of its words are real words */
 function realSentence(x){const all=(x.match(/[A-Za-z0-9][A-Za-z0-9'-]*/g)||[]).length;return all>=3&&realCount(x)/all>=0.8}
@@ -1812,7 +1854,7 @@ function checkParagraph(raw){
   if(sents.length>=3&&!has('agree'))goods.push('Your subjects and verbs agree.');
   if(sents.length>=3&&!has('tense'))goods.push('Your verb tenses match.');
   if(sents.length>=3&&!has('comma')&&!has('end'))goods.push('Your commas and end marks are in the right places.');
-  return {sents,count:realN,roots,fixes,tips,goods,grade:gradeOf(realN,roots.length,fixes.length)};
+  return {sents,count:realN,roots,fixes,tips,goods,grade:gradeOf(realN,roots.length,fixes.length,fixes.some(f=>HARD.test(f.cat)))};
 }
 //--CHECK END--
 
@@ -1832,7 +1874,8 @@ function wFeedback(r){
   const need=[];
   if(r.count<5)need.push('write '+(5-r.count)+' more sentence'+(5-r.count===1?'':'s'));
   if(r.roots.length<5)need.push('use '+(5-r.roots.length)+' more root word'+(5-r.roots.length===1?'':'s'));
-  if(r.fixes.length>1)need.push('fix the mistakes below');
+  if(r.fixes.some(f=>HARD.test(f.cat)))need.push('fix every spelling, verb tense, and subject-verb mistake below');
+  else if(r.fixes.length>1)need.push('fix the mistakes below');
   $('#w-fb').innerHTML=`<div><div class="eyebrow">Feedback</div>
     <div class="score">${r.count<5?'Not ready to turn in yet':'Score right now: '+r.grade+' of 3'}</div>
     <p class="help" style="margin-top:4px">${r.grade===3?'This paragraph meets the goal. Read it one more time, then turn it in.':'To reach a 3: '+need.join(', ')+'.'}</p></div>

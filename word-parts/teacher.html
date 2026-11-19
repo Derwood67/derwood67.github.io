@@ -69,6 +69,40 @@ tr.s td:first-child{font-weight:700}
 </style>
 </head>
 <body>
+<!-- Teacher lock: code 8531 (only a scrambled copy is stored in this page) -->
+<style>
+#tl-ov{position:fixed;inset:0;z-index:2147483000;background:#141c24;display:flex;align-items:center;justify-content:center;padding:16px;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+#tl-ov form{background:#fff;color:#1b2420;border-radius:14px;max-width:400px;width:100%;padding:24px;display:flex;flex-direction:column;gap:12px;font-size:18px;box-shadow:0 12px 32px rgba(0,0,0,.35)}
+#tl-ov h2{margin:0;font-size:1.4rem}
+#tl-ov input{font:inherit;padding:12px;border:2px solid #c9d1cc;border-radius:8px}
+#tl-ov button{font:inherit;font-weight:700;border:0;border-radius:8px;padding:12px;background:#0b6b4a;color:#fff;cursor:pointer}
+#tl-ov p{margin:0;min-height:1.3em;color:#a83226;font-size:.95rem}
+body.tl-locked .wrap{display:none}
+</style>
+<script>
+(function(){
+  var HASH="cf2d0fe7ea0a7780592080ef0bf415a6043a3d59aa5d72ace64d39c6e0837285",S="wpw-teacher-session",TRY="echols-classgate-tries";
+  function g(st,k){try{return st.getItem(k)}catch(e){return null}}
+  function put(st,k,v){try{v===null?st.removeItem(k):st.setItem(k,v)}catch(e){}}
+  window.TEACHER_LOCK={code:""};
+  if(g(sessionStorage,S)==="1")return;
+  document.body.classList.add("tl-locked");
+  var o=document.createElement("div");o.id="tl-ov";o.setAttribute("role","dialog");o.setAttribute("aria-modal","true");
+  o.innerHTML='<form><h2>Teacher only</h2><label for="tl-code">Teacher code</label><input id="tl-code" type="password" inputmode="numeric" autocomplete="off"><button>Open</button><p id="tl-msg" aria-live="polite"></p></form>';
+  document.body.appendChild(o);setTimeout(function(){o.querySelector("input").focus()},30);
+  o.querySelector("form").onsubmit=function(e){e.preventDefault();
+    var t={};try{t=JSON.parse(g(localStorage,TRY))||{}}catch(x){}
+    var msg=o.querySelector("#tl-msg"),inp=o.querySelector("input"),c=inp.value.trim();
+    if(t.until&&Date.now()<t.until){msg.textContent="Too many tries. Wait 10 minutes and try again.";return}
+    crypto.subtle.digest("SHA-256",new TextEncoder().encode("echols-room2:"+c)).then(function(b){
+      var h=Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0")}).join("");
+      if(h===HASH){put(localStorage,TRY,null);put(sessionStorage,S,"1");window.TEACHER_LOCK.code=c;o.remove();document.body.classList.remove("tl-locked");document.dispatchEvent(new Event("teacher:unlocked"));return}
+      t.n=(t.n||0)+1;if(t.n>=3)t={n:0,until:Date.now()+600000};put(localStorage,TRY,JSON.stringify(t));
+      inp.value="";msg.textContent=t.until?"Too many tries. Wait 10 minutes and try again.":"That code is not right.";
+    });
+  };
+})();
+</script>
 <div class="wrap">
   <header class="top">
     <div>
@@ -205,8 +239,13 @@ function start(){clearInterval(timer);load();timer=setInterval(load,30000)}
 $("refresh").onclick=load;
 $("codeForm").addEventListener("submit",e=>{e.preventDefault();code=$("code").value.trim();try{localStorage.setItem("wordPartsTeacherCode",code)}catch(_){};start()});
 $("changeCode").onclick=()=>{try{localStorage.removeItem("wordPartsTeacherCode")}catch(e){};code="";needCode("Type the new teacher code.")};
-if(demo){$("demoNote").hidden=false;$("main").hidden=false;setStatus("demo","Example data");load()}
-else if(code)start(); else needCode();
+/* nothing loads until the teacher code (8531) is entered */
+function init(){
+  if(!code&&window.TEACHER_LOCK&&TEACHER_LOCK.code)code=TEACHER_LOCK.code;
+  if(demo){$("demoNote").hidden=false;$("main").hidden=false;setStatus("demo","Example data");load()}
+  else if(code)start(); else needCode();
+}
+if(document.body.classList.contains("tl-locked"))document.addEventListener("teacher:unlocked",init,{once:true});else init();
 </script>
 </body>
 </html>

@@ -73,9 +73,10 @@
   /* every word that is not a real English word */
   function nonWords(text){
     init();scanPage();
-    var t=String(text||"").replace(/[‘’ʼ`]/g,"'"),re=/[A-Za-z0-9][A-Za-z0-9'\-]*/g,m,out=[],lastEnd=0,start=true;
+    var t=String(text||"").replace(/[‘’ʼ`]/g,"'"),re=/[A-Za-z0-9][A-Za-z0-9'\-]*/g,m,out=[],lastEnd=0,start=true,lastTok="";
     while((m=re.exec(t))){
-      var between=t.slice(lastEnd,m.index);if(/[.!?]/.test(between))start=true;
+      /* the period in Mr. Ms. Mrs. Dr. does not end the sentence, so the name after it is still a name */
+      var between=t.slice(lastEnd,m.index);if(/[.!?]/.test(between)&&!/^(mr|mrs|ms|dr|st|jr|mt)$/i.test(lastTok))start=true;lastTok=m[0];
       var tok=m[0].replace(/['\-]+$/,""),ok=isWord(tok);
       /* a capitalized word in the middle of a sentence may be a name */
       if(!ok&&!start&&/^[A-Z][a-z']+$/.test(tok)&&nameLike(tok))ok=true;
