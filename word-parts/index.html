@@ -149,6 +149,15 @@ mark{background:transparent;color:var(--k);font-weight:700;text-decoration:under
 .steps .what{flex:1 1 220px;min-width:0}
 .steps .num{font-family:var(--display);font-weight:600;font-variant-numeric:tabular-nums}
 .steps li.met .num{color:var(--good)}
+/* Monifa, the game show host */
+.host{display:flex;flex-wrap:wrap;align-items:center;gap:12px 16px;border:2px solid var(--accent);border-radius:16px;padding:12px 14px;background:var(--surface)}
+.hostpic{flex:none;width:56px;height:56px;border-radius:50%;background:var(--accent);color:var(--on-accent);display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:600;font-size:1.7rem}
+.host.talk .hostpic{animation:hostbob .5s ease-in-out infinite alternate}
+@keyframes hostbob{from{transform:translateY(0) scale(1)}to{transform:translateY(-3px) scale(1.06)}}
+@media (prefers-reduced-motion:reduce){.host.talk .hostpic{animation:none;box-shadow:0 0 0 4px var(--star)}}
+.hostname{font-family:var(--display);font-weight:600;font-size:1.25rem}
+.hostsay{flex:1 1 220px;min-width:0}
+.host select{max-width:14em}
 /* bingo */
 .bnum{flex:0 1 9em;width:9em;min-width:0}
 .bcode{font-family:var(--display);font-size:1.6rem;font-weight:600;letter-spacing:.06em}
@@ -570,6 +579,22 @@ label.help{font-weight:700}
           <button class="btn sm" id="bg-new">Start a new game</button>
         </div>
         <div class="msg" id="bg-newmsg" aria-live="polite"></div>
+      </div>
+      <div class="stage">
+        <div class="host" id="host">
+          <div class="hostpic" aria-hidden="true">M</div>
+          <div class="hostsay">
+            <div class="eyebrow">Your game show host</div>
+            <div class="hostname">Monifa</div>
+            <div class="help" id="host-say" aria-live="polite">Monifa reads every clue and answer out loud.</div>
+          </div>
+          <div class="row">
+            <label class="help"><input type="checkbox" id="host-on" checked> Monifa talks</label>
+            <button class="btn sm ghost" id="host-again">Say it again</button>
+            <label class="help" for="host-voice">Voice</label>
+            <select class="search" id="host-voice"></select>
+          </div>
+        </div>
       </div>
       <div class="stage">
         <div class="eyebrow" id="bg-count"></div>
@@ -1973,6 +1998,61 @@ function cardGrid(card,marked,wins,play){
 }
 const lineWords=wins=>[...new Set(wins.map(l=>l.name))].join(' and ');
 
+
+/* ---------- Monifa, the game show host (reads the bingo calls aloud) ---------- */
+// Uses the browser's built-in voices, so nothing is sent anywhere. A higher pitch and a
+// slightly quick, bouncy pace make an adult female voice sound like a 10-year-old girl.
+const HOST={pitch:1.75,rate:1.08,last:'',key:'wpw-monifa'};
+let HOST_PREF={on:true,voice:''};
+try{HOST_PREF=Object.assign(HOST_PREF,JSON.parse(localStorage.getItem(HOST.key))||{})}catch(e){}
+const hostSave=()=>{try{localStorage.setItem(HOST.key,JSON.stringify(HOST_PREF))}catch(e){}};
+const HAS_TTS='speechSynthesis' in window&&'SpeechSynthesisUtterance' in window;
+const GIRLISH=['google us english','samantha','microsoft ava','microsoft jenny','microsoft aria','microsoft zira','karen','moira','tessa','victoria','allison','susan','female'];
+function hostVoices(){return HAS_TTS?speechSynthesis.getVoices().filter(v=>/^en/i.test(v.lang)):[]}
+function hostPick(){
+  const vs=hostVoices();if(!vs.length)return null;
+  const mine=vs.find(v=>v.name===HOST_PREF.voice);if(mine)return mine;
+  for(const n of GIRLISH){const v=vs.find(v=>v.name.toLowerCase().includes(n));if(v)return v}
+  return vs.find(v=>/en-US/i.test(v.lang))||vs[0];
+}
+function hostFillVoices(){
+  const sel=$('#host-voice'),vs=hostVoices(),cur=hostPick();
+  if(!vs.length){sel.innerHTML='<option>Default voice</option>';return}
+  sel.innerHTML=vs.map(v=>`<option value="${esc(v.name)}"${cur&&v.name===cur.name?' selected':''}>${esc(v.name.replace(/^(Microsoft|Google)\s+/,'').replace(/\s*Online.*$/,''))}</option>`).join('');
+}
+function hostSay(text){
+  HOST.last=text;$('#host-say').textContent='“'+text+'”';
+  if(!HAS_TTS||!HOST_PREF.on)return;
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text),v=hostPick();
+  if(v){u.voice=v;u.lang=v.lang}
+  u.pitch=HOST.pitch;u.rate=HOST.rate;
+  u.onstart=()=>$('#host').classList.add('talk');
+  u.onend=u.onerror=()=>$('#host').classList.remove('talk');
+  speechSynthesis.speak(u);
+}
+const pickOne=a=>a[Math.floor(Math.random()*a.length)];
+// "in- / im-" is read as "I N, or I M" so students hear the spelling, not a mumble.
+const spellPart=p=>p.label.replace(/\(.*?\)/g,'').split('/').map(x=>x.replace(/[^a-z]/gi,'').toUpperCase().split('').join(' ')).filter(Boolean).join(', or ');
+const sayMeaning=p=>p.meaning.replace(/;\s*/g,', or ');
+const sayKind=p=>({prefix:'the prefix',suffix:'the suffix',greek:'the Greek root',latin:'the Latin root'})[p.kind];
+function hostClue(p,n){
+  hostSay(pickOne([`Here comes clue number ${n}!`,`Okay, friends, clue number ${n}!`,`Eyes on your cards! Clue number ${n}!`,`Are you ready? Clue number ${n}!`,`Ooh, I love this one! Clue number ${n}!`])+
+    ` Find the word part that means: ${sayMeaning(p)}. One more time: ${sayMeaning(p)}.`);
+}
+function hostAnswer(p){
+  const ex=(p.ex[0]||'').replace(/[\[\]]/g,'');
+  hostSay(pickOne(['Did you get it? ','Drumroll, please! ','Here is the answer! ',"Let's see if you were right! "])+
+    `It's ${sayKind(p)}, ${spellPart(p)}, which means ${sayMeaning(p)}.`+(ex?` Like in the word ${ex}!`:''));
+}
+const hostHello=()=>hostSay("Hi, everybody! I'm Monifa, and welcome to Word Parts Bingo! Get your cards ready, and let's play!");
+$('#host-on').checked=HOST_PREF.on;
+$('#host-on').addEventListener('change',e=>{HOST_PREF.on=e.target.checked;hostSave();if(!HOST_PREF.on&&HAS_TTS)speechSynthesis.cancel()});
+$('#host-again').addEventListener('click',()=>{if(HOST.last)hostSay(HOST.last);else hostHello()});
+$('#host-voice').addEventListener('change',e=>{HOST_PREF.voice=e.target.value;hostSave();hostSay("Hi! It's me, Monifa! Do you like my voice?")});
+if(HAS_TTS){hostFillVoices();speechSynthesis.addEventListener?.('voiceschanged',hostFillVoices)}
+else{$('#host-say').textContent='This browser cannot speak, so read the clues aloud yourself.';$('#host-voice').hidden=true}
+
 const BG_KEY='wpw-bingo-caller-v1',BP_KEY='wpw-bingo-play-v1',BM_KEY='wpw-bingo-mode';
 let BG=null,BP={code:'',card:'',marks:[]},BG_MODE='play',BG_PEND='PSGL';
 try{BG=JSON.parse(localStorage.getItem(BG_KEY))}catch(e){}
@@ -2021,14 +2101,17 @@ $('#bg-new').addEventListener('click',e=>{
     setTimeout(()=>{bgArmed=false;e.target.textContent='Start a new game'},4000);return}
   bgArmed=false;e.target.textContent='Start a new game';
   bgNew(BG_PEND);bgRender();$('#bg-checkgrid').innerHTML='';setMsg('#bg-checkmsg','');
+  hostHello();
   setMsg('#bg-newmsg','New game '+BG.code+' started. Print new cards for this game.','good');
 });
 $('#bg-next').addEventListener('click',()=>{
   const left=bingoPool(BG.code).filter(p=>!BG.called.includes(p.id));if(!left.length)return;
   BG.called.push(left[Math.floor(Math.random()*left.length)].id);BG.show=false;bgSave();bgRender();
+  const n=BG.called.length;hostClue(BY_ID[BG.called[n-1]],n);
 });
 $('#bg-undo').addEventListener('click',()=>{BG.called.pop();BG.show=false;bgSave();bgRender()});
-$('#bg-show').addEventListener('click',()=>{BG.show=!BG.show;bgSave();bgRender()});
+$('#bg-show').addEventListener('click',()=>{BG.show=!BG.show;bgSave();bgRender();
+  if(BG.show&&BG.called.length)hostAnswer(BY_ID[BG.called[BG.called.length-1]]);});
 $('#bg-checkform').addEventListener('submit',e=>{
   e.preventDefault();
   const n=Math.round(+$('#bg-checknum').value);
@@ -2036,6 +2119,8 @@ $('#bg-checkform').addEventListener('submit',e=>{
   const card=bingoCard(BG.code,n),marked=new Set(card.map((p,i)=>!p||BG.called.includes(p.id)?i:-1).filter(i=>i>=0)),wins=winLines(marked);
   setMsg('#bg-checkmsg',wins.length?'Card '+n+' has BINGO on '+lineWords(wins)+'.':'Card '+n+' does not have a line yet. Called squares are shaded.',wins.length?'good':'bad');
   $('#bg-checkgrid').innerHTML=cardGrid(card,marked,wins,false);
+  hostSay(wins.length?pickOne([`Card ${n} has BINGO! Woo-hoo! Give it up for card ${n}!`,`We have a winner! Card ${n}, that's BINGO!`])
+    :pickOne([`Ooh, so close, card ${n}, but not yet! Keep playing!`,`Not yet, card ${n}! Hang in there!`]));
 });
 const doPrint=()=>{try{window.print()}catch(e){}};
 $('#bg-print').addEventListener('click',()=>{
