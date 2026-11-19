@@ -104,7 +104,7 @@ footer{border-top:1px solid var(--line);padding:28px 0 48px;color:var(--muted);f
       </div>
     </div>
     <div class="stats" aria-label="Portfolio at a glance">
-      <div class="stat"><b id="count">34</b><span>interactive tools</span></div>
+      <div class="stat"><b id="count">39</b><span>interactive tools</span></div>
       <div class="stat"><b>4</b><span>core subjects</span></div>
       <div class="stat"><b>4–5</b><span>grade band</span></div>
     </div>
@@ -173,10 +173,12 @@ const P = [
   {s:"math", t:"Mount Mitchell Math Climb", k:["Answer problems to move their climber up the mountain", "Play solo or on a team"],  d:"Correct answers move climbers up Mount Mitchell, solo or in two teams, across all four operations and fractions.", f:["Team play","NC-themed"], u:"https://claude.ai/artifact/7MhHdwU5PZS9ysNoUkFeYQ"},
   {s:"math", t:"Summit Math Climb", k:["Practice multi-digit multiplication and division", "Work with powers of ten, exponents and measurement conversions", "Climb higher with each correct answer"],  d:"Multi-digit multiplication, division, powers of ten, exponents and measurement conversions, aligned to Eureka Math² and NC standards.", f:["Eureka Math²","NC Math"], u:"https://claude.ai/artifact/2KCjELvCW3phxinkELqGPS"},
   {s:"math", t:"Cross Math", k:["Solve cross math puzzles with a number bank", "Choose from three difficulty levels", "Use hints and try to beat their best time"],  d:"Cross math puzzles with random grids, a number bank, three difficulty levels, hints and best times.", f:["Puzzles","3 levels"], u:"https://claude.ai/artifact/QpY5Tj6NUYq4m3zD3kZixE"},
+  {s:"math", t:"Captain Spark Math", k:["Solve 10 addition and subtraction problems to fly a hero up a tower", "Pick a level from single-digit facts to 3-digit regrouping", "Get a place-value hint after a first miss"],  d:"A superhero climbing game: each correct answer lights a floor until the hero reaches the roof and rescues Pip the kitten. Four levels, a strategy hint after a miss, streaks and stars.", f:["Add & subtract","Regrouping","4 levels"], u:"https://claude.ai/artifact/DcjJjwNWStER54D1oLd2sP"},
   {s:"math", t:"Fraction Bingo", k:["Solve each fraction problem the teacher calls", "Find and mark the answer on their own bingo card", "Get five in a row to win"],  d:"Whole-class bingo with a teacher caller, student cards that rebuild from a card number, and a winner checker that confirms a win against the problems called.", f:["NC.4.NF.1–7","NC.5.NF.1–4, 7","Eureka Math² topics"], u:GH+"fraction-bingo/"},
   // Science & Social Studies
   {s:"sci", t:"NC Grade 5 Science Lab", k:["Sign in and read chapters by standard", "Practice with EOG-style passages", "Do activities, play games and watch videos"],  d:"Standards, chapters, EOG practice passages, activities, games and videos, with name sign-in and a class dashboard. Shared with two colleagues for their classes.", f:["NC Science","Used by 3 classes"], u:GH+"science-lab/"},
   {s:"sci", t:"Water Cycle Game Room", k:["Play eleven water cycle and weather games", "Take the 40-question challenge"],  d:"Eleven water cycle and weather games, including a 40-question challenge, each tagged to an NC 2023 science standard.", f:["NC 2023 Science","11 games"], u:GH+"water-cycle-games/"},
+  {s:"sci", t:"Water Cycle Practice 40", k:["Answer 40 water cycle questions in five parts", "Label a water cycle diagram by tapping words into place", "Read an explanation for every answer they miss"],  d:"A 40-question water cycle practice set in five parts, ending with a diagram to label, a live score bar and an explanation for every answer.", f:["NC 2023 Science","40 questions"], u:"https://claude.ai/artifact/Ti4TTQuQJ9AjyLSY5PHi18"},
   {s:"sci", t:"Capital Research Lab", k:["Research the U.S. capital and another country's capital", "Compare the two in a research notebook"],  d:"A research notebook where students compare the U.S. capital with the capital of another country.", f:["Social studies","Research skills"], u:GH+"research-lab/"},
   {s:"sci", t:"Landform Word Match", k:["Match landform words to their meanings in two rounds"],  d:"Two-round vocabulary matching game for landform words.", f:["Vocabulary"], u:"https://claude.ai/artifact/5MTLBDjX3Tduy63EWTzCZY"},
   // Review & Test Prep
@@ -186,7 +188,10 @@ const P = [
   // Teacher tools
   {s:"tool", t:"Text Analyzer for Teachers", tk:["Type a book or story title to get summary, theme, point of view and more", "Get results written for a chosen grade level"],  d:"Type a book or story title to get summary, main idea, text structure, theme, point of view, narrator, characters and setting, with evidence.", f:["Lesson planning","Grade-level output"], u:GH+"text-analyzer/"},
   {s:"tool", t:"NC 4–5 Standards Planner", tk:["Search NC standards with I-can statements", "Check off what's been taught and tag quarters", "Share notes with their PLC"],  d:"Searchable NCDPI standards for ELA, math, science and social studies with I-can statements, quarter tags, taught checkboxes and PLC notes. Installs as an app.", f:["Installable app","PLC planning"], u:GH+"standards/"},
-  {s:"tool", t:"Scan to Doc", tk:["Turn scans, photos and PDFs into one clean PDF or Word file", "Convert scanned pages to typed text"],  d:"Turns scans, photos and PDFs into one cleaned-up PDF or Word file, with optional typed-text conversion.", f:["Workflow tool"], u:"https://claude.ai/artifact/5WZ7wUJXJk7LnEwFGfHcAn"}
+  {s:"tool", t:"Scan to Doc", tk:["Turn scans, photos and PDFs into one clean PDF or Word file", "Convert scanned pages to typed text"],  d:"Turns scans, photos and PDFs into one cleaned-up PDF or Word file, with optional typed-text conversion.", f:["Workflow tool"], u:"https://claude.ai/artifact/5WZ7wUJXJk7LnEwFGfHcAn"},
+  {s:"tool", t:"Echols Standards Gradebook", tk:["Score students 1–4 on NCDPI standards in ELA, math, science and social studies", "Upload photos or PDFs of student work, mark them up and get suggested scores", "See class charts and print a PDF grade list for each student"],  d:"A standards-based gradebook for a combined 4th/5th grade class: 1–4 scores on objective-level NC standards, marked-up student work, class charts and per-student PDF reports. Built to install as an app on Mac and PC.", f:["NCDPI standards","1–4 scoring","PDF reports"]},
+  {s:"tool", t:"Grade 4–5 Plan Book", tk:["See each day's lessons with I Do, We Do and You Do steps", "Switch between day, week and pacing views for Q2–Q4", "Filter by 4th grade, 5th grade or both"],  d:"A combined-class plan book with daily lessons for math, ELA and science tied to NC standards, plus week and pacing views across quarters 2–4.", f:["NC standards","Gradual release","Pacing"], u:"https://claude.ai/artifact/STrszV3LWpiXT71hq9G7C8"},
+  {s:"tool", t:"Fractions Answer Key", tk:["Tap a check or X on each problem to grade a paper with a live score", "Hide answers and reveal them one at a time to review in class"],  d:"An interactive answer key for the Introduction to Fractions worksheet: 53 problems with worked explanations, a tap-to-grade running score, and a review mode.", f:["NC.4.NF.1–4","NC.5.NF.1, 3, 4, 7","Grading tool"], u:"https://claude.ai/artifact/Q5oFzo6Nih6xd6cA16FZ5b"}
 ];
 
 const grid = document.getElementById("grid");
@@ -202,7 +207,7 @@ grid.innerHTML = P.map(p=>{
     <p>${esc(p.d)}</p>
     ${p.k||p.tk?`<div class="can"><h4>${p.k?"Students can":"Teachers can"}</h4><ul>${(p.k||p.tk).map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`:""}
     <ul class="feats">${p.f.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>
-    <a class="go" href="${p.u}" target="_blank" rel="noopener">Open the tool <span aria-hidden="true">→</span></a>
+    ${p.u?`<a class="go" href="${p.u}" target="_blank" rel="noopener">Open the tool <span aria-hidden="true">→</span></a>`:`<span class="go" style="opacity:.75">Private: holds student records. Demo on request.</span>`}
   </article>`;
 }).join("");
 
