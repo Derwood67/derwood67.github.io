@@ -149,6 +149,44 @@ mark{background:transparent;color:var(--k);font-weight:700;text-decoration:under
 .steps .what{flex:1 1 220px;min-width:0}
 .steps .num{font-family:var(--display);font-weight:600;font-variant-numeric:tabular-nums}
 .steps li.met .num{color:var(--good)}
+/* bingo */
+.bnum{flex:0 1 9em;width:9em;min-width:0}
+.bcode{font-family:var(--display);font-size:1.6rem;font-weight:600;letter-spacing:.06em}
+.bcall{font-family:var(--display);font-size:clamp(1.6rem,5vw,2.6rem);font-weight:600;line-height:1.15;text-wrap:balance}
+.bgrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;max-width:560px;width:100%}
+.bhead{font-family:var(--display);font-weight:600;text-align:center;font-size:1.5rem;color:var(--accent)}
+.bcell{aspect-ratio:1/1;max-width:100%;display:flex;align-items:center;justify-content:center;text-align:center;border:2px solid var(--k,var(--line));background:var(--k-bg,var(--surface));color:var(--ink);border-radius:10px;font-family:var(--display);font-weight:600;font-size:clamp(.72rem,2.5vw,1.1rem);line-height:1.1;padding:4px;overflow-wrap:anywhere;min-width:0}
+.bcell.free{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.bcell.hit{background:var(--star);border-color:var(--star);color:var(--on-accent)}
+.bcell.win{box-shadow:0 0 0 3px var(--good)}
+button.bcell{cursor:pointer}
+.called{display:flex;flex-wrap:wrap;gap:6px}
+.called span{font-size:.9rem;border:2px solid var(--k);background:var(--k-bg);border-radius:999px;padding:2px 10px}
+details summary{cursor:pointer}
+#print-area{display:none}
+@media print{
+  @page{size:letter portrait;margin:.4in}
+  :root{padding:0!important}
+  html,body{background:#fff!important}
+  body>*:not(#print-area){display:none!important}
+  #print-area{display:block!important;color:#000}
+  .pcard{height:4.9in;box-sizing:border-box;break-inside:avoid;display:flex;flex-direction:column;gap:.08in;padding-top:.12in}
+  .pcard:nth-child(2n){break-after:page}
+  .pcard:nth-child(2n){border-top:1px dashed #888}
+  .ptop{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--body);font-size:11pt}
+  .ptop b{font-family:var(--display);font-size:20pt;font-weight:600}
+  .pname{font-family:var(--body);font-size:11pt}
+  .pgrid{display:grid;grid-template-columns:repeat(5,1fr);border:2px solid #000;width:6.6in;margin:0 auto}
+  .pgrid div{border:1px solid #000;height:.7in;display:flex;align-items:center;justify-content:center;text-align:center;font-family:var(--display);font-size:14pt;font-weight:600;padding:2px;overflow-wrap:anywhere;line-height:1.1}
+  .pgrid .ph{height:.42in;font-size:20pt;background:#e8e8e8;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .pgrid .pf{font-size:12pt;background:#e8e8e8;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .plist h2{font-family:var(--display);font-size:16pt;margin:0 0 .1in}
+  .plist p{font-family:var(--body);font-size:10pt;margin:0 0 .12in}
+  .plist table{width:100%;border-collapse:collapse;font-family:var(--body);font-size:10pt}
+  .plist th,.plist td{border:1px solid #999;padding:3px 6px;text-align:left;vertical-align:top}
+  .plist tr{break-inside:avoid}
+  .plist .pbox{width:.35in}
+}
 /* sentence ladder */
 .ladder{display:flex;flex-wrap:wrap;gap:6px}
 .ladder button{font-size:.88rem;border-radius:999px;padding:5px 12px;background:var(--bg);border:2px solid var(--line);color:var(--muted)}
@@ -312,6 +350,7 @@ label.help{font-weight:700}
     <button role="tab" id="tab-sent" data-view="sent" aria-selected="false">Write Sentences</button>
     <button role="tab" id="tab-write" data-view="write" aria-selected="false">Write a Paragraph</button>
     <button role="tab" id="tab-quiz" data-view="quiz" aria-selected="false">Quiz</button>
+    <button role="tab" id="tab-bingo" data-view="bingo" aria-selected="false">Bingo</button>
   </nav>
 
   <!-- EXPLORE -->
@@ -480,7 +519,97 @@ label.help{font-weight:700}
       <textarea class="copybox" id="w-copybox" readonly hidden aria-label="Your paragraph"></textarea>
     </div>
   </section>
+
+  <!-- BINGO -->
+  <section class="panel" id="view-bingo" role="tabpanel" aria-labelledby="tab-bingo" hidden>
+    <div class="row">
+      <div class="seg" id="bg-mode">
+        <button data-mode="play" aria-pressed="true">Play on screen</button>
+        <button data-mode="teacher" aria-pressed="false">Call the game (teacher)</button>
+      </div>
+    </div>
+
+    <div class="panel" id="bg-play">
+      <div class="stage">
+        <div>
+          <div class="eyebrow">Word Parts Bingo</div>
+          <div class="clue">Listen to the meaning. Find the word part on your card that matches it, and tap it.</div>
+          <p class="help" style="margin-top:6px">Five in a row, in a column, or on a diagonal wins. The middle square is free. Playing on paper? Use your printed card instead.</p>
+        </div>
+        <form class="row" id="bp-form">
+          <label class="help" for="bp-code">Game code</label>
+          <input class="search bnum" id="bp-code" autocomplete="off" maxlength="9" placeholder="PSGL-4821">
+          <label class="help" for="bp-card">Card number</label>
+          <input class="search bnum" id="bp-card" type="number" min="1" max="99" inputmode="numeric" placeholder="1 to 99">
+          <button class="btn">Show my card</button>
+        </form>
+        <div class="msg" id="bp-msg" aria-live="polite"></div>
+      </div>
+      <div class="stage" id="bp-board" hidden>
+        <div class="row" style="justify-content:space-between">
+          <span class="eyebrow" id="bp-title"></span>
+          <button class="btn sm ghost" id="bp-clear">Clear my marks</button>
+        </div>
+        <div id="bp-grid"></div>
+        <div class="msg" id="bp-win" aria-live="polite"></div>
+      </div>
+    </div>
+
+    <div class="panel" id="bg-teacher" hidden>
+      <div class="stage">
+        <div class="row" style="justify-content:space-between;align-items:flex-end">
+          <div><div class="eyebrow">Game code</div><div class="bcode" id="bg-code"></div></div>
+          <p class="help" id="bg-pool"></p>
+        </div>
+        <div class="row" id="bg-kinds">
+          <span class="help">Word parts for a new game:</span>
+          <button class="chip k-prefix" data-k="P" aria-pressed="true">Prefixes</button>
+          <button class="chip k-suffix" data-k="S" aria-pressed="true">Suffixes</button>
+          <button class="chip k-greek" data-k="G" aria-pressed="true">Greek roots</button>
+          <button class="chip k-latin" data-k="L" aria-pressed="true">Latin roots</button>
+          <button class="btn sm" id="bg-new">Start a new game</button>
+        </div>
+        <div class="msg" id="bg-newmsg" aria-live="polite"></div>
+      </div>
+      <div class="stage">
+        <div class="eyebrow" id="bg-count"></div>
+        <div class="bcall" id="bg-clue"></div>
+        <div class="row" id="bg-answer" hidden></div>
+        <div class="row">
+          <button class="btn" id="bg-next">Call next</button>
+          <button class="btn ghost" id="bg-show">Show answer</button>
+          <button class="btn ghost" id="bg-undo">Undo last call</button>
+        </div>
+        <details>
+          <summary class="help">Called so far (shows the answers)</summary>
+          <div class="called" id="bg-called" style="margin-top:10px"></div>
+        </details>
+      </div>
+      <div class="stage">
+        <div class="eyebrow">Printable cards</div>
+        <div class="row">
+          <label class="help" for="bg-ncards">How many cards</label>
+          <input class="search bnum" id="bg-ncards" type="number" min="1" max="40" value="25" inputmode="numeric">
+          <button class="btn" id="bg-print">Print cards</button>
+          <button class="btn ghost" id="bg-printlist">Print caller list</button>
+        </div>
+        <p class="help">Every card has a different board. Cards print two to a page with the game code and a card number, so you can check a winner. Print new cards after you start a new game. Printing opens your browser's print window. It works on the class site, but not inside Claude's preview.</p>
+      </div>
+      <div class="stage">
+        <div class="eyebrow">Check a winner</div>
+        <form class="row" id="bg-checkform">
+          <label class="help" for="bg-checknum">Card number</label>
+          <input class="search bnum" id="bg-checknum" type="number" min="1" max="99" inputmode="numeric">
+          <button class="btn">Check card</button>
+        </form>
+        <div class="msg" id="bg-checkmsg" aria-live="polite"></div>
+        <div id="bg-checkgrid"></div>
+      </div>
+    </div>
+  </section>
 </div>
+
+<div id="print-area"></div>
 
 <script src="config.js"></script>
 <script>
@@ -920,7 +1049,7 @@ function breakdownHTML(word){
 }
 
 /* ---------- tabs ---------- */
-const VIEWS=['explore','build','sent','quiz','write'];
+const VIEWS=['explore','build','sent','quiz','write','bingo'];
 const PROG_KEY='wpw-progress-v1';let PROG={};
 try{PROG=JSON.parse(localStorage.getItem(PROG_KEY))||{}}catch(e){}
 function pSave(){try{localStorage.setItem(PROG_KEY,JSON.stringify(PROG))}catch(e){}}
@@ -1793,6 +1922,171 @@ $('#q-steps').addEventListener('click',e=>{
   show(b.dataset.go);try{history.replaceState(null,'','#'+b.dataset.go)}catch(_){location.hash=b.dataset.go}
   scrollTo({top:0});
 });
+
+/* ---------- bingo ---------- */
+// A game code like PSGL-4821 says which word parts are in the game (P prefixes, S suffixes,
+// G Greek roots, L Latin roots) and seeds the random boards, so card 7 is the same board
+// on paper, on a student's screen, and in "Check a winner".
+function rngFor(str){
+  let h=2166136261;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)}
+  let a=h>>>0;
+  return ()=>{a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+}
+function seededShuffle(arr,rnd){const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+const BG_KINDS={P:'prefix',S:'suffix',G:'greek',L:'latin'},BG_POOL=45;
+function parseCode(c){
+  const m=String(c||'').toUpperCase().replace(/\s+/g,'').match(/^([PSGL]{1,4})-?(\d{4})$/);if(!m)return null;
+  const letters=[...new Set(m[1])].sort((a,b)=>'PSGL'.indexOf(a)-'PSGL'.indexOf(b)).join('');
+  return {code:letters+'-'+m[2],letters,kinds:[...letters].map(x=>BG_KINDS[x])};
+}
+const baseLabel=p=>p.label.replace(/\(.*?\)/g,'').trim().toLowerCase();
+const POOLS={};
+// Up to 45 word parts whose meanings do not overlap, so each called meaning matches one square.
+function bingoPool(code){
+  const g=parseCode(code);if(!g)return [];
+  if(POOLS[g.code])return POOLS[g.code];
+  const rnd=rngFor('pool:'+g.code),pool=[],labels=new Set();
+  for(const p of seededShuffle(PARTS.filter(p=>g.kinds.includes(p.kind)),rnd)){
+    if(pool.length===BG_POOL)break;
+    if(labels.has(baseLabel(p))||pool.some(q=>sameMeaning(q.meaning,p.meaning)))continue;
+    labels.add(baseLabel(p));pool.push(p);
+  }
+  return POOLS[g.code]=pool;
+}
+function bingoCard(code,n){
+  const g=parseCode(code),pick=seededShuffle(bingoPool(code),rngFor('card:'+g.code+':'+n)).slice(0,24);
+  pick.splice(12,0,null);return pick;
+}
+const BG_LINES=[
+  ...[0,1,2,3,4].map(r=>({name:'row '+(r+1),cells:[0,1,2,3,4].map(c=>r*5+c)})),
+  ...[0,1,2,3,4].map(c=>({name:'the '+'BINGO'[c]+' column',cells:[0,1,2,3,4].map(r=>r*5+c)})),
+  {name:'a diagonal',cells:[0,6,12,18,24]},{name:'a diagonal',cells:[4,8,12,16,20]}];
+const winLines=marked=>BG_LINES.filter(l=>l.cells.every(i=>marked.has(i)));
+function cardGrid(card,marked,wins,play){
+  const win=new Set(wins.flatMap(l=>l.cells));
+  return '<div class="bgrid">'+[...'BINGO'].map(ch=>`<div class="bhead">${ch}</div>`).join('')+card.map((p,i)=>{
+    if(!p)return '<div class="bcell free">FREE</div>';
+    const cls=`bcell k-${p.kind}${marked.has(i)?' hit':''}${win.has(i)?' win':''}`;
+    return play?`<button class="${cls}" data-cell="${i}" aria-pressed="${marked.has(i)}">${esc(p.label)}</button>`
+               :`<div class="${cls}">${esc(p.label)}</div>`;
+  }).join('')+'</div>';
+}
+const lineWords=wins=>[...new Set(wins.map(l=>l.name))].join(' and ');
+
+const BG_KEY='wpw-bingo-caller-v1',BP_KEY='wpw-bingo-play-v1',BM_KEY='wpw-bingo-mode';
+let BG=null,BP={code:'',card:'',marks:[]},BG_MODE='play',BG_PEND='PSGL';
+try{BG=JSON.parse(localStorage.getItem(BG_KEY))}catch(e){}
+try{BP=Object.assign(BP,JSON.parse(localStorage.getItem(BP_KEY))||{})}catch(e){}
+try{BG_MODE=localStorage.getItem(BM_KEY)==='teacher'?'teacher':'play'}catch(e){}
+const bgSave=()=>{try{localStorage.setItem(BG_KEY,JSON.stringify(BG))}catch(e){}};
+const bpSave=()=>{try{localStorage.setItem(BP_KEY,JSON.stringify(BP))}catch(e){}};
+function bgNew(letters){BG={code:letters+'-'+(1000+Math.floor(Math.random()*9000)),called:[],show:false};bgSave()}
+if(!BG||!parseCode(BG.code)||!Array.isArray(BG.called))bgNew('PSGL');
+BG_PEND=parseCode(BG.code).letters;
+
+function bgMode(m){
+  BG_MODE=m;try{localStorage.setItem(BM_KEY,m)}catch(e){}
+  document.querySelectorAll('#bg-mode button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.mode===m));
+  $('#bg-play').hidden=m!=='play';$('#bg-teacher').hidden=m!=='teacher';
+}
+function bgRender(){
+  const g=parseCode(BG.code),pool=bingoPool(BG.code),n=BG.called.length;
+  $('#bg-code').textContent=g.code;
+  $('#bg-pool').textContent=pool.length+' word parts in this game. Each card uses 24 of them.';
+  document.querySelectorAll('#bg-kinds .chip').forEach(b=>b.setAttribute('aria-pressed',BG_PEND.includes(b.dataset.k)));
+  const cur=n?BY_ID[BG.called[n-1]]:null;
+  $('#bg-count').textContent=cur?'Clue '+n+' of '+pool.length:'Ready to start';
+  $('#bg-clue').textContent=cur?cur.meaning:n>=pool.length&&n?'Every word part has been called.':'Tap Call next to read the first meaning aloud.';
+  $('#bg-answer').innerHTML=cur?`<span class="tile k-${cur.kind}">${esc(cur.label)}</span><span class="help">${esc(cur.gloss)}</span>`:'';
+  $('#bg-answer').hidden=!(cur&&BG.show);
+  $('#bg-show').hidden=!cur;$('#bg-show').textContent=BG.show?'Hide answer':'Show answer';
+  $('#bg-next').disabled=n>=pool.length;
+  $('#bg-undo').hidden=!n;
+  $('#bg-called').innerHTML=n?BG.called.map(id=>{const p=BY_ID[id];return `<span class="k-${p.kind}">${esc(p.label)}: ${esc(p.meaning)}</span>`}).join(''):'<p class="help">None yet.</p>';
+}
+$('#bg-mode').addEventListener('click',e=>{const b=e.target.closest('button');if(b)bgMode(b.dataset.mode)});
+$('#bg-kinds').addEventListener('click',e=>{
+  const b=e.target.closest('.chip');if(!b)return;
+  const k=b.dataset.k;
+  if(BG_PEND.includes(k)){if(BG_PEND.length===1)return;BG_PEND=BG_PEND.replace(k,'')}
+  else BG_PEND=[...'PSGL'].filter(x=>BG_PEND.includes(x)||x===k).join('');
+  bgRender();
+  const size=bingoPool(BG_PEND+'-0000').length;
+  setMsg('#bg-newmsg',size<24?'Those types give only '+size+' word parts with different meanings, and a card needs 24. Add another type.':'Tap Start a new game to use these types.',size<24?'bad':'');
+});
+let bgArmed=false;
+$('#bg-new').addEventListener('click',e=>{
+  if(bingoPool(BG_PEND+'-0000').length<24){setMsg('#bg-newmsg','Add another type of word part first. A card needs 24 word parts.','bad');return}
+  if(BG.called.length&&!bgArmed){bgArmed=true;e.target.textContent='Tap again to end this game';
+    setTimeout(()=>{bgArmed=false;e.target.textContent='Start a new game'},4000);return}
+  bgArmed=false;e.target.textContent='Start a new game';
+  bgNew(BG_PEND);bgRender();$('#bg-checkgrid').innerHTML='';setMsg('#bg-checkmsg','');
+  setMsg('#bg-newmsg','New game '+BG.code+' started. Print new cards for this game.','good');
+});
+$('#bg-next').addEventListener('click',()=>{
+  const left=bingoPool(BG.code).filter(p=>!BG.called.includes(p.id));if(!left.length)return;
+  BG.called.push(left[Math.floor(Math.random()*left.length)].id);BG.show=false;bgSave();bgRender();
+});
+$('#bg-undo').addEventListener('click',()=>{BG.called.pop();BG.show=false;bgSave();bgRender()});
+$('#bg-show').addEventListener('click',()=>{BG.show=!BG.show;bgSave();bgRender()});
+$('#bg-checkform').addEventListener('submit',e=>{
+  e.preventDefault();
+  const n=Math.round(+$('#bg-checknum').value);
+  if(!(n>=1&&n<=99)){setMsg('#bg-checkmsg','Type a card number from 1 to 99.','bad');$('#bg-checkgrid').innerHTML='';return}
+  const card=bingoCard(BG.code,n),marked=new Set(card.map((p,i)=>!p||BG.called.includes(p.id)?i:-1).filter(i=>i>=0)),wins=winLines(marked);
+  setMsg('#bg-checkmsg',wins.length?'Card '+n+' has BINGO on '+lineWords(wins)+'.':'Card '+n+' does not have a line yet. Called squares are shaded.',wins.length?'good':'bad');
+  $('#bg-checkgrid').innerHTML=cardGrid(card,marked,wins,false);
+});
+const doPrint=()=>{try{window.print()}catch(e){}};
+$('#bg-print').addEventListener('click',()=>{
+  const n=Math.min(40,Math.max(1,Math.round(+$('#bg-ncards').value)||25));$('#bg-ncards').value=n;
+  const code=parseCode(BG.code).code;
+  $('#print-area').innerHTML=Array.from({length:n},(_,k)=>{
+    const card=bingoCard(code,k+1);
+    return `<div class="pcard"><div class="ptop"><b>Word Parts Bingo</b><span>Game ${code} &middot; Card ${k+1}</span></div>
+      <div class="pname">Name: ______________________________</div>
+      <div class="pgrid">${[...'BINGO'].map(c=>`<div class="ph">${c}</div>`).join('')}${card.map(p=>p?`<div>${esc(p.label)}</div>`:'<div class="pf">FREE</div>').join('')}</div></div>`;
+  }).join('');
+  doPrint();
+});
+$('#bg-printlist').addEventListener('click',()=>{
+  const code=parseCode(BG.code).code,pool=bingoPool(code);
+  $('#print-area').innerHTML=`<div class="plist"><h2>Word Parts Bingo: caller list</h2>
+    <p>Game ${code}. Read each meaning aloud in any order and check it off. Students mark the word part that matches.</p>
+    <table><thead><tr><th>Called</th><th>Word part</th><th>Type</th><th>Meaning (read aloud)</th><th>Example words</th></tr></thead><tbody>${
+    pool.map(p=>`<tr><td class="pbox"></td><td><b>${esc(p.label)}</b></td><td>${KIND[p.kind]}</td><td>${esc(p.meaning)}</td><td>${esc(p.ex.map(x=>x.replace(/[\[\]]/g,'')).join(', '))}</td></tr>`).join('')}</tbody></table></div>`;
+  doPrint();
+});
+
+function bpRender(){
+  const g=parseCode(BP.code),n=+BP.card;
+  if(!g||!(n>=1&&n<=99)){$('#bp-board').hidden=true;return}
+  const card=bingoCard(g.code,n),marked=new Set([12,...BP.marks]),wins=winLines(marked);
+  $('#bp-title').textContent='Game '+g.code+' · Card '+n;
+  $('#bp-grid').innerHTML=cardGrid(card,marked,wins,true);
+  setMsg('#bp-win',wins.length?'BINGO on '+lineWords(wins)+'! Call out BINGO and tell your teacher your card number, '+n+'.':'',wins.length?'good':'');
+  $('#bp-board').hidden=false;
+}
+$('#bp-form').addEventListener('submit',e=>{
+  e.preventDefault();
+  const g=parseCode($('#bp-code').value),n=Math.round(+$('#bp-card').value);
+  if(!g){setMsg('#bp-msg','Type the game code your teacher shows, like PSGL-4821.','bad');return}
+  if(!(n>=1&&n<=99)){setMsg('#bp-msg','Type your card number. It is a number from 1 to 99.','bad');return}
+  if(bingoPool(g.code).length<24){setMsg('#bp-msg','That game code does not work. Check it with your teacher.','bad');return}
+  if(g.code!==BP.code||n!==+BP.card)BP={code:g.code,card:n,marks:[]};
+  $('#bp-code').value=g.code;bpSave();setMsg('#bp-msg','');bpRender();
+});
+$('#bp-grid').addEventListener('click',e=>{
+  const b=e.target.closest('[data-cell]');if(!b)return;
+  const i=+b.dataset.cell,had=BP.marks.includes(i);
+  BP.marks=had?BP.marks.filter(x=>x!==i):BP.marks.concat(i);bpSave();
+  const before=winLines(new Set([12,...BP.marks.filter(x=>x!==i)])).length;
+  bpRender();
+  if(!had&&!before&&winLines(new Set([12,...BP.marks])).length)addStar();
+});
+$('#bp-clear').addEventListener('click',()=>{BP.marks=[];bpSave();bpRender()});
+$('#bp-code').value=BP.code||'';$('#bp-card').value=BP.card||'';
+bgMode(BG_MODE);bgRender();bpRender();
 
 renderExplore();newBuild();startQuiz();updateLock();LOCK_READY=true;
 show(location.hash.slice(1));
