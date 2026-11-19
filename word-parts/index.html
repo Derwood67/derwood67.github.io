@@ -2024,9 +2024,8 @@ function hostPick(){
   const vs=hostVoices();if(!vs.length)return null;
   return vs.find(v=>v.name===HOST_PREF.voice)||vs.slice().sort((a,b)=>hostRank(a)-hostRank(b))[0];
 }
-// A child voice is spoken as is. Other voices get only a small lift and a slightly slower
-// pace: anything higher sounds muffled on Chromebooks.
-const hostTune=v=>v&&isKid(v)?{pitch:1.05,rate:1.0}:{pitch:1.2,rate:0.95};
+// Clarity first: normal pitch (any pitch change blurs the words) and a slightly slow pace.
+const hostTune=v=>v&&isKid(v)?{pitch:1,rate:0.92}:{pitch:1,rate:0.88};
 const voiceLabel=v=>(isKid(v)?'Ana (girl’s voice)':v.name.replace(/^(Microsoft|Google)\s+/,'').replace(/\s*Online.*$/,'').replace(/\s*-\s*English.*$/,''))+(isNatural(v)&&!isKid(v)?' (natural)':'');
 function hostFillVoices(){
   const sel=$('#host-voice'),vs=hostVoices().sort((a,b)=>hostRank(a)-hostRank(b)),cur=hostPick();
@@ -2034,23 +2033,30 @@ function hostFillVoices(){
   sel.innerHTML=vs.map(v=>`<option value="${esc(v.name)}"${cur&&v.name===cur.name?' selected':''}>${esc(voiceLabel(v))}</option>`).join('');
   $('#host-tip').hidden=vs.some(isKid);
 }
+let HOST_RUN=0;
 function hostSay(text){
   HOST.last=text;$('#host-say').textContent='“'+text+'”';
   if(!HAS_TTS||!HOST_PREF.on)return;
   speechSynthesis.cancel();
-  const v=hostPick(),t=hostTune(v),parts=text.match(/[^.!?]+[.!?]+["”]?|[^.!?]+$/g)||[text];
-  parts.forEach((piece,k)=>{
-    const u=new SpeechSynthesisUtterance(piece.trim());
+  // One sentence at a time with a short pause between, so each sentence is heard clearly
+  // (and Chrome does not cut a long line off partway).
+  const run=++HOST_RUN,v=hostPick(),t=hostTune(v),parts=(text.match(/[^.!?]+[.!?]+["”]?|[^.!?]+$/g)||[text]).map(x=>x.trim()).filter(Boolean);
+  const host=$('#host');host.classList.add('talk');
+  const next=k=>{
+    if(run!==HOST_RUN)return;
+    if(k>=parts.length){host.classList.remove('talk');return}
+    const u=new SpeechSynthesisUtterance(parts[k]);
     if(v){u.voice=v;u.lang=v.lang}
-    u.pitch=t.pitch;u.rate=t.rate;
-    if(k===0)u.onstart=()=>$('#host').classList.add('talk');
-    if(k===parts.length-1)u.onend=u.onerror=()=>$('#host').classList.remove('talk');
+    u.pitch=t.pitch;u.rate=t.rate;u.volume=1;
+    let done=false;const go=()=>{if(done)return;done=true;setTimeout(()=>next(k+1),350)};
+    u.onend=go;u.onerror=go;
     speechSynthesis.speak(u);
-  });
+  };
+  next(0);
 }
 const pickOne=a=>a[Math.floor(Math.random()*a.length)];
 // "in- / im-" is read as "I N, or I M" so students hear the spelling, not a mumble.
-const spellPart=p=>p.label.replace(/\(.*?\)/g,'').split('/').map(x=>x.replace(/[^a-z]/gi,'').toUpperCase().split('').join(' ')).filter(Boolean).join(', or ');
+const spellPart=p=>p.label.replace(/\(.*?\)/g,'').split('/').map(x=>x.replace(/[^a-z]/gi,'').toUpperCase().split('').join(', ')).filter(Boolean).join('. Or, ');
 const sayMeaning=p=>p.meaning.replace(/;\s*/g,', or ');
 const sayKind=p=>({prefix:'the prefix',suffix:'the suffix',greek:'the Greek root',latin:'the Latin root'})[p.kind];
 function hostClue(p,n){
@@ -2060,11 +2066,11 @@ function hostClue(p,n){
 function hostAnswer(p){
   const ex=(p.ex[0]||'').replace(/[\[\]]/g,'');
   hostSay(pickOne(['Did you get it? ','Drumroll, please! ','Here is the answer! ',"Let's see if you were right! "])+
-    `It's ${sayKind(p)}, ${spellPart(p)}, which means ${sayMeaning(p)}.`+(ex?` Like in the word ${ex}!`:''));
+    `It's ${sayKind(p)}: ${spellPart(p)}. It means ${sayMeaning(p)}.`+(ex?` Like in the word ${ex}!`:''));
 }
 const hostHello=()=>hostSay("Hi, everybody! I'm Monifa, and welcome to Word Parts Bingo! Get your cards ready, and let's play!");
 $('#host-on').checked=HOST_PREF.on;
-$('#host-on').addEventListener('change',e=>{HOST_PREF.on=e.target.checked;hostSave();if(!HOST_PREF.on&&HAS_TTS)speechSynthesis.cancel()});
+$('#host-on').addEventListener('change',e=>{HOST_PREF.on=e.target.checked;hostSave();if(!HOST_PREF.on&&HAS_TTS){HOST_RUN++;speechSynthesis.cancel();$('#host').classList.remove('talk')}});
 $('#host-again').addEventListener('click',()=>{if(HOST.last)hostSay(HOST.last);else hostHello()});
 $('#host-voice').addEventListener('change',e=>{HOST_PREF.voice=e.target.value;hostSave();hostSay("Hi! It's me, Monifa! Do you like my voice?")});
 if(HAS_TTS){hostFillVoices();speechSynthesis.addEventListener?.('voiceschanged',hostFillVoices)}
