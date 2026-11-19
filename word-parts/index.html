@@ -594,6 +594,7 @@ label.help{font-weight:700}
             <label class="help" for="host-voice">Voice</label>
             <select class="search" id="host-voice"></select>
           </div>
+          <p class="help" id="host-tip" hidden style="flex-basis:100%;margin:0">For a real 10-year-old girl’s voice, open this page in Microsoft Edge and Monifa will use Ana automatically.</p>
         </div>
       </div>
       <div class="stage">
@@ -2000,36 +2001,52 @@ const lineWords=wins=>[...new Set(wins.map(l=>l.name))].join(' and ');
 
 
 /* ---------- Monifa, the game show host (reads the bingo calls aloud) ---------- */
-// Uses the browser's built-in voices, so nothing is sent anywhere. A higher pitch and a
-// slightly quick, bouncy pace make an adult female voice sound like a 14-year-old girl.
-const HOST={pitch:1.35,rate:1.04,last:'',key:'wpw-monifa'};
+// Uses the browser's built-in voices, so nothing is sent anywhere. Raising the pitch of an
+// adult voice makes it blurry, so Monifa uses a real child voice when the browser has one
+// (Microsoft Ana, a girl's voice in Microsoft Edge) and otherwise the clearest natural
+// female voice at close to normal pitch. Long lines are spoken a sentence at a time,
+// which keeps Chrome from cutting a voice off partway through.
+const HOST={last:'',key:'wpw-monifa-v2'};
 let HOST_PREF={on:true,voice:''};
 try{HOST_PREF=Object.assign(HOST_PREF,JSON.parse(localStorage.getItem(HOST.key))||{})}catch(e){}
 const hostSave=()=>{try{localStorage.setItem(HOST.key,JSON.stringify(HOST_PREF))}catch(e){}};
 const HAS_TTS='speechSynthesis' in window&&'SpeechSynthesisUtterance' in window;
-const GIRLISH=['google us english','samantha','microsoft ava','microsoft jenny','microsoft aria','microsoft zira','karen','moira','tessa','victoria','allison','susan','female'];
+const isKid=v=>/\bana\b/i.test(v.name);
+const isNatural=v=>/natural|online|neural/i.test(v.name);
+const CLEAR=['ava','emma','jenny','aria','michelle','google us english','samantha','allison','zira','susan','karen','female'];
 function hostVoices(){return HAS_TTS?speechSynthesis.getVoices().filter(v=>/^en/i.test(v.lang)):[]}
+function hostRank(v){
+  if(isKid(v))return 0;
+  const n=v.name.toLowerCase(),k=CLEAR.findIndex(x=>n.includes(x));
+  return (k<0?50:k+1)+(isNatural(v)?0:20)+(/en-US/i.test(v.lang)?0:5);
+}
 function hostPick(){
   const vs=hostVoices();if(!vs.length)return null;
-  const mine=vs.find(v=>v.name===HOST_PREF.voice);if(mine)return mine;
-  for(const n of GIRLISH){const v=vs.find(v=>v.name.toLowerCase().includes(n));if(v)return v}
-  return vs.find(v=>/en-US/i.test(v.lang))||vs[0];
+  return vs.find(v=>v.name===HOST_PREF.voice)||vs.slice().sort((a,b)=>hostRank(a)-hostRank(b))[0];
 }
+// A child voice is spoken as is. Other voices get only a small lift and a slightly slower
+// pace: anything higher sounds muffled on Chromebooks.
+const hostTune=v=>v&&isKid(v)?{pitch:1.05,rate:1.0}:{pitch:1.2,rate:0.95};
+const voiceLabel=v=>(isKid(v)?'Ana (girl’s voice)':v.name.replace(/^(Microsoft|Google)\s+/,'').replace(/\s*Online.*$/,'').replace(/\s*-\s*English.*$/,''))+(isNatural(v)&&!isKid(v)?' (natural)':'');
 function hostFillVoices(){
-  const sel=$('#host-voice'),vs=hostVoices(),cur=hostPick();
+  const sel=$('#host-voice'),vs=hostVoices().sort((a,b)=>hostRank(a)-hostRank(b)),cur=hostPick();
   if(!vs.length){sel.innerHTML='<option>Default voice</option>';return}
-  sel.innerHTML=vs.map(v=>`<option value="${esc(v.name)}"${cur&&v.name===cur.name?' selected':''}>${esc(v.name.replace(/^(Microsoft|Google)\s+/,'').replace(/\s*Online.*$/,''))}</option>`).join('');
+  sel.innerHTML=vs.map(v=>`<option value="${esc(v.name)}"${cur&&v.name===cur.name?' selected':''}>${esc(voiceLabel(v))}</option>`).join('');
+  $('#host-tip').hidden=vs.some(isKid);
 }
 function hostSay(text){
   HOST.last=text;$('#host-say').textContent='“'+text+'”';
   if(!HAS_TTS||!HOST_PREF.on)return;
   speechSynthesis.cancel();
-  const u=new SpeechSynthesisUtterance(text),v=hostPick();
-  if(v){u.voice=v;u.lang=v.lang}
-  u.pitch=HOST.pitch;u.rate=HOST.rate;
-  u.onstart=()=>$('#host').classList.add('talk');
-  u.onend=u.onerror=()=>$('#host').classList.remove('talk');
-  speechSynthesis.speak(u);
+  const v=hostPick(),t=hostTune(v),parts=text.match(/[^.!?]+[.!?]+["”]?|[^.!?]+$/g)||[text];
+  parts.forEach((piece,k)=>{
+    const u=new SpeechSynthesisUtterance(piece.trim());
+    if(v){u.voice=v;u.lang=v.lang}
+    u.pitch=t.pitch;u.rate=t.rate;
+    if(k===0)u.onstart=()=>$('#host').classList.add('talk');
+    if(k===parts.length-1)u.onend=u.onerror=()=>$('#host').classList.remove('talk');
+    speechSynthesis.speak(u);
+  });
 }
 const pickOne=a=>a[Math.floor(Math.random()*a.length)];
 // "in- / im-" is read as "I N, or I M" so students hear the spelling, not a mumble.
