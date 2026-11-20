@@ -411,9 +411,6 @@ label.help{font-weight:700}
         <section class="tsec">
           <h3>Word Parts Bingo</h3>
           <div class="row"><button class="btn sm" type="button" id="t-call">Call a bingo game</button></div>
-          <h4 style="margin:12px 0 4px">Lock “Play on screen”</h4>
-          <label class="help"><input type="checkbox" id="t-lockplay"> Locked: students play on paper cards only</label>
-          <p class="help">Students on Chromebooks need a 2-digit join PIN, and it shows on your caller screen only when this is unlocked. Locking stops new players from joining. A student who already joined can finish that game. PINs change every day.</p>
           <h4 style="margin:12px 0 4px">Lock “Call the game”</h4>
           <p class="help">Student Chromebooks are always locked. To let a student call a game, have them type today’s caller pass: <b id="t-pass"></b>. You can always open the caller with your teacher code.</p>
           <label class="help"><input type="checkbox" id="t-lockcall" checked> Also lock it on this computer (uncheck for a classroom computer that students use to call games)</label>
@@ -695,8 +692,6 @@ label.help{font-weight:700}
           <input class="search bnum" id="bp-code" autocomplete="off" maxlength="10" placeholder="PSGL-4821">
           <label class="help" for="bp-card">Card number</label>
           <input class="search bnum" id="bp-card" type="number" min="1" max="99" inputmode="numeric" placeholder="1 to 99">
-          <label class="help" for="bp-pin">Join PIN</label>
-          <input class="search bnum" id="bp-pin" inputmode="numeric" maxlength="2" autocomplete="off" placeholder="2 digits" style="flex-basis:6em;width:6em">
           <button class="btn">Show my card</button>
         </form>
         <div class="msg" id="bp-msg" aria-live="polite"></div>
@@ -2566,7 +2561,6 @@ else{$('#host-say').textContent='This browser cannot speak, so read the clues al
 // Both are worked out from today's date, so every device agrees without talking to each other.
 const todayKey=()=>{const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()};
 const callerPass=()=>String(1000+Math.floor(rngFor('caller-pass:'+todayKey())()*9000));
-const joinPin=code=>String(10+Math.floor(rngFor('join-pin:'+parseCode(code).code+':'+todayKey())()*90));
 const LK_KEY='wpw-bingo-locks';let LOCKS={play:false,call:true};
 try{LOCKS=Object.assign(LOCKS,JSON.parse(localStorage.getItem(LK_KEY))||{})}catch(e){}
 const lkSave=()=>{try{localStorage.setItem(LK_KEY,JSON.stringify(LOCKS))}catch(e){}};
@@ -2610,9 +2604,7 @@ function bgRender(){
   $('#bg-show').hidden=!cur;$('#bg-show').textContent=BG.show?'Hide answer':'Show answer';
   $('#bg-next').disabled=n>=pool.length||!!BG.stopped;
   $('#bg-resume').hidden=!BG.stopped;
-  $('#bg-join').innerHTML=LOCKS.play?'Play on screen is locked. Students use paper cards.'
-    :T.on()?`Chromebook players: game code <b>${esc(g.code)}</b> &middot; join PIN <b>${joinPin(g.code)}</b>`
-    :'Students playing on Chromebooks need the join PIN from your teacher.';
+  $('#bg-join').innerHTML=`Chromebook players: game code <b>${esc(g.code)}</b>`;
   $('#bg-undo').hidden=!n;
   $('#bg-called').innerHTML=n?BG.called.map(id=>{const p=BY_ID[id];return `<span class="k-${p.kind}">${esc(p.label)}: ${g.words?esc(plainWord(bingoWord(g.code,p))):esc(p.meaning)}</span>`}).join(''):'<p class="help">None yet.</p>';
 }
@@ -2870,7 +2862,7 @@ $('#bg-useform').addEventListener('submit',e=>{
 
 function bpRender(){
   const g=parseCode(BP.code),n=+BP.card;
-  if(!g||!(n>=1&&n<=99)||BP.day!==todayKey()){$('#bp-board').hidden=true;return}
+  if(!g||!(n>=1&&n<=99)){$('#bp-board').hidden=true;return}
   const card=bingoCard(g.code,n),marked=new Set([12,...BP.marks]),wins=winLines(marked);
   $('#bp-title').textContent='Game '+g.code+' · Card '+n;
   $('#bp-grid').innerHTML=cardGrid(card,marked,wins,true);
@@ -2883,9 +2875,8 @@ $('#bp-form').addEventListener('submit',e=>{
   if(!g){setMsg('#bp-msg','Type the game code your teacher shows, like PSGL-4821 or WPSGL-2011.','bad');return}
   if(!(n>=1&&n<=99)){setMsg('#bp-msg','Type your card number. It is a number from 1 to 99.','bad');return}
   if(bingoPool(g.code).length<24){setMsg('#bp-msg','That game code does not work. Check it with your teacher.','bad');return}
-  if($('#bp-pin').value.trim()!==joinPin(g.code)){setMsg('#bp-msg','Type the 2-digit join PIN on your teacher’s screen. No PIN on the screen? Today’s game is played on paper cards.','bad');return}
   if(g.code!==BP.code||n!==+BP.card)BP={code:g.code,card:n,marks:[]};
-  BP.day=todayKey();
+
   $('#bp-code').value=g.code;bpSave();setMsg('#bp-msg','');bpRender();
 });
 $('#bp-grid').addEventListener('click',e=>{
@@ -2925,10 +2916,9 @@ $('#t-form').addEventListener('submit',e=>{
     $('#t-msg').className='msg bad';
   });
 });
-$('#t-lockplay').checked=LOCKS.play;$('#t-lockcall').checked=LOCKS.call;
+$('#t-lockcall').checked=LOCKS.call;
 function lockUI(){$('#t-pass').textContent=callerPass()}
 lockUI();
-$('#t-lockplay').addEventListener('change',e=>{if(!T.on()){e.target.checked=LOCKS.play;return}LOCKS.play=e.target.checked;lkSave();bgRender()});
 $('#t-lockcall').addEventListener('change',e=>{if(!T.on()){e.target.checked=LOCKS.call;return}LOCKS.call=e.target.checked;lkSave();lockUI()});
 $('#t-call').addEventListener('click',()=>{tClose();show('bingo');bgMode('teacher');$('#view-bingo').scrollIntoView({behavior:'smooth',block:'start'})});
 $('#t-lock').addEventListener('click',()=>{T.set(false);T.fresh=0;T.code='';if(HAS_TTS){HOST_RUN++;speechSynthesis.cancel()}bgMode('play');tClose()});
