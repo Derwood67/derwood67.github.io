@@ -205,6 +205,9 @@ mark{background:transparent;color:var(--k);font-weight:700;text-decoration:under
 .btimer select{font:inherit;padding:6px 8px;border-radius:10px;border:2px solid var(--line);background:var(--surface);color:var(--ink)}
 .btimer .tcustom input{width:4.2em}
 @media (prefers-reduced-motion: no-preference){.btimer.up .tclock{animation:tpulse .5s ease-in-out 4 alternate}@keyframes tpulse{to{transform:scale(1.08)}}}
+/* bingo: example sentence under the answer */
+.bsent{flex-basis:100%;font-size:1.25rem;line-height:1.4;border-left:5px solid var(--accent);padding:6px 12px;margin-top:4px;background:var(--surface)}
+.bsent mark{background:var(--good-bg);color:inherit;font-weight:700;border-radius:4px;padding:0 2px}
 /* bingo */
 .bnum{flex:0 1 9em;width:9em;min-width:0}
 .bcode{font-family:var(--display);font-size:1.6rem;font-weight:600;letter-spacing:.06em}
@@ -870,6 +873,7 @@ label.help{font-weight:700}
 
 <script src="realwords.js"></script>
 <script src="config.js"></script>
+<script src="sentences.js"></script>
 <script>
 const KIND={prefix:'Prefix',suffix:'Suffix',greek:'Greek root',latin:'Latin root'};
 const PARTS=[
@@ -2590,14 +2594,32 @@ function hostWordClue(p,n,word){
   hostSay(pickOne([`Here comes word number ${n}!`,`Okay, friends, word number ${n}!`,`Eyes on your cards! Word number ${n}!`,`Are you ready? Word number ${n}!`])+
     ` Find the word part in this word: ${word}. One more time: ${word}.`+(isHardGame(BG.code)?pickOne([' This word has more than one part, but only one is on your card!',' Break it apart. Only one part is on your card!','']):''));
 }
+// The example sentence for a called part: the called word in a word game, or the part's
+// first example word that has a sentence in a meanings game.
+function bingoSentence(code,p){
+  const S=window.WP_SENTENCES||{};
+  const words=isWordGame(code)?[bingoWord(code,p)]:p.ex.map(plainWord);
+  for(const w of words)if(S[w])return {word:w,text:S[w]};
+  return null;
+}
+// The sentence with the word in bold and its word part highlighted.
+function sentenceHTML(p,sn){
+  const re=new RegExp('(^|[^A-Za-z])('+sn.word.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')(?![A-Za-z])','i');
+  const m=sn.text.match(re);if(!m)return esc(sn.text);
+  const i=m.index+m[1].length,w=sn.text.slice(i,i+sn.word.length),lw=w.toLowerCase();
+  let inner=markPart(p,lw);
+  if(w[0]!==lw[0])inner=inner.replace(/^(<mark>)?([a-z])/,(x,mk,c)=>(mk||'')+c.toUpperCase());
+  return esc(sn.text.slice(0,i))+'<b>'+inner+'</b>'+esc(sn.text.slice(i+sn.word.length));
+}
+const sayInSentence=(code,p)=>{const sn=bingoSentence(code,p);return sn?` Here it is in a sentence: ${sn.text}`:''};
 function hostWordAnswer(p,word,afterDrum){
   hostSay(pickOne(afterDrum?['Did you get it? ','Here is the answer! ','Ta-da! ']:['Did you get it? ','Drumroll, please! ','Here is the answer! '])+
-    `${word} has ${sayKind(p)}: ${spellIn(p,word)}. It means ${sayMeaning(p)}.`+(isHardGame(BG.code)?(()=>{const o=otherParts(p,word)[0];return o?` It also has ${sayKind(o)} ${spellIn(o,word)}, but that one is not on your card.`:''})():''));
+    `${word} has ${sayKind(p)}: ${spellIn(p,word)}. It means ${sayMeaning(p)}.`+(isHardGame(BG.code)?(()=>{const o=otherParts(p,word)[0];return o?` It also has ${sayKind(o)} ${spellIn(o,word)}, but that one is not on your card.`:''})():'')+sayInSentence(BG.code,p));
 }
 function hostAnswer(p,afterDrum){
   const ex=(p.ex[0]||'').replace(/[\[\]]/g,'');
   hostSay(pickOne(afterDrum?['Did you get it? ','Here is the answer! ',"Let's see if you were right! ",'Ta-da! ']:['Did you get it? ','Drumroll, please! ','Here is the answer! ',"Let's see if you were right! "])+
-    `It's ${sayKind(p)}: ${spellPart(p)}. It means ${sayMeaning(p)}.`+(ex?` Like in the word ${ex}!`:''));
+    `It's ${sayKind(p)}: ${spellPart(p)}. It means ${sayMeaning(p)}.`+(sayInSentence(BG.code,p)||(ex?` Like in the word ${ex}!`:'')));
 }
 const hostHello=()=>hostSay(isHardGame(BG.code)?"Hi, everybody! I'm Monifa, and welcome to Harder Find the Word Part Bingo! My words have more than one part, so break them apart and find the one on your card. Let's play!":isWordGame(BG.code)?"Hi, everybody! I'm Monifa, and welcome to Find the Word Part Bingo! I'll say a word, and you find its word part on your card. Let's play!":"Hi, everybody! I'm Monifa, and welcome to Word Parts Bingo! Get your cards ready, and let's play!");
 $('#host-on').checked=HOST_PREF.on;
@@ -2657,7 +2679,7 @@ function bgRender(){
   const cur=n?BY_ID[BG.called[n-1]]:null;
   $('#bg-count').textContent=cur?'Clue '+n+' of '+pool.length:'Ready to start';
   $('#bg-clue').textContent=cur?(g.words?plainWord(bingoWord(g.code,cur)):cur.meaning):n>=pool.length&&n?'Every word part has been called.':g.words?'Tap Call next to call the first word.':'Tap Call next to read the first meaning aloud.';
-  $('#bg-answer').innerHTML=cur?`<span class="tile k-${cur.kind}">${esc(cur.label)}</span><span class="help">${g.words?markPart(cur,bingoWord(g.code,cur))+': '+esc(cur.meaning):esc(cur.gloss)}</span>`:'';
+  $('#bg-answer').innerHTML=cur?`<span class="tile k-${cur.kind}">${esc(cur.label)}</span><span class="help">${g.words?markPart(cur,bingoWord(g.code,cur))+': '+esc(cur.meaning):esc(cur.gloss)}</span>${(sn=>sn?`<div class="bsent">${sentenceHTML(cur,sn)}</div>`:'')(bingoSentence(g.code,cur))}`:'';
   $('#bg-answer').hidden=!(cur&&BG.show);
   $('#bg-show').hidden=!cur;$('#bg-show').textContent=BG.show?'Hide answer':'Show answer';
   $('#bg-next').disabled=n>=pool.length||!!BG.stopped;
