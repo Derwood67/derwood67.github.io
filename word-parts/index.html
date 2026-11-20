@@ -824,12 +824,11 @@ label.help{font-weight:700}
           <div class="row">
             <button class="btn sm" id="bt-start">Start timer</button>
             <button class="btn sm ghost" id="bt-reset">Reset</button>
-            <label class="help" for="bt-auto"><input type="checkbox" id="bt-auto" checked> Start the timer after each call</label>
             <label class="help" for="bt-reveal"><input type="checkbox" id="bt-reveal" checked> Show the answer when time is up</label>
             <button class="btn sm ghost" id="bt-test">Test sound</button>
           </div>
           <div class="tbar" aria-hidden="true"><i id="bt-bar"></i></div>
-          <span class="help" id="bt-msg" aria-live="polite">Pick a time. The timer starts when Monifa calls a clue, and a soft chime plays when time is up.</span>
+          <span class="help" id="bt-msg" aria-live="polite">Pick a time. The timer starts as soon as each word is shown, and a soft chime plays when time is up.</span>
         </div>
         <details>
           <summary class="help">Called so far (shows the answers)</summary>
@@ -2748,7 +2747,7 @@ $('#bg-next').addEventListener('click',async()=>{
   BG.called.push(pick);BG.show=false;bgSave();bgRender();
   const n=BG.called.length,cp=BY_ID[BG.called[n-1]];
   if(isWordGame(BG.code))hostWordClue(cp,n,plainWord(bingoWord(BG.code,cp)));else hostClue(cp,n);
-  if(BT.auto){btReset();btStart()}else btReset('Tap Start timer when you are ready.');
+  btReset();btStart(); // the timer always starts as soon as the word (clue) is shown
 });
 $('#bg-undo').addEventListener('click',()=>{if(BG_ROLLING)return;btReset();BG.called.pop();BG.show=false;bgSave();bgRender()});
 async function bgReveal(drum){
@@ -2833,7 +2832,7 @@ function btSetLen(sec){
   sel.value=preset?String(BT.len):'custom';
   $('#bt-custom').hidden=preset;
   $('#bt-min').value=Math.floor(BT.len/60);$('#bt-sec').value=BT.len%60;
-  $('#bt-auto').checked=BT.auto;btPaint();
+  btPaint();
 })();
 $('#bt-len').addEventListener('change',e=>{
   const v=e.target.value;$('#bt-custom').hidden=v!=='custom';
@@ -2848,7 +2847,6 @@ function btCustom(){
 $('#bt-start').addEventListener('click',()=>{BT.endAt?btPause():btStart()});
 $('#bt-reset').addEventListener('click',()=>btReset());
 $('#bt-test').addEventListener('click',btBuzzer);
-$('#bt-auto').addEventListener('change',e=>{BT.auto=e.target.checked;btSave()});
 $('#bt-reveal').checked=BT.reveal;
 $('#bt-reveal').addEventListener('change',e=>{BT.reveal=e.target.checked;btSave()});
 $('#bg-checkform').addEventListener('submit',e=>{
