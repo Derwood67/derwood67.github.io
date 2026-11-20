@@ -426,6 +426,19 @@ label.help{font-weight:700}
           <div class="row"><button class="btn sm" type="button" id="t-call">Call a bingo game</button></div>
         </section>
         <section class="tsec">
+          <h3>Missed word parts: practice lists</h3>
+          <p class="help">One page for each student with every word part they missed in the Quiz and Find the Word Part, what it means, example words, and how many times they missed it. To make PDFs, choose “Save as PDF” as the printer.</p>
+          <p class="help" id="ml-src"></p>
+          <div class="row">
+            <label class="help" for="ml-who">Student</label>
+            <select class="search" id="ml-who" style="max-width:16em"></select>
+            <label class="help" for="ml-when">Missed</label>
+            <select class="search" id="ml-when" style="max-width:10em"><option value="today">Today</option><option value="week" selected>Last 7 days</option><option value="all">Any time</option></select>
+          </div>
+          <div class="row"><button class="btn sm" type="button" id="ml-go">Print practice lists</button><button class="btn sm ghost" type="button" id="ml-reload">Refresh list</button></div>
+          <div class="msg" id="ml-msg" aria-live="polite"></div>
+        </section>
+        <section class="tsec">
           <h3>Print student work</h3>
           <p class="help">Prints each student on their own page: what they wrote, their rating (⭐ Mastery only when everything is correct), what to fix, a corrected version, and suggestions.</p>
           <p class="help" id="pr-src"></p>
@@ -583,6 +596,7 @@ label.help{font-weight:700}
       <div class="breakdown" id="f-break" hidden></div>
       <div class="row">
         <button class="btn" id="f-next" hidden>Next word</button>
+        <button class="btn sm ghost" id="f-mylist" data-mylist>Print my practice list</button>
         <span class="tally" id="f-tally"></span>
       </div>
     </div>
@@ -625,6 +639,7 @@ label.help{font-weight:700}
       <div class="breakdown" id="q-break" hidden></div>
       <div class="row">
         <button class="btn" id="q-next" hidden>Next question</button>
+        <button class="btn sm ghost" id="q-mylist" data-mylist>Print my practice list</button>
         <span class="tally" id="q-tally"></span>
       </div>
     </div>
@@ -1683,7 +1698,7 @@ $('#f-opts').addEventListener('click',e=>{
   const b=e.target.closest('.opt');if(!b||b.disabled)return;
   const it=F.cur,ok=b.dataset.id===it.p.id;
   F.tried++;
-  if(ok){F.right++;F.streak++}else{F.streak=0;if(!F.missed.some(m=>m.p.id===it.p.id))F.missed.push(it)}
+  if(ok){F.right++;F.streak++}else{F.streak=0;if(!F.missed.some(m=>m.p.id===it.p.id))F.missed.push(it);missAdd('Find the Word Part',{id:it.p.id,text:it.p.label,kind:it.p.kind,meaning:it.p.meaning})}
   document.querySelectorAll('#f-opts .opt').forEach(o=>{
     o.disabled=true;
     if(o.dataset.id===it.p.id){o.classList.add('right');o.insertAdjacentText('afterbegin','✓ ')}
@@ -1777,6 +1792,7 @@ $('#q-opts').addEventListener('click',e=>{
     Q.streak=0;
     const m=q.type==='part'?{text:q.p.label,kind:q.p.kind,meaning:q.p.meaning}:{text:q.w.w,kind:'base',meaning:q.w.def};
     if(!Q.missed.some(x=>x.text===m.text))Q.missed.push(m);
+    missAdd('Quiz',q.type==='part'?{id:q.p.id,text:q.p.label,kind:q.p.kind,meaning:q.p.meaning}:{text:q.w.w,kind:'base',meaning:q.w.def});
   }
   document.querySelectorAll('#q-opts .opt').forEach(o=>{
     o.disabled=true;
@@ -2923,6 +2939,16 @@ if(!SR)$('#bg-listenrow').hidden=true;
 // Printing opens the cards in their own tab. Many school setups (Google Classroom, embedded
 // pages, some Chromebooks) block the print window inside an app, but not in a plain tab.
 const PRINT_CSS=`@page{size:letter portrait;margin:.4in}
+.mpage{break-after:page;font-size:11pt}.mpage:last-child{break-after:auto}
+.mpage h1{font-family:"Fredoka","Trebuchet MS",system-ui,sans-serif;font-size:20pt;margin:0 0 2pt}
+.mpage .msub{margin:0 0 10pt;color:#333}
+.mpage table{width:100%;border-collapse:collapse}
+.mpage th,.mpage td{border:1px solid #888;padding:5pt 6pt;text-align:left;vertical-align:top}
+.mpage th{background:#e8e8e8;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:10pt}
+.mpage tr{break-inside:avoid}
+.mpage td.mp{font-family:"Fredoka","Trebuchet MS",system-ui,sans-serif;font-weight:600;font-size:13pt;white-space:nowrap}
+.mpage td.mw{width:1.8in}
+.mpage .mtip{margin-top:10pt;font-size:10pt;color:#333}
 body{margin:0;color:#000;background:#fff;font-family:"Atkinson Hyperlegible",Verdana,system-ui,sans-serif}
 .bar{position:sticky;top:0;display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding:12px 16px;background:#fff8e6;border-bottom:2px solid #e0c060;font-size:15px}
 .bar button{font:700 18px system-ui,sans-serif;padding:10px 22px;border-radius:10px;border:0;background:#1d5fbf;color:#fff;cursor:pointer}
@@ -3035,7 +3061,7 @@ function tShow(){
   const open=T.on()&&Date.now()-T.fresh<600000;
   $('#t-form').hidden=open;$('#t-panel').hidden=!open;
   $('#t-msg').textContent='';$('#t-code').value='';
-  if(open){prInit();hostFillVoices();$('#host-on').checked=HOST_PREF.on;$('#host-rate').value=String(HOST_PREF.rate||1)}
+  if(open){prInit();mlLoad();hostFillVoices();$('#host-on').checked=HOST_PREF.on;$('#host-rate').value=String(HOST_PREF.rate||1)}
   if(typeof TD.showModal==='function'){if(!TD.open)TD.showModal()}else TD.setAttribute('open','');
   setTimeout(()=>(open?$('#host-voice'):$('#t-code')).focus(),30);
 }
@@ -3056,6 +3082,80 @@ $('#t-form').addEventListener('submit',e=>{
 $('#t-call').addEventListener('click',()=>{tClose();show('bingo');bgMode('teacher');$('#view-bingo').scrollIntoView({behavior:'smooth',block:'start'})});
 $('#t-lock').addEventListener('click',()=>{T.set(false);T.fresh=0;T.code='';if(HAS_TTS){HOST_RUN++;speechSynthesis.cancel()}bgMode('play');tClose()});
 document.addEventListener('classgate:signin',()=>{T.set(false);bgMode('play')});
+
+/* ---------- Missed word parts: each student's practice list ----------
+   Every word part (or word) a student misses in the Quiz or Find the Word Part is saved on
+   their Chromebook, and sent to the Google Sheet's "Missed" tab when the Sheet is connected.
+   Students can print their own list; the teacher dashboard prints one page per student. */
+const MS_KEY='wpw-missed-v1';
+const msAll=()=>{try{return JSON.parse(localStorage.getItem(MS_KEY))||[]}catch(e){return []}};
+const msSave=a=>{try{localStorage.setItem(MS_KEY,JSON.stringify(a.slice(-600)))}catch(e){}};
+const msName=()=>((window.ClassGate&&ClassGate.name())||(window.W&&W.name&&W.name.trim())||'').trim()||'(no name)';
+function missAdd(activity,item){
+  const row={student:msName(),time:new Date().toISOString(),activity,key:item.id||item.text,text:item.text,kind:item.kind,meaning:item.meaning};
+  const a=msAll();a.push(row);msSave(a);
+  if(SHEET_URL){OUT.q.push(Object.assign({type:'miss'},row));outSave();outFlush()}
+}
+// Group misses into one list per student: each word part once, with how many times it was missed.
+function missLists(rows){
+  const by=new Map();
+  rows.forEach(r=>{
+    const k=keyName(r.student);if(!k)return;
+    if(!by.has(k))by.set(k,{name:String(r.student).trim(),items:new Map()});
+    const it=by.get(k).items,key=String(r.key||r.text);
+    if(!it.has(key))it.set(key,{key,text:r.text,kind:r.kind,meaning:r.meaning,count:0,acts:new Set()});
+    const m=it.get(key);m.count++;if(r.activity)m.acts.add(r.activity);
+  });
+  return [...by.values()].map(s=>({name:s.name,items:[...s.items.values()].sort((a,b)=>b.count-a.count||String(a.text).localeCompare(String(b.text)))}))
+    .sort((a,b)=>a.name.localeCompare(b.name));
+}
+const KINDNAME={prefix:'Prefix',suffix:'Suffix',greek:'Greek root',latin:'Latin root',base:'Word'};
+function missPageHTML(st){
+  const rows=st.items.map(m=>{
+    const p=BY_ID[m.key];
+    const ex=p?p.ex.slice(0,3).map(plainWord).join(', '):'';
+    return `<tr><td class="mp">${esc(m.text)}</td><td>${esc(KINDNAME[m.kind]||'')}</td><td>${esc(m.meaning||'')}</td><td>${esc(ex)}</td><td style="text-align:center">${m.count}</td><td class="mw"></td></tr>`;
+  }).join('');
+  return `<div class="mpage"><h1>Word Parts to Practice</h1>
+    <p class="msub"><b>${esc(st.name)}</b> &middot; Mr. Echols’ Room 2 &middot; ${esc(new Date().toLocaleDateString())} &middot; ${st.items.length} to practice</p>
+    ${st.items.length?`<table><thead><tr><th>Word part</th><th>Type</th><th>What it means</th><th>Example words</th><th>Times missed</th><th>Write a new word with it</th></tr></thead><tbody>${rows}</tbody></table>
+    <p class="mtip">Practice: say each word part and its meaning out loud, then write a new word that uses it. Check your words in the Explore tab.</p>`
+    :'<p>Nothing missed. Great work!</p>'}</div>`;
+}
+// Students print their own list.
+document.querySelectorAll('[data-mylist]').forEach(b=>b.addEventListener('click',()=>{
+  const me=keyName(msName()),st=missLists(msAll().filter(r=>keyName(r.student)===me))[0]||{name:msName(),items:[]};
+  printTab('Word parts to practice: '+st.name,missPageHTML(st));
+}));
+// Teacher dashboard: one page per student.
+const ML={rows:null,source:''};
+function mlLoad(){
+  $('#ml-msg').textContent='Loading...';
+  const done=(rows,src)=>{ML.rows=rows;ML.source=src;mlFill()};
+  if(SHEET_URL)return fetch(SHEET_URL+'?action=results&key='+encodeURIComponent(T.code||'')).then(r=>r.json()).then(j=>{
+      if(j.error){$('#ml-msg').textContent=j.message||'The Google Sheet did not accept the teacher code.';return done([],'sheet')}
+      done((j.misses||[]).filter(r=>r.student),'sheet');
+    }).catch(()=>{$('#ml-msg').textContent='Could not reach the Google Sheet. Showing lists saved on this computer.';done(msAll(),'local')});
+  done(msAll(),'local');return Promise.resolve();
+}
+function mlFill(){
+  const lists=missLists(ML.rows),cur=$('#ml-who').value;
+  $('#ml-who').innerHTML='<option value="">All students ('+lists.length+')</option>'+lists.map(l=>`<option value="${esc(keyName(l.name))}">${esc(l.name)}</option>`).join('');
+  if(lists.some(l=>keyName(l.name)===cur))$('#ml-who').value=cur;
+  $('#ml-src').textContent=ML.source==='sheet'?'Lists come from your Google Sheet: every student’s misses.'
+    :'This app is not connected to its Google Sheet yet, so only misses saved on this computer can print. Students can print their own list with “Print my practice list” in the Quiz or Find the Word Part. Connect the Sheet (see the results page) to print every student from here.';
+  if(!/Could not|did not/.test($('#ml-msg').textContent))$('#ml-msg').textContent=lists.length?'':'No missed word parts yet.';
+}
+$('#ml-go').addEventListener('click',()=>{
+  if(!ML.rows)return mlLoad();
+  const v=$('#ml-when').value,cut=v==='today'?new Date().setHours(0,0,0,0):v==='week'?Date.now()-7*864e5:0,who=$('#ml-who').value;
+  const lists=missLists(ML.rows.filter(r=>!cut||new Date(r.time).getTime()>=cut)).filter(l=>!who||keyName(l.name)===who).filter(l=>l.items.length);
+  if(!lists.length){setMsg('#ml-msg','No missed word parts for '+(who?'that student':'any student')+' in that time.','bad');return}
+  printTab('Word parts to practice',lists.map(missPageHTML).join(''));
+  setMsg('#ml-msg',lists.length+' practice list'+(lists.length>1?'s':'')+' opened in a new tab. Press Print, or choose Save as PDF.','good');
+});
+$('#ml-reload').addEventListener('click',mlLoad);
+
 /* ---------- Print student work (teacher dashboard) ---------- */
 const PR={data:null,source:''};
 const keyName=n=>String(n||'').trim().toLowerCase();

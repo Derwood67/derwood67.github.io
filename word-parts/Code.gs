@@ -10,6 +10,7 @@
 //
 // "Paragraphs" tab: one row each time a student turns in a paragraph.
 // "Sentences" tab:  one row each time a student checks a sentence (Explore cards and Write Sentences).
+// "Missed" tab:     one row each time a student misses a word part in the Quiz or Find the Word Part.
 
 const TEACHER_CODE = '';
 const CODE_HASH = 'cf2d0fe7ea0a7780592080ef0bf415a6043a3d59aa5d72ace64d39c6e0837285';
@@ -17,13 +18,19 @@ const CODE_HASH = 'cf2d0fe7ea0a7780592080ef0bf415a6043a3d59aa5d72ace64d39c6e0837
 const HEADERS = ['Turned in', 'Student', 'Rating (4 Mastery, 3 Almost, 2 Not yet, 1 Sorry)', 'Time spent (sec)', 'Time spent (min)', 'Sentences',
                  'Root words', 'Root words used', 'Mistakes found', 'Feedback given', 'Times checked', 'Paragraph'];
 const S_HEADERS = ['Checked', 'Student', 'Activity', 'Task', 'Word part or words', 'Level', 'Sentence', 'Correct?', 'Feedback given'];
+const M_HEADERS = ['Missed', 'Student', 'Activity', 'Word part or word', 'Type', 'Meaning', 'Part id'];
 
 function doPost(e) {
   const d = JSON.parse(e.postData.contents);
   const lock = LockService.getScriptLock();
   lock.waitLock(15000);
   try {
-    if (d.type === 'sentence') {
+    if (d.type === 'miss') {
+      getSheet_('Missed', M_HEADERS).appendRow([
+        d.time ? new Date(d.time) : new Date(), clean_(d.student, 60), clean_(d.activity, 40), clean_(d.text, 80),
+        clean_(d.kind, 20), clean_(d.meaning, 300), clean_(d.key, 80)
+      ]);
+    } else if (d.type === 'sentence') {
       getSheet_('Sentences', S_HEADERS).appendRow([
         d.time ? new Date(d.time) : new Date(), clean_(d.student, 60), clean_(d.activity, 40), clean_(d.task, 300),
         clean_(d.key, 200), num_(d.level), clean_(d.text, 1500), d.passed ? 'Yes' : 'No', clean_(d.feedback, 3000)
@@ -47,7 +54,7 @@ function doPost(e) {
 function doGet(e) {
   const p = e.parameter || {};
   if (!keyOK_(p.key)) return json_({ error: 'code', message: 'That teacher code is not right.' });
-  return json_({ now: Date.now(), results: getRows_(), sentences: getSentenceRows_() });
+  return json_({ now: Date.now(), results: getRows_(), sentences: getSentenceRows_(), misses: getMissRows_() });
 }
 
 function keyOK_(k) {
@@ -59,7 +66,17 @@ function keyOK_(k) {
   return hex === CODE_HASH;
 }
 
-function setup() { getSheet_('Paragraphs', HEADERS); getSheet_('Sentences', S_HEADERS); }
+function setup() { getSheet_('Paragraphs', HEADERS); getSheet_('Sentences', S_HEADERS); getSheet_('Missed', M_HEADERS); }
+
+function getMissRows_() {
+  const sheet = getSheet_('Missed', M_HEADERS);
+  const n = sheet.getLastRow();
+  if (n < 2) return [];
+  return sheet.getRange(2, 1, n - 1, M_HEADERS.length).getValues().map(function (r) {
+    return { time: r[0] instanceof Date ? r[0].toISOString() : String(r[0]), student: String(r[1]), activity: String(r[2]),
+      text: String(r[3]), kind: String(r[4]), meaning: String(r[5]), key: String(r[6]) };
+  });
+}
 
 function getRows_() {
   const sheet = getSheet_('Paragraphs', HEADERS);
