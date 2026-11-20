@@ -810,6 +810,7 @@ label.help{font-weight:700}
             <button class="btn sm" id="bt-start">Start timer</button>
             <button class="btn sm ghost" id="bt-reset">Reset</button>
             <label class="help" for="bt-auto"><input type="checkbox" id="bt-auto" checked> Start the timer after each call</label>
+            <label class="help" for="bt-reveal"><input type="checkbox" id="bt-reveal" checked> Show the answer when time is up</label>
             <button class="btn sm ghost" id="bt-test">Test sound</button>
           </div>
           <div class="tbar" aria-hidden="true"><i id="bt-bar"></i></div>
@@ -2733,22 +2734,25 @@ $('#bg-next').addEventListener('click',async()=>{
   if(BT.auto){btReset();btStart()}else btReset('Tap Start timer when you are ready.');
 });
 $('#bg-undo').addEventListener('click',()=>{if(BG_ROLLING)return;btReset();BG.called.pop();BG.show=false;bgSave();bgRender()});
-$('#bg-show').addEventListener('click',async()=>{
-  if(BG_ROLLING)return;
-  if(BG.show||!BG.called.length){BG.show=false;bgSave();bgRender();return}
-  if(DRUM_ON){bgRollStart('Drum roll…',$('#bg-answer'));await drumRoll(1700);bgRollEnd($('#bg-answer'))}
+async function bgReveal(drum){
+  if(DRUM_ON&&drum){bgRollStart('Drum roll…',$('#bg-answer'));await drumRoll(1700);bgRollEnd($('#bg-answer'))}
   BG.show=true;bgSave();bgRender();
   const cp=BY_ID[BG.called[BG.called.length-1]];
-  if(isWordGame(BG.code))hostWordAnswer(cp,plainWord(bingoWord(BG.code,cp)),DRUM_ON);else hostAnswer(cp,DRUM_ON);
+  if(isWordGame(BG.code))hostWordAnswer(cp,plainWord(bingoWord(BG.code,cp)),DRUM_ON&&drum);else hostAnswer(cp,DRUM_ON&&drum);
+}
+$('#bg-show').addEventListener('click',()=>{
+  if(BG_ROLLING)return;
+  if(BG.show||!BG.called.length){BG.show=false;bgSave();bgRender();return}
+  bgReveal(true);
 });
 /* ---------- Clue timer with a soft chime ----------
    The teacher picks how long students get for each clue. It can start on its own
    after every call; it pauses if someone shouts BINGO. Web Audio chime, no file. */
 const BT_KEY='wpw-bingo-timer';
-const BT={len:30,left:30000,endAt:0,raf:0,auto:true};
-try{const v=JSON.parse(localStorage.getItem(BT_KEY)||'null');if(v){if(v.len>0)BT.len=v.len;BT.auto=v.auto!==false}}catch(e){}
+const BT={len:30,left:30000,endAt:0,raf:0,auto:true,reveal:true};
+try{const v=JSON.parse(localStorage.getItem(BT_KEY)||'null');if(v){if(v.len>0)BT.len=v.len;BT.auto=v.auto!==false;BT.reveal=v.reveal!==false}}catch(e){}
 BT.left=BT.len*1000;
-function btSave(){try{localStorage.setItem(BT_KEY,JSON.stringify({len:BT.len,auto:BT.auto}))}catch(e){}}
+function btSave(){try{localStorage.setItem(BT_KEY,JSON.stringify({len:BT.len,auto:BT.auto,reveal:BT.reveal}))}catch(e){}}
 function btFmt(ms){const s=Math.ceil(ms/1000);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
 function btPaint(){
   const s=Math.ceil(BT.left/1000),box=$('#bg-timer'),clk=$('#bt-clock');
@@ -2781,6 +2785,11 @@ function btTick(){
   if(BT.left<=0){
     BT.endAt=0;BT.raf=0;btPaint();btBuzzer();
     $('#bt-msg').textContent="Time's up! Tap Call next for the next clue.";
+    // After the chime finishes, show the answer and have Monifa read it (no drum roll: the chime was the cue).
+    if(BT.reveal&&BG.called.length&&!BG.show&&!BG.stopped){
+      const at=BG.called.length;
+      setTimeout(()=>{if(BG.called.length===at&&!BG.show&&!BG.stopped&&!BG_ROLLING)bgReveal(false)},1800);
+    }
     return;
   }
   BT.raf=requestAnimationFrame(btTick);
@@ -2823,6 +2832,8 @@ $('#bt-start').addEventListener('click',()=>{BT.endAt?btPause():btStart()});
 $('#bt-reset').addEventListener('click',()=>btReset());
 $('#bt-test').addEventListener('click',btBuzzer);
 $('#bt-auto').addEventListener('change',e=>{BT.auto=e.target.checked;btSave()});
+$('#bt-reveal').checked=BT.reveal;
+$('#bt-reveal').addEventListener('change',e=>{BT.reveal=e.target.checked;btSave()});
 $('#bg-checkform').addEventListener('submit',e=>{
   e.preventDefault();
   const n=Math.round(+$('#bg-checknum').value);
