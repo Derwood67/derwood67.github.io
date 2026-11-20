@@ -800,7 +800,8 @@ label.help{font-weight:700}
         </div>
         <div class="row" id="bg-listenrow">
           <button class="btn sm ghost" id="bg-listen" aria-pressed="false">🎤 Monifa listens for BINGO</button>
-          <span class="help" id="bg-listenmsg">Turn this on and Monifa stops the game when someone shouts “BINGO!”, asks for the card number, and reads the winning word parts.</span>
+          <span class="help" id="bg-listenmsg">Monifa starts listening when you tap Call next. When someone shouts “BINGO!”, she stops the game, asks for the card number, and reads the winning word parts.</span>
+          <span class="help" id="bg-heard" aria-live="off"></span>
         </div>
         <div class="btimer" id="bg-timer" role="group" aria-label="Clue timer">
           <div><div class="eyebrow">Clue timer</div><div class="tclock" id="bt-clock" role="timer" aria-live="off">0:30</div></div>
@@ -2556,6 +2557,8 @@ function hostFillVoices(){
   $('#host-now').textContent=cur?'Voice: '+voiceLabel(cur)+' (set in the Teacher dashboard)':'';
 }
 let HOST_RUN=0;
+// Stop Monifa mid-sentence (drum roll, BINGO, teacher lock) and clear her "talking" state.
+function hostHush(){HOST_RUN++;if(HAS_TTS)speechSynthesis.cancel();HOST.saying='';const h=$('#host');if(h)h.classList.remove('talk')}
 function hostSay(text){
   HOST.last=text;$('#host-say').textContent='“'+text+'”';
   if(!HAS_TTS||!HOST_PREF.on)return;
@@ -2563,10 +2566,10 @@ function hostSay(text){
   // One sentence at a time with a short pause between, so each sentence is heard clearly
   // (and Chrome does not cut a long line off partway).
   const run=++HOST_RUN,v=hostPick(),t=hostTune(v),parts=(text.match(/[^.!?]+[.!?]+["”]?|[^.!?]+$/g)||[text]).map(x=>x.trim()).filter(Boolean);
-  const host=$('#host');host.classList.add('talk');
+  const host=$('#host');host.classList.add('talk');HOST.saying=text;
   const next=k=>{
     if(run!==HOST_RUN)return;
-    if(k>=parts.length){host.classList.remove('talk');return}
+    if(k>=parts.length){host.classList.remove('talk');HOST.saying='';return}
     const u=new SpeechSynthesisUtterance(parts[k]);
     if(v){u.voice=v;u.lang=v.lang}
     u.pitch=t.pitch;u.rate=Math.min(1.4,t.rate*(+HOST_PREF.rate||1));u.volume=1;
@@ -2753,7 +2756,7 @@ function drumRoll(ms){
 }
 function bgRollStart(text,el){
   BG_ROLLING=true;['#bg-next','#bg-show','#bg-undo'].forEach(x=>$(x).disabled=true);
-  if(HAS_TTS){HOST_RUN++;speechSynthesis.cancel()}
+  hostHush();
   el.textContent=text;el.hidden=false;el.classList.add('rolling');
 }
 function bgRollEnd(el){BG_ROLLING=false;el.classList.remove('rolling');['#bg-show','#bg-undo'].forEach(x=>$(x).disabled=false)}
@@ -2904,7 +2907,11 @@ function heardNumber(t){
   }
   return null;
 }
-const hostBusy=()=>$('#host').classList.contains('talk')||Date.now()<LS.quietUntil;
+// Students are heard even while Monifa is talking. The only thing ignored is Monifa hearing
+// herself: a "bingo" while she is saying a line that has "bingo" in it, or a number while
+// she is reading a winner (she only listens for a card number after she asks for it).
+const hostTalking=()=>$('#host').classList.contains('talk')||Date.now()<LS.quietUntil;
+const hostSaysBingo=()=>hostTalking()&&/bingo/i.test(HOST.saying||'');
 function listenSet(on){
   LS.on=on;$('#bg-listen').setAttribute('aria-pressed',on);$('#bg-listen').classList.toggle('listen-on',on);
   $('#bg-listen').textContent=on?'🎤 Listening for BINGO (tap to stop)':'🎤 Monifa listens for BINGO';
@@ -2914,20 +2921,23 @@ function listenStart(){
   try{if(LS.rec)LS.rec.abort()}catch(e){}
   const r=LS.rec=new SR();r.lang='en-US';r.continuous=true;r.interimResults=true;
   r.onresult=e=>{
-    if(hostBusy())return;
     let t='';for(let i=e.resultIndex;i<e.results.length;i++)t+=' '+e.results[i][0].transcript;
-    onHeard(t.toLowerCase());
+    t=t.toLowerCase().trim();if(!t)return;
+    $('#bg-heard').textContent='Heard: “'+t.slice(-60)+'”';
+    onHeard(t);
   };
   r.onerror=e=>{if(e.error==='not-allowed'||e.error==='service-not-allowed'){listenSet(false);$('#bg-listenmsg').textContent='Monifa can’t hear you. Allow the microphone for this site (the icon at the right end of the address bar), then try again.'}};
-  r.onend=()=>{if(LS.on&&LS.rec===r)setTimeout(()=>{if(LS.on&&LS.rec===r)try{r.start()}catch(e){}},250)};
+  r.onend=()=>{if(LS.on&&LS.rec===r)setTimeout(()=>{if(LS.on&&LS.rec===r){try{r.start()}catch(e){listenStart()}}},300)};
   try{r.start()}catch(e){}
 }
+const BINGO_RE=/\bbingo|\bbing go\b|\bbingle\b|\bbinga\b|\bbingos?\b/;
 function onHeard(t){
-  if(LS.wantCard){const n=heardNumber(t);if(n>=1&&n<=99){LS.wantCard=false;clearTimeout(LS.timer);checkCard(n)}return}
-  if(/\bbingo\b|\bbing go\b|\bbingle\b/.test(t)&&!BG.stopped)bingoHeard();
+  if(LS.wantCard){if(hostTalking()&&/\d|one|two|three|four|five|six|seven|eight|nine|ten|twenty/i.test(HOST.saying||''))return;const n=heardNumber(t);if(n>=1&&n<=99){LS.wantCard=false;clearTimeout(LS.timer);checkCard(n)}return}
+  if(BINGO_RE.test(t)&&!BG.stopped&&!hostSaysBingo())bingoHeard();
 }
 function listenStop(){LS.wantCard=false;clearTimeout(LS.timer);if(LS.on)listenSet(false);try{if(LS.rec)LS.rec.abort()}catch(e){}LS.rec=null}
 function bingoHeard(){
+  hostHush();
   btPause('Timer paused for BINGO.');
   BG.stopped=true;bgSave();bgRender();
   $('#bg-stop').hidden=false;$('#bg-stop').textContent='BINGO! The game is stopped. What is the card number?';
@@ -2944,9 +2954,17 @@ function winSpeech(n,card,wins){
     ` The winning line is ${lineWords(wins)}. The winning word parts are: `+cells.map(i=>sayPart(card[i])).join('. ')+'.'+
     (wins.some(l=>l.cells.includes(12))?' Plus the free space!':'')+` Give it up for card ${n}! You have bragging rights!`;
 }
+const LISTEN_KEY='wpw-bingo-listen';
+const listenWanted=()=>{try{return localStorage.getItem(LISTEN_KEY)!=='off'}catch(e){return true}};
+// Listening is on by default. Browsers only let the microphone start after a tap, so it
+// starts with the teacher's first tap in the caller (Call next, Show answer, Start a new game).
+function listenAuto(){if(SR&&!LS.on&&listenWanted()&&!$('#bg-teacher').hidden){listenSet(true);listenStart();
+  $('#bg-listenmsg').textContent='Monifa is listening, even while she talks. When someone shouts “BINGO!”, she stops the game and asks for the card number.'}}
+['#bg-next','#bg-show','#bg-new','#bt-start'].forEach(id=>{const b=$(id);if(b)b.addEventListener('click',listenAuto)});
 $('#bg-listen').addEventListener('click',()=>{
   if(!SR)return;
-  if(LS.on){listenStop();return}
+  if(LS.on){listenStop();try{localStorage.setItem(LISTEN_KEY,'off')}catch(e){}$('#bg-listenmsg').textContent='Monifa is not listening. Tap the microphone button to turn listening back on.';return}
+  try{localStorage.setItem(LISTEN_KEY,'on')}catch(e){}
   listenSet(true);listenStart();
   $('#bg-listenmsg').textContent='Monifa is listening. When someone shouts “BINGO!”, she stops the game and asks for the card number. The microphone sound goes to the browser’s speech service (Google in Chrome, Microsoft in Edge).';
 });
@@ -3100,7 +3118,7 @@ $('#t-form').addEventListener('submit',e=>{
   });
 });
 $('#t-call').addEventListener('click',()=>{tClose();show('bingo');bgMode('teacher');$('#view-bingo').scrollIntoView({behavior:'smooth',block:'start'})});
-$('#t-lock').addEventListener('click',()=>{T.set(false);T.fresh=0;T.code='';if(HAS_TTS){HOST_RUN++;speechSynthesis.cancel()}bgMode('play');tClose()});
+$('#t-lock').addEventListener('click',()=>{T.set(false);T.fresh=0;T.code='';hostHush();bgMode('play');tClose()});
 document.addEventListener('classgate:signin',()=>{T.set(false);bgMode('play')});
 
 /* ---------- Missed word parts: each student's practice list ----------
