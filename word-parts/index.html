@@ -719,9 +719,9 @@ label.help{font-weight:700}
     <div class="panel" id="bg-gate" hidden>
       <div class="stage">
         <div class="eyebrow">Call the game is locked</div>
-        <div class="clue">Ask your teacher for today’s caller pass.</div>
+        <div class="clue">Only the teacher can call the game. The caller shows the answers!</div>
         <form class="row" id="bg-gateform">
-          <label class="help" for="bg-gatecode">Caller pass or teacher code</label>
+          <label class="help" for="bg-gatecode">Teacher code</label>
           <input class="search bnum" id="bg-gatecode" type="password" inputmode="numeric" autocomplete="off" maxlength="12">
           <button class="btn">Open the caller</button>
         </form>
@@ -2608,7 +2608,9 @@ try{LOCKS=Object.assign(LOCKS,JSON.parse(localStorage.getItem(LK_KEY))||{})}catc
 const lkSave=()=>{try{localStorage.setItem(LK_KEY,JSON.stringify(LOCKS))}catch(e){}};
 const CALLER_OK='wpw-caller-ok';
 function callerOpen(){
-  return true; // anyone can open the caller (no pass needed)
+  // Teacher only: the caller shows the answers. Opens with the teacher code (8531).
+  if(T.on())return true;
+  try{return sessionStorage.getItem(CALLER_OK)===todayKey()}catch(e){return false}
 }
 
 const BG_KEY='wpw-bingo-caller-v1',BP_KEY='wpw-bingo-play-v1',BM_KEY='wpw-bingo-mode';
@@ -2653,9 +2655,8 @@ $('#bg-mode').addEventListener('click',e=>{const b=e.target.closest('button');if
 $('#bg-gateform').addEventListener('submit',e=>{
   e.preventDefault();const v=$('#bg-gatecode').value.trim();$('#bg-gatecode').value='';
   const ok=()=>{try{sessionStorage.setItem(CALLER_OK,todayKey())}catch(_){}setMsg('#bg-gatemsg','');bgMode('teacher');bgRender()};
-  if(v===callerPass())return ok();
   const check=window.ClassGate&&ClassGate.checkCode?ClassGate.checkCode(v):Promise.resolve('wrong');
-  check.then(r=>{if(r==='ok')ok();else setMsg('#bg-gatemsg',(window.ClassGate&&ClassGate.codeMsg(r))||'That pass is not right. Ask your teacher.','bad')});
+  check.then(r=>{if(r==='ok')ok();else setMsg('#bg-gatemsg',(window.ClassGate&&ClassGate.codeMsg(r))||'That code is not right.','bad')});
 });
 $('#bg-type').addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;
@@ -2844,7 +2845,7 @@ $('#bg-checkform').addEventListener('submit',e=>{
   LS.quietUntil=Date.now()+600;
   if(wins.length){
     hostSay(winSpeech(n,card,wins));
-    if(BG.stopped){$('#bg-stop').hidden=false;$('#bg-stop').textContent='Card '+n+' wins with '+lineWords(wins)+'! Tap Keep playing to look for more winners, or start a new game.'}
+    if(BG.stopped){$('#bg-stop').hidden=false;$('#bg-stop').textContent='Card '+n+' wins with '+lineWords(wins)+' and gets bragging rights! Tap Keep playing to look for more winners, or start a new game.'}
   }else{
     hostSay(pickOne([`Ooh, so close, card ${n}, but not yet! Keep playing!`,`Not yet, card ${n}! Hang in there! Let's keep playing!`]));
     if(BG.stopped){BG.stopped=false;bgSave();$('#bg-stop').hidden=true;bgRender()}
@@ -2905,7 +2906,7 @@ function winSpeech(n,card,wins){
   const cells=[...new Set(wins.flatMap(l=>l.cells))].filter(i=>card[i]);
   return pickOne([`Card ${n} has BINGO! Woo-hoo!`,`We have a winner! Card ${n}, that's BINGO!`])+
     ` The winning line is ${lineWords(wins)}. The winning word parts are: `+cells.map(i=>sayPart(card[i])).join('. ')+'.'+
-    (wins.some(l=>l.cells.includes(12))?' Plus the free space!':'')+` Give it up for card ${n}!`;
+    (wins.some(l=>l.cells.includes(12))?' Plus the free space!':'')+` Give it up for card ${n}! You have bragging rights!`;
 }
 $('#bg-listen').addEventListener('click',()=>{
   if(!SR)return;
