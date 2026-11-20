@@ -719,7 +719,14 @@ label.help{font-weight:700}
           <button class="btn" id="bg-print">Print cards</button>
           <button class="btn ghost" id="bg-printlist">Print caller list</button>
         </div>
-        <p class="help">Every card has a different board. Cards print two to a page with the game code and a card number, so you can check a winner. Print new cards after you start a new game. Printing opens your browser's print window. It works on the class site, but not inside Claude's preview.</p>
+        <div class="msg" id="bg-printmsg" aria-live="polite"></div>
+        <form class="row" id="bg-useform">
+          <label class="help" for="bg-usecode">Already have printed cards? Type their game code</label>
+          <input class="search bnum" id="bg-usecode" autocomplete="off" maxlength="9" placeholder="PSGL-1120">
+          <button class="btn sm ghost">Call this game</button>
+        </form>
+        <div class="msg" id="bg-usemsg" aria-live="polite"></div>
+        <p class="help">Every card has a different board. Cards print two to a page with the game code and a card number, so you can check a winner. Print new cards after you start a new game. Printing opens the cards in a new tab with a Print button. To save them as a PDF, choose Save as PDF as the printer.</p>
       </div>
       <div class="stage">
         <div class="eyebrow">Check a winner</div>
@@ -2393,25 +2400,77 @@ $('#bg-checkform').addEventListener('submit',e=>{
   hostSay(wins.length?pickOne([`Card ${n} has BINGO! Woo-hoo! Give it up for card ${n}!`,`We have a winner! Card ${n}, that's BINGO!`])
     :pickOne([`Ooh, so close, card ${n}, but not yet! Keep playing!`,`Not yet, card ${n}! Hang in there!`]));
 });
-const doPrint=()=>{try{window.print()}catch(e){}};
-$('#bg-print').addEventListener('click',()=>{
-  const n=Math.min(40,Math.max(1,Math.round(+$('#bg-ncards').value)||25));$('#bg-ncards').value=n;
-  const code=parseCode(BG.code).code;
-  $('#print-area').innerHTML=Array.from({length:n},(_,k)=>{
-    const card=bingoCard(code,k+1);
-    return `<div class="pcard"><div class="ptop"><b>Word Parts Bingo</b><span>Game ${code} &middot; Card ${k+1}</span></div>
+// Printing opens the cards in their own tab. Many school setups (Google Classroom, embedded
+// pages, some Chromebooks) block the print window inside an app, but not in a plain tab.
+const PRINT_CSS=`@page{size:letter portrait;margin:.4in}
+body{margin:0;color:#000;background:#fff;font-family:"Atkinson Hyperlegible",Verdana,system-ui,sans-serif}
+.bar{position:sticky;top:0;display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding:12px 16px;background:#fff8e6;border-bottom:2px solid #e0c060;font-size:15px}
+.bar button{font:700 18px system-ui,sans-serif;padding:10px 22px;border-radius:10px;border:0;background:#1d5fbf;color:#fff;cursor:pointer}
+.sheet{max-width:7.7in;margin:0 auto;padding:.2in 0}
+.pcard{height:4.9in;box-sizing:border-box;break-inside:avoid;display:flex;flex-direction:column;gap:.08in;padding-top:.12in}
+.pcard:nth-child(2n){break-after:page;border-top:1px dashed #888}
+.ptop{display:flex;justify-content:space-between;align-items:baseline;font-size:11pt}
+.ptop b{font-family:"Fredoka","Trebuchet MS",system-ui,sans-serif;font-size:20pt;font-weight:600}
+.pname{font-size:11pt}
+.pgrid{display:grid;grid-template-columns:repeat(5,1fr);border:2px solid #000;width:6.6in;margin:0 auto}
+.pgrid div{border:1px solid #000;height:.7in;display:flex;align-items:center;justify-content:center;text-align:center;font-family:"Fredoka","Trebuchet MS",system-ui,sans-serif;font-size:14pt;font-weight:600;padding:2px;overflow-wrap:anywhere;line-height:1.05}
+.pgrid .ph{height:.42in;font-size:20pt;background:#e8e8e8;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pgrid .pf{font-size:12pt;background:#e8e8e8;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.plist h2{font-family:"Fredoka","Trebuchet MS",system-ui,sans-serif;font-size:16pt;margin:0 0 .1in}
+.plist p{font-size:10pt;margin:0 0 .12in}
+.plist table{width:100%;border-collapse:collapse;font-size:10pt}
+.plist th,.plist td{border:1px solid #999;padding:3px 6px;text-align:left;vertical-align:top}
+.plist tr{break-inside:avoid}.plist .pbox{width:.35in}
+@media print{.bar{display:none}.sheet{max-width:none;padding:0}}`;
+function printTab(title,html){
+  const doc=`<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>${esc(title)}</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Fredoka:wght@500;600&display=swap">
+<style>${PRINT_CSS}</style></head><body>
+<div class="bar"><button onclick="print()">Print</button><span>Or press <b>Ctrl + P</b> (<b>Cmd + P</b> on a Mac). To save a copy, choose <b>Save as PDF</b> as the printer.</span></div>
+<div class="sheet">${html}</div>
+<script>addEventListener('load',()=>setTimeout(()=>{try{print()}catch(e){}},400))<\/script></body></html>`;
+  let w=null;
+  try{w=window.open(URL.createObjectURL(new Blob([doc],{type:'text/html'})),'_blank')}catch(e){}
+  if(w)return true;
+  // Pop-up blocked: fall back to printing from this page.
+  $('#print-area').innerHTML=html;try{window.print()}catch(e){}
+  return false;
+}
+function cardsHTML(code,from,n){
+  return Array.from({length:n},(_,k)=>{
+    const num=from+k,card=bingoCard(code,num);
+    return `<div class="pcard"><div class="ptop"><b>Word Parts Bingo</b><span>Game ${code} &middot; Card ${num}</span></div>
       <div class="pname">Name: ______________________________</div>
       <div class="pgrid">${[...'BINGO'].map(c=>`<div class="ph">${c}</div>`).join('')}${card.map(p=>p?`<div>${esc(p.label)}</div>`:'<div class="pf">FREE</div>').join('')}</div></div>`;
   }).join('');
-  doPrint();
-});
-$('#bg-printlist').addEventListener('click',()=>{
-  const code=parseCode(BG.code).code,pool=bingoPool(code);
-  $('#print-area').innerHTML=`<div class="plist"><h2>Word Parts Bingo: caller list</h2>
+}
+function callerHTML(code){
+  const pool=bingoPool(code);
+  return `<div class="plist"><h2>Word Parts Bingo: caller list</h2>
     <p>Game ${code}. Read each meaning aloud in any order and check it off. Students mark the word part that matches.</p>
     <table><thead><tr><th>Called</th><th>Word part</th><th>Type</th><th>Meaning (read aloud)</th><th>Example words</th></tr></thead><tbody>${
     pool.map(p=>`<tr><td class="pbox"></td><td><b>${esc(p.label)}</b></td><td>${KIND[p.kind]}</td><td>${esc(p.meaning)}</td><td>${esc(p.ex.map(x=>x.replace(/[\[\]]/g,'')).join(', '))}</td></tr>`).join('')}</tbody></table></div>`;
-  doPrint();
+}
+$('#bg-print').addEventListener('click',()=>{
+  const n=Math.min(40,Math.max(1,Math.round(+$('#bg-ncards').value)||25));$('#bg-ncards').value=n;
+  const code=parseCode(BG.code).code;
+  if(!printTab('Word Parts Bingo cards '+code,cardsHTML(code,1,n)))setMsg('#bg-printmsg','Your browser blocked the new tab. Allow pop-ups for this site, or use the print window that opened.','bad');
+  else setMsg('#bg-printmsg','Your cards opened in a new tab. Press the blue Print button there.','good');
+});
+$('#bg-printlist').addEventListener('click',()=>{
+  const code=parseCode(BG.code).code;
+  if(!printTab('Word Parts Bingo caller list '+code,callerHTML(code)))setMsg('#bg-printmsg','Your browser blocked the new tab. Allow pop-ups for this site, or use the print window that opened.','bad');
+  else setMsg('#bg-printmsg','The caller list opened in a new tab. Press the blue Print button there.','good');
+});
+// Cards already printed (on another computer, or from a PDF)? Type their game code to call that game.
+$('#bg-useform').addEventListener('submit',e=>{
+  e.preventDefault();
+  const g=parseCode($('#bg-usecode').value);
+  if(!g||bingoPool(g.code).length<24){setMsg('#bg-usemsg','Type the game code printed on the cards, like PSGL-1120.','bad');return}
+  if(g.code===BG.code){setMsg('#bg-usemsg','You are already calling game '+g.code+'.','good');return}
+  BG={code:g.code,called:[],show:false};BG_PEND=g.letters;bgSave();bgRender();
+  $('#bg-checkgrid').innerHTML='';setMsg('#bg-checkmsg','');$('#bg-usecode').value='';
+  setMsg('#bg-usemsg','Now calling game '+g.code+'. It matches cards printed with that code.','good');
 });
 
 function bpRender(){
