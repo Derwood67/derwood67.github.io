@@ -192,6 +192,19 @@ mark{background:transparent;color:var(--k);font-weight:700;text-decoration:under
 .bstop{border:3px solid var(--good);border-radius:14px;padding:12px 14px;font-family:var(--display);font-weight:600;font-size:1.3rem;background:var(--surface)}
 .listen-on{box-shadow:0 0 0 3px var(--star)}
 .bjoin{font-family:var(--display);font-weight:600;font-size:1.15rem}
+/* bingo: clue timer */
+.btimer{display:flex;flex-wrap:wrap;align-items:center;gap:12px 18px;border:2px solid var(--line);border-radius:14px;padding:12px 14px;background:var(--surface)}
+.btimer .tclock{font-family:var(--display);font-weight:600;font-size:clamp(2rem,6vw,3.2rem);font-variant-numeric:tabular-nums;line-height:1;min-width:3.2em;color:var(--good)}
+.btimer .tclock.warn{color:var(--star)}
+.btimer .tclock.low,.btimer .tclock.up{color:var(--bad)}
+.btimer .tbar{flex:1 1 100%;height:10px;border-radius:999px;background:var(--line);overflow:hidden}
+.btimer .tbar>i{display:block;height:100%;width:100%;background:var(--good);transition:background .3s}
+.btimer.warn .tbar>i{background:var(--star)}
+.btimer.low .tbar>i,.btimer.up .tbar>i{background:var(--bad)}
+.btimer.up{border-color:var(--bad);background:var(--bad-bg)}
+.btimer select{font:inherit;padding:6px 8px;border-radius:10px;border:2px solid var(--line);background:var(--surface);color:var(--ink)}
+.btimer .tcustom input{width:4.2em}
+@media (prefers-reduced-motion: no-preference){.btimer.up .tclock{animation:tpulse .5s ease-in-out 4 alternate}@keyframes tpulse{to{transform:scale(1.08)}}}
 /* bingo */
 .bnum{flex:0 1 9em;width:9em;min-width:0}
 .bcode{font-family:var(--display);font-size:1.6rem;font-weight:600;letter-spacing:.06em}
@@ -770,6 +783,37 @@ label.help{font-weight:700}
         <div class="row" id="bg-listenrow">
           <button class="btn sm ghost" id="bg-listen" aria-pressed="false">🎤 Monifa listens for BINGO</button>
           <span class="help" id="bg-listenmsg">Turn this on and Monifa stops the game when someone shouts “BINGO!”, asks for the card number, and reads the winning word parts.</span>
+        </div>
+        <div class="btimer" id="bg-timer" role="group" aria-label="Clue timer">
+          <div><div class="eyebrow">Clue timer</div><div class="tclock" id="bt-clock" role="timer" aria-live="off">0:30</div></div>
+          <div class="row">
+            <label class="help" for="bt-len">Time for each clue</label>
+            <select id="bt-len">
+              <option value="10">10 seconds</option>
+              <option value="15">15 seconds</option>
+              <option value="20">20 seconds</option>
+              <option value="30" selected>30 seconds</option>
+              <option value="45">45 seconds</option>
+              <option value="60">1 minute</option>
+              <option value="90">1 minute 30 seconds</option>
+              <option value="120">2 minutes</option>
+              <option value="180">3 minutes</option>
+              <option value="300">5 minutes</option>
+              <option value="custom">Custom…</option>
+            </select>
+            <span class="tcustom row" id="bt-custom" hidden>
+              <input class="search" id="bt-min" type="number" min="0" max="59" value="0" inputmode="numeric" aria-label="Minutes"><span class="help">min</span>
+              <input class="search" id="bt-sec" type="number" min="0" max="59" value="30" inputmode="numeric" aria-label="Seconds"><span class="help">sec</span>
+            </span>
+          </div>
+          <div class="row">
+            <button class="btn sm" id="bt-start">Start timer</button>
+            <button class="btn sm ghost" id="bt-reset">Reset</button>
+            <label class="help" for="bt-auto"><input type="checkbox" id="bt-auto" checked> Start the timer after each call</label>
+            <button class="btn sm ghost" id="bt-test">Test sound</button>
+          </div>
+          <div class="tbar" aria-hidden="true"><i id="bt-bar"></i></div>
+          <span class="help" id="bt-msg" aria-live="polite">Pick a time. The timer starts when Monifa calls a clue, and a soft chime plays when time is up.</span>
         </div>
         <details>
           <summary class="help">Called so far (shows the answers)</summary>
@@ -2676,6 +2720,7 @@ function bgRollStart(text,el){
 function bgRollEnd(el){BG_ROLLING=false;el.classList.remove('rolling');['#bg-show','#bg-undo'].forEach(x=>$(x).disabled=false)}
 $('#bg-next').addEventListener('click',async()=>{
   if(BG_ROLLING)return;
+  btPause('Calling the next clue…');
   const left=bingoPool(BG.code).filter(p=>!BG.called.includes(p.id));if(!left.length)return;
   const pick=left[Math.floor(Math.random()*left.length)].id;
   if(DRUM_ON){
@@ -2685,8 +2730,9 @@ $('#bg-next').addEventListener('click',async()=>{
   BG.called.push(pick);BG.show=false;bgSave();bgRender();
   const n=BG.called.length,cp=BY_ID[BG.called[n-1]];
   if(isWordGame(BG.code))hostWordClue(cp,n,plainWord(bingoWord(BG.code,cp)));else hostClue(cp,n);
+  if(BT.auto){btReset();btStart()}else btReset('Tap Start timer when you are ready.');
 });
-$('#bg-undo').addEventListener('click',()=>{if(BG_ROLLING)return;BG.called.pop();BG.show=false;bgSave();bgRender()});
+$('#bg-undo').addEventListener('click',()=>{if(BG_ROLLING)return;btReset();BG.called.pop();BG.show=false;bgSave();bgRender()});
 $('#bg-show').addEventListener('click',async()=>{
   if(BG_ROLLING)return;
   if(BG.show||!BG.called.length){BG.show=false;bgSave();bgRender();return}
@@ -2695,6 +2741,88 @@ $('#bg-show').addEventListener('click',async()=>{
   const cp=BY_ID[BG.called[BG.called.length-1]];
   if(isWordGame(BG.code))hostWordAnswer(cp,plainWord(bingoWord(BG.code,cp)),DRUM_ON);else hostAnswer(cp,DRUM_ON);
 });
+/* ---------- Clue timer with a soft chime ----------
+   The teacher picks how long students get for each clue. It can start on its own
+   after every call; it pauses if someone shouts BINGO. Web Audio chime, no file. */
+const BT_KEY='wpw-bingo-timer';
+const BT={len:30,left:30000,endAt:0,raf:0,auto:true};
+try{const v=JSON.parse(localStorage.getItem(BT_KEY)||'null');if(v){if(v.len>0)BT.len=v.len;BT.auto=v.auto!==false}}catch(e){}
+BT.left=BT.len*1000;
+function btSave(){try{localStorage.setItem(BT_KEY,JSON.stringify({len:BT.len,auto:BT.auto}))}catch(e){}}
+function btFmt(ms){const s=Math.ceil(ms/1000);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
+function btPaint(){
+  const s=Math.ceil(BT.left/1000),box=$('#bg-timer'),clk=$('#bt-clock');
+  clk.textContent=btFmt(BT.left);
+  const f=BT.len?BT.left/(BT.len*1000):0;$('#bt-bar').style.width=(f*100)+'%';
+  const warnAt=Math.max(5,Math.round(BT.len/3)),lowAt=Math.max(3,Math.round(BT.len/6));
+  const st=BT.left<=0?'up':s<=lowAt?'low':s<=warnAt?'warn':'';
+  ['warn','low','up'].forEach(c=>{box.classList.toggle(c,c===st);clk.classList.toggle(c,c===st)});
+  $('#bt-start').textContent=BT.endAt?'Pause':BT.left<BT.len*1000&&BT.left>0?'Resume':'Start timer';
+}
+function btBuzzer(){
+  // A soft, friendly "time's up" chime: three gentle bell notes going up (C, E, G), then a held high C.
+  try{
+    const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+    DRUM_CTX=DRUM_CTX||new AC();const c=DRUM_CTX;if(c.state==='suspended')c.resume();
+    const t0=c.currentTime+0.03,out=c.createGain();out.gain.value=0.16;out.connect(c.destination);
+    const bell=(f,t,len,vol)=>{
+      [[1,1],[2,0.18],[3,0.06]].forEach(([m,a])=>{
+        const o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=f*m;
+        g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol*a,t+0.015);
+        g.gain.exponentialRampToValueAtTime(0.0001,t+len);
+        o.connect(g);g.connect(out);o.start(t);o.stop(t+len+0.05);
+      });
+    };
+    bell(523.25,t0,0.9,0.8);bell(659.25,t0+0.18,0.9,0.8);bell(783.99,t0+0.36,0.9,0.8);bell(1046.5,t0+0.54,1.6,0.7);
+  }catch(e){}
+}
+function btTick(){
+  BT.left=Math.max(0,BT.endAt-performance.now());btPaint();
+  if(BT.left<=0){
+    BT.endAt=0;BT.raf=0;btPaint();btBuzzer();
+    $('#bt-msg').textContent="Time's up! Tap Call next for the next clue.";
+    return;
+  }
+  BT.raf=requestAnimationFrame(btTick);
+}
+function btStart(){
+  if(BT.left<=0)BT.left=BT.len*1000;
+  BT.endAt=performance.now()+BT.left;cancelAnimationFrame(BT.raf);BT.raf=requestAnimationFrame(btTick);
+  $('#bt-msg').textContent='Find the word part before the chime!';btPaint();
+}
+function btPause(msg){
+  if(!BT.endAt)return;
+  cancelAnimationFrame(BT.raf);BT.raf=0;BT.left=Math.max(0,BT.endAt-performance.now());BT.endAt=0;
+  $('#bt-msg').textContent=msg||'Timer paused.';btPaint();
+}
+function btReset(msg){
+  cancelAnimationFrame(BT.raf);BT.raf=0;BT.endAt=0;BT.left=BT.len*1000;
+  $('#bt-msg').textContent=msg||'Timer reset.';btPaint();
+}
+function btSetLen(sec){
+  sec=Math.max(1,Math.min(3599,Math.round(sec)||0));BT.len=sec;btSave();btReset('Each clue gets '+btFmt(sec*1000)+'.');
+}
+(function btInit(){
+  const sel=$('#bt-len'),preset=[...sel.options].some(o=>o.value===String(BT.len));
+  sel.value=preset?String(BT.len):'custom';
+  $('#bt-custom').hidden=preset;
+  $('#bt-min').value=Math.floor(BT.len/60);$('#bt-sec').value=BT.len%60;
+  $('#bt-auto').checked=BT.auto;btPaint();
+})();
+$('#bt-len').addEventListener('change',e=>{
+  const v=e.target.value;$('#bt-custom').hidden=v!=='custom';
+  if(v==='custom'){$('#bt-min').focus();btCustom()}else btSetLen(+v);
+});
+function btCustom(){
+  const m=Math.max(0,Math.min(59,Math.round(+$('#bt-min').value)||0)),sc=Math.max(0,Math.min(59,Math.round(+$('#bt-sec').value)||0));
+  if(m*60+sc<1){$('#bt-msg').textContent='Set at least 1 second.';return}
+  btSetLen(m*60+sc);
+}
+['#bt-min','#bt-sec'].forEach(x=>$(x).addEventListener('change',btCustom));
+$('#bt-start').addEventListener('click',()=>{BT.endAt?btPause():btStart()});
+$('#bt-reset').addEventListener('click',()=>btReset());
+$('#bt-test').addEventListener('click',btBuzzer);
+$('#bt-auto').addEventListener('change',e=>{BT.auto=e.target.checked;btSave()});
 $('#bg-checkform').addEventListener('submit',e=>{
   e.preventDefault();
   const n=Math.round(+$('#bg-checknum').value);
@@ -2752,6 +2880,7 @@ function onHeard(t){
 }
 function listenStop(){LS.wantCard=false;clearTimeout(LS.timer);if(LS.on)listenSet(false);try{if(LS.rec)LS.rec.abort()}catch(e){}LS.rec=null}
 function bingoHeard(){
+  btPause('Timer paused for BINGO.');
   BG.stopped=true;bgSave();bgRender();
   $('#bg-stop').hidden=false;$('#bg-stop').textContent='BINGO! The game is stopped. What is the card number?';
   hostSay(pickOne(["BINGO! Somebody has BINGO! Everybody stop! What's your card number?","Whoa, I heard BINGO! Freeze, everybody! Tell me your card number!"]));
