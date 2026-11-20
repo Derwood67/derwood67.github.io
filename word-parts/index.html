@@ -188,6 +188,10 @@ mark{background:transparent;color:var(--k);font-weight:700;text-decoration:under
 #t-dash .tsec{display:flex;flex-direction:column;gap:8px;border-top:2px solid var(--line);padding-top:14px}
 #t-dash label[for=t-code]{font-weight:700}
 #t-dash select{max-width:18em}
+/* bingo: stop banner, listening, gate */
+.bstop{border:3px solid var(--good);border-radius:14px;padding:12px 14px;font-family:var(--display);font-weight:600;font-size:1.3rem;background:var(--surface)}
+.listen-on{box-shadow:0 0 0 3px var(--star)}
+.bjoin{font-family:var(--display);font-weight:600;font-size:1.15rem}
 /* bingo */
 .bnum{flex:0 1 9em;width:9em;min-width:0}
 .bcode{font-family:var(--display);font-size:1.6rem;font-weight:600;letter-spacing:.06em}
@@ -406,8 +410,13 @@ label.help{font-weight:700}
         </section>
         <section class="tsec">
           <h3>Word Parts Bingo</h3>
-          <p class="help">Anyone can open Bingo and choose “Play on screen” or “Call the game,” so a student can run a game for a group.</p>
           <div class="row"><button class="btn sm" type="button" id="t-call">Call a bingo game</button></div>
+          <h4 style="margin:12px 0 4px">Lock “Play on screen”</h4>
+          <label class="help"><input type="checkbox" id="t-lockplay"> Locked: students play on paper cards only</label>
+          <p class="help">Students on Chromebooks need a 2-digit join PIN, and it shows on your caller screen only when this is unlocked. Locking stops new players from joining. A student who already joined can finish that game. PINs change every day.</p>
+          <h4 style="margin:12px 0 4px">Lock “Call the game”</h4>
+          <p class="help">Student Chromebooks are always locked. To let a student call a game, have them type today’s caller pass: <b id="t-pass"></b>. You can always open the caller with your teacher code.</p>
+          <label class="help"><input type="checkbox" id="t-lockcall" checked> Also lock it on this computer (uncheck for a classroom computer that students use to call games)</label>
         </section>
         <section class="tsec">
           <h3>Print student work</h3>
@@ -541,6 +550,13 @@ label.help{font-weight:700}
   <!-- QUIZ -->
   <!-- FIND THE WORD PART -->
   <section class="panel" id="view-find" role="tabpanel" aria-labelledby="tab-find" hidden>
+    <div class="row">
+      <span class="help">Level:</span>
+      <div class="seg" id="f-level">
+        <button data-level="1" aria-pressed="true">Regular</button>
+        <button data-level="2" aria-pressed="false">Harder</button>
+      </div>
+    </div>
     <div class="row" id="f-filters">
       <span class="help">Find these parts:</span>
       <button class="chip k-prefix" data-kind="prefix" aria-pressed="true">Prefixes</button>
@@ -679,6 +695,8 @@ label.help{font-weight:700}
           <input class="search bnum" id="bp-code" autocomplete="off" maxlength="10" placeholder="PSGL-4821">
           <label class="help" for="bp-card">Card number</label>
           <input class="search bnum" id="bp-card" type="number" min="1" max="99" inputmode="numeric" placeholder="1 to 99">
+          <label class="help" for="bp-pin">Join PIN</label>
+          <input class="search bnum" id="bp-pin" inputmode="numeric" maxlength="2" autocomplete="off" placeholder="2 digits" style="flex-basis:6em;width:6em">
           <button class="btn">Show my card</button>
         </form>
         <div class="msg" id="bp-msg" aria-live="polite"></div>
@@ -693,12 +711,26 @@ label.help{font-weight:700}
       </div>
     </div>
 
+    <div class="panel" id="bg-gate" hidden>
+      <div class="stage">
+        <div class="eyebrow">Call the game is locked</div>
+        <div class="clue">Ask your teacher for today’s caller pass.</div>
+        <form class="row" id="bg-gateform">
+          <label class="help" for="bg-gatecode">Caller pass or teacher code</label>
+          <input class="search bnum" id="bg-gatecode" type="password" inputmode="numeric" autocomplete="off" maxlength="12">
+          <button class="btn">Open the caller</button>
+        </form>
+        <div class="msg" id="bg-gatemsg" aria-live="polite"></div>
+      </div>
+    </div>
+
     <div class="panel" id="bg-teacher" hidden>
       <div class="stage">
         <div class="row" style="justify-content:space-between;align-items:flex-end">
           <div><div class="eyebrow">Game code</div><div class="bcode" id="bg-code"></div></div>
           <p class="help" id="bg-pool"></p>
         </div>
+        <div class="bjoin" id="bg-join" aria-live="polite"></div>
         <div class="row" id="bg-kinds">
           <span class="help">Word parts for a new game:</span>
           <button class="chip k-prefix" data-k="P" aria-pressed="true">Prefixes</button>
@@ -712,6 +744,7 @@ label.help{font-weight:700}
           <div class="seg" id="bg-type">
             <button data-w="0" aria-pressed="true">Meanings</button>
             <button data-w="1" aria-pressed="false">Words (find the word part)</button>
+            <button data-w="2" aria-pressed="false">Harder words</button>
           </div>
         </div>
         <div class="msg" id="bg-newmsg" aria-live="polite"></div>
@@ -731,6 +764,7 @@ label.help{font-weight:700}
         </div>
       </div>
       <div class="stage">
+        <div class="bstop" id="bg-stop" hidden aria-live="assertive"></div>
         <div class="eyebrow" id="bg-count"></div>
         <div class="bcall" id="bg-clue"></div>
         <div class="row" id="bg-answer" hidden></div>
@@ -738,7 +772,12 @@ label.help{font-weight:700}
           <button class="btn" id="bg-next">Call next</button>
           <button class="btn ghost" id="bg-show">Show answer</button>
           <button class="btn ghost" id="bg-undo">Undo last call</button>
+          <button class="btn" id="bg-resume" hidden>Keep playing</button>
           <label class="help" for="bg-drum"><input type="checkbox" id="bg-drum" checked> Drum roll</label>
+        </div>
+        <div class="row" id="bg-listenrow">
+          <button class="btn sm ghost" id="bg-listen" aria-pressed="false">🎤 Monifa listens for BINGO</button>
+          <span class="help" id="bg-listenmsg">Turn this on and Monifa stops the game when someone shouts “BINGO!”, asks for the card number, and reads the winning word parts.</span>
         </div>
         <details>
           <summary class="help">Called so far (shows the answers)</summary>
@@ -1203,6 +1242,7 @@ const $=s=>document.querySelector(s);
 const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const hl=s=>esc(s).replace(/\[(.+?)\]/g,'<mark>$1</mark>');
 const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const baseLabel=p=>p.label.replace(/\(.*?\)/g,'').trim().toLowerCase();
 /* Spellings of a word part, like ["in","im"] for "in- / im-". */
 const partForms=p=>p.label.replace(/\(.*?\)/g,'').split('/').map(x=>x.replace(/[^a-z]/gi,'').toLowerCase()).filter(Boolean);
 /* Could a student fairly say this word part is in this word? Prefixes must start the word,
@@ -1212,6 +1252,47 @@ function partInWord(p,word){
   return partForms(p).some(f=>p.kind==='prefix'?word.startsWith(f):p.kind==='suffix'?word.endsWith(f):f.length>=3&&word.includes(f));
 }
 const plainWord=e=>e.replace(/[\[\]]/g,'').toLowerCase();
+/* Which word parts the app LISTS for each word (from each part's example words and the
+   Build-a-Word list). These are known to be right, so they are the answers and the only
+   "other parts" Monifa or the caller list ever names. */
+let VERIFIED=null;
+function verified(){
+  if(VERIFIED)return VERIFIED;VERIFIED={};
+  const add=(w,id)=>{(VERIFIED[w]=VERIFIED[w]||new Set()).add(id)};
+  PARTS.forEach(p=>p.ex.forEach(e=>add(plainWord(e),p.id)));
+  WORDS.forEach(w=>w.parts.forEach(q=>{if(q.id&&BY_ID[q.id])add(w.w.toLowerCase(),q.id)}));
+  return VERIFIED;
+}
+const listedIn=(p,w)=>!!(verified()[w]&&verified()[w].has(p.id));
+/* A careful spelling check for a SECOND part, used only to pick longer, harder words:
+   roots only when listed; prefixes of 3+ letters (or common 2-letter ones) at the start;
+   suffixes of 3+ letters at the end. Each must leave a real chunk of word beside it. */
+const SAFE2=new Set(['re','un','in','im','de','co','ex','bi','il','ir','en','em','up','tri','mis','dis','non','pre','sub']);
+function affixGuess(q,w){
+  return partForms(q).some(f=>{
+    if(q.kind==='prefix')return w.startsWith(f)&&((f.length>=3&&w.length-f.length>=3)||(SAFE2.has(f)&&w.length-f.length>=4));
+    if(q.kind==='suffix')return f.length>=3&&f!=='ess'&&w.endsWith(f)&&w.length-f.length>=3;
+    return false;
+  });
+}
+function partsBesides(p,w,test){
+  const pf=partForms(p),seen=new Set(),out=[];
+  for(const q of PARTS){
+    if(q.group===p.group||baseLabel(q)===baseLabel(p)||!test(q,w))continue;
+    if(partForms(q).some(a=>pf.some(b=>a.includes(b)||b.includes(a))))continue;
+    if(seen.has(baseLabel(q)))continue;seen.add(baseLabel(q));out.push(q);
+  }
+  return out;
+}
+const otherParts=(p,w)=>partsBesides(p,w,listedIn);                               // safe to name
+const likelyOthers=(p,w)=>partsBesides(p,w,(q,x)=>listedIn(q,x)||affixGuess(q,x)); // makes a word "harder"
+const partStrong=(p,w)=>listedIn(p,w);
+let ALL_WORDS_CACHE=null;
+/* Every word the app knows, written with p's part in [brackets] when it can be. */
+function allWords(){
+  if(ALL_WORDS_CACHE)return ALL_WORDS_CACHE;
+  return ALL_WORDS_CACHE=Object.keys(verified());
+}
 const kindOf=p=>p.id?BY_ID[p.id].kind:'base';
 // prefix tiles show "dis-", suffix tiles show "-able", so students can see where each part goes
 const tileText=(text,kind)=>kind==='prefix'?text+'-':kind==='suffix'?'-'+text:text;
@@ -1493,8 +1574,25 @@ $('#b-level').addEventListener('click',e=>{
 /* ---------- find the word part ---------- */
 // A word is shown (like "invisible"). The student taps the word part that is in it.
 // Wrong choices are parts that are NOT in the word, so there is only one right answer.
-const F={kinds:new Set(['prefix','suffix','greek','latin']),len:20,queue:[],cur:null,right:0,tried:0,streak:0,missed:[],done:false};
+const F={level:1,kinds:new Set(['prefix','suffix','greek','latin']),len:20,queue:[],cur:null,right:0,tried:0,streak:0,missed:[],done:false};
+// Harder: a word with two or more parts, and the student must find one KIND of part
+// ("Find the suffix in unbreakable"). The other parts in the word are offered as wrong answers.
+function findQueueHard(){
+  const items=[];
+  allWords().forEach(w=>{
+    PARTS.filter(p=>F.kinds.has(p.kind)&&listedIn(p,w)).forEach(p=>{
+      const others=likelyOthers(p,w);
+      if(!others.length)return;
+      // only one part of the asked kind can fit, so there is exactly one right answer
+      if(PARTS.some(q=>q.kind===p.kind&&q.group!==p.group&&baseLabel(q)!==baseLabel(p)&&partInWord(q,w)))return;
+      items.push({p,w,e:null,others,named:otherParts(p,w)});
+    });
+  });
+  const seen=new Set();
+  return shuffle(items).filter(it=>!seen.has(it.w)&&!seen.has(it.p.id)&&(seen.add(it.w),seen.add(it.p.id)));
+}
 function findQueue(){
+  if(F.level===2)return findQueueHard();
   const items=[];
   PARTS.filter(p=>F.kinds.has(p.kind)).forEach(p=>p.ex.forEach(e=>{
     const w=plainWord(e);
@@ -1513,9 +1611,16 @@ function findNew(){
   if(!F.queue.length)F.queue=findQueue();
   const it=F.cur=F.queue.pop(),p=it.p;
   $('#f-count').textContent='Word '+(F.tried+1)+' of '+F.len;
-  $('#f-prompt').innerHTML='Which word part is in <strong>'+esc(it.w)+'</strong>?';
-  $('#f-sub').textContent='Look at the beginning, the end, and the middle of the word.';
   const wrong=[],labels=new Set([p.label]);
+  if(F.level===2){
+    const kindName=KIND[p.kind].toLowerCase();
+    $('#f-prompt').innerHTML='Find the <strong>'+esc(kindName)+'</strong> in <strong>'+esc(it.w)+'</strong>.';
+    $('#f-sub').textContent='This word has more than one part. Pick the one that is a '+kindName+'.';
+    it.others.slice(0,2).forEach(o=>{if(!labels.has(o.label)){labels.add(o.label);wrong.push(o)}});
+  }else{
+    $('#f-prompt').innerHTML='Which word part is in <strong>'+esc(it.w)+'</strong>?';
+    $('#f-sub').textContent='Look at the beginning, the end, and the middle of the word.';
+  }
   const pick=pool=>shuffle(pool).forEach(o=>{
     if(wrong.length<3&&o.group!==p.group&&!labels.has(o.label)&&!partInWord(o,it.w)){labels.add(o.label);wrong.push(o)}
   });
@@ -1533,7 +1638,7 @@ function findFinish(){
   $('#f-sub').textContent=pct===1?'Perfect! You can spot word parts anywhere.':pct>=.8?'Great work. Just a few to practice.':pct>=.6?'Good effort. Look over the words below and try again.':'Keep practicing. The Explore tab shows each part with example words.';
   $('#f-opts').innerHTML='';
   setMsg('#f-msg',F.missed.length?'Practice these:':'');
-  $('#f-break').innerHTML=F.missed.map(m=>`<div class="piece"><span class="tile k-${m.p.kind}">${esc(m.p.label)}</span><small>${hl(m.e)}: ${esc(m.p.meaning)}</small></div>`).join('');
+  $('#f-break').innerHTML=F.missed.map(m=>`<div class="piece"><span class="tile k-${m.p.kind}">${esc(m.p.label)}</span><small>${markPart(m.p,m.w)}: ${esc(m.p.meaning)}</small></div>`).join('');
   $('#f-break').hidden=!F.missed.length;
   $('#f-next').textContent='Start a new round';$('#f-next').hidden=false;
 }
@@ -1547,12 +1652,16 @@ $('#f-opts').addEventListener('click',e=>{
     if(o.dataset.id===it.p.id){o.classList.add('right');o.insertAdjacentText('afterbegin','✓ ')}
     else if(o===b){o.classList.add('wrong');o.insertAdjacentText('afterbegin','✗ ')}
   });
-  setMsg('#f-msg',(ok?'Correct! ':'Not quite. ')+it.w+' has the '+KIND[it.p.kind].toLowerCase()+' '+it.p.label+', which means "'+it.p.meaning+'."',ok?'good':'bad');
-  $('#f-break').innerHTML=`<div class="piece"><span class="tile k-${it.p.kind}">${esc(it.p.label)}</span><small>${hl(it.e)}</small></div>`;
+  setMsg('#f-msg',(ok?'Correct! ':'Not quite. ')+it.w+' has the '+KIND[it.p.kind].toLowerCase()+' '+it.p.label+', which means "'+it.p.meaning+'."'+(F.level===2&&it.named.length?' It also has '+it.named.map(o=>'the '+KIND[o.kind].toLowerCase()+' '+o.label).join(' and ')+'.':''),ok?'good':'bad');
+  $('#f-break').innerHTML=[it.p].concat(F.level===2?it.named:[]).map(q=>`<div class="piece"><span class="tile k-${q.kind}">${esc(q.label)}</span><small>${q===it.p?markPart(q,it.w):esc(q.meaning)}</small></div>`).join('');
   $('#f-break').hidden=false;
   findTally();$('#f-next').textContent=F.tried>=F.len?'See my score':'Next word';$('#f-next').hidden=false;$('#f-next').focus();
 });
 $('#f-next').addEventListener('click',()=>{if(F.done)findStart();else findNew()});
+$('#f-level').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  F.level=+b.dataset.level;document.querySelectorAll('#f-level button').forEach(x=>x.setAttribute('aria-pressed',x===b));findStart();
+});
 $('#f-filters').addEventListener('click',e=>{
   const b=e.target.closest('.chip');if(!b)return;
   const k=b.dataset.kind;
@@ -2271,15 +2380,22 @@ function rngFor(str){
 function seededShuffle(arr,rnd){const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 const BG_KINDS={P:'prefix',S:'suffix',G:'greek',L:'latin'},BG_POOL=45;
 // A code that starts with W (like WPSGL-2011) is a "Find the Word Part" game: Monifa calls
-// a whole word and students mark the word part in it. Its cards are different boards.
+// a whole word and students mark the word part in it. WH (like WHPSGL-2011) is the harder
+// version: every called word has two or more word parts, and only one of them is on the cards.
 function parseCode(c){
-  const m=String(c||'').toUpperCase().replace(/\s+/g,'').match(/^(W?)([PSGL]{1,4})-?(\d{4})$/);if(!m)return null;
-  const letters=[...new Set(m[2])].sort((a,b)=>'PSGL'.indexOf(a)-'PSGL'.indexOf(b)).join('');
-  return {code:m[1]+letters+'-'+m[3],letters,words:!!m[1],kinds:[...letters].map(x=>BG_KINDS[x])};
+  const m=String(c||'').toUpperCase().replace(/\s+/g,'').match(/^(W(H?))?([PSGL]{1,4})-?(\d{4})$/);if(!m)return null;
+  const letters=[...new Set(m[3])].sort((a,b)=>'PSGL'.indexOf(a)-'PSGL'.indexOf(b)).join('');
+  const words=!!m[1],hard=!!m[2];
+  return {code:(words?'W':'')+(hard?'H':'')+letters+'-'+m[4],letters,words,hard,kinds:[...letters].map(x=>BG_KINDS[x])};
 }
-const baseLabel=p=>p.label.replace(/\(.*?\)/g,'').trim().toLowerCase();
 const POOLS={};
 // Up to 45 word parts whose meanings do not overlap, so each called meaning matches one square.
+// Words a part can be called with: the part is in the word, no OTHER card part is, and in a
+// harder game the word must also have at least one more word part to think about.
+function callWords(p,pool,hard){
+  const src=hard?allWords():p.ex.map(plainWord);
+  return [...new Set(src)].filter(w=>partInWord(p,w)&&!pool.some(q=>q!==p&&partInWord(q,w))&&(!hard||(listedIn(p,w)&&likelyOthers(p,w).length>0))).sort();
+}
 function bingoPool(code){
   const g=parseCode(code);if(!g)return [];
   if(POOLS[g.code])return POOLS[g.code];
@@ -2287,28 +2403,42 @@ function bingoPool(code){
   for(const p of seededShuffle(PARTS.filter(p=>g.kinds.includes(p.kind)),rnd)){
     if(pool.length===(g.words?BG_POOL+25:BG_POOL))break;
     if(labels.has(baseLabel(p))||pool.some(q=>sameMeaning(q.meaning,p.meaning)))continue;
-    if(g.words&&!p.ex.some(e=>partInWord(p,plainWord(e))))continue;
+    if(g.words&&!callWords(p,[],g.hard).length)continue;
     labels.add(baseLabel(p));pool.push(p);
   }
   if(g.words){
-    // Keep only parts that have a word with no OTHER card part in it, so each called word
-    // matches exactly one square. Dropping a part only removes clashes, so repeat until stable.
+    // Keep only parts that still have a word no other card part fits. Dropping a part only
+    // removes clashes, so repeat until nothing changes.
     for(let changed=true;changed;){
       changed=false;
-      const keep=pool.filter(p=>p.ex.some(e=>{const w=plainWord(e);return partInWord(p,w)&&!pool.some(q=>q!==p&&partInWord(q,w))}));
+      const keep=pool.filter(p=>callWords(p,pool,g.hard).length);
       if(keep.length<pool.length){pool=keep;changed=true}
     }
     pool=pool.slice(0,BG_POOL);
   }
   return POOLS[g.code]=pool;
 }
-// The word Monifa calls for a part in a word game (always the same word for the same game).
+// The word Monifa calls for a part (always the same word for the same game).
+const WORD_PICK={};
 function bingoWord(code,p){
-  const pool=bingoPool(code);
-  const ok=p.ex.filter(e=>{const w=plainWord(e);return partInWord(p,w)&&!pool.some(q=>q!==p&&partInWord(q,w))});
-  return seededShuffle(ok.length?ok:p.ex,rngFor('word:'+code+':'+p.id))[0];
+  const k=code+'|'+p.id;if(WORD_PICK[k])return WORD_PICK[k];
+  const g=parseCode(code),pool=bingoPool(code);
+  if(!g.hard){ // regular games: same pick as the first version, so printed caller lists still match
+    const ok=p.ex.filter(e=>{const w=plainWord(e);return partInWord(p,w)&&!pool.some(q=>q!==p&&partInWord(q,w))});
+    return WORD_PICK[k]=plainWord(seededShuffle(ok.length?ok:p.ex,rngFor('word:'+code+':'+p.id))[0]);
+  }
+  const ok=callWords(p,pool,true),list=ok.length?ok:p.ex.map(plainWord);
+  return WORD_PICK[k]=seededShuffle(list,rngFor('word:'+code+':'+p.id))[0];
 }
 const isWordGame=code=>!!(parseCode(code)||{}).words;
+const isHardGame=code=>!!(parseCode(code)||{}).hard;
+// Show the word with the answer part highlighted.
+function markPart(p,word){
+  const f=partForms(p).filter(f=>partInWord(Object.assign({},p,{label:f}),word)).sort((a,b)=>b.length-a.length)[0];
+  if(!f)return esc(word);
+  const i=p.kind==='suffix'?word.lastIndexOf(f):word.indexOf(f);
+  return esc(word.slice(0,i))+'<mark>'+esc(f)+'</mark>'+esc(word.slice(i+f.length));
+}
 function bingoCard(code,n){
   const g=parseCode(code),pick=seededShuffle(bingoPool(code),rngFor('card:'+g.code+':'+n)).slice(0,24);
   pick.splice(12,0,null);return pick;
@@ -2406,18 +2536,18 @@ function spellIn(p,word){
 }
 function hostWordClue(p,n,word){
   hostSay(pickOne([`Here comes word number ${n}!`,`Okay, friends, word number ${n}!`,`Eyes on your cards! Word number ${n}!`,`Are you ready? Word number ${n}!`])+
-    ` Find the word part in this word: ${word}. One more time: ${word}.`);
+    ` Find the word part in this word: ${word}. One more time: ${word}.`+(isHardGame(BG.code)?pickOne([' This word has more than one part, but only one is on your card!',' Break it apart. Only one part is on your card!','']):''));
 }
 function hostWordAnswer(p,word,afterDrum){
   hostSay(pickOne(afterDrum?['Did you get it? ','Here is the answer! ','Ta-da! ']:['Did you get it? ','Drumroll, please! ','Here is the answer! '])+
-    `${word} has ${sayKind(p)}: ${spellIn(p,word)}. It means ${sayMeaning(p)}.`);
+    `${word} has ${sayKind(p)}: ${spellIn(p,word)}. It means ${sayMeaning(p)}.`+(isHardGame(BG.code)?(()=>{const o=otherParts(p,word)[0];return o?` It also has ${sayKind(o)} ${spellIn(o,word)}, but that one is not on your card.`:''})():''));
 }
 function hostAnswer(p,afterDrum){
   const ex=(p.ex[0]||'').replace(/[\[\]]/g,'');
   hostSay(pickOne(afterDrum?['Did you get it? ','Here is the answer! ',"Let's see if you were right! ",'Ta-da! ']:['Did you get it? ','Drumroll, please! ','Here is the answer! ',"Let's see if you were right! "])+
     `It's ${sayKind(p)}: ${spellPart(p)}. It means ${sayMeaning(p)}.`+(ex?` Like in the word ${ex}!`:''));
 }
-const hostHello=()=>hostSay(isWordGame(BG.code)?"Hi, everybody! I'm Monifa, and welcome to Find the Word Part Bingo! I'll say a word, and you find its word part on your card. Let's play!":"Hi, everybody! I'm Monifa, and welcome to Word Parts Bingo! Get your cards ready, and let's play!");
+const hostHello=()=>hostSay(isHardGame(BG.code)?"Hi, everybody! I'm Monifa, and welcome to Harder Find the Word Part Bingo! My words have more than one part, so break them apart and find the one on your card. Let's play!":isWordGame(BG.code)?"Hi, everybody! I'm Monifa, and welcome to Find the Word Part Bingo! I'll say a word, and you find its word part on your card. Let's play!":"Hi, everybody! I'm Monifa, and welcome to Word Parts Bingo! Get your cards ready, and let's play!");
 $('#host-on').checked=HOST_PREF.on;
 $('#host-on').addEventListener('change',e=>{if(!T.on()){e.target.checked=HOST_PREF.on;return}HOST_PREF.on=e.target.checked;hostSave();if(!HOST_PREF.on&&HAS_TTS){HOST_RUN++;speechSynthesis.cancel();$('#host').classList.remove('talk')}});
 $('#host-again').addEventListener('click',()=>{if(HOST.last)hostSay(HOST.last);else hostHello()});
@@ -2429,43 +2559,75 @@ $('#t-test').addEventListener('click',()=>hostSay("Hi, everybody! I'm Monifa. Th
 if(HAS_TTS){hostFillVoices();speechSynthesis.addEventListener?.('voiceschanged',hostFillVoices)}
 else{$('#host-say').textContent='This browser cannot speak, so read the clues aloud yourself.';$('#host-voice').hidden=true}
 
+
+/* ---------- locks: join PIN for Play on screen, daily caller pass ---------- */
+// There is no shared server, so a switch on the teacher's computer cannot reach student
+// Chromebooks. Instead, both features need a code that only the teacher's dashboard shows.
+// Both are worked out from today's date, so every device agrees without talking to each other.
+const todayKey=()=>{const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()};
+const callerPass=()=>String(1000+Math.floor(rngFor('caller-pass:'+todayKey())()*9000));
+const joinPin=code=>String(10+Math.floor(rngFor('join-pin:'+parseCode(code).code+':'+todayKey())()*90));
+const LK_KEY='wpw-bingo-locks';let LOCKS={play:false,call:true};
+try{LOCKS=Object.assign(LOCKS,JSON.parse(localStorage.getItem(LK_KEY))||{})}catch(e){}
+const lkSave=()=>{try{localStorage.setItem(LK_KEY,JSON.stringify(LOCKS))}catch(e){}};
+const CALLER_OK='wpw-caller-ok';
+function callerOpen(){
+  if(T.on()||!LOCKS.call)return true; // LOCKS.call is this computer's setting (on by default)
+  try{return sessionStorage.getItem(CALLER_OK)===todayKey()}catch(e){return false}
+}
+
 const BG_KEY='wpw-bingo-caller-v1',BP_KEY='wpw-bingo-play-v1',BM_KEY='wpw-bingo-mode';
-let BG=null,BP={code:'',card:'',marks:[]},BG_MODE='play',BG_PEND='PSGL',BG_PENDW=false;
+let BG=null,BP={code:'',card:'',marks:[]},BG_MODE='play',BG_PEND='PSGL',BG_PENDW=0;
 try{BG=JSON.parse(localStorage.getItem(BG_KEY))}catch(e){}
 try{BP=Object.assign(BP,JSON.parse(localStorage.getItem(BP_KEY))||{})}catch(e){}
 try{BG_MODE=localStorage.getItem(BM_KEY)==='teacher'?'teacher':'play'}catch(e){}
 const bgSave=()=>{try{localStorage.setItem(BG_KEY,JSON.stringify(BG))}catch(e){}};
 const bpSave=()=>{try{localStorage.setItem(BP_KEY,JSON.stringify(BP))}catch(e){}};
-function bgNew(letters,words){BG={code:(words?'W':'')+letters+'-'+(1000+Math.floor(Math.random()*9000)),called:[],show:false};bgSave()}
+const gameType=code=>{const g=parseCode(code)||{};return g.hard?2:g.words?1:0};
+const typePrefix=w=>w===2?'WH':w?'W':'';
+function bgNew(letters,words){BG={code:typePrefix(words)+letters+'-'+(1000+Math.floor(Math.random()*9000)),called:[],show:false};bgSave()}
 if(!BG||!parseCode(BG.code)||!Array.isArray(BG.called))bgNew('PSGL');
-BG_PEND=parseCode(BG.code).letters;BG_PENDW=parseCode(BG.code).words;
+BG_PEND=parseCode(BG.code).letters;BG_PENDW=gameType(BG.code);
 
 function bgMode(m){
   BG_MODE=m;try{localStorage.setItem(BM_KEY,m)}catch(e){}
   document.querySelectorAll('#bg-mode button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.mode===m));
-  $('#bg-play').hidden=m!=='play';$('#bg-teacher').hidden=m!=='teacher';
+  const open=m!=='teacher'||callerOpen();
+  $('#bg-play').hidden=m!=='play';$('#bg-teacher').hidden=!(m==='teacher'&&open);$('#bg-gate').hidden=!(m==='teacher'&&!open);
+  if((m!=='teacher'||!open)&&typeof listenStop==='function')listenStop();
 }
 function bgRender(){
   const g=parseCode(BG.code),pool=bingoPool(BG.code),n=BG.called.length;
   $('#bg-code').textContent=g.code;
-  $('#bg-pool').textContent=(g.words?'Find the Word Part game. ':'Meanings game. ')+pool.length+' word parts in this game. Each card uses 24 of them.';
-  document.querySelectorAll('#bg-type button').forEach(b=>b.setAttribute('aria-pressed',(b.dataset.w==='1')===BG_PENDW));
+  $('#bg-pool').textContent=(g.hard?'Harder Find the Word Part game. ':g.words?'Find the Word Part game. ':'Meanings game. ')+pool.length+' word parts in this game. Each card uses 24 of them.';
+  document.querySelectorAll('#bg-type button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.w===BG_PENDW));
   document.querySelectorAll('#bg-kinds .chip').forEach(b=>b.setAttribute('aria-pressed',BG_PEND.includes(b.dataset.k)));
   const cur=n?BY_ID[BG.called[n-1]]:null;
   $('#bg-count').textContent=cur?'Clue '+n+' of '+pool.length:'Ready to start';
   $('#bg-clue').textContent=cur?(g.words?plainWord(bingoWord(g.code,cur)):cur.meaning):n>=pool.length&&n?'Every word part has been called.':g.words?'Tap Call next to call the first word.':'Tap Call next to read the first meaning aloud.';
-  $('#bg-answer').innerHTML=cur?`<span class="tile k-${cur.kind}">${esc(cur.label)}</span><span class="help">${g.words?hl(bingoWord(g.code,cur))+': '+esc(cur.meaning):esc(cur.gloss)}</span>`:'';
+  $('#bg-answer').innerHTML=cur?`<span class="tile k-${cur.kind}">${esc(cur.label)}</span><span class="help">${g.words?markPart(cur,bingoWord(g.code,cur))+': '+esc(cur.meaning):esc(cur.gloss)}</span>`:'';
   $('#bg-answer').hidden=!(cur&&BG.show);
   $('#bg-show').hidden=!cur;$('#bg-show').textContent=BG.show?'Hide answer':'Show answer';
-  $('#bg-next').disabled=n>=pool.length;
+  $('#bg-next').disabled=n>=pool.length||!!BG.stopped;
+  $('#bg-resume').hidden=!BG.stopped;
+  $('#bg-join').innerHTML=LOCKS.play?'Play on screen is locked. Students use paper cards.'
+    :T.on()?`Chromebook players: game code <b>${esc(g.code)}</b> &middot; join PIN <b>${joinPin(g.code)}</b>`
+    :'Students playing on Chromebooks need the join PIN from your teacher.';
   $('#bg-undo').hidden=!n;
   $('#bg-called').innerHTML=n?BG.called.map(id=>{const p=BY_ID[id];return `<span class="k-${p.kind}">${esc(p.label)}: ${g.words?esc(plainWord(bingoWord(g.code,p))):esc(p.meaning)}</span>`}).join(''):'<p class="help">None yet.</p>';
 }
 $('#bg-mode').addEventListener('click',e=>{const b=e.target.closest('button');if(b)bgMode(b.dataset.mode)});
+$('#bg-gateform').addEventListener('submit',e=>{
+  e.preventDefault();const v=$('#bg-gatecode').value.trim();$('#bg-gatecode').value='';
+  const ok=()=>{try{sessionStorage.setItem(CALLER_OK,todayKey())}catch(_){}setMsg('#bg-gatemsg','');bgMode('teacher');bgRender()};
+  if(v===callerPass())return ok();
+  const check=window.ClassGate&&ClassGate.checkCode?ClassGate.checkCode(v):Promise.resolve('wrong');
+  check.then(r=>{if(r==='ok')ok();else setMsg('#bg-gatemsg',(window.ClassGate&&ClassGate.codeMsg(r))||'That pass is not right. Ask your teacher.','bad')});
+});
 $('#bg-type').addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;
-  BG_PENDW=b.dataset.w==='1';bgRender();
-  setMsg('#bg-newmsg',BG_PENDW===!!parseCode(BG.code).words?'':'Tap Start a new game to switch. '+(BG_PENDW?'Monifa will call words, and students find the word part in each word. This game uses new cards.':'Monifa will call meanings.'),'');
+  BG_PENDW=+b.dataset.w;bgRender();
+  setMsg('#bg-newmsg',BG_PENDW===gameType(BG.code)?'':'Tap Start a new game to switch. '+['Monifa will call meanings.','Monifa will call words, and students find the word part in each word. This game uses new cards.','Monifa will call longer words with two or more word parts. Only one of them is on the cards, so students have to break the word apart. This game uses new cards.'][BG_PENDW],'');
 });
 $('#bg-kinds').addEventListener('click',e=>{
   const b=e.target.closest('.chip');if(!b)return;
@@ -2473,18 +2635,18 @@ $('#bg-kinds').addEventListener('click',e=>{
   if(BG_PEND.includes(k)){if(BG_PEND.length===1)return;BG_PEND=BG_PEND.replace(k,'')}
   else BG_PEND=[...'PSGL'].filter(x=>BG_PEND.includes(x)||x===k).join('');
   bgRender();
-  const size=bingoPool((BG_PENDW?'W':'')+BG_PEND+'-0000').length;
+  const size=bingoPool(typePrefix(BG_PENDW)+BG_PEND+'-0000').length;
   setMsg('#bg-newmsg',size<24?'Those types give only '+size+' word parts with different meanings, and a card needs 24. Add another type.':'Tap Start a new game to use these types.',size<24?'bad':'');
 });
 let bgArmed=false;
 $('#bg-new').addEventListener('click',e=>{
-  if(bingoPool((BG_PENDW?'W':'')+BG_PEND+'-0000').length<24){setMsg('#bg-newmsg','Add another type of word part first. A card needs 24 word parts.','bad');return}
+  if(bingoPool(typePrefix(BG_PENDW)+BG_PEND+'-0000').length<24){setMsg('#bg-newmsg','Add another type of word part first. A card needs 24 word parts.','bad');return}
   if(BG.called.length&&!bgArmed){bgArmed=true;e.target.textContent='Tap again to end this game';
     setTimeout(()=>{bgArmed=false;e.target.textContent='Start a new game'},4000);return}
   bgArmed=false;e.target.textContent='Start a new game';
-  bgNew(BG_PEND,BG_PENDW);bgRender();$('#bg-checkgrid').innerHTML='';setMsg('#bg-checkmsg','');
+  bgNew(BG_PEND,BG_PENDW);$('#bg-stop').hidden=true;bgRender();$('#bg-checkgrid').innerHTML='';setMsg('#bg-checkmsg','');
   hostHello();
-  setMsg('#bg-newmsg','New '+(BG_PENDW?'Find the Word Part':'Meanings')+' game '+BG.code+' started. Print new cards for this game.','good');
+  setMsg('#bg-newmsg','New '+['Meanings','Find the Word Part','Harder Find the Word Part'][BG_PENDW]+' game '+BG.code+' started. Print new cards for this game.','good');
 });
 /* drum roll: a snare roll that speeds up and gets louder, then a cymbal crash.
    Made with the browser's Web Audio, so there is no sound file to load. */
@@ -2552,9 +2714,83 @@ $('#bg-checkform').addEventListener('submit',e=>{
   const card=bingoCard(BG.code,n),marked=new Set(card.map((p,i)=>!p||BG.called.includes(p.id)?i:-1).filter(i=>i>=0)),wins=winLines(marked);
   setMsg('#bg-checkmsg',wins.length?'Card '+n+' has BINGO on '+lineWords(wins)+'.':'Card '+n+' does not have a line yet. Called squares are shaded.',wins.length?'good':'bad');
   $('#bg-checkgrid').innerHTML=cardGrid(card,marked,wins,false);
-  hostSay(wins.length?pickOne([`Card ${n} has BINGO! Woo-hoo! Give it up for card ${n}!`,`We have a winner! Card ${n}, that's BINGO!`])
-    :pickOne([`Ooh, so close, card ${n}, but not yet! Keep playing!`,`Not yet, card ${n}! Hang in there!`]));
+  LS.quietUntil=Date.now()+600;
+  if(wins.length){
+    hostSay(winSpeech(n,card,wins));
+    if(BG.stopped){$('#bg-stop').hidden=false;$('#bg-stop').textContent='Card '+n+' wins with '+lineWords(wins)+'! Tap Keep playing to look for more winners, or start a new game.'}
+  }else{
+    hostSay(pickOne([`Ooh, so close, card ${n}, but not yet! Keep playing!`,`Not yet, card ${n}! Hang in there! Let's keep playing!`]));
+    if(BG.stopped){BG.stopped=false;bgSave();$('#bg-stop').hidden=true;bgRender()}
+  }
 });
+/* ---------- Monifa listens for BINGO ---------- */
+// Uses the browser's speech recognition (Chrome and Edge). She ignores what she hears while
+// she is talking, so her own "BINGO!" does not set her off.
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+const LS={on:false,rec:null,wantCard:false,quietUntil:0,timer:0};
+const NUMW={zero:0,one:1,won:1,two:2,to:2,too:2,three:3,four:4,for:4,five:5,six:6,seven:7,eight:8,ate:8,nine:9,ten:10,eleven:11,twelve:12,thirteen:13,fourteen:14,fifteen:15,sixteen:16,seventeen:17,eighteen:18,nineteen:19,twenty:20,thirty:30,forty:40,fifty:50,sixty:60,seventy:70,eighty:80,ninety:90};
+function heardNumber(t){
+  const d=t.match(/\b(\d{1,2})\b/);if(d)return +d[1];
+  const w=t.toLowerCase().replace(/-/g,' ').split(/\s+/);
+  for(let i=0;i<w.length;i++){
+    if(!(w[i] in NUMW)||NUMW[w[i]]===0)continue;
+    let v=NUMW[w[i]];
+    if(v>=20&&v%10===0&&NUMW[w[i+1]]>0&&NUMW[w[i+1]]<10)v+=NUMW[w[i+1]];
+    return v;
+  }
+  return null;
+}
+const hostBusy=()=>$('#host').classList.contains('talk')||Date.now()<LS.quietUntil;
+function listenSet(on){
+  LS.on=on;$('#bg-listen').setAttribute('aria-pressed',on);$('#bg-listen').classList.toggle('listen-on',on);
+  $('#bg-listen').textContent=on?'🎤 Listening for BINGO (tap to stop)':'🎤 Monifa listens for BINGO';
+}
+function listenStart(){
+  if(!SR)return;
+  try{if(LS.rec)LS.rec.abort()}catch(e){}
+  const r=LS.rec=new SR();r.lang='en-US';r.continuous=true;r.interimResults=true;
+  r.onresult=e=>{
+    if(hostBusy())return;
+    let t='';for(let i=e.resultIndex;i<e.results.length;i++)t+=' '+e.results[i][0].transcript;
+    onHeard(t.toLowerCase());
+  };
+  r.onerror=e=>{if(e.error==='not-allowed'||e.error==='service-not-allowed'){listenSet(false);$('#bg-listenmsg').textContent='Monifa can’t hear you. Allow the microphone for this site (the icon at the right end of the address bar), then try again.'}};
+  r.onend=()=>{if(LS.on&&LS.rec===r)setTimeout(()=>{if(LS.on&&LS.rec===r)try{r.start()}catch(e){}},250)};
+  try{r.start()}catch(e){}
+}
+function onHeard(t){
+  if(LS.wantCard){const n=heardNumber(t);if(n>=1&&n<=99){LS.wantCard=false;clearTimeout(LS.timer);checkCard(n)}return}
+  if(/\bbingo\b|\bbing go\b|\bbingle\b/.test(t)&&!BG.stopped)bingoHeard();
+}
+function listenStop(){LS.wantCard=false;clearTimeout(LS.timer);if(LS.on)listenSet(false);try{if(LS.rec)LS.rec.abort()}catch(e){}LS.rec=null}
+function bingoHeard(){
+  BG.stopped=true;bgSave();bgRender();
+  $('#bg-stop').hidden=false;$('#bg-stop').textContent='BINGO! The game is stopped. What is the card number?';
+  hostSay(pickOne(["BINGO! Somebody has BINGO! Everybody stop! What's your card number?","Whoa, I heard BINGO! Freeze, everybody! Tell me your card number!"]));
+  LS.quietUntil=Date.now()+600;LS.wantCard=true;
+  clearTimeout(LS.timer);LS.timer=setTimeout(()=>{if(LS.wantCard){LS.wantCard=false;$('#bg-stop').textContent='BINGO! The game is stopped. Type the card number under Check a winner.'}},25000);
+}
+function checkCard(n){$('#bg-checknum').value=n;$('#bg-checkform').requestSubmit()}
+// Word parts read aloud by their spelling: "un", "in, or im".
+const sayPart=p=>partForms(p).join(', or ');
+function winSpeech(n,card,wins){
+  const cells=[...new Set(wins.flatMap(l=>l.cells))].filter(i=>card[i]);
+  return pickOne([`Card ${n} has BINGO! Woo-hoo!`,`We have a winner! Card ${n}, that's BINGO!`])+
+    ` The winning line is ${lineWords(wins)}. The winning word parts are: `+cells.map(i=>sayPart(card[i])).join('. ')+'.'+
+    (wins.some(l=>l.cells.includes(12))?' Plus the free space!':'')+` Give it up for card ${n}!`;
+}
+$('#bg-listen').addEventListener('click',()=>{
+  if(!SR)return;
+  if(LS.on){listenStop();return}
+  listenSet(true);listenStart();
+  $('#bg-listenmsg').textContent='Monifa is listening. When someone shouts “BINGO!”, she stops the game and asks for the card number. The microphone sound goes to the browser’s speech service (Google in Chrome, Microsoft in Edge).';
+});
+$('#bg-resume').addEventListener('click',()=>{
+  BG.stopped=false;bgSave();$('#bg-stop').hidden=true;LS.wantCard=false;bgRender();
+  hostSay(pickOne(["Okay, let's keep playing!","Back to the game! Eyes on your cards!"]));
+});
+if(!SR)$('#bg-listenrow').hidden=true;
+
 // Printing opens the cards in their own tab. Many school setups (Google Classroom, embedded
 // pages, some Chromebooks) block the print window inside an app, but not in a plain tab.
 const PRINT_CSS=`@page{size:letter portrait;margin:.4in}
@@ -2594,17 +2830,17 @@ function printTab(title,html){
 function cardsHTML(code,from,n){
   return Array.from({length:n},(_,k)=>{
     const num=from+k,card=bingoCard(code,num);
-    return `<div class="pcard"><div class="ptop"><b>${isWordGame(code)?'Find the Word Part Bingo':'Word Parts Bingo'}</b><span>Game ${code} &middot; Card ${num}</span></div>
+    return `<div class="pcard"><div class="ptop"><b>${isHardGame(code)?'Find the Word Part Bingo: Harder':isWordGame(code)?'Find the Word Part Bingo':'Word Parts Bingo'}</b><span>Game ${code} &middot; Card ${num}</span></div>
       <div class="pname">Name: ______________________________</div>
       <div class="pgrid">${[...'BINGO'].map(c=>`<div class="ph">${c}</div>`).join('')}${card.map(p=>p?`<div>${esc(p.label)}</div>`:'<div class="pf">FREE</div>').join('')}</div></div>`;
   }).join('');
 }
 function callerHTML(code){
   const pool=bingoPool(code);
-  if(isWordGame(code))return `<div class="plist"><h2>Find the Word Part Bingo: caller list</h2>
-    <p>Game ${code}. Read each word aloud in any order and check it off. Students mark the word part that is in the word.</p>
-    <table><thead><tr><th>Called</th><th>Word (read aloud)</th><th>Answer: word part</th><th>Type</th><th>Meaning</th></tr></thead><tbody>${
-    pool.map(p=>`<tr><td class="pbox"></td><td><b>${esc(plainWord(bingoWord(code,p)))}</b></td><td>${esc(p.label)}</td><td>${KIND[p.kind]}</td><td>${esc(p.meaning)}</td></tr>`).join('')}</tbody></table></div>`;
+  if(isWordGame(code)){const hard=isHardGame(code);return `<div class="plist"><h2>Find the Word Part Bingo${hard?': Harder':''}: caller list</h2>
+    <p>Game ${code}. Read each word aloud in any order and check it off. Students mark the word part that is in the word.${hard?' Each word has more than one part, but only the answer is on the cards.':''}</p>
+    <table><thead><tr><th>Called</th><th>Word (read aloud)</th><th>Answer: word part</th><th>Type</th><th>Meaning</th>${hard?'<th>Other parts in the word (not on cards)</th>':''}</tr></thead><tbody>${
+    pool.map(p=>{const w=bingoWord(code,p),o=hard?likelyOthers(p,w):[];return `<tr><td class="pbox"></td><td><b>${esc(w)}</b></td><td>${esc(p.label)}</td><td>${KIND[p.kind]}</td><td>${esc(p.meaning)}</td>${hard?`<td>${esc(o.map(q=>q.label).join(', '))}</td>`:''}</tr>`}).join('')}</tbody></table></div>`}
   return `<div class="plist"><h2>Word Parts Bingo: caller list</h2>
     <p>Game ${code}. Read each meaning aloud in any order and check it off. Students mark the word part that matches.</p>
     <table><thead><tr><th>Called</th><th>Word part</th><th>Type</th><th>Meaning (read aloud)</th><th>Example words</th></tr></thead><tbody>${
@@ -2627,14 +2863,14 @@ $('#bg-useform').addEventListener('submit',e=>{
   const g=parseCode($('#bg-usecode').value);
   if(!g||bingoPool(g.code).length<24){setMsg('#bg-usemsg','Type the game code printed on the cards, like PSGL-1120.','bad');return}
   if(g.code===BG.code){setMsg('#bg-usemsg','You are already calling game '+g.code+'.','good');return}
-  BG={code:g.code,called:[],show:false};BG_PEND=g.letters;BG_PENDW=g.words;bgSave();bgRender();
+  BG={code:g.code,called:[],show:false};BG_PEND=g.letters;BG_PENDW=gameType(g.code);bgSave();bgRender();
   $('#bg-checkgrid').innerHTML='';setMsg('#bg-checkmsg','');$('#bg-usecode').value='';
   setMsg('#bg-usemsg','Now calling game '+g.code+'. It matches cards printed with that code.','good');
 });
 
 function bpRender(){
   const g=parseCode(BP.code),n=+BP.card;
-  if(!g||!(n>=1&&n<=99)){$('#bp-board').hidden=true;return}
+  if(!g||!(n>=1&&n<=99)||BP.day!==todayKey()){$('#bp-board').hidden=true;return}
   const card=bingoCard(g.code,n),marked=new Set([12,...BP.marks]),wins=winLines(marked);
   $('#bp-title').textContent='Game '+g.code+' · Card '+n;
   $('#bp-grid').innerHTML=cardGrid(card,marked,wins,true);
@@ -2647,7 +2883,9 @@ $('#bp-form').addEventListener('submit',e=>{
   if(!g){setMsg('#bp-msg','Type the game code your teacher shows, like PSGL-4821 or WPSGL-2011.','bad');return}
   if(!(n>=1&&n<=99)){setMsg('#bp-msg','Type your card number. It is a number from 1 to 99.','bad');return}
   if(bingoPool(g.code).length<24){setMsg('#bp-msg','That game code does not work. Check it with your teacher.','bad');return}
+  if($('#bp-pin').value.trim()!==joinPin(g.code)){setMsg('#bp-msg','Type the 2-digit join PIN on your teacher’s screen. No PIN on the screen? Today’s game is played on paper cards.','bad');return}
   if(g.code!==BP.code||n!==+BP.card)BP={code:g.code,card:n,marks:[]};
+  BP.day=todayKey();
   $('#bp-code').value=g.code;bpSave();setMsg('#bp-msg','');bpRender();
 });
 $('#bp-grid').addEventListener('click',e=>{
@@ -2687,6 +2925,11 @@ $('#t-form').addEventListener('submit',e=>{
     $('#t-msg').className='msg bad';
   });
 });
+$('#t-lockplay').checked=LOCKS.play;$('#t-lockcall').checked=LOCKS.call;
+function lockUI(){$('#t-pass').textContent=callerPass()}
+lockUI();
+$('#t-lockplay').addEventListener('change',e=>{if(!T.on()){e.target.checked=LOCKS.play;return}LOCKS.play=e.target.checked;lkSave();bgRender()});
+$('#t-lockcall').addEventListener('change',e=>{if(!T.on()){e.target.checked=LOCKS.call;return}LOCKS.call=e.target.checked;lkSave();lockUI()});
 $('#t-call').addEventListener('click',()=>{tClose();show('bingo');bgMode('teacher');$('#view-bingo').scrollIntoView({behavior:'smooth',block:'start'})});
 $('#t-lock').addEventListener('click',()=>{T.set(false);T.fresh=0;T.code='';if(HAS_TTS){HOST_RUN++;speechSynthesis.cancel()}bgMode('play');tClose()});
 document.addEventListener('classgate:signin',()=>{T.set(false);bgMode('play')});
