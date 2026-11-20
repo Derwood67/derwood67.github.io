@@ -460,6 +460,7 @@ label.help{font-weight:700}
     <button role="tab" id="tab-build" data-view="build" aria-selected="false">Build a Word</button>
     <button role="tab" id="tab-sent" data-view="sent" aria-selected="false">Write Sentences</button>
     <button role="tab" id="tab-write" data-view="write" aria-selected="false">Write a Paragraph</button>
+    <button role="tab" id="tab-find" data-view="find" aria-selected="false">Find the Word Part</button>
     <button role="tab" id="tab-quiz" data-view="quiz" aria-selected="false">Quiz</button>
     <button role="tab" id="tab-bingo" data-view="bingo" aria-selected="false">Bingo</button>
   </nav>
@@ -538,6 +539,32 @@ label.help{font-weight:700}
   </section>
 
   <!-- QUIZ -->
+  <!-- FIND THE WORD PART -->
+  <section class="panel" id="view-find" role="tabpanel" aria-labelledby="tab-find" hidden>
+    <div class="row" id="f-filters">
+      <span class="help">Find these parts:</span>
+      <button class="chip k-prefix" data-kind="prefix" aria-pressed="true">Prefixes</button>
+      <button class="chip k-suffix" data-kind="suffix" aria-pressed="true">Suffixes</button>
+      <button class="chip k-greek" data-kind="greek" aria-pressed="true">Greek roots</button>
+      <button class="chip k-latin" data-kind="latin" aria-pressed="true">Latin roots</button>
+    </div>
+    <div class="stage">
+      <div>
+        <div class="eyebrow" id="f-count" style="margin-bottom:6px"></div>
+        <div class="eyebrow">Find the word part</div>
+        <div class="clue" id="f-prompt"></div>
+        <p class="help" id="f-sub" style="margin-top:6px"></p>
+      </div>
+      <div class="opts" id="f-opts"></div>
+      <div class="msg" id="f-msg" aria-live="polite"></div>
+      <div class="breakdown" id="f-break" hidden></div>
+      <div class="row">
+        <button class="btn" id="f-next" hidden>Next word</button>
+        <span class="tally" id="f-tally"></span>
+      </div>
+    </div>
+  </section>
+
   <section class="panel" id="view-quiz" role="tabpanel" aria-labelledby="tab-quiz" hidden>
     <div class="stage lock" id="q-lock" hidden>
       <div>
@@ -644,12 +671,12 @@ label.help{font-weight:700}
       <div class="stage">
         <div>
           <div class="eyebrow">Word Parts Bingo</div>
-          <div class="clue">Listen to the meaning. Find the word part on your card that matches it, and tap it.</div>
+          <div class="clue">Listen to Monifa's clue. She says a meaning or a whole word. Find the word part on your card that matches, and tap it.</div>
           <p class="help" style="margin-top:6px">Five in a row, in a column, or on a diagonal wins. The middle square is free. Playing on paper? Use your printed card instead.</p>
         </div>
         <form class="row" id="bp-form">
           <label class="help" for="bp-code">Game code</label>
-          <input class="search bnum" id="bp-code" autocomplete="off" maxlength="9" placeholder="PSGL-4821">
+          <input class="search bnum" id="bp-code" autocomplete="off" maxlength="10" placeholder="PSGL-4821">
           <label class="help" for="bp-card">Card number</label>
           <input class="search bnum" id="bp-card" type="number" min="1" max="99" inputmode="numeric" placeholder="1 to 99">
           <button class="btn">Show my card</button>
@@ -679,6 +706,13 @@ label.help{font-weight:700}
           <button class="chip k-greek" data-k="G" aria-pressed="true">Greek roots</button>
           <button class="chip k-latin" data-k="L" aria-pressed="true">Latin roots</button>
           <button class="btn sm" id="bg-new">Start a new game</button>
+        </div>
+        <div class="row">
+          <span class="help">Monifa calls:</span>
+          <div class="seg" id="bg-type">
+            <button data-w="0" aria-pressed="true">Meanings</button>
+            <button data-w="1" aria-pressed="false">Words (find the word part)</button>
+          </div>
         </div>
         <div class="msg" id="bg-newmsg" aria-live="polite"></div>
       </div>
@@ -722,7 +756,7 @@ label.help{font-weight:700}
         <div class="msg" id="bg-printmsg" aria-live="polite"></div>
         <form class="row" id="bg-useform">
           <label class="help" for="bg-usecode">Already have printed cards? Type their game code</label>
-          <input class="search bnum" id="bg-usecode" autocomplete="off" maxlength="9" placeholder="PSGL-1120">
+          <input class="search bnum" id="bg-usecode" autocomplete="off" maxlength="10" placeholder="PSGL-1120">
           <button class="btn sm ghost">Call this game</button>
         </form>
         <div class="msg" id="bg-usemsg" aria-live="polite"></div>
@@ -1169,6 +1203,15 @@ const $=s=>document.querySelector(s);
 const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const hl=s=>esc(s).replace(/\[(.+?)\]/g,'<mark>$1</mark>');
 const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+/* Spellings of a word part, like ["in","im"] for "in- / im-". */
+const partForms=p=>p.label.replace(/\(.*?\)/g,'').split('/').map(x=>x.replace(/[^a-z]/gi,'').toLowerCase()).filter(Boolean);
+/* Could a student fairly say this word part is in this word? Prefixes must start the word,
+   suffixes must end it, and roots (3+ letters) can be anywhere. Used to keep wrong choices
+   and other bingo squares from also fitting a called word. */
+function partInWord(p,word){
+  return partForms(p).some(f=>p.kind==='prefix'?word.startsWith(f):p.kind==='suffix'?word.endsWith(f):f.length>=3&&word.includes(f));
+}
+const plainWord=e=>e.replace(/[\[\]]/g,'').toLowerCase();
 const kindOf=p=>p.id?BY_ID[p.id].kind:'base';
 // prefix tiles show "dis-", suffix tiles show "-able", so students can see where each part goes
 const tileText=(text,kind)=>kind==='prefix'?text+'-':kind==='suffix'?'-'+text:text;
@@ -1188,7 +1231,7 @@ function breakdownHTML(word){
 }
 
 /* ---------- tabs ---------- */
-const VIEWS=['explore','build','sent','quiz','write','bingo'];
+const VIEWS=['explore','build','sent','find','quiz','write','bingo'];
 const PROG_KEY='wpw-progress-v1';let PROG={};
 try{PROG=JSON.parse(localStorage.getItem(PROG_KEY))||{}}catch(e){}
 function pSave(){try{localStorage.setItem(PROG_KEY,JSON.stringify(PROG))}catch(e){}}
@@ -1444,6 +1487,77 @@ $('#b-level').addEventListener('click',e=>{
   B.level=b.dataset.level;B.queue=[];
   document.querySelectorAll('#b-level button').forEach(x=>x.setAttribute('aria-pressed',x===b));
   newBuild();
+});
+
+
+/* ---------- find the word part ---------- */
+// A word is shown (like "invisible"). The student taps the word part that is in it.
+// Wrong choices are parts that are NOT in the word, so there is only one right answer.
+const F={kinds:new Set(['prefix','suffix','greek','latin']),len:20,queue:[],cur:null,right:0,tried:0,streak:0,missed:[],done:false};
+function findQueue(){
+  const items=[];
+  PARTS.filter(p=>F.kinds.has(p.kind)).forEach(p=>p.ex.forEach(e=>{
+    const w=plainWord(e);
+    if(partInWord(p,w))items.push({p,e,w});
+  }));
+  const seen=new Set();   // one word per part per round, so a round covers many parts
+  return shuffle(items).filter(it=>!seen.has(it.p.id)&&seen.add(it.p.id));
+}
+function findStart(){
+  F.right=F.tried=F.streak=0;F.missed=[];F.done=false;F.queue=[];
+  $('#f-next').textContent='Next word';findNew();findTally();
+}
+function findTally(){$('#f-tally').textContent=F.tried?`${F.right} of ${F.tried} correct`+(F.streak>1?` · ${F.streak} in a row`:''):''}
+function findNew(){
+  if(F.tried>=F.len){findFinish();return}
+  if(!F.queue.length)F.queue=findQueue();
+  const it=F.cur=F.queue.pop(),p=it.p;
+  $('#f-count').textContent='Word '+(F.tried+1)+' of '+F.len;
+  $('#f-prompt').innerHTML='Which word part is in <strong>'+esc(it.w)+'</strong>?';
+  $('#f-sub').textContent='Look at the beginning, the end, and the middle of the word.';
+  const wrong=[],labels=new Set([p.label]);
+  const pick=pool=>shuffle(pool).forEach(o=>{
+    if(wrong.length<3&&o.group!==p.group&&!labels.has(o.label)&&!partInWord(o,it.w)){labels.add(o.label);wrong.push(o)}
+  });
+  pick(PARTS.filter(o=>o.kind===p.kind&&F.kinds.has(o.kind)));
+  if(wrong.length<3)pick(PARTS.filter(o=>F.kinds.has(o.kind)));
+  if(wrong.length<3)pick(PARTS);
+  $('#f-opts').innerHTML=shuffle(wrong.concat(p)).map(o=>`<button class="opt" data-id="${esc(o.id)}"><span class="tile k-${o.kind}">${esc(o.label)}</span></button>`).join('');
+  setMsg('#f-msg','');$('#f-break').hidden=true;$('#f-next').hidden=true;
+}
+function findFinish(){
+  if(!F.done){lastStar=0;addStar('find-'+(++starRound))}
+  F.done=true;const pct=F.right/F.len;
+  $('#f-count').textContent='Round complete';
+  $('#f-prompt').textContent='You found '+F.right+' of '+F.len+' word parts.';
+  $('#f-sub').textContent=pct===1?'Perfect! You can spot word parts anywhere.':pct>=.8?'Great work. Just a few to practice.':pct>=.6?'Good effort. Look over the words below and try again.':'Keep practicing. The Explore tab shows each part with example words.';
+  $('#f-opts').innerHTML='';
+  setMsg('#f-msg',F.missed.length?'Practice these:':'');
+  $('#f-break').innerHTML=F.missed.map(m=>`<div class="piece"><span class="tile k-${m.p.kind}">${esc(m.p.label)}</span><small>${hl(m.e)}: ${esc(m.p.meaning)}</small></div>`).join('');
+  $('#f-break').hidden=!F.missed.length;
+  $('#f-next').textContent='Start a new round';$('#f-next').hidden=false;
+}
+$('#f-opts').addEventListener('click',e=>{
+  const b=e.target.closest('.opt');if(!b||b.disabled)return;
+  const it=F.cur,ok=b.dataset.id===it.p.id;
+  F.tried++;
+  if(ok){F.right++;F.streak++}else{F.streak=0;if(!F.missed.some(m=>m.p.id===it.p.id))F.missed.push(it)}
+  document.querySelectorAll('#f-opts .opt').forEach(o=>{
+    o.disabled=true;
+    if(o.dataset.id===it.p.id){o.classList.add('right');o.insertAdjacentText('afterbegin','✓ ')}
+    else if(o===b){o.classList.add('wrong');o.insertAdjacentText('afterbegin','✗ ')}
+  });
+  setMsg('#f-msg',(ok?'Correct! ':'Not quite. ')+it.w+' has the '+KIND[it.p.kind].toLowerCase()+' '+it.p.label+', which means "'+it.p.meaning+'."',ok?'good':'bad');
+  $('#f-break').innerHTML=`<div class="piece"><span class="tile k-${it.p.kind}">${esc(it.p.label)}</span><small>${hl(it.e)}</small></div>`;
+  $('#f-break').hidden=false;
+  findTally();$('#f-next').textContent=F.tried>=F.len?'See my score':'Next word';$('#f-next').hidden=false;$('#f-next').focus();
+});
+$('#f-next').addEventListener('click',()=>{if(F.done)findStart();else findNew()});
+$('#f-filters').addEventListener('click',e=>{
+  const b=e.target.closest('.chip');if(!b)return;
+  const k=b.dataset.kind;
+  if(F.kinds.has(k)){if(F.kinds.size===1)return;F.kinds.delete(k)}else F.kinds.add(k);
+  b.setAttribute('aria-pressed',F.kinds.has(k));findStart();
 });
 
 /* ---------- quiz ---------- */
@@ -2156,10 +2270,12 @@ function rngFor(str){
 }
 function seededShuffle(arr,rnd){const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 const BG_KINDS={P:'prefix',S:'suffix',G:'greek',L:'latin'},BG_POOL=45;
+// A code that starts with W (like WPSGL-2011) is a "Find the Word Part" game: Monifa calls
+// a whole word and students mark the word part in it. Its cards are different boards.
 function parseCode(c){
-  const m=String(c||'').toUpperCase().replace(/\s+/g,'').match(/^([PSGL]{1,4})-?(\d{4})$/);if(!m)return null;
-  const letters=[...new Set(m[1])].sort((a,b)=>'PSGL'.indexOf(a)-'PSGL'.indexOf(b)).join('');
-  return {code:letters+'-'+m[2],letters,kinds:[...letters].map(x=>BG_KINDS[x])};
+  const m=String(c||'').toUpperCase().replace(/\s+/g,'').match(/^(W?)([PSGL]{1,4})-?(\d{4})$/);if(!m)return null;
+  const letters=[...new Set(m[2])].sort((a,b)=>'PSGL'.indexOf(a)-'PSGL'.indexOf(b)).join('');
+  return {code:m[1]+letters+'-'+m[3],letters,words:!!m[1],kinds:[...letters].map(x=>BG_KINDS[x])};
 }
 const baseLabel=p=>p.label.replace(/\(.*?\)/g,'').trim().toLowerCase();
 const POOLS={};
@@ -2167,14 +2283,32 @@ const POOLS={};
 function bingoPool(code){
   const g=parseCode(code);if(!g)return [];
   if(POOLS[g.code])return POOLS[g.code];
-  const rnd=rngFor('pool:'+g.code),pool=[],labels=new Set();
+  const rnd=rngFor('pool:'+g.code);let pool=[];const labels=new Set();
   for(const p of seededShuffle(PARTS.filter(p=>g.kinds.includes(p.kind)),rnd)){
-    if(pool.length===BG_POOL)break;
+    if(pool.length===(g.words?BG_POOL+25:BG_POOL))break;
     if(labels.has(baseLabel(p))||pool.some(q=>sameMeaning(q.meaning,p.meaning)))continue;
+    if(g.words&&!p.ex.some(e=>partInWord(p,plainWord(e))))continue;
     labels.add(baseLabel(p));pool.push(p);
+  }
+  if(g.words){
+    // Keep only parts that have a word with no OTHER card part in it, so each called word
+    // matches exactly one square. Dropping a part only removes clashes, so repeat until stable.
+    for(let changed=true;changed;){
+      changed=false;
+      const keep=pool.filter(p=>p.ex.some(e=>{const w=plainWord(e);return partInWord(p,w)&&!pool.some(q=>q!==p&&partInWord(q,w))}));
+      if(keep.length<pool.length){pool=keep;changed=true}
+    }
+    pool=pool.slice(0,BG_POOL);
   }
   return POOLS[g.code]=pool;
 }
+// The word Monifa calls for a part in a word game (always the same word for the same game).
+function bingoWord(code,p){
+  const pool=bingoPool(code);
+  const ok=p.ex.filter(e=>{const w=plainWord(e);return partInWord(p,w)&&!pool.some(q=>q!==p&&partInWord(q,w))});
+  return seededShuffle(ok.length?ok:p.ex,rngFor('word:'+code+':'+p.id))[0];
+}
+const isWordGame=code=>!!(parseCode(code)||{}).words;
 function bingoCard(code,n){
   const g=parseCode(code),pick=seededShuffle(bingoPool(code),rngFor('card:'+g.code+':'+n)).slice(0,24);
   pick.splice(12,0,null);return pick;
@@ -2265,12 +2399,25 @@ function hostClue(p,n){
   hostSay(pickOne([`Here comes clue number ${n}!`,`Okay, friends, clue number ${n}!`,`Eyes on your cards! Clue number ${n}!`,`Are you ready? Clue number ${n}!`,`Ooh, I love this one! Clue number ${n}!`])+
     ` Find the word part that means: ${sayMeaning(p)}. One more time: ${sayMeaning(p)}.`);
 }
+// Spell only the spelling that is in the word: "tractor" gets "O, R", not "E, R, or O, R".
+function spellIn(p,word){
+  const f=partForms(p).filter(f=>partInWord(Object.assign({},p,{label:f}),word)).sort((a,b)=>b.length-a.length)[0];
+  return f?f.toUpperCase().split('').join(', '):spellPart(p);
+}
+function hostWordClue(p,n,word){
+  hostSay(pickOne([`Here comes word number ${n}!`,`Okay, friends, word number ${n}!`,`Eyes on your cards! Word number ${n}!`,`Are you ready? Word number ${n}!`])+
+    ` Find the word part in this word: ${word}. One more time: ${word}.`);
+}
+function hostWordAnswer(p,word,afterDrum){
+  hostSay(pickOne(afterDrum?['Did you get it? ','Here is the answer! ','Ta-da! ']:['Did you get it? ','Drumroll, please! ','Here is the answer! '])+
+    `${word} has ${sayKind(p)}: ${spellIn(p,word)}. It means ${sayMeaning(p)}.`);
+}
 function hostAnswer(p,afterDrum){
   const ex=(p.ex[0]||'').replace(/[\[\]]/g,'');
   hostSay(pickOne(afterDrum?['Did you get it? ','Here is the answer! ',"Let's see if you were right! ",'Ta-da! ']:['Did you get it? ','Drumroll, please! ','Here is the answer! ',"Let's see if you were right! "])+
     `It's ${sayKind(p)}: ${spellPart(p)}. It means ${sayMeaning(p)}.`+(ex?` Like in the word ${ex}!`:''));
 }
-const hostHello=()=>hostSay("Hi, everybody! I'm Monifa, and welcome to Word Parts Bingo! Get your cards ready, and let's play!");
+const hostHello=()=>hostSay(isWordGame(BG.code)?"Hi, everybody! I'm Monifa, and welcome to Find the Word Part Bingo! I'll say a word, and you find its word part on your card. Let's play!":"Hi, everybody! I'm Monifa, and welcome to Word Parts Bingo! Get your cards ready, and let's play!");
 $('#host-on').checked=HOST_PREF.on;
 $('#host-on').addEventListener('change',e=>{if(!T.on()){e.target.checked=HOST_PREF.on;return}HOST_PREF.on=e.target.checked;hostSave();if(!HOST_PREF.on&&HAS_TTS){HOST_RUN++;speechSynthesis.cancel();$('#host').classList.remove('talk')}});
 $('#host-again').addEventListener('click',()=>{if(HOST.last)hostSay(HOST.last);else hostHello()});
@@ -2283,15 +2430,15 @@ if(HAS_TTS){hostFillVoices();speechSynthesis.addEventListener?.('voiceschanged',
 else{$('#host-say').textContent='This browser cannot speak, so read the clues aloud yourself.';$('#host-voice').hidden=true}
 
 const BG_KEY='wpw-bingo-caller-v1',BP_KEY='wpw-bingo-play-v1',BM_KEY='wpw-bingo-mode';
-let BG=null,BP={code:'',card:'',marks:[]},BG_MODE='play',BG_PEND='PSGL';
+let BG=null,BP={code:'',card:'',marks:[]},BG_MODE='play',BG_PEND='PSGL',BG_PENDW=false;
 try{BG=JSON.parse(localStorage.getItem(BG_KEY))}catch(e){}
 try{BP=Object.assign(BP,JSON.parse(localStorage.getItem(BP_KEY))||{})}catch(e){}
 try{BG_MODE=localStorage.getItem(BM_KEY)==='teacher'?'teacher':'play'}catch(e){}
 const bgSave=()=>{try{localStorage.setItem(BG_KEY,JSON.stringify(BG))}catch(e){}};
 const bpSave=()=>{try{localStorage.setItem(BP_KEY,JSON.stringify(BP))}catch(e){}};
-function bgNew(letters){BG={code:letters+'-'+(1000+Math.floor(Math.random()*9000)),called:[],show:false};bgSave()}
+function bgNew(letters,words){BG={code:(words?'W':'')+letters+'-'+(1000+Math.floor(Math.random()*9000)),called:[],show:false};bgSave()}
 if(!BG||!parseCode(BG.code)||!Array.isArray(BG.called))bgNew('PSGL');
-BG_PEND=parseCode(BG.code).letters;
+BG_PEND=parseCode(BG.code).letters;BG_PENDW=parseCode(BG.code).words;
 
 function bgMode(m){
   BG_MODE=m;try{localStorage.setItem(BM_KEY,m)}catch(e){}
@@ -2301,37 +2448,43 @@ function bgMode(m){
 function bgRender(){
   const g=parseCode(BG.code),pool=bingoPool(BG.code),n=BG.called.length;
   $('#bg-code').textContent=g.code;
-  $('#bg-pool').textContent=pool.length+' word parts in this game. Each card uses 24 of them.';
+  $('#bg-pool').textContent=(g.words?'Find the Word Part game. ':'Meanings game. ')+pool.length+' word parts in this game. Each card uses 24 of them.';
+  document.querySelectorAll('#bg-type button').forEach(b=>b.setAttribute('aria-pressed',(b.dataset.w==='1')===BG_PENDW));
   document.querySelectorAll('#bg-kinds .chip').forEach(b=>b.setAttribute('aria-pressed',BG_PEND.includes(b.dataset.k)));
   const cur=n?BY_ID[BG.called[n-1]]:null;
   $('#bg-count').textContent=cur?'Clue '+n+' of '+pool.length:'Ready to start';
-  $('#bg-clue').textContent=cur?cur.meaning:n>=pool.length&&n?'Every word part has been called.':'Tap Call next to read the first meaning aloud.';
-  $('#bg-answer').innerHTML=cur?`<span class="tile k-${cur.kind}">${esc(cur.label)}</span><span class="help">${esc(cur.gloss)}</span>`:'';
+  $('#bg-clue').textContent=cur?(g.words?plainWord(bingoWord(g.code,cur)):cur.meaning):n>=pool.length&&n?'Every word part has been called.':g.words?'Tap Call next to call the first word.':'Tap Call next to read the first meaning aloud.';
+  $('#bg-answer').innerHTML=cur?`<span class="tile k-${cur.kind}">${esc(cur.label)}</span><span class="help">${g.words?hl(bingoWord(g.code,cur))+': '+esc(cur.meaning):esc(cur.gloss)}</span>`:'';
   $('#bg-answer').hidden=!(cur&&BG.show);
   $('#bg-show').hidden=!cur;$('#bg-show').textContent=BG.show?'Hide answer':'Show answer';
   $('#bg-next').disabled=n>=pool.length;
   $('#bg-undo').hidden=!n;
-  $('#bg-called').innerHTML=n?BG.called.map(id=>{const p=BY_ID[id];return `<span class="k-${p.kind}">${esc(p.label)}: ${esc(p.meaning)}</span>`}).join(''):'<p class="help">None yet.</p>';
+  $('#bg-called').innerHTML=n?BG.called.map(id=>{const p=BY_ID[id];return `<span class="k-${p.kind}">${esc(p.label)}: ${g.words?esc(plainWord(bingoWord(g.code,p))):esc(p.meaning)}</span>`}).join(''):'<p class="help">None yet.</p>';
 }
 $('#bg-mode').addEventListener('click',e=>{const b=e.target.closest('button');if(b)bgMode(b.dataset.mode)});
+$('#bg-type').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  BG_PENDW=b.dataset.w==='1';bgRender();
+  setMsg('#bg-newmsg',BG_PENDW===!!parseCode(BG.code).words?'':'Tap Start a new game to switch. '+(BG_PENDW?'Monifa will call words, and students find the word part in each word. This game uses new cards.':'Monifa will call meanings.'),'');
+});
 $('#bg-kinds').addEventListener('click',e=>{
   const b=e.target.closest('.chip');if(!b)return;
   const k=b.dataset.k;
   if(BG_PEND.includes(k)){if(BG_PEND.length===1)return;BG_PEND=BG_PEND.replace(k,'')}
   else BG_PEND=[...'PSGL'].filter(x=>BG_PEND.includes(x)||x===k).join('');
   bgRender();
-  const size=bingoPool(BG_PEND+'-0000').length;
+  const size=bingoPool((BG_PENDW?'W':'')+BG_PEND+'-0000').length;
   setMsg('#bg-newmsg',size<24?'Those types give only '+size+' word parts with different meanings, and a card needs 24. Add another type.':'Tap Start a new game to use these types.',size<24?'bad':'');
 });
 let bgArmed=false;
 $('#bg-new').addEventListener('click',e=>{
-  if(bingoPool(BG_PEND+'-0000').length<24){setMsg('#bg-newmsg','Add another type of word part first. A card needs 24 word parts.','bad');return}
+  if(bingoPool((BG_PENDW?'W':'')+BG_PEND+'-0000').length<24){setMsg('#bg-newmsg','Add another type of word part first. A card needs 24 word parts.','bad');return}
   if(BG.called.length&&!bgArmed){bgArmed=true;e.target.textContent='Tap again to end this game';
     setTimeout(()=>{bgArmed=false;e.target.textContent='Start a new game'},4000);return}
   bgArmed=false;e.target.textContent='Start a new game';
-  bgNew(BG_PEND);bgRender();$('#bg-checkgrid').innerHTML='';setMsg('#bg-checkmsg','');
+  bgNew(BG_PEND,BG_PENDW);bgRender();$('#bg-checkgrid').innerHTML='';setMsg('#bg-checkmsg','');
   hostHello();
-  setMsg('#bg-newmsg','New game '+BG.code+' started. Print new cards for this game.','good');
+  setMsg('#bg-newmsg','New '+(BG_PENDW?'Find the Word Part':'Meanings')+' game '+BG.code+' started. Print new cards for this game.','good');
 });
 /* drum roll: a snare roll that speeds up and gets louder, then a cymbal crash.
    Made with the browser's Web Audio, so there is no sound file to load. */
@@ -2380,7 +2533,8 @@ $('#bg-next').addEventListener('click',async()=>{
     bgRollStart('Drum roll, please…',$('#bg-clue'));await drumRoll(1200);bgRollEnd($('#bg-clue'));
   }
   BG.called.push(pick);BG.show=false;bgSave();bgRender();
-  const n=BG.called.length;hostClue(BY_ID[BG.called[n-1]],n);
+  const n=BG.called.length,cp=BY_ID[BG.called[n-1]];
+  if(isWordGame(BG.code))hostWordClue(cp,n,plainWord(bingoWord(BG.code,cp)));else hostClue(cp,n);
 });
 $('#bg-undo').addEventListener('click',()=>{if(BG_ROLLING)return;BG.called.pop();BG.show=false;bgSave();bgRender()});
 $('#bg-show').addEventListener('click',async()=>{
@@ -2388,7 +2542,8 @@ $('#bg-show').addEventListener('click',async()=>{
   if(BG.show||!BG.called.length){BG.show=false;bgSave();bgRender();return}
   if(DRUM_ON){bgRollStart('Drum roll…',$('#bg-answer'));await drumRoll(1700);bgRollEnd($('#bg-answer'))}
   BG.show=true;bgSave();bgRender();
-  hostAnswer(BY_ID[BG.called[BG.called.length-1]],DRUM_ON);
+  const cp=BY_ID[BG.called[BG.called.length-1]];
+  if(isWordGame(BG.code))hostWordAnswer(cp,plainWord(bingoWord(BG.code,cp)),DRUM_ON);else hostAnswer(cp,DRUM_ON);
 });
 $('#bg-checkform').addEventListener('submit',e=>{
   e.preventDefault();
@@ -2439,13 +2594,17 @@ function printTab(title,html){
 function cardsHTML(code,from,n){
   return Array.from({length:n},(_,k)=>{
     const num=from+k,card=bingoCard(code,num);
-    return `<div class="pcard"><div class="ptop"><b>Word Parts Bingo</b><span>Game ${code} &middot; Card ${num}</span></div>
+    return `<div class="pcard"><div class="ptop"><b>${isWordGame(code)?'Find the Word Part Bingo':'Word Parts Bingo'}</b><span>Game ${code} &middot; Card ${num}</span></div>
       <div class="pname">Name: ______________________________</div>
       <div class="pgrid">${[...'BINGO'].map(c=>`<div class="ph">${c}</div>`).join('')}${card.map(p=>p?`<div>${esc(p.label)}</div>`:'<div class="pf">FREE</div>').join('')}</div></div>`;
   }).join('');
 }
 function callerHTML(code){
   const pool=bingoPool(code);
+  if(isWordGame(code))return `<div class="plist"><h2>Find the Word Part Bingo: caller list</h2>
+    <p>Game ${code}. Read each word aloud in any order and check it off. Students mark the word part that is in the word.</p>
+    <table><thead><tr><th>Called</th><th>Word (read aloud)</th><th>Answer: word part</th><th>Type</th><th>Meaning</th></tr></thead><tbody>${
+    pool.map(p=>`<tr><td class="pbox"></td><td><b>${esc(plainWord(bingoWord(code,p)))}</b></td><td>${esc(p.label)}</td><td>${KIND[p.kind]}</td><td>${esc(p.meaning)}</td></tr>`).join('')}</tbody></table></div>`;
   return `<div class="plist"><h2>Word Parts Bingo: caller list</h2>
     <p>Game ${code}. Read each meaning aloud in any order and check it off. Students mark the word part that matches.</p>
     <table><thead><tr><th>Called</th><th>Word part</th><th>Type</th><th>Meaning (read aloud)</th><th>Example words</th></tr></thead><tbody>${
@@ -2468,7 +2627,7 @@ $('#bg-useform').addEventListener('submit',e=>{
   const g=parseCode($('#bg-usecode').value);
   if(!g||bingoPool(g.code).length<24){setMsg('#bg-usemsg','Type the game code printed on the cards, like PSGL-1120.','bad');return}
   if(g.code===BG.code){setMsg('#bg-usemsg','You are already calling game '+g.code+'.','good');return}
-  BG={code:g.code,called:[],show:false};BG_PEND=g.letters;bgSave();bgRender();
+  BG={code:g.code,called:[],show:false};BG_PEND=g.letters;BG_PENDW=g.words;bgSave();bgRender();
   $('#bg-checkgrid').innerHTML='';setMsg('#bg-checkmsg','');$('#bg-usecode').value='';
   setMsg('#bg-usemsg','Now calling game '+g.code+'. It matches cards printed with that code.','good');
 });
@@ -2485,7 +2644,7 @@ function bpRender(){
 $('#bp-form').addEventListener('submit',e=>{
   e.preventDefault();
   const g=parseCode($('#bp-code').value),n=Math.round(+$('#bp-card').value);
-  if(!g){setMsg('#bp-msg','Type the game code your teacher shows, like PSGL-4821.','bad');return}
+  if(!g){setMsg('#bp-msg','Type the game code your teacher shows, like PSGL-4821 or WPSGL-2011.','bad');return}
   if(!(n>=1&&n<=99)){setMsg('#bp-msg','Type your card number. It is a number from 1 to 99.','bad');return}
   if(bingoPool(g.code).length<24){setMsg('#bp-msg','That game code does not work. Check it with your teacher.','bad');return}
   if(g.code!==BP.code||n!==+BP.card)BP={code:g.code,card:n,marks:[]};
@@ -2700,7 +2859,7 @@ $('#pr-go').addEventListener('click',()=>{
 addEventListener('afterprint',()=>{document.body.classList.remove('printing');$('#print-area').innerHTML=''});
 
 
-renderExplore();newBuild();startQuiz();updateLock();LOCK_READY=true;
+renderExplore();newBuild();findStart();startQuiz();updateLock();LOCK_READY=true;
 show(location.hash.slice(1));
 </script>
 <div id="print-area" aria-hidden="true"></div>
