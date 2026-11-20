@@ -411,9 +411,6 @@ label.help{font-weight:700}
         <section class="tsec">
           <h3>Word Parts Bingo</h3>
           <div class="row"><button class="btn sm" type="button" id="t-call">Call a bingo game</button></div>
-          <h4 style="margin:12px 0 4px">Lock “Call the game”</h4>
-          <p class="help">Student Chromebooks are always locked. To let a student call a game, have them type today’s caller pass: <b id="t-pass"></b>. You can always open the caller with your teacher code.</p>
-          <label class="help"><input type="checkbox" id="t-lockcall" checked> Also lock it on this computer (uncheck for a classroom computer that students use to call games)</label>
         </section>
         <section class="tsec">
           <h3>Print student work</h3>
@@ -2566,8 +2563,7 @@ try{LOCKS=Object.assign(LOCKS,JSON.parse(localStorage.getItem(LK_KEY))||{})}catc
 const lkSave=()=>{try{localStorage.setItem(LK_KEY,JSON.stringify(LOCKS))}catch(e){}};
 const CALLER_OK='wpw-caller-ok';
 function callerOpen(){
-  if(T.on()||!LOCKS.call)return true; // LOCKS.call is this computer's setting (on by default)
-  try{return sessionStorage.getItem(CALLER_OK)===todayKey()}catch(e){return false}
+  return true; // anyone can open the caller (no pass needed)
 }
 
 const BG_KEY='wpw-bingo-caller-v1',BP_KEY='wpw-bingo-play-v1',BM_KEY='wpw-bingo-mode';
@@ -2916,10 +2912,6 @@ $('#t-form').addEventListener('submit',e=>{
     $('#t-msg').className='msg bad';
   });
 });
-$('#t-lockcall').checked=LOCKS.call;
-function lockUI(){$('#t-pass').textContent=callerPass()}
-lockUI();
-$('#t-lockcall').addEventListener('change',e=>{if(!T.on()){e.target.checked=LOCKS.call;return}LOCKS.call=e.target.checked;lkSave();lockUI()});
 $('#t-call').addEventListener('click',()=>{tClose();show('bingo');bgMode('teacher');$('#view-bingo').scrollIntoView({behavior:'smooth',block:'start'})});
 $('#t-lock').addEventListener('click',()=>{T.set(false);T.fresh=0;T.code='';if(HAS_TTS){HOST_RUN++;speechSynthesis.cancel()}bgMode('play');tClose()});
 document.addEventListener('classgate:signin',()=>{T.set(false);bgMode('play')});
