@@ -104,7 +104,7 @@ select,input[type=text]{font:inherit;padding:8px 10px;border-radius:8px;border:1
 </style>
 <script data-login>
 (function(){
-  var BLOCKED=[];          /* first names that may not use this app */
+  var BLOCKED=["james"];          /* first names that may not use this app */
   var CODE_HASH="cf2d0fe7ea0a7780592080ef0bf415a6043a3d59aa5d72ace64d39c6e0837285";  /* scrambled teacher code; the code itself is not stored in this page */
   var TRY_KEY="echols-classgate-tries";
   function sha(t){return crypto.subtle.digest("SHA-256",new TextEncoder().encode(t)).then(function(b){return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0")}).join("")})}
