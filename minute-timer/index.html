@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1-Minute Timer — Fractions Practice</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #fbf8f2; --ink: #1f2a37; --quiet: #6b7280; --track: #e7e1d6;
+    --go: #2f7d5b; --warn: #d08a1d; --stop: #c2412d; --btn: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font-family: 'Lexend', system-ui, sans-serif; background: var(--bg); color: var(--ink);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 3vh; padding: 24px; transition: background .4s;
+  }
+  body.done { background: #fbe9e5; }
+  h1 { margin: 0; font-size: clamp(18px, 3vw, 30px); font-weight: 600; color: var(--quiet); letter-spacing: .02em; }
+  .dial { position: relative; width: min(70vh, 80vw); aspect-ratio: 1; }
+  svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .track { fill: none; stroke: var(--track); stroke-width: 14; }
+  .ring { fill: none; stroke: var(--go); stroke-width: 14; stroke-linecap: round; transition: stroke .3s; }
+  .time {
+    position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .digits { font-size: min(20vh, 22vw); font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; }
+  .status { font-size: clamp(16px, 2.6vh, 26px); color: var(--quiet); margin-top: 1.5vh; min-height: 1.3em; }
+  .controls { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
+  button {
+    font: inherit; font-size: clamp(18px, 2.8vh, 26px); font-weight: 600; padding: .55em 1.4em; border-radius: 999px;
+    border: 2px solid var(--ink); background: var(--btn); color: var(--ink); cursor: pointer; min-width: 7.5em;
+  }
+  button.primary { background: var(--ink); color: #fff; }
+  button:focus-visible { outline: 4px solid var(--warn); outline-offset: 3px; }
+  .hint { font-size: 14px; color: var(--quiet); }
+  body.done .digits { color: var(--stop); animation: pulse 1s ease-in-out 3; }
+  @keyframes pulse { 50% { transform: scale(1.06); } }
+</style>
+</head>
+<body>
+  <h1>Fractions Practice · 1-Minute Timer</h1>
+  <div class="dial">
+    <svg viewBox="0 0 200 200" aria-hidden="true">
+      <circle class="track" cx="100" cy="100" r="88"/>
+      <circle class="ring" id="ring" cx="100" cy="100" r="88"/>
+    </svg>
+    <div class="time">
+      <div class="digits" id="digits" role="timer" aria-live="off">1:00</div>
+      <div class="status" id="status" aria-live="polite">Ready</div>
+    </div>
+  </div>
+  <div class="controls">
+    <button class="primary" id="startBtn">Start</button>
+    <button id="resetBtn">Reset</button>
+    <button id="fullBtn">Full screen</button>
+    <button id="testBtn">Test buzzer</button>
+  </div>
+  <div class="hint">Space = start / pause · R = reset</div>
+
+<script>
+  const TOTAL = 60;
+  const ring = document.getElementById('ring');
+  const digits = document.getElementById('digits');
+  const statusEl = document.getElementById('status');
+  const startBtn = document.getElementById('startBtn');
+  const C = 2 * Math.PI * 88;
+  ring.style.strokeDasharray = C;
+
+  let remainingMs = TOTAL * 1000, endAt = null, raf = null, audio = null;
+
+  function fmt(ms) {
+    const s = Math.ceil(ms / 1000);
+    return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+  }
+  function paint(ms) {
+    digits.textContent = fmt(ms);
+    const frac = ms / (TOTAL * 1000);
+    ring.style.strokeDashoffset = C * (1 - frac);
+    const s = Math.ceil(ms / 1000);
+    ring.style.stroke = s <= 10 ? 'var(--stop)' : s <= 20 ? 'var(--warn)' : 'var(--go)';
+  }
+  // Game-show style buzzer: two detuned square waves, low and gritty, ~1.5 s.
+  function buzzer() {
+    if (!audio) return;
+    try {
+      const now = audio.currentTime, len = 1.5;
+      const master = audio.createGain();
+      master.gain.setValueAtTime(0.0001, now);
+      master.gain.exponentialRampToValueAtTime(0.35, now + 0.03);
+      master.gain.setValueAtTime(0.35, now + len - 0.15);
+      master.gain.exponentialRampToValueAtTime(0.0001, now + len);
+      const lp = audio.createBiquadFilter();
+      lp.type = 'lowpass'; lp.frequency.value = 2200;
+      lp.connect(master); master.connect(audio.destination);
+      [150, 156, 75].forEach((f, i) => {
+        const o = audio.createOscillator();
+        o.type = i === 2 ? 'sawtooth' : 'square';
+        o.frequency.setValueAtTime(f, now);
+        o.connect(lp);
+        o.start(now); o.stop(now + len);
+      });
+    } catch (e) {}
+  }
+  function tick() {
+    remainingMs = Math.max(0, endAt - performance.now());
+    paint(remainingMs);
+    if (remainingMs <= 0) {
+      endAt = null; raf = null;
+      document.body.classList.add('done');
+      statusEl.textContent = "Time's up! Pencils down.";
+      startBtn.textContent = 'Start';
+      buzzer();
+      return;
+    }
+    raf = requestAnimationFrame(tick);
+  }
+  function start() {
+    if (!audio) { try { audio = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+    if (audio && audio.state === 'suspended') { audio.resume().catch(() => {}); }
+    if (remainingMs <= 0) reset();
+    document.body.classList.remove('done');
+    endAt = performance.now() + remainingMs;
+    statusEl.textContent = 'Working…';
+    startBtn.textContent = 'Pause';
+    raf = requestAnimationFrame(tick);
+  }
+  function pause() {
+    cancelAnimationFrame(raf); raf = null;
+    remainingMs = Math.max(0, endAt - performance.now()); endAt = null;
+    statusEl.textContent = 'Paused';
+    startBtn.textContent = 'Resume';
+  }
+  function reset() {
+    cancelAnimationFrame(raf); raf = null; endAt = null;
+    remainingMs = TOTAL * 1000;
+    document.body.classList.remove('done');
+    statusEl.textContent = 'Ready';
+    startBtn.textContent = 'Start';
+    paint(remainingMs);
+  }
+  function toggle() { endAt ? pause() : start(); }
+
+  startBtn.addEventListener('click', toggle);
+  document.getElementById('resetBtn').addEventListener('click', reset);
+  document.getElementById('fullBtn').addEventListener('click', () => {
+    try {
+      if (document.fullscreenElement) document.exitFullscreen();
+      else document.documentElement.requestFullscreen().catch(() => {});
+    } catch (e) {}
+  });
+  document.getElementById('testBtn').addEventListener('click', () => {
+    if (!audio) { try { audio = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+    if (audio && audio.state === 'suspended') { audio.resume().catch(() => {}); }
+    buzzer();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); toggle(); }
+    else if (e.key === 'r' || e.key === 'R') reset();
+  });
+  paint(remainingMs);
+</script>
+</body>
+</html>
