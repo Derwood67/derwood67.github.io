@@ -112,6 +112,11 @@ td .cell{display:inline-block;min-width:34px;border-radius:7px;padding:2px 5px;f
 .note{font-size:.88rem;color:var(--soft)}
 .sec{margin-top:26px}
 .sec>h2{font-size:1.15rem;margin-bottom:10px}
+.sites{padding:6px 18px}
+.siterow{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--line)}
+.siterow:last-child{border-bottom:0}
+.siteu{font-size:.82rem;word-break:break-all}
+#sitemsg{min-height:1.2em;color:var(--ok);font-weight:700}
 @media (max-width:560px){body{font-size:17px}.hero h1{font-size:1.4rem}.bar{grid-template-columns:105px 1fr 44px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -358,7 +363,11 @@ function vDash(){const L=list();let sums=0,qsum=0,qn=0,need=0;const skT=SK.map((
   const rows=L.map(s=>`<tr><td class="name"><button class="pill" data-act="stu" data-k="${esc(s.k)}">${esc(s.name)}</button></td>${C.map((c,i)=>{const st=status(s,i+1);
     if(st.qz!=null)return `<td><span class="cell s${lvl(st.qz/NQ)}" title="Quiz best ${st.qz}/${NQ} · Skills ${st.skOk}/${NS}">${st.qz}</span></td>`;
     return `<td><span class="cell s0" title="${st.sk||st.sum?"Started: skills "+st.sk+"/"+NS+(st.sum?", summary in":""):"Not started"}">${st.sk||st.sum?"…":"·"}</span></td>`}).join("")}</tr>`).join("");
+  const dt=view.dtab||"class",dtabs=`<div class="tabs">${[["class","Class progress","Scores and summaries for "+BOOK.title],["sites","Student sites","Open or copy each book's student link"]]
+    .map(t=>`<button class="tab${dt===t[0]?" cur":""}" data-act="dtab" data-t="${t[0]}">${t[1]}<small>${esc(t[2])}</small></button>`).join("")}</div>`;
+  if(dt==="sites")return `<div class="hero"><div><h1>Teacher Dashboard</h1></div></div>${dtabs}${vSites()}`;
   return `<div class="hero"><div><h1>Teacher Dashboard</h1><div class="note">Showing student work for <b>${esc(BOOK.title)}</b> saved in this browser on this device.</div></div></div>
+  ${dtabs}
   ${vBookPanel()}
   <div class="stats"><div class="stat"><b>${L.length}</b><span>Students</span></div><div class="stat"><b>${qn?(qsum/qn).toFixed(1):"–"}</b><span>Average quiz score (of ${NQ})</span></div><div class="stat"><b>${sums}</b><span>Summaries turned in</span></div><div class="stat"><b>${need}</b><span>Summaries to score</span></div></div>
   <div class="sec"><h2>Quiz scores by chapter</h2>${L.length?`<div class="scroll"><table><thead><tr><th class="name">Student</th>${head}</tr></thead><tbody>${rows}</tbody></table></div>
@@ -403,6 +412,13 @@ function vBookPanel(){const id=window.NOVEL_ID,custom=/^custom-/.test(id);
       ${custom?`<button class="btn small ghost" data-act="dlbook">Download book file</button><button class="btn small danger" data-act="rmbook">Remove from this device</button>`:""}</div>
   </div></div>`}
 
+/* Student sites: the student link for each Read & Unlock book */
+function siteRow(t,u,extra){return `<div class="siterow"><div><b>${esc(t)}</b>${extra?` <span class="note">${extra}</span>`:""}<div class="note siteu">${esc(u.replace(/^https?:\/\//,""))}</div></div>
+  <div class="row" style="gap:8px;flex-wrap:nowrap"><a class="btn small" href="${esc(u)}" target="_blank" rel="noopener">Open</a><button class="btn small ghost" data-act="copysite" data-u="${esc(u)}">Copy link</button></div></div>`}
+function vSites(){const books=(window.NOVEL_BOOKS||[]).map(b=>siteRow(b.title,studentLink(b.id),b.author?"by "+esc(b.author):"")).join("");
+  return `<p class="note" style="margin:0 0 6px">Open shows the book's student page in a new tab, just as students see it. Copy link gives you the link to post in Google Classroom.</p><p class="note" id="sitemsg" role="status"></p>
+  <div class="sec"><h2>Read &amp; Unlock books</h2><div class="card sites">${books||'<p class="note">No books on the website yet.</p>'}</div>
+  <p class="note">Books you add with Make a new book show up here once their book file is added to the website.</p></div>`}
 const COLS=["Chapter","Chapter title","Type","Skill","Question","Correct answer","Wrong answer 1","Wrong answer 2","Wrong answer 3","Explanation"];
 function templateCSV(){const q=v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"',rows=[COLS];
   const ex=window.NOVEL_BOOK.chapters[0];
@@ -483,6 +499,8 @@ document.addEventListener("change",e=>{
 document.addEventListener("input",e=>{const f=e.target.dataset&&e.target.dataset.f;if(f&&view.b){view.b[f]=e.target.value;view.b.res=null}});
 document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(!b||!teacher)return;const a=b.dataset.act;
   if(a==="builder")return go({name:"builder"});
+  if(a==="dtab"){view.dtab=b.dataset.t;render();window.scrollTo(0,0);return}
+  if(a==="copysite"){const v=b.dataset.u,m=$("#sitemsg");const ok=()=>{m.textContent="Link copied: "+v},bad=()=>{window.prompt("Copy this link:",v)};try{navigator.clipboard.writeText(v).then(ok,bad)}catch(x){bad()}return}
   if(a==="copylink"){const v=$("#booklink").value,m=$("#linkmsg");try{navigator.clipboard.writeText(v).then(()=>m.textContent="Copied.",()=>{$("#booklink").select();m.textContent="Press Ctrl+C to copy."})}catch(x){$("#booklink").select()}}
   if(a==="tplcsv")download("novel-study-template.csv","﻿"+templateCSV(),"text/csv");
   if(a==="bcheck"){view.b.res=buildBook(view.b,parseTable(view.b.text));render();return}
