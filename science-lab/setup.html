@@ -44,7 +44,7 @@ a{color:var(--earth)}
 <h1>Connect your class to a Google Sheet</h1>
 <p class="lead">Your students' scores save to a Google Sheet that only you own. This takes about five minutes, once. You need to be signed in to your school Google account.</p>
 <ol class="steps">
-<li><h2>Make a new Google Sheet</h2>Go to <a href="https://sheets.new" target="_blank" rel="noopener">sheets.new</a> to open a blank spreadsheet. Name it something like <i>Dickens Science Lab Scores</i>.</li>
+<li><h2>Make a new Google Sheet</h2>Go to <a href="https://sheets.new" target="_blank" rel="noopener">sheets.new</a> to open a blank spreadsheet. Name it something like <i>Echols Science Lab Scores</i>.</li>
 <li><h2>Add the class-records script</h2>In the sheet, open <b class="ui">Extensions</b> → <b class="ui">Apps Script</b>. Delete the few lines already there, then paste in the script below and click the <b class="ui">Save</b> icon.
 <div class="code"><div class="codehead"><span class="muted">Code.gs · 229 lines</span><button type="button" id="copy">Copy script</button></div>
 <pre id="src">/**
@@ -286,7 +286,7 @@ function handle_(b) {
 <ul><li><b>Execute as:</b> Me</li><li><b>Who has access:</b> Anyone</li></ul>
 Click <b class="ui">Deploy</b>, then copy the <b>Web app URL</b>. It starts with <code>https://script.google.com/macros/s/</code> and ends with <code>/exec</code>.</li>
 <li><h2>Connect your lab</h2>Open your lab below, click <b class="ui">Teacher dashboard</b> at the bottom of the sign-in screen, paste the web app URL, and click <b class="ui">Make my class link</b>.
-<div class="labs" style="margin-top:12px"><a class="lab" href="dickens/#teacher"><b>Dickens</b><span>Open the teacher dashboard</span></a><a class="lab" href="harrison/#teacher"><b>Harrison</b><span>Open the teacher dashboard</span></a><a class="lab" href="echols/#teacher"><b>Echols</b><span>Open the teacher dashboard</span></a></div></li>
+<div class="labs" style="margin-top:12px"><a class="lab" href="echols/#teacher"><b>Echols</b><span>Open the teacher dashboard</span></a></div></li>
 <li><h2>Add students and post the link</h2>Enter your PIN, add your class list on the <b class="ui">Students</b> tab, then open <b class="ui">Settings &amp; class link</b> and copy your class link. Post that link in Google Classroom. Students type their name each time they open it.</li>
 </ol>
 <div class="note"><b>If “Anyone” isn't offered in step 5,</b> your district limits who can use web apps. Ask your technology team to allow Apps Script web apps with “Anyone” access for this sheet. Students' scores still stay in your sheet.</div>
