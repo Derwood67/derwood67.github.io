@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Control Center · Darren Echols</title>
+<meta name="description" content="One place to open, copy links to and pin every interactive classroom app.">
+<meta name="robots" content="noindex">
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--ink:#14213a;--muted:#55627a;--line:#dde3ea;--ok:#0f7a4f;
+  --ela:#7a3fb0;--flu:#c2410c;--math:#1f5fbf;--sci:#0f8a5f;--rev:#b4235a;--tool:#475569}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.5}
+main{max-width:1180px;margin:0 auto;padding:26px max(16px,env(safe-area-inset-left,0px)) 70px}
+h1{font:800 clamp(28px,4.4vw,40px)/1.08 var(--ec-display);letter-spacing:-.02em;margin:0 0 6px}
+.lead{color:var(--muted);max-width:70ch;margin:0 0 18px}
+.stats{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 18px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 16px;min-width:120px}
+.stat b{display:block;font:800 24px/1.1 var(--ec-display)}
+.stat span{color:var(--muted);font-size:13.5px}
+.controls{position:sticky;top:0;z-index:5;background:var(--bg);padding:12px 0;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{font:700 14.5px/1 var(--ec-body);border:2px solid var(--line);background:#fff;color:var(--ink);border-radius:999px;padding:10px 15px;min-height:44px;cursor:pointer}
+.seg button[aria-pressed="true"]{color:#fff;border-color:var(--c,var(--ink));background:var(--c,var(--ink))}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #f2b705;outline-offset:2px}
+input[type=search]{font:16px var(--ec-body);border:2px solid var(--line);border-radius:10px;padding:9px 12px;background:#fff;color:var(--ink);min-height:44px;flex:1 1 260px;min-width:0}
+.chk{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600;min-height:44px}
+.chk input{width:20px;height:20px}
+.grp{font:800 13px/1 var(--ec-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:26px 0 10px;display:flex;align-items:center;gap:10px}
+.grp i{width:10px;height:10px;border-radius:50%;background:var(--c)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:12px}
+.app{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--c);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.app h3{margin:0;font:800 17px/1.25 var(--ec-display);display:flex;gap:8px;align-items:flex-start;justify-content:space-between}
+.app p{margin:0;color:var(--muted);font-size:14px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tag{font:600 11.5px/1 var(--ec-mono);padding:5px 8px;border-radius:999px;background:#eef2f7;color:#33415c}
+.tag.dash{background:#fff4d6;color:#6b4e00}
+.tag.cl{background:#ece6f8;color:#4b2a82}
+.tag.pv{background:#f1f1f1;color:#666}
+.acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:auto;padding-top:4px}
+.btn{font:700 14px/1 var(--ec-body);border-radius:10px;padding:10px 14px;min-height:40px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;text-decoration:none;border:2px solid var(--ink)}
+.btn.pri{background:var(--ink);color:#fff}
+.btn.gh{background:#fff;color:var(--ink)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.pin{flex:none;border:0;background:none;font-size:22px;line-height:1;cursor:pointer;color:#c3cad6;padding:2px;min-width:32px;min-height:32px}
+.pin[aria-pressed="true"]{color:#e0a400}
+.empty{background:#fff;border:1px dashed var(--line);border-radius:14px;padding:22px;color:var(--muted);text-align:center}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:999px;font-weight:700;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;max-width:92vw}
+#toast.on{opacity:1}
+.note{color:var(--muted);font-size:13.5px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<link rel="stylesheet" href="/shared/brand.css">
+<script src="/shared/frame.js" data-app="Control Center" data-subject="tool" data-tags="All apps" data-standards="off"></script>
+<script src="apps.js"></script>
+</head>
+<body>
+<main>
+  <h1>Control Center</h1>
+  <p class="lead">Every interactive app in one place. <b>Open</b> starts the app in a new tab, just as students see it. <b>Copy link</b> gives you the link to post in Google Classroom. <b>Update</b> opens Claude with a request for that app already filled in; type the change and send. Tap the ☆ to pin the apps you use most to the top.</p>
+  <div class="stats" id="stats"></div>
+  <div class="controls">
+    <div class="row"><input type="search" id="q" placeholder="Search apps, like fractions or summary" aria-label="Search apps">
+      <label class="chk"><input type="checkbox" id="dashOnly"> Only apps with a teacher dashboard</label></div>
+    <div class="seg" id="subj" role="group" aria-label="Subject"></div>
+  </div>
+  <div id="out"></div>
+  <p class="note" style="margin-top:28px">Student links never need to be re-sent: when an app is updated, the same link opens the newest version. Apps marked <b>claude.ai</b> open on claude.ai. <b>Private</b> apps hold student records, so they have no public link. Teacher dashboards are inside each app; open the app and choose Teacher dashboard.</p>
+</main>
+<div id="toast" role="status" aria-live="polite"></div>
+<script>
+(function(){
+  var APPS=window.EC_APPS||[];
+  var SUBJ=[["all","All apps","var(--ink)"],["pin","★ Pinned","#e0a400"],["ela","Reading & Writing","var(--ela)"],["flu","Fluency & Phonics","var(--flu)"],["math","Math","var(--math)"],
+    ["sci","Science & Social Studies","var(--sci)"],["rev","Review & Test Prep","var(--rev)"],["tool","Teacher Tools","var(--tool)"]];
+  var COL={ela:"var(--ela)",flu:"var(--flu)",math:"var(--math)",sci:"var(--sci)",rev:"var(--rev)",tool:"var(--tool)"};
+  var NAME={};SUBJ.forEach(function(x){NAME[x[0]]=x[1]});
+  function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
+  var pins=[];try{pins=JSON.parse(ls("ec-control-pins")||"[]")}catch(e){}
+  var st={s:"all",q:"",dash:false};
+  try{Object.assign(st,JSON.parse(sessionStorage.getItem("ec-control")||"{}"))}catch(e){}
+  function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+  function full(a){return a.where==="site"?location.origin+a.u:a.u}
+  /* Update link: opens a new Claude chat with the request filled in. Type the change at the end, then send. */
+  function updURL(a){var where=a.where==="site"?"on my GitHub Pages site derwood67.github.io ("+full(a)+")":a.where==="claude"?"(my claude.ai artifact "+a.u+")":"(my private app; it is a claude.ai artifact)";
+    var t="Update my classroom app \""+a.t+"\" "+where+". Keep everything else the same, test it, then push it live.\n\nChange: ";
+    return "https://claude.ai/new?q="+encodeURIComponent(t)}
+  function isPin(a){return pins.indexOf(a.t)>=0}
+
+  function card(a){
+    var where=a.where==="claude"?'<span class="tag cl">claude.ai</span>':a.where==="private"?'<span class="tag pv">Private</span>':'<span class="tag">'+esc(a.u)+'</span>';
+    var acts=a.u?'<a class="btn pri" href="'+esc(full(a))+'" target="_blank" rel="noopener">Open <span aria-hidden="true">↗</span></a><button class="btn gh" data-copy="'+esc(full(a))+'" data-name="'+esc(a.t)+'">Copy link</button>'
+      :'<button class="btn gh" disabled>No public link</button>';
+    acts+='<a class="btn gh" href="'+esc(updURL(a))+'" target="_blank" rel="noopener" title="Opens Claude with an update request for this app">Update <span aria-hidden="true">✎</span></a>'+
+      '<button class="btn gh" data-copy="'+esc(updURL(a))+'" data-name="update link for '+esc(a.t)+'" title="Copy a link that opens Claude with an update request for this app">Copy update link</button>';
+    return '<article class="app" style="--c:'+COL[a.s]+'"><h3><span>'+esc(a.t)+'</span><button class="pin" data-pin="'+esc(a.t)+'" aria-pressed="'+isPin(a)+'" aria-label="'+(isPin(a)?"Unpin ":"Pin ")+esc(a.t)+'">'+(isPin(a)?"★":"☆")+'</button></h3>'+
+      '<p>'+esc(a.d)+'</p><div class="tags"><span class="tag">'+esc(NAME[a.s])+'</span>'+where+(a.dash?'<span class="tag dash">'+esc(a.dash)+'</span>':'')+'</div><div class="acts">'+acts+'</div></article>'}
+
+  function render(){
+    document.getElementById("subj").innerHTML=SUBJ.map(function(x){var n=x[0]==="all"?APPS.length:x[0]==="pin"?pins.filter(function(t){return APPS.some(function(a){return a.t===t})}).length:APPS.filter(function(a){return a.s===x[0]}).length;
+      return '<button data-s="'+x[0]+'" style="--c:'+x[2]+'" aria-pressed="'+(st.s===x[0])+'">'+esc(x[1])+' · '+n+'</button>'}).join("");
+    var q=st.q.trim().toLowerCase();
+    var list=APPS.filter(function(a){
+      if(st.s==="pin"&&!isPin(a))return false;
+      if(st.s!=="all"&&st.s!=="pin"&&a.s!==st.s)return false;
+      if(st.dash&&!a.dash)return false;
+      if(q&&(a.t+" "+a.d+" "+NAME[a.s]).toLowerCase().indexOf(q)<0)return false;
+      return true});
+    var html="";
+    if(!list.length)html='<div class="empty">'+(st.s==="pin"&&!pins.length?"No pinned apps yet. Tap the ☆ on any app to pin it here.":"No apps match. Try another word or subject.")+'</div>';
+    else{
+      var pinned=st.s==="all"&&!q&&!st.dash?list.filter(isPin):[];
+      if(pinned.length)html+='<div class="grp"><i style="--c:#e0a400"></i>Pinned</div><div class="grid">'+pinned.map(card).join("")+'</div>';
+      SUBJ.slice(2).forEach(function(x){var L=list.filter(function(a){return a.s===x[0]});if(!L.length)return;
+        html+='<div class="grp"><i style="--c:'+x[2]+'"></i>'+esc(x[1])+'</div><div class="grid">'+L.map(card).join("")+'</div>'});
+    }
+    document.getElementById("out").innerHTML=html;
+    document.getElementById("stats").innerHTML=
+      '<div class="stat"><b>'+APPS.length+'</b><span>Apps</span></div>'+
+      '<div class="stat"><b>'+APPS.filter(function(a){return a.s!=="tool"}).length+'</b><span>Student apps</span></div>'+
+      '<div class="stat"><b>'+APPS.filter(function(a){return a.dash}).length+'</b><span>With a teacher dashboard</span></div>'+
+      '<div class="stat"><b>'+pins.length+'</b><span>Pinned</span></div>';
+    try{sessionStorage.setItem("ec-control",JSON.stringify(st))}catch(e){}
+  }
+  var tt;function toast(m){var t=document.getElementById("toast");t.textContent=m;t.classList.add("on");clearTimeout(tt);tt=setTimeout(function(){t.classList.remove("on")},2200)}
+  document.getElementById("subj").onclick=function(e){var b=e.target.closest("button");if(b){st.s=b.dataset.s;render()}};
+  document.getElementById("out").onclick=function(e){
+    var p=e.target.closest("[data-pin]");
+    if(p){var t=p.dataset.pin,i=pins.indexOf(t);if(i>=0)pins.splice(i,1);else pins.push(t);ls("ec-control-pins",JSON.stringify(pins));render();return}
+    var c=e.target.closest("[data-copy]");
+    if(c){var v=c.dataset.copy,ok=function(){toast("Link copied: "+c.dataset.name)},bad=function(){window.prompt("Copy this link:",v)};
+      try{navigator.clipboard.writeText(v).then(ok,bad)}catch(x){bad()}}
+  };
+  var q=document.getElementById("q");q.value=st.q;q.oninput=function(){st.q=q.value;render()};
+  var d=document.getElementById("dashOnly");d.checked=st.dash;d.onchange=function(){st.dash=d.checked;render()};
+  render();
+})();
+</script>
+</body>
+</html>
