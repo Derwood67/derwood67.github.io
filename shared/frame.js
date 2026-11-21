@@ -25,8 +25,8 @@
   var STD=window.ECStandards, PICK=(STD_ON&&STD&&ls(JKEY))||"nc";
   function place(key){var p=String(key||"nc").split("/"),j=STD&&STD.JURIS[p[0]];if(!j)return {state:"nc",j:STD?STD.JURIS.nc:null};
     var d=p[1]&&j.districts&&j.districts[p[1]];return {state:p[0],j:j,d:d}}
-  function options(sel){var o="";Object.keys(STD.JURIS).forEach(function(k){var j=STD.JURIS[k];
-      o+='<option value="'+k+'"'+(sel===k?" selected":"")+'>'+esc(j.kind==="national"?j.label:j.label+(k==="nc"?" (NCDPI)":""))+'</option>';
+  function options(sel){var o="";(STD.order?STD.order():Object.keys(STD.JURIS)).forEach(function(k){var j=STD.JURIS[k];
+      o+='<option value="'+k+'"'+(sel===k?" selected":"")+'>'+esc(j.kind==="national"?j.label:j.label+(k==="nc"?" (NCDPI)":"")+(j.loaded===false?" (national sets)":""))+'</option>';
       if(j.districts)Object.keys(j.districts).forEach(function(dk){var v=k+"/"+dk;o+='<option value="'+v+'"'+(sel===v?" selected":"")+'>   '+esc(j.districts[dk].label)+'</option>'})});
     return o}
   window.ECPlace=function(){return place(PICK)};
@@ -75,6 +75,8 @@
     if(!STD_ON||!STD||place(PICK).state==="nc"||document.querySelector(".ec-std-note"))return;
     var p=place(PICK),j=p.j,who=p.d?p.d.label:j.label;
     var n=document.createElement("div");n.className="ec-std-note";
+    if(j.loaded===false){n.innerHTML='<b>'+esc(j.label)+'’s own standards aren’t loaded yet.</b> <span class="ec-more">Codes in this app show the national sets instead (Common Core, NGSS, C3); ≈ means closest match. The activities were written for North Carolina.</span> <a href="/standards-explorer/">See the standards →</a>';
+      document.querySelector(".ec-bar").after(n);return}
     n.innerHTML='<b>Showing '+esc(who)+' standards.</b> <span class="ec-more">'+esc(p.d&&p.d.note?p.d.note:(j.note||""))+
       ' Codes in this app are switched to the matching '+esc(j.kind==="national"?"national":j.label)+' standard; ≈ means closest match. The activities were written for North Carolina.</span>'+
       (j.tests?' <span class="ec-tests">State tests: '+esc(j.tests)+'.</span>':'')+

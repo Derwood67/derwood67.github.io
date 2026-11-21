@@ -39,6 +39,19 @@
                  url:"https://www.lausd.org/Page/17834"}
         }}
   };
+  /* Every other state and DC: listed so it can be picked. Until a state's own standards are loaded, it shows the
+     national sets (Common Core, NGSS, C3) and says so. To load one, give it its own sets like North Carolina. */
+  var STATES={al:"Alabama",ak:"Alaska",az:"Arizona",ar:"Arkansas",ca:"California",co:"Colorado",ct:"Connecticut",de:"Delaware",dc:"District of Columbia",
+    fl:"Florida",ga:"Georgia",hi:"Hawaii",id:"Idaho",il:"Illinois",in:"Indiana",ia:"Iowa",ks:"Kansas",ky:"Kentucky",la:"Louisiana",me:"Maine",md:"Maryland",
+    ma:"Massachusetts",mi:"Michigan",mn:"Minnesota",ms:"Mississippi",mo:"Missouri",mt:"Montana",ne:"Nebraska",nv:"Nevada",nh:"New Hampshire",nj:"New Jersey",
+    nm:"New Mexico",ny:"New York",nc:"North Carolina",nd:"North Dakota",oh:"Ohio",ok:"Oklahoma",or:"Oregon",pa:"Pennsylvania",ri:"Rhode Island",
+    sc:"South Carolina",sd:"South Dakota",tn:"Tennessee",tx:"Texas",ut:"Utah",vt:"Vermont",va:"Virginia",wa:"Washington",wv:"West Virginia",wi:"Wisconsin",wy:"Wyoming"};
+  Object.keys(STATES).forEach(function(k){if(JURIS[k])return;
+    JURIS[k]={label:STATES[k],short:k.toUpperCase(),kind:"state",loaded:false,math:"ccss",ela:"ccss",sci:"ngss",ss:"c3",
+      note:STATES[k]+"'s own standards aren't loaded yet, so this shows the national sets instead: Common Core (math and ELA), NGSS (science) and the C3 Framework (social studies). "+STATES[k]+"'s education department publishes its exact standards."}});
+  /* menu order: Common Core first, then states A–Z */
+  function order(){return ["us"].concat(Object.keys(JURIS).filter(function(k){return k!=="us"}).sort(function(a,b){return JURIS[a].label.localeCompare(JURIS[b].label)}))}
+
   /* math, ELA and science codes are the same in Common Core/NGSS and in California's versions */
   var SAME_CODES={cacc:"ccss", cangss:"ngss"};
 
@@ -154,5 +167,5 @@
     return {codes:m.c,approx:!!m.approx,note:m.note||"",set:SETS[set]};
   }
 
-  window.ECStandards={SETS:SETS,JURIS:JURIS,match:match,subjectOf:subjectOf};
+  window.ECStandards={SETS:SETS,JURIS:JURIS,order:order,match:match,subjectOf:subjectOf};
 })();

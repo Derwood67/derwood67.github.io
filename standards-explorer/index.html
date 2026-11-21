@@ -235,7 +235,7 @@ textarea.paste{width:100%;min-height:120px;font:13px ui-monospace,Menlo,monospac
   /* state, then district */
   (function(){var cur=(function(){try{return localStorage.getItem("ec-standards")||"nc"}catch(e){return "nc"}})(),parts=cur.split("/"),
       sp=document.getElementById("stpick"),dp=document.getElementById("dipick");
-    sp.innerHTML=Object.keys(S.JURIS).map(function(k){var j=S.JURIS[k];return '<option value="'+k+'"'+(k===parts[0]?" selected":"")+'>'+esc(j.kind==="national"?"Common Core (national)":j.label)+'</option>'}).join("");
+    sp.innerHTML=S.order().map(function(k){var j=S.JURIS[k];return '<option value="'+k+'"'+(k===parts[0]?" selected":"")+'>'+esc(j.kind==="national"?"Common Core (national)":j.label+(j.loaded===false?" (national sets for now)":""))+'</option>'}).join("");
     function fillD(state,sel){var j=S.JURIS[state],ds=(j&&j.districts)||{};
       dp.innerHTML='<option value="">'+(j&&j.kind==="national"?"Not a state":"Whole state")+'</option>'+Object.keys(ds).map(function(k){return '<option value="'+k+'"'+(k===sel?" selected":"")+'>'+esc(ds[k].label)+'</option>'}).join("");
       dp.disabled=!Object.keys(ds).length}
@@ -275,6 +275,7 @@ textarea.paste{width:100%;min-height:120px;font:13px ui-monospace,Menlo,monospac
     var who=P.d?P.d.label:P.j.label, setInfo=S.SETS[set]||{name:"NC Standard Course of Study"};
     document.getElementById("sum").innerHTML='<span class="setname">'+esc(who)+' · '+NAMES[st.subj]+' · '+GNAME(st.grade)+'</span>'+
       '<span><b>'+rows.length+'</b> standards in '+esc(setInfo.name)+'</span><span><b>'+covered+'</b> practiced in the apps</span>'+
+      (P.j.loaded===false?'<span style="flex-basis:100%;color:#14213a"><b>'+esc(P.j.label)+'’s own standards aren’t loaded yet.</b> Showing the national sets (Common Core, NGSS, C3) instead. '+esc(P.j.label)+'’s education department publishes its exact standards.</span>':'')+
       (set==="c3"?'<span>C3 lists grades 3–5 together; shown here are the indicators the apps match.</span>':'')+
       (set==="cahss"?'<span>Main standards shown; each has numbered sub-standards on the CDE site.</span>':'')+
       (set==="nc"&&st.subj==="sci"?'<span>NC 2023 science standards.</span>':'');
