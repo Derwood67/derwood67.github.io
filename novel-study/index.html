@@ -282,8 +282,9 @@ function render(){const bt=$("#booktitle");if(bt)bt.textContent=BOOK.title;
 }
 
 function vSignin(){return `<div class="card center">
-  <h1>Read &amp; Unlock</h1>
-  <p class="lead">Read a chapter of <em>${esc(BOOK.title)}</em>${BOOK.author?" by "+esc(BOOK.author):""}, then show what you know.</p>
+  <div class="num">READ &amp; UNLOCK</div>
+  <h1>${esc(BOOK.title)}</h1>
+  <p class="lead">${BOOK.author?"by "+esc(BOOK.author)+". ":""}Read a chapter, then show what you know.</p>
   <form data-form="signin"><label for="nm">Type your first name</label>
   <input type="text" id="nm" maxlength="20" autocomplete="off" autocapitalize="words" placeholder="First name">
   <p class="note">Does someone in class have the same first name? Add your last initial, like Sam T.</p>
