@@ -1,0 +1,195 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Landform Word Match</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* Layout: a strata-banded header (rock layers), then two columns of tiles: words left, clues right. */
+:root{
+  --bg:#f3efe6; --surface:#fffdf8; --ink:#2b2622; --muted:#6d655c; --line:#ddd3c4;
+  --rock:#c2643a; --rock-soft:#f6dccd; --sage:#5c7f5a; --sage-soft:#dcebd6;
+  --sky:#3f6f93; --sky-soft:#dbe8f2; --miss:#b33a3a; --miss-soft:#f6d6d4;
+  --s1:#d9a26b; --s2:#c2643a; --s3:#9b4e33; --s4:#e6c39a;
+  --display:"Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
+  --body:"Atkinson Hyperlegible", Verdana, system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#1c1916; --surface:#272320; --ink:#f1ebe3; --muted:#b4a99c; --line:#3d3631;
+  --rock:#e88a5c; --rock-soft:#4a2e22; --sage:#8fbf8b; --sage-soft:#26372a;
+  --sky:#8dbbe0; --sky-soft:#1f3242; --miss:#ef8a85; --miss-soft:#4a2424;
+  --s1:#7a5536; --s2:#8f4528; --s3:#6a3322; --s4:#94704b; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1c1916; --surface:#272320; --ink:#f1ebe3; --muted:#b4a99c; --line:#3d3631;
+  --rock:#e88a5c; --rock-soft:#4a2e22; --sage:#8fbf8b; --sage-soft:#26372a;
+  --sky:#8dbbe0; --sky-soft:#1f3242; --miss:#ef8a85; --miss-soft:#4a2424;
+  --s1:#7a5536; --s2:#8f4528; --s3:#6a3322; --s4:#94704b; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+.wrap{max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+header{display:flex;flex-direction:column;gap:6px}
+.strata{display:flex;height:10px;border-radius:3px;overflow:hidden}
+.strata span{flex:1}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(28px,6vw,42px);line-height:1.05;margin:8px 0 0;text-wrap:balance}
+.sub{color:var(--muted);margin:0;max-width:60ch}
+
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;justify-content:space-between}
+.tabs{display:flex;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px}
+.tab{font:700 15px var(--body);border:0;background:transparent;color:var(--muted);padding:8px 14px;border-radius:999px;cursor:pointer}
+.tab[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.stats{display:flex;gap:14px;font-variant-numeric:tabular-nums;color:var(--muted);font-size:15px}
+.stats b{color:var(--ink)}
+.btn{font:700 15px var(--body);border:2px solid var(--ink);background:transparent;color:var(--ink);padding:8px 16px;border-radius:10px;cursor:pointer}
+.btn.primary{background:var(--rock);border-color:var(--rock);color:#fff}
+.btn:focus-visible,.tab:focus-visible,.tile:focus-visible{outline:3px solid var(--sky);outline-offset:2px}
+
+.board{display:grid;grid-template-columns:minmax(0,0.75fr) minmax(0,1.6fr);gap:14px 18px}
+.col{display:flex;flex-direction:column;gap:10px;min-width:0}
+.colhead{font:700 12px var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.tile{position:relative;text-align:left;font:inherit;color:var(--ink);background:var(--surface);border:2px solid var(--line);
+  border-radius:12px;padding:12px 14px;cursor:pointer;min-height:64px;display:flex;flex-direction:column;justify-content:center;gap:2px;
+  transition:transform .12s, border-color .12s, background .12s}
+.tile:hover{border-color:var(--muted)}
+.tile.word .w{font-family:var(--display);font-weight:800;font-size:22px;line-height:1.1}
+.tile.word .pos{font-size:13px;color:var(--muted);font-style:italic}
+.tile.clue{font-size:16px}
+.tile.clue .blank{display:inline-block;min-width:4.5em;border-bottom:2px solid var(--ink);margin:0 2px}
+.tile.sel{border-color:var(--rock);background:var(--rock-soft);transform:translateY(-2px)}
+.tile.done{border-color:var(--sage);background:var(--sage-soft);cursor:default}
+.tile.done .tag{position:absolute;top:8px;right:10px;font:700 12px var(--body);color:var(--sage)}
+.tile.done .blank{border-bottom-color:var(--sage);color:var(--sage);font-weight:700;text-align:center}
+.tile.wrong{border-color:var(--miss);background:var(--miss-soft);animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+@media (prefers-reduced-motion:reduce){.tile{transition:none}.tile.wrong{animation:none}}
+
+.hint{color:var(--muted);font-size:15px;margin:0}
+.win{display:flex;flex-direction:column;gap:12px;align-items:flex-start;background:var(--sky-soft);border:2px solid var(--sky);border-radius:14px;padding:18px 20px}
+.win h2{font-family:var(--display);font-weight:800;font-size:26px;margin:0}
+.win p{margin:0}
+.win .row{display:flex;gap:10px;flex-wrap:wrap}
+
+@media (max-width:560px){
+  .board{grid-template-columns:minmax(0,0.85fr) minmax(0,1.5fr);gap:10px}
+  .tile{padding:10px;min-height:56px}
+  .tile.word .w{font-size:18px}
+  .tile.clue{font-size:14.5px}
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="strata" aria-hidden="true"><span style="background:var(--s4)"></span><span style="background:var(--s1)"></span><span style="background:var(--s2)"></span><span style="background:var(--s3)"></span><span style="background:var(--s1)"></span><span style="background:var(--s4)"></span></div>
+    <h1>Landform Word Match</h1>
+    <p class="sub">Tap a word, then tap the clue that goes with it. Matched pairs turn green.</p>
+  </header>
+
+  <div class="bar">
+    <div class="tabs" role="group" aria-label="Choose a round">
+      <button class="tab" id="tab-meaning" aria-pressed="true" data-mode="meaning">Round 1 · Meanings</button>
+      <button class="tab" id="tab-sentence" aria-pressed="false" data-mode="sentence">Round 2 · Sentences</button>
+    </div>
+    <div class="stats"><span>Matched <b id="matched">0</b>/4</span><span>Tries <b id="tries">0</b></span></div>
+  </div>
+
+  <div class="board">
+    <div class="col"><div class="colhead">Words</div><div class="col" id="words"></div></div>
+    <div class="col"><div class="colhead" id="cluehead">Meanings</div><div class="col" id="clues"></div></div>
+  </div>
+
+  <p class="hint" id="hint" aria-live="polite">Pick any word to start.</p>
+  <div class="win" id="win" hidden>
+    <h2 id="wintitle">All four matched!</h2>
+    <p id="wintext"></p>
+    <div class="row">
+      <button class="btn primary" id="next">Play Round 2</button>
+      <button class="btn" id="again">Play this round again</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const VOCAB=[
+ {word:"scenic",pos:"adjective",meaning:"Something that is scenic has beautiful scenery.",sentence:"The scenic cliffs towered over the beach."},
+ {word:"landscape",pos:"noun",meaning:"When you look at a landscape, you are looking at the area of land around you.",sentence:"The landscape of a forest is thick with trees."},
+ {word:"canyon",pos:"noun",meaning:"A canyon is a deep valley that has steep sides.",sentence:"He felt dizzy as he looked down into the canyon."},
+ {word:"landform",pos:"noun",meaning:"A landform is a natural feature, such as a mountain, of a land’s surface.",sentence:"The tallest landform in the world is Mount Everest."}
+];
+const $=id=>document.getElementById(id);
+let mode="meaning", sel=null, done=new Set(), tries=0;
+
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function esc(s){return s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+function clueHTML(v,solved){
+  if(mode==="meaning"){
+    // hide the word inside its own definition so the clue isn't a giveaway
+    return esc(v.meaning).replace(new RegExp("\\b"+v.word+"\\b","gi"),'<span class="blank">'+(solved?v.word:"")+'</span>');
+  }
+  return esc(v.sentence).replace(new RegExp("\\b"+v.word+"\\b","i"),'<span class="blank">'+(solved?v.word:"")+'</span>');
+}
+
+function render(){
+  $("cluehead").textContent = mode==="meaning" ? "Meanings" : "Sentences";
+  document.querySelectorAll(".tab").forEach(t=>t.setAttribute("aria-pressed",t.dataset.mode===mode));
+  $("words").innerHTML=""; $("clues").innerHTML="";
+  shuffle(VOCAB).forEach(v=>{
+    const b=document.createElement("button");
+    b.className="tile word"; b.id="w-"+v.word; b.dataset.k=v.word; b.dataset.side="w";
+    b.innerHTML='<span class="w">'+v.word+'</span><span class="pos">'+v.pos+'</span>';
+    $("words").appendChild(b);
+  });
+  shuffle(VOCAB).forEach(v=>{
+    const b=document.createElement("button");
+    b.className="tile clue"; b.id="c-"+v.word; b.dataset.k=v.word; b.dataset.side="c";
+    b.innerHTML=clueHTML(v,false);
+    $("clues").appendChild(b);
+  });
+  update();
+}
+function update(){
+  $("matched").textContent=done.size; $("tries").textContent=tries;
+  const finished=done.size===VOCAB.length;
+  $("win").hidden=!finished;
+  if(finished){
+    const extra=tries-VOCAB.length;
+    $("wintitle").textContent = extra===0 ? "Perfect round!" : "All four matched!";
+    $("wintext").textContent = extra===0 ? "You matched every pair on the first try."
+      : "You matched every pair in "+tries+" tries ("+extra+" miss"+(extra===1?"":"es")+").";
+    $("next").textContent = mode==="meaning" ? "Play Round 2: Sentences" : "Back to Round 1: Meanings";
+  }
+}
+function start(m){mode=m;sel=null;done=new Set();tries=0;$("hint").textContent="Pick any word to start.";render()}
+
+document.addEventListener("click",e=>{
+  const t=e.target.closest(".tile"); if(!t||t.classList.contains("done"))return;
+  if(!sel||sel.dataset.side===t.dataset.side){
+    if(sel)sel.classList.remove("sel");
+    if(sel===t){sel=null;return}
+    sel=t;t.classList.add("sel");
+    $("hint").textContent = t.dataset.side==="w" ? "Now tap the clue that matches “"+t.dataset.k+"”." : "Now tap the word that fits this clue.";
+    return;
+  }
+  tries++;
+  const a=sel,b=t; a.classList.remove("sel"); sel=null;
+  if(a.dataset.k===b.dataset.k){
+    const k=a.dataset.k, v=VOCAB.find(x=>x.word===k); done.add(k);
+    const w=$("w-"+k), c=$("c-"+k);
+    w.classList.add("done"); c.classList.add("done"); c.innerHTML=clueHTML(v,true)+'<span class="tag">✓</span>';
+    w.insertAdjacentHTML("beforeend",'<span class="tag">✓</span>');
+    $("hint").textContent="Yes! “"+k+"” is a match.";
+  }else{
+    [a,b].forEach(x=>{x.classList.remove("wrong");void x.offsetWidth;x.classList.add("wrong");setTimeout(()=>x.classList.remove("wrong"),600)});
+    $("hint").textContent="Not quite. Try another pair.";
+  }
+  update();
+});
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>start(t.dataset.mode)));
+$("again").addEventListener("click",()=>start(mode));
+$("next").addEventListener("click",()=>start(mode==="meaning"?"sentence":"meaning"));
+start("meaning");
+</script>
+
+<link rel="stylesheet" href="/shared/brand.css">
+<script src="/shared/standards.js"></script>
+<script src="/shared/frame.js" data-app="Landform Word Match" data-subject="sci" data-tags="Grades 4–5|Vocabulary"></script>
+</body></html>
