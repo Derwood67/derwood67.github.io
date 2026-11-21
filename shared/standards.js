@@ -18,7 +18,17 @@
     ngss: {name:"Next Generation Science Standards (NGSS)", url:"https://www.nextgenscience.org/"},
     cangss:{name:"California NGSS", url:"https://www.cde.ca.gov/pd/ca/sc/ngssstandards.asp"},
     c3:   {name:"C3 Framework for Social Studies", url:"https://www.socialstudies.org/standards/c3"},
-    cahss:{name:"California History–Social Science Content Standards", url:"https://www.cde.ca.gov/be/st/ss/"}
+    cahss:{name:"California History–Social Science Content Standards", url:"https://www.cde.ca.gov/be/st/ss/"},
+    /* Virginia, Maryland and DC (grades K–6). summary:true = short plain-language summaries; the link has the exact wording. */
+    vamath:{name:"Virginia 2023 Mathematics SOL", url:"https://www.doe.virginia.gov/teaching-learning-assessment/k-12-standards-instruction/mathematics/standards-of-learning/2023-mathematics-sol", summary:true},
+    vaela: {name:"Virginia 2024 English SOL", url:"https://www.doe.virginia.gov/teaching-learning-assessment/k-12-standards-instruction/english-reading-literacy/standards-of-learning", summary:true},
+    vasci: {name:"Virginia 2018 Science SOL", url:"https://www.doe.virginia.gov/teaching-learning-assessment/k-12-standards-instruction/science/standards-of-learning", summary:true},
+    vahss: {name:"Virginia 2023 History and Social Science SOL", url:"https://www.doe.virginia.gov/teaching-learning-assessment/k-12-standards-instruction/history-and-social-science/standards-of-learning", summary:true},
+    mdmath:{name:"Maryland 2025 Mathematics Standards (MCCRS)", url:"https://marylandpublicschools.org/about/pages/dcaa/math/revised-standards.aspx", summary:true},
+    mdccrs:{name:"Maryland College and Career Ready Standards for ELA", url:"https://marylandpublicschools.org/programs/pages/ela/mccr.aspx"},
+    mdngss:{name:"Maryland Science Standards (NGSS)", url:"https://marylandpublicschools.org/about/Pages/DCAA/Science/index.aspx"},
+    mdss:  {name:"Maryland Social Studies Frameworks", url:"https://marylandpublicschools.org/about/pages/dcaa/social-studies/msss.aspx", summary:true},
+    dcss:  {name:"DC Social Studies Standards (2023)", url:"https://osse.dc.gov/page/social-studies-0", summary:true}
   };
 
   /* ---------- the choices in the switch ---------- */
@@ -39,6 +49,15 @@
                  url:"https://www.lausd.org/Page/17834"}
         }}
   };
+  JURIS.va={label:"Virginia", short:"VA", kind:"state", math:"vamath", ela:"vaela", sci:"vasci", ss:"vahss",
+    tests:"SOL tests in reading and math (grades 3–8) and science (grades 5 and 8)",
+    note:"Virginia's Standards of Learning (SOL) use their own codes. Grade 4 social studies is Virginia Studies (VS), grade 5 is U.S. History to 1865 (USI) and grade 6 is U.S. History 1865 to the present (USII); divisions may order these differently. Matches to NC codes are by topic."};
+  JURIS.md={label:"Maryland", short:"MD", kind:"state", math:"mdmath", ela:"mdccrs", sci:"mdngss", ss:"mdss",
+    tests:"MCAP in ELA and math (grades 3–8; MSTAR from spring 2027), science (grades 5 and 8) and social studies (grade 8)",
+    note:"Maryland's revised math standards (adopted July 2025, in effect 2026–27) use new codes such as 4.NOS.D.9. ELA keeps Common Core codes (revised in 2025 with small wording changes). Science is NGSS. Social studies follows MSDE's grade-level frameworks."};
+  JURIS.dc={label:"District of Columbia", short:"DC", kind:"state", math:"ccss", ela:"ccss", sci:"ngss", ss:"dcss",
+    tests:"DC CAPE in ELA and math (grades 3–8) and DC Science (grades 5 and 8)",
+    note:"DC uses Common Core for ELA and math, NGSS for science, and its own 2023 social studies standards."};
   /* Every other state and DC: listed so it can be picked. Until a state's own standards are loaded, it shows the
      national sets (Common Core, NGSS, C3) and says so. To load one, give it its own sets like North Carolina. */
   var STATES={al:"Alabama",ak:"Alaska",az:"Arizona",ar:"Arkansas",ca:"California",co:"Colorado",ct:"Connecticut",de:"Delaware",dc:"District of Columbia",
@@ -53,7 +72,8 @@
   function order(){return ["us"].concat(Object.keys(JURIS).filter(function(k){return k!=="us"}).sort(function(a,b){return JURIS[a].label.localeCompare(JURIS[b].label)}))}
 
   /* math, ELA and science codes are the same in Common Core/NGSS and in California's versions */
-  var SAME_CODES={cacc:"ccss", cangss:"ngss"};
+  var SAME_CODES={cacc:"ccss", cangss:"ngss", mdccrs:"ccss", mdngss:"ngss"};
+  function dataKey(set){return SAME_CODES[set]||set}
 
   /* ---------- NC math → Common Core (codes not listed here keep the same number without "NC.") ---------- */
   var MATH={
@@ -139,6 +159,105 @@
     "5.H.1.5":["HI.1–3 (Analysis Skills)"], "5.H.1.6":["5.7"]
   };
 
+  /* ---------- NC → Virginia, Maryland and DC (grades 4–5, the grades the apps cover). All by topic. ---------- */
+  function A(c,n){return {c:c,approx:true,note:n||""}}
+  var VAMATH={
+    "NC.4.OA.1":["4.CE.2"], "NC.4.OA.3":["4.CE.1","4.CE.2"], "NC.4.OA.4":["4.CE.2"], "NC.4.OA.5":["4.PFA.1"],
+    "NC.4.NBT.1":["4.NS.1"], "NC.4.NBT.2":["4.NS.1"], "NC.4.NBT.7":["4.NS.2"], "NC.4.NBT.4":["4.CE.1"],
+    "NC.4.NBT.5":["4.CE.2"], "NC.4.NBT.6":["4.CE.2"],
+    "NC.4.NF.1":["4.NS.3"], "NC.4.NF.2":["4.NS.3"], "NC.4.NF.3":["4.CE.3"], "NC.4.NF.4":["4.CE.3"],
+    "NC.4.NF.5":["4.NS.5"], "NC.4.NF.6":["4.NS.5","4.NS.4"], "NC.4.NF.7":["4.NS.4"],
+    "NC.4.MD.1":["4.MG.1"], "NC.4.MD.2":A(["4.MG.1","5.MG.1"],"Virginia converts U.S. Customary units in grade 4 and metric units in grade 5."),
+    "NC.4.MD.8":["4.MG.2"], "NC.4.MD.3":["4.MG.3"], "NC.4.MD.4":A(["4.PS.1"]),
+    "NC.4.MD.6":A(["5.MG.3"],"Virginia measures angles in grade 5."),
+    "NC.4.G.1":["4.MG.4"], "NC.4.G.2":A(["4.MG.5","5.MG.3"],"Virginia classifies quadrilaterals in grade 4 and triangles in grade 5."),
+    "NC.4.G.3":A(["2.MG.3","6.MG.4"],"Virginia teaches lines of symmetry in grades 2 and 6."),
+    "NC.5.OA.2":["5.CE.4"], "NC.5.OA.3":A(["5.PFA.1"]),
+    "NC.5.NBT.1":A(["4.NS.1","4.NS.4"],"Virginia covers place value to thousandths in grade 4."),
+    "NC.5.NBT.3":A(["4.NS.4","5.NS.1"],"Virginia reads and compares decimals to thousandths in grade 4."),
+    "NC.5.NBT.5":["5.CE.1"], "NC.5.NBT.6":["5.CE.1"], "NC.5.NBT.7":["5.CE.3"],
+    "NC.5.NF.1":["5.CE.2"], "NC.5.NF.2":["5.CE.2"], "NC.5.NF.3":A(["5.CE.1","5.NS.1"],"Virginia has no separate standard for fractions as division."),
+    "NC.5.NF.4":A(["5.CE.2","6.CE.1"],"Virginia multiplies a whole number by a fraction in grade 5 and a fraction by a fraction in grade 6."),
+    "NC.5.NF.7":A(["6.CE.1"],"Virginia divides with fractions in grade 6."),
+    "NC.5.MD.1":["5.MG.1"], "NC.5.MD.2":["5.PS.1"], "NC.5.MD.4":["5.MG.2"], "NC.5.MD.5":["5.MG.2"],
+    "NC.5.G.1":A(["6.MG.3"],"Virginia graphs ordered pairs in grade 6."), "NC.5.G.3":A(["4.MG.5","5.MG.3"])
+  };
+  var VASCI={
+    "PS.4.1.1":A(["2.2","5.4"],"Virginia teaches magnets in grade 2 and electromagnets in grade 5."), "PS.4.1.2":A(["5.4"],"Virginia teaches static electricity in grade 5."),
+    "PS.4.2.1":A(["5.2"]), "PS.4.2.2":A(["5.4"],"Virginia teaches circuits in grade 5."), "PS.4.2.3":A(["5.4"]),
+    "PS.4.3.1":A(["5.6"],"Virginia teaches light in grade 5."), "PS.4.3.2":A(["5.6"],"Virginia teaches light in grade 5."),
+    "LS.4.1.1":["4.2"], "LS.4.1.2":A(["4.2","K.5"]), "LS.4.1.3":A(["3.4"]), "LS.4.2.1":A(["3.4"],"Virginia teaches fossils in grade 3."),
+    "LS.4.2.2":A(["3.4","5.8"]), "ESS.4.1.1":A(["4.6","6.3"]), "ESS.4.1.2":["4.6"],
+    "ESS.4.2.1":A(["4.8"]), "ESS.4.2.2":A(["5.8"],"Virginia teaches the rock cycle in grade 5."), "ESS.4.2.3":A(["5.8"]),
+    "ESS.4.3.1":A(["4.3"]), "ESS.4.3.2":A(["3.8"]), "ESS.4.3.3":A(["3.8","6.9"]),
+    "PS.5.1.1":A(["5.7"]), "PS.5.1.2":A(["5.7"]), "PS.5.1.3":A(["5.7"]), "PS.5.2.1":A(["5.3"]), "PS.5.2.2":A(["5.3"]),
+    "LS.5.1.1":{c:[],note:"Virginia's K–6 science has no cells or body systems standard; it is in middle school Life Science."},
+    "LS.5.1.2":{c:[],note:"Virginia's K–6 science has no body systems standard; it is in middle school Life Science."},
+    "LS.5.2.1":A(["4.3","3.5"]), "LS.5.2.2":A(["4.3"]), "LS.5.2.3":A(["4.3"]), "LS.5.3.1":A(["3.4"]), "LS.5.3.2":A(["3.4"]),
+    "ESS.5.1.1":A(["4.4"]), "ESS.5.1.2":A(["4.4"]), "ESS.5.1.3":A(["4.7","6.7"]), "ESS.5.1.4":A(["3.7"],"Virginia teaches the water cycle in grade 3.")
+  };
+  /* Common Core ELA code → the Virginia 2024 English strand that covers it */
+  function vaEla(cc){var m=/^(RL|RI|RF|W|SL|L)\.(K|\d)\.(\d+)/.exec(cc);if(!m)return null;var s=m[1],g=m[2],n=+m[3],t;
+    if(s==="RL")t=n<=3?"RL.1":n===4?"RV.1":n<=6?"RL.2":n<=9?"RL.3":"DSR";
+    else if(s==="RI")t=n<=3||n===8?"RI.1":n===4?"RV.1":n<=7?"RI.2":n===9?"RI.3":"DSR";
+    else if(s==="RF")t=n===1?"FFR.1":n===2?"FFR.2":n===3?"FFR.3":"DSR";
+    else if(s==="W")t=n<=3||n>=9?"W.1":n===4?"W.2":n===5?"W.3":n===6?"C.3":"R.1";
+    else if(s==="SL")t=n<=3?"C.1":n===5?"C.3":"C.2";
+    else t=n===2?"LU.2":n<=3?"LU.1":"RV.1";
+    if(+g>=3&&/^FFR\.[12]$/.test(t))t="FFR.3";
+    return g+"."+t}
+  function ss(c,n){return A(c,n||"Matched by topic.")}
+  var VAHSS={
+    "4.B.1.1":ss(["VS.2","VS.4"]), "4.B.1.2":ss(["VS.2","VS.4"]), "4.C&G.1.1":ss(["VS.6"]), "4.C&G.1.2":ss(["VS.11"]), "4.C&G.1.3":ss(["VS.6"]),
+    "4.E.1.1":ss(["VS.9","VS.13"]), "4.E.1.2":ss(["VS.9","VS.13"]), "4.E.1.3":ss(["VS.13"]),
+    "4.E.2.1":{c:[],note:"Virginia Studies has no personal-finance standard."}, "4.E.2.2":{c:[],note:"Virginia Studies has no personal-finance standard."},
+    "4.G.1.1":ss(["VS.1"]), "4.G.1.2":ss(["VS.9"]), "4.G.1.3":ss(["VS.4","VS.6"]),
+    "4.H.1.1":ss(["VS.2","VS.4","VS.11"]), "4.H.1.2":ss(["VS.4","VS.8","VS.11"]), "4.H.1.3":ss(["VS.5","VS.11"]), "4.H.1.4":ss(["VS.5","VS.7","VS.10"]),
+    "4.H.1.5":ss(["VS.Skills"]), "4.H.1.6":ss(["VS.12"]),
+    "5.B.1.1":ss(["USI.2","USI.5"]), "5.B.1.2":ss(["USI.4","USI.5"]), "5.C&G.1.1":ss(["USI.7"]), "5.C&G.1.2":ss(["USI.7"]),
+    "5.C&G.2.1":ss(["USI.8","USII.8"]), "5.C&G.2.2":ss(["USI.7"]),
+    "5.E.1.1":ss(["USI.5","USI.8"]), "5.E.1.2":ss(["USI.5"]), "5.E.1.3":ss(["USI.8"]), "5.E.1.4":ss(["USI.5"]),
+    "5.E.2.1":{c:[],note:"U.S. History to 1865 has no personal-finance standard."}, "5.E.2.2":{c:[],note:"U.S. History to 1865 has no personal-finance standard."},
+    "5.E.2.3":{c:[],note:"U.S. History to 1865 has no personal-finance standard."},
+    "5.G.1.1":ss(["USI.1"]), "5.G.1.2":ss(["USI.4","USI.8"]), "5.G.1.3":ss(["USI.8"]), "5.G.1.4":ss(["USI.8"]),
+    "5.H.1.1":ss(["USI.4","USI.8"]), "5.H.1.2":ss(["USI.8","USII.8"]), "5.H.1.3":ss(["USI.6","USI.8"]), "5.H.1.4":ss(["USI.6","USI.9"]),
+    "5.H.1.5":ss(["USI.Skills"]), "5.H.1.6":ss(["USI.7"])
+  };
+  var MDSS={
+    "4.B.1.1":ss(["4.U1.1"]), "4.B.1.2":ss(["4.U1.1","4.U2.1"]), "4.C&G.1.1":ss(["4.U3.4"]), "4.C&G.1.2":ss(["4.U3.3"]), "4.C&G.1.3":ss(["4.U3.2"]),
+    "4.E.1.1":ss(["4.U2.2"]), "4.E.1.2":ss(["4.U2.2"]), "4.E.1.3":ss(["4.U2.2"]),
+    "4.E.2.1":{c:[],note:"Maryland's grade 4 framework has no personal-finance topic."}, "4.E.2.2":{c:[],note:"Maryland's grade 4 framework has no personal-finance topic."},
+    "4.G.1.1":ss(["4.U2.2"]), "4.G.1.2":ss(["4.U1.3"]), "4.G.1.3":ss(["4.U1.2","4.U2.3"]),
+    "4.H.1.1":ss(["4.U2.4","4.U3.3"]), "4.H.1.2":ss(["4.U2.3","4.U3.3"]), "4.H.1.3":ss(["4.U2.4","4.U3.1"]), "4.H.1.4":ss(["4.U3.1","4.U3.3"]),
+    "4.H.1.5":ss(["4.U3.3"]), "4.H.1.6":ss(["4.U3.2"]),
+    "5.B.1.1":ss(["5.U2.2"]), "5.B.1.2":ss(["5.U2.1","5.U3.4"]), "5.C&G.1.1":ss(["5.U1.1"]), "5.C&G.1.2":ss(["5.U1.1","5.U3.3"]),
+    "5.C&G.2.1":ss(["5.U3.2","5.U3.4"]), "5.C&G.2.2":ss(["5.U1.2"]),
+    "5.E.1.1":ss(["5.U2.3"]), "5.E.1.2":ss(["5.U2.3"]), "5.E.1.3":ss(["5.U2.3"]), "5.E.1.4":ss(["5.U3.3"]),
+    "5.E.2.1":{c:[],note:"Maryland's grade 5 framework has no personal-finance topic."}, "5.E.2.2":{c:[],note:"Maryland's grade 5 framework has no personal-finance topic."},
+    "5.E.2.3":{c:[],note:"Maryland's grade 5 framework has no personal-finance topic."},
+    "5.G.1.1":ss(["5.U2.3"]), "5.G.1.2":ss(["5.U2.1","5.U2.3"]), "5.G.1.3":ss(["5.U2.3"]), "5.G.1.4":ss(["5.U2.3"]),
+    "5.H.1.1":ss(["5.U3.4"]), "5.H.1.2":ss(["5.U2.2","5.U3.4"]), "5.H.1.3":ss(["5.U2.1","5.U3.4"]), "5.H.1.4":ss(["5.U2.1","5.U2.2"]),
+    "5.H.1.5":ss(["5.U3.1"]), "5.H.1.6":ss(["5.U1.2"])
+  };
+  var DCSS={
+    "4.B.1.1":ss(["4.9","4.33"]), "4.B.1.2":ss(["4.13","4.34"]), "4.C&G.1.1":ss(["4.45"]), "4.C&G.1.2":ss(["4.53"]), "4.C&G.1.3":ss(["4.50"]),
+    "4.E.1.1":ss(["4.6"]), "4.E.1.2":ss(["4.30"]), "4.E.1.3":ss(["4.3"]),
+    "4.E.2.1":{c:[],note:"DC's grade 4 standards have no personal-finance standard."}, "4.E.2.2":{c:[],note:"DC's grade 4 standards have no personal-finance standard."},
+    "4.G.1.1":ss(["4.2"]), "4.G.1.2":ss(["4.20"]), "4.G.1.3":ss(["4.4","4.24"]),
+    "4.H.1.1":ss(["4.34"]), "4.H.1.2":ss(["4.13","4.36"]), "4.H.1.3":ss(["4.19","4.38"]), "4.H.1.4":ss(["4.40"]),
+    "4.H.1.5":ss(["4.1"]), "4.H.1.6":ss(["4.42"]),
+    "5.B.1.1":ss(["5.26","5.43"]), "5.B.1.2":ss(["5.17","5.21"]), "5.C&G.1.1":ss(["4.45"],"DC teaches the three branches in grade 4."),
+    "5.C&G.1.2":ss(["4.45","4.48"],"DC teaches the three branches in grade 4."), "5.C&G.2.1":ss(["5.54","5.56"]), "5.C&G.2.2":ss(["5.37","5.50"]),
+    "5.E.1.1":ss(["5.15"]), "5.E.1.2":ss(["5.31"]), "5.E.1.3":ss(["5.15"]), "5.E.1.4":ss(["6.67"],"DC covers trade in grade 6."),
+    "5.E.2.1":{c:[],note:"DC's grade 5 standards have no personal-finance standard."}, "5.E.2.2":{c:[],note:"DC's grade 5 standards have no personal-finance standard."},
+    "5.E.2.3":{c:[],note:"DC's grade 5 standards have no personal-finance standard."},
+    "5.G.1.1":ss(["5.14"]), "5.G.1.2":ss(["5.16","5.42"]), "5.G.1.3":ss(["5.15"]), "5.G.1.4":ss(["5.42"]),
+    "5.H.1.1":ss(["5.30","5.49"]), "5.H.1.2":ss(["5.46"]), "5.H.1.3":ss(["5.20","5.51"]), "5.H.1.4":ss(["5.28","5.44"]),
+    "5.H.1.5":ss(["5.2"]), "5.H.1.6":ss(["5.34"])
+  };
+  /* Common Core math (2010 codes, cluster letter dropped) → Maryland 2025 codes, from MSDE's crosswalks */
+  var MD_FROM_CC={"K.CC.1":["K.NOS.A.1","K.NOS.A.4"],"K.CC.2":["K.NOS.A.2"],"K.CC.3":["K.NOS.A.5"],"K.CC.4":["K.NOS.B.6","K.NOS.B.7"],"K.NBT.1":["K.NOS.C.9"],"K.CC.6":["K.NOS.C.10"],"K.CC.7":["K.NOS.C.10"],"K.OA.3":["K.NOS.D.11"],"K.OA.4":["K.NOS.D.11"],"K.OA.1":["K.AT.A.1"],"K.OA.2":["K.AT.A.2"],"K.MD.1":["K.GR.A.1"],"K.MD.2":["K.GR.A.2"],"K.G.1":["K.GR.B.4"],"K.G.2":["K.GR.B.5"],"K.G.3":["K.GR.B.6"],"K.G.4":["K.GR.B.7"],"K.G.5":["K.GR.B.8"],"K.G.6":["K.GR.B.9"],"K.MD.3":["K.DS.A.1","K.DS.A.2"],"1.NBT.1":["1.NOS.A.1"],"1.NBT.2":["1.NOS.B.3"],"1.NBT.3":["1.NOS.B.5"],"1.OA.3":["1.NOS.C.7"],"1.OA.4":["1.NOS.C.8"],"1.OA.6":["1.NOS.D.9"],"1.NBT.4":["1.NOS.E.10"],"1.NBT.5":["1.NOS.E.11"],"1.NBT.6":["1.NOS.E.12"],"1.G.3":["1.NOS.F.14"],"1.OA.7":["1.AT.A.1"],"1.OA.1":["1.AT.A.2"],"1.OA.8":["1.AT.A.3"],"1.MD.1":["1.GR.A.1"],"1.MD.2":["1.GR.A.2"],"1.G.1":["1.GR.B.3"],"1.G.2":["1.GR.B.4"],"1.MD.3":["1.GR.C.5"],"1.MD.4":["1.DS.A.1"],"2.NBT.1":["2.NOS.A.1"],"2.NBT.2":["2.NOS.A.2"],"2.NBT.3":["2.NOS.A.3"],"2.NBT.4":["2.NOS.A.4"],"2.OA.2":["2.NOS.B.6"],"2.MD.6":["2.NOS.C.7"],"2.NBT.5":["2.NOS.C.8"],"2.NBT.7":["2.NOS.C.9"],"2.NBT.8":["2.NOS.C.10"],"2.G.3":["2.NOS.D.11"],"2.OA.1":["2.AT.A.1","2.AT.A.2"],"2.OA.3":["2.AT.B.3"],"2.MD.1":["2.GR.A.1"],"2.MD.2":["2.GR.A.2"],"2.MD.3":["2.GR.A.3"],"2.MD.4":["2.GR.A.4"],"2.G.1":["2.GR.B.5"],"4.G.3":["2.GR.B.6"],"2.MD.7":["2.GR.C.7"],"2.MD.8":["2.GR.C.9"],"2.MD.9":["2.DS.A.1"],"3.OA.1":["3.NOS.B.2"],"3.OA.2":["3.NOS.B.3"],"3.OA.5":["3.NOS.C.4"],"3.OA.6":["3.NOS.C.5"],"3.NBT.2":["3.NOS.D.7"],"3.NBT.3":["3.NOS.D.8"],"3.OA.7":["3.NOS.E.9"],"3.NF.1":["3.NOS.F.10"],"3.NF.2":["3.NOS.F.12"],"3.NF.3":["3.NOS.F.13"],"3.OA.3":["3.AT.A.1"],"3.OA.8":["3.AT.A.2"],"3.OA.9":["3.AT.A.3"],"3.MD.4":["3.GR.A.1"],"3.MD.1":["3.GR.A.2"],"3.MD.2":["3.GR.A.3","3.GR.A.4"],"3.G.1":["3.GR.B.5"],"3.MD.5":["3.GR.C.6"],"3.MD.6":["3.GR.C.6"],"3.MD.7":["3.GR.C.7"],"3.MD.8":["3.GR.C.9"],"3.MD.3":["3.DS.A.1"],"4.NBT.2":["4.NOS.A.1"],"4.NBT.1":["4.NOS.A.2"],"4.NBT.4":["4.NOS.B.3"],"4.NBT.5":["4.NOS.B.5"],"4.NBT.6":["4.NOS.B.6"],"4.OA.4":["4.NOS.C.8"],"4.NF.1":["4.NOS.D.9"],"4.NF.2":["4.NOS.D.10"],"4.NF.3":["4.NOS.E.11","4.NOS.E.12"],"4.NF.4":["4.NOS.E.13"],"4.NF.5":["4.NOS.F.14"],"4.NF.6":["4.NOS.F.15"],"4.NF.7":["4.NOS.F.16"],"4.OA.1":["4.AT.A.1"],"4.OA.2":["4.AT.A.2"],"4.OA.3":["4.AT.A.4"],"4.MD.1":["4.GR.A.1"],"4.MD.2":["4.GR.A.2"],"4.MD.3":["4.GR.A.3"],"4.MD.5":["4.GR.B.5"],"4.MD.6":["4.GR.B.6"],"4.MD.7":["4.GR.B.7"],"4.G.1":["4.GR.C.8"],"4.G.2":["4.GR.C.9"],"4.MD.4":["4.DS.A.1"],"5.NBT.1":["5.NOS.A.1"],"5.NBT.2":["5.NOS.A.2"],"5.NBT.3":["5.NOS.A.3"],"5.NBT.4":["5.NOS.A.3"],"5.NBT.5":["5.NOS.B.4"],"5.NBT.6":["5.NOS.B.5"],"5.NBT.7":["5.NOS.B.6","5.NOS.B.7"],"5.NF.1":["5.NOS.C.8"],"5.NF.2":["5.NOS.C.9"],"5.NF.3":["5.NOS.D.10"],"5.NF.4":["5.NOS.D.11","5.NOS.D.12","5.NOS.D.13"],"5.NF.5":["5.NOS.D.14"],"5.NF.6":["5.NOS.D.15"],"5.NF.7":["5.NOS.D.16"],"5.OA.1":["5.AT.A.1"],"5.OA.2":["5.AT.A.2"],"5.OA.3":["5.AT.B.3"],"5.MD.1":["5.GR.A.1"],"5.G.3":["5.GR.B.2"],"5.G.4":["5.GR.B.3"],"5.MD.3":["5.GR.C.4"],"5.MD.4":["5.GR.C.4"],"5.MD.5":["5.GR.C.5"],"5.G.1":["5.GR.D.6"],"5.G.2":["5.GR.D.7"],"5.MD.2":["5.DS.A.1"],"6.NS.1":["6.NOS.A.1"],"6.NS.2":["6.NOS.B.2"],"6.NS.3":["6.NOS.B.3"],"6.NS.4":["6.NOS.B.4"],"6.NS.5":["6.NOS.C.5"],"6.NS.6":["6.NOS.C.6","6.NOS.C.7"],"6.NS.7":["6.NOS.C.8"],"6.NS.8":["6.NOS.C.9"],"6.RP.1":["6.AT.A.1"],"6.RP.2":["6.AT.A.2"],"6.RP.3":["6.AT.A.3","6.AT.A.4"],"6.EE.1":["6.AT.B.5"],"6.EE.2":["6.AT.B.6"],"6.EE.3":["6.AT.B.7"],"6.EE.4":["6.AT.B.7"],"6.EE.5":["6.AT.C.8","6.AT.C.10"],"6.EE.6":["6.AT.C.8"],"6.EE.7":["6.AT.C.8"],"6.EE.8":["6.AT.C.9"],"6.EE.9":["6.AT.D.11"],"6.G.1":["6.GR.A.1"],"6.G.2":["6.GR.A.2"],"6.G.3":["6.GR.A.3"],"6.G.4":["6.GR.A.4"],"6.SP.1":["6.DS.A.1"],"6.SP.2":["6.DS.A.3"],"6.SP.3":["6.DS.A.4"],"6.SP.4":["6.DS.B.5"],"6.SP.5":["6.DS.B.6"]};
+
   /* ---------- lookup ---------- */
   function norm(m){if(!m)return null;if(Array.isArray(m))return {c:m};return m}
   /* Which subject an NC code belongs to */
@@ -155,11 +274,21 @@
     var subj=subjectOf(code); if(!subj)return null;
     var set=j[subj]; if(set==="nc")return null;
     var base=SAME_CODES[set]||set, m;
-    if(subj==="math"){m=norm(MATH[code])||{c:[code.replace(/^NC\./,"")]}}
+    /* sets with their own codes: go through Common Core/NGSS first where that is how they line up */
+    if(set==="vamath"){m=norm(VAMATH[code])}
+    else if(set==="mdmath"){var r=match(code,"us");if(!r)return null;var out=[];r.codes.forEach(function(c){(MD_FROM_CC[c]||[]).forEach(function(x){if(out.indexOf(x)<0)out.push(x)})});
+      if(!out.length)return null;m={c:out,approx:r.approx,note:r.note}}
+    else if(set==="vaela"){var r2=match(code,"us");if(!r2)return null;var o2=[];r2.codes.forEach(function(c){var v=vaEla(c);if(v&&o2.indexOf(v)<0)o2.push(v)});
+      if(!o2.length)return null;m={c:o2,approx:true,note:"Matched by topic: Virginia groups English skills into broader standards."}}
+    else if(set==="vasci"){
+      if(/^\w+\.\d\.\d$/.test(code)){var all=[],ap=false;Object.keys(VASCI).forEach(function(k){if(k.indexOf(code+".")===0){var x=norm(VASCI[k]);x.c.forEach(function(c){if(all.indexOf(c)<0)all.push(c)});ap=ap||!!x.approx}});m=all.length?{c:all,approx:ap}:null}
+      else m=norm(VASCI[code])}
+    else if(subj==="ss"&&(set==="vahss"||set==="mdss"||set==="dcss")){m=norm({vahss:VAHSS,mdss:MDSS,dcss:DCSS}[set][code])}
+    else if(subj==="math"){m=norm(MATH[code])||{c:[code.replace(/^NC\./,"")]}}
     else if(subj==="ela"){var e=code.replace(/^NC\.(K|\d)\.([A-Z]+)\./,"$2.$1.");   /* NC.K.RF.3a → RF.K.3a */
       m=norm(ELA[e])||{c:[e]}}
     else if(subj==="sci"){
-      if(/^\w+\.\d\.\d$/.test(code)){var all=[],ap=false;Object.keys(SCI).forEach(function(k){if(k.indexOf(code+".")===0){var x=norm(SCI[k]);x.c.forEach(function(c){if(all.indexOf(c)<0)all.push(c)});ap=ap||!!x.approx}});m=all.length?{c:all,approx:ap}:null}
+      if(/^\w+\.\d\.\d$/.test(code)){var all2=[],ap2=false;Object.keys(SCI).forEach(function(k){if(k.indexOf(code+".")===0){var x=norm(SCI[k]);x.c.forEach(function(c){if(all2.indexOf(c)<0)all2.push(c)});ap2=ap2||!!x.approx}});m=all2.length?{c:all2,approx:ap2}:null}
       else m=norm(SCI[code])}
     else if(subj==="ss"){m=norm((base==="c3"?C3:CAHSS)[code]);if(m&&base==="c3")m={c:m.c,approx:true,note:m.note}}
     if(!m)return null;
@@ -167,5 +296,6 @@
     return {codes:m.c,approx:!!m.approx,note:m.note||"",set:SETS[set]};
   }
 
-  window.ECStandards={SETS:SETS,JURIS:JURIS,order:order,match:match,subjectOf:subjectOf};
+  window.ECStandards={SETS:SETS,JURIS:JURIS,order:order,match:match,subjectOf:subjectOf,dataKey:dataKey,
+    fromCC:function(set,cc){return set==="mdmath"?(MD_FROM_CC[cc]||null):null}};
 })();

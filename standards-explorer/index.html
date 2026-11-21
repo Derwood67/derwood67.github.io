@@ -80,6 +80,7 @@ textarea.paste{width:100%;min-height:120px;font:13px ui-monospace,Menlo,monospac
 <link rel="stylesheet" href="/shared/brand.css">
 <script src="/shared/standards.js"></script>
 <script src="/shared/std-data.js"></script>
+<script src="/shared/std-states.js"></script>
 <script src="/shared/pacing.js"></script>
 <script src="/shared/frame.js" data-app="Standards Explorer" data-subject="tool" data-tags="Grades 4–5"></script>
 </head>
@@ -124,7 +125,7 @@ textarea.paste{width:100%;min-height:120px;font:13px ui-monospace,Menlo,monospac
   /* which set of codes this place uses for a subject */
   function setFor(subj){var k=P.j[subj];return k==="nc"?"nc":k}
   /* California math, ELA and science codes are the same as Common Core / NGSS */
-  function dataKey(set){return set==="cangss"?"ngss":set}
+  function dataKey(set){return S.dataKey?S.dataKey(set):(set==="cangss"?"ngss":set)}
 
   /* For every NC code an app practices: the codes it becomes in this place, and which apps */
   function coverage(){
@@ -152,7 +153,10 @@ textarea.paste{width:100%;min-height:120px;font:13px ui-monospace,Menlo,monospac
   function baseCode(c){return String(c).replace(/[a-z]$/,"")}
   /* Common Core code -> codes in this place's set (NC codes for North Carolina) */
   var revNC=null;
+  var MATHSET=P.j.math;
   function toPlace(cc){
+    /* Common Core → Maryland 2025 codes, from MSDE's crosswalks */
+    if(MATHSET==="mdmath"&&st.subj==="math")return (S.fromCC&&S.fromCC("mdmath",baseCode(cc)))||[];
     if(P.state!=="nc")return [cc];
     if(!revNC){revNC={};Object.keys(D.nc).forEach(function(s){Object.keys(D.nc[s]).forEach(function(g){D.nc[s][g].forEach(function(r){
       var m=S.match(r[0],"us");if(!m)return;m.codes.forEach(function(c){(revNC[c]=revNC[c]||[]);if(revNC[c].indexOf(r[0])<0)revNC[c].push(r[0])})})})})}
@@ -162,7 +166,7 @@ textarea.paste{width:100%;min-height:120px;font:13px ui-monospace,Menlo,monospac
   function sources(){var out=[],dk=P.d?P.state:(P.state==="nc"?"nc":null),dist=dk&&PC.district[dk];
     if(dist&&st.subj==="math")out.push({k:"district",label:"District: "+dist.name.replace(/ \(LAUSD\)/,""),cur:dist.math,dist:dist});
     else if(dist)out.push({k:"district",label:"District: "+dist.name.replace(/ \(LAUSD\)/,""),cur:null,dist:dist});
-    if(st.subj==="math")["em2","im"].forEach(function(k){out.push({k:k,label:PC.sources[k].name,cur:k})});
+    if(st.subj==="math"&&MATHSET!=="vamath")["em2","im"].forEach(function(k){out.push({k:k,label:PC.sources[k].name,cur:k})});
     out.push({k:"mine",label:"My pacing"});return out}
   function pkey(){return "ec-pacing:"+(P.d?P.state+"/"+Object.keys(P.j.districts).filter(function(k){return P.j.districts[k]===P.d})[0]:P.state)+":"+st.subj+":"+st.grade}
   function myPace(){try{return JSON.parse(localStorage.getItem(pkey())||"{}")}catch(e){return {}}}
@@ -219,7 +223,7 @@ textarea.paste{width:100%;min-height:120px;font:13px ui-monospace,Menlo,monospac
     if(a==="clear"){if(confirm("Clear your pacing for this subject and grade?")){savePace({});render()}}
     if(a==="paste"){var p=document.getElementById("paste");p.hidden=!p.hidden;if(!p.hidden)document.getElementById("pastebox").focus()}
     if(a==="apply"){var n=0,miss=[];document.getElementById("pastebox").value.split(/\r?\n/).forEach(function(line){
-        var code=(line.match(/(?:NC\.)?(?:K|\d)\.[A-Z]{1,4}\.\d+[a-z]?|(?:RL|RI|RF|W|SL|L)\.\d\.\d+[a-z]?|\d-(?:PS|LS|ESS)\d-\d|(?:PS|LS|ESS)\.\d\.\d\.\d|\d\.(?:H|G|E|B|C&G)\.\d\.\d|\d\.\d|D2\.\w+\.\d+\.3-5/)||[])[0],
+        var code=(line.match(/(?:VS|USII?)\.(?:\d+|Skills)|(?:K|\d)\.(?:NOS|AT|GR|DS)\.[A-Z]\.\d+|(?:K|\d)\.U\d\.\d+|(?:K|\d)\.DSR|(?:K|\d)\.(?:FFR|FFW|RV|RL|RI|W|LU|C|R|NS|CE|MG|PS|PFA)\.\d+|(?:NC\.)?(?:K|\d)\.[A-Z]{1,4}\.\d+[a-z]?|(?:RL|RI|RF|W|SL|L)\.\d\.\d+[a-z]?|\d-(?:PS|LS|ESS)\d-\d|(?:PS|LS|ESS)\.\d\.\d\.\d|\d\.(?:H|G|E|B|C&G)\.\d\.\d|(?:K|\d)\.\d{1,2}|D2\.\w+\.\d+\.3-5/)||[])[0],
             q=(line.replace(code||"","").match(/\b(?:Q|quarter\s*)?([1-4])\b/i)||[])[1];
         if(!code||!q)return;var t=have.indexOf(code)>=0?code:(have.indexOf(baseCode(code))>=0?baseCode(code):null);
         if(t){m[t]=+q;n++}else miss.push(code)});
@@ -271,15 +275,19 @@ textarea.paste{width:100%;min-height:120px;font:13px ui-monospace,Menlo,monospac
         (P.state!=="nc"&&ncm.length?'<span class="chip nc" title="North Carolina standards that match">NC: '+esc(ncm.slice(0,4).join(", "))+(ncm.length>4?" +"+(ncm.length-4):"")+'</span>':'')+
         '</div></article>';
     });
-    document.getElementById("out").innerHTML=shown?'<div class="list">'+html+'</div>':(!rows.length?'<div class="empty">'+esc(setInfo0.name)+' for '+esc(NAMES[st.subj])+', '+esc(GNAME(st.grade))+' aren\u2019t in the Explorer yet. Grades K–6 are ready for Common Core and California math and ELA; the rest are being added.</div>':'<div class="empty">No standards match. Try another word or turn off “Only standards my apps practice.”</div>');
+    document.getElementById("out").innerHTML=shown?'<div class="list">'+html+'</div>':(!rows.length?'<div class="empty">'+esc(setInfo0.name)+' for '+esc(NAMES[st.subj])+', '+esc(GNAME(st.grade))+' aren\u2019t in the Explorer yet. Grades K–6 are ready for Common Core, California, Virginia, Maryland and DC; other sets cover the grades their documents list.</div>':'<div class="empty">No standards match. Try another word or turn off “Only standards my apps practice.”</div>');
     var who=P.d?P.d.label:P.j.label, setInfo=S.SETS[set]||{name:"NC Standard Course of Study"};
     document.getElementById("sum").innerHTML='<span class="setname">'+esc(who)+' · '+NAMES[st.subj]+' · '+GNAME(st.grade)+'</span>'+
       '<span><b>'+rows.length+'</b> standards in '+esc(setInfo.name)+'</span><span><b>'+covered+'</b> practiced in the apps</span>'+
       (P.j.loaded===false?'<span style="flex-basis:100%;color:#14213a"><b>'+esc(P.j.label)+'’s own standards aren’t loaded yet.</b> Showing the national sets (Common Core, NGSS, C3) instead. '+esc(P.j.label)+'’s education department publishes its exact standards.</span>':'')+
       (set==="c3"?'<span>C3 lists grades 3–5 together; shown here are the indicators the apps match.</span>':'')+
       (set==="cahss"?'<span>Main standards shown; each has numbered sub-standards on the CDE site.</span>':'')+
-      (set==="nc"&&st.subj==="sci"?'<span>NC 2023 science standards.</span>':'');
-    var src=[];["nc","ccss","cacc","ngss","cangss","c3","cahss"].forEach(function(k){var s=S.SETS[k];if(s&&s.url)src.push('<a href="'+s.url+'" target="_blank" rel="noopener">'+esc(s.name)+'</a>')});
+      (set==="nc"&&st.subj==="sci"?'<span>NC 2023 science standards.</span>':'')+
+      (setInfo.summary&&rows.length?'<span style="flex-basis:100%">Shown as short summaries in plain words, not the official wording. <a href="'+esc(setInfo.url)+'" target="_blank" rel="noopener">'+esc(setInfo.name)+'</a> has the exact text.</span>':'')+
+      (dataKey(set)==="ngss"&&st.grade==="6"?'<span style="flex-basis:100%">NGSS groups grades 6–8 together; grade 6 shows all middle school standards (short summaries). Your district decides which are taught in grade 6.</span>':'')+
+      (dataKey(set)==="ngss"&&/^[K123]$/.test(st.grade)?'<span style="flex-basis:100%">Grades K–3 are shown as short summaries; nextgenscience.org has the exact wording.</span>':'')+
+      (set==="mdccrs"?'<span style="flex-basis:100%">Maryland revised these in 2025 with the same codes and small wording changes; the Common Core text is shown.</span>':'');
+    var src=[],keys=["nc","ccss","cacc","ngss","cangss","c3","cahss"];["math","ela","sci","ss"].forEach(function(x){var k=P.j[x];if(k&&keys.indexOf(k)<0)keys.unshift(k)});keys.forEach(function(k){var s=S.SETS[k];if(s&&s.url)src.push('<a href="'+s.url+'" target="_blank" rel="noopener">'+esc(s.name)+'</a>')});
     document.getElementById("src").innerHTML='Official sources: '+src.join(" · ")+(P.d&&P.d.url?' · <a href="'+P.d.url+'" target="_blank" rel="noopener">'+esc(P.d.label)+' standards page</a>':'')+
       '. Common Core text © 2010 NGA Center and CCSSO. NGSS © 2013 Achieve, Inc. Matches between sets are my own alignment; ≈ in the apps means closest match.';
     try{sessionStorage.setItem("ec-explorer",JSON.stringify(st))}catch(e){}
