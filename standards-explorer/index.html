@@ -44,7 +44,33 @@ a.chip:hover{border-color:var(--ink)}
 .empty{padding:30px;text-align:center;color:var(--muted);background:#fff;border:1px dashed var(--line);border-radius:12px}
 .src{margin-top:34px;font-size:13.5px;color:var(--muted)}
 .src a{color:#1f5fbf}
+[hidden]{display:none!important}
+.qcol .chip{font-size:12px;padding:3px 8px;display:inline-block;margin:2px 2px 0 0}
+.qgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;align-items:start}
+.qcol{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px;min-width:0}
+.qcol h3{margin:0 0 8px;font:800 16px/1.2 var(--ec-display);display:flex;justify-content:space-between}
+.qcol h3 small{font:600 12px var(--ec-body);color:var(--muted)}
+.unit{border:1px solid var(--line);border-left:4px solid var(--c,var(--ink));border-radius:10px;padding:10px;margin-bottom:10px;background:#fbfcfd}
+.unit b{display:block;font-size:13px;color:var(--muted);font-family:var(--ec-mono)}
+.unit .ut{font-weight:700;margin:2px 0 6px;line-height:1.3}
+.codes{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px}
+.codes span{font:600 12px/1 var(--ec-mono);background:#eef2f7;border-radius:6px;padding:4px 6px;cursor:help}
+.unit .chip{font-size:12px;padding:3px 8px;display:inline-block;margin:2px 2px 0 0}
+.pnote{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:14px 0;color:var(--muted);font-size:14.5px}
+.pnote b{color:var(--ink)}
+.prow{display:grid;grid-template-columns:110px 1fr 96px;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.prow .code{font:700 13px var(--ec-mono)}
+.prow p{margin:0;font-size:14px}
+.prow select{min-height:40px;padding:6px 8px}
+.tools{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.tools button{font:700 14px var(--ec-body);border:2px solid var(--ink);background:#fff;color:var(--ink);border-radius:10px;padding:9px 14px;min-height:44px;cursor:pointer}
+.tools button.pri{background:var(--ink);color:#fff}
+textarea.paste{width:100%;min-height:120px;font:13px ui-monospace,Menlo,monospace;border:2px solid var(--line);border-radius:10px;padding:10px}
+@media (max-width:900px){.qgrid{grid-template-columns:1fr 1fr}}
+@media print{.ec-bar,.ec-std-note,.controls,.tools,.lead,.src,#paste{display:none!important}.qgrid{grid-template-columns:repeat(4,1fr)}body{background:#fff}}
 @media (max-width:640px){
+  .qgrid{grid-template-columns:1fr}
+  .prow{grid-template-columns:1fr 96px}.prow p{grid-column:1/-1;grid-row:2}
   .std{grid-template-columns:1fr;gap:4px}
   .std .meta{grid-column:1}
   .std.child{margin-left:12px}
@@ -54,12 +80,13 @@ a.chip:hover{border-color:var(--ink)}
 <link rel="stylesheet" href="/shared/brand.css">
 <script src="/shared/standards.js"></script>
 <script src="/shared/std-data.js"></script>
+<script src="/shared/pacing.js"></script>
 <script src="/shared/frame.js" data-app="Standards Explorer" data-subject="tool" data-tags="Grades 4–5"></script>
 </head>
 <body>
 <main class="ec-noswap">
   <h1>Standards Explorer</h1>
-  <p class="lead">Pick a set of standards, a core subject and a grade to read the standards and see which classroom apps practice each one. Use the <b>Standards</b> menu at the top to switch between North Carolina, Common Core, a state or a district.</p>
+  <p class="lead">Pick a set of standards, a core subject and a grade to read the standards, see which classroom apps practice each one, and see when they are taught in a pacing guide. Use the <b>Standards</b> menu at the top to switch between North Carolina, Common Core, a state or a district.</p>
 
   <div class="controls" role="region" aria-label="Filters">
     <div class="row">
@@ -68,8 +95,10 @@ a.chip:hover{border-color:var(--ink)}
         <button class="s-sci" data-v="sci">Science</button><button class="s-ss" data-v="ss">Social Studies</button>
       </div>
       <div class="seg" id="grade" role="group" aria-label="Grade"><button data-v="4">Grade 4</button><button data-v="5">Grade 5</button></div>
+      <div class="seg" id="view" role="group" aria-label="View" style="margin-left:auto"><button data-v="list">Standards</button><button data-v="pacing">Pacing guide</button></div>
     </div>
-    <div class="row">
+    <div class="row" id="pacerow" hidden><div class="seg" id="psrc" role="group" aria-label="Pacing source"></div></div>
+    <div class="row" id="listrow">
       <input type="search" id="q" placeholder="Search codes or words, like 4.NF or theme" aria-label="Search standards">
       <label class="chk"><input type="checkbox" id="only"> Only standards my apps practice</label>
     </div>
@@ -82,7 +111,7 @@ a.chip:hover{border-color:var(--ink)}
 <script>
 (function(){
   var D=window.ECStdData, S=window.ECStandards, P=window.ECPlace?window.ECPlace():{state:"nc",j:S.JURIS.nc};
-  var st={subj:"math",grade:"4",q:"",only:false};
+  var st={subj:"math",grade:"4",q:"",only:false,view:"list",src:""};
   try{var saved=JSON.parse(sessionStorage.getItem("ec-explorer")||"{}");Object.assign(st,saved)}catch(e){}
   var NAMES={ela:"English Language Arts",math:"Math",sci:"Science",ss:"Social Studies"};
   var ORDER=function(c){return String(c).split(/(\d+)/).map(function(x){return /^\d+$/.test(x)?("000"+x).slice(-4):x}).join("")};
@@ -114,7 +143,97 @@ a.chip:hover{border-color:var(--ink)}
       if(t===code||(t.indexOf(code)===0&&/^[a-z]$/.test(t.slice(code.length))))cov[t].forEach(function(x){if(!out.some(function(y){return y.k===x.k}))out.push(x)})});
     return out}
 
+  /* ---------- pacing ---------- */
+  var PC=window.ECPacing;
+  function baseCode(c){return String(c).replace(/[a-z]$/,"")}
+  /* Common Core code -> codes in this place's set (NC codes for North Carolina) */
+  var revNC=null;
+  function toPlace(cc){
+    if(P.state!=="nc")return [cc];
+    if(!revNC){revNC={};Object.keys(D.nc).forEach(function(s){Object.keys(D.nc[s]).forEach(function(g){D.nc[s][g].forEach(function(r){
+      var m=S.match(r[0],"us");if(!m)return;m.codes.forEach(function(c){(revNC[c]=revNC[c]||[]);if(revNC[c].indexOf(r[0])<0)revNC[c].push(r[0])})})})})}
+    return revNC[cc]||revNC[baseCode(cc)]||[];
+  }
+  function uniq(a){return a.filter(function(x,i){return a.indexOf(x)===i})}
+  function sources(){var out=[],dk=P.d?P.state:(P.state==="nc"?"nc":null),dist=dk&&PC.district[dk];
+    if(dist&&st.subj==="math")out.push({k:"district",label:"District: "+dist.name.replace(/ \(LAUSD\)/,""),cur:dist.math,dist:dist});
+    else if(dist)out.push({k:"district",label:"District: "+dist.name.replace(/ \(LAUSD\)/,""),cur:null,dist:dist});
+    if(st.subj==="math")["em2","im"].forEach(function(k){out.push({k:k,label:PC.sources[k].name,cur:k})});
+    out.push({k:"mine",label:"My pacing"});return out}
+  function pkey(){return "ec-pacing:"+(P.d?P.state+"/"+Object.keys(P.j.districts).filter(function(k){return P.j.districts[k]===P.d})[0]:P.state)+":"+st.subj+":"+st.grade}
+  function myPace(){try{return JSON.parse(localStorage.getItem(pkey())||"{}")}catch(e){return {}}}
+  function savePace(m){try{localStorage.setItem(pkey(),JSON.stringify(m))}catch(e){}}
+  function appsOf(codes,cov){var out=[];codes.forEach(function(c){appsFor(c,cov).forEach(function(x){if(!out.some(function(y){return y.k===x.k}))out.push(x)})});return out}
+  function appChips(list){return list.map(function(x){return '<a class="chip app" href="/'+x.k+'/">'+esc(x.name.replace(/\s*[·|—-]\s*Darren Echols.*/,""))+'</a>'}).join("")}
+  function curUnits(cur){return ((PC.units[cur]||{})[st.grade])||[]}
+  function stdText(code){var set=setFor(st.subj),rows=((D[dataKey(set)]||{})[st.subj]||{})[st.grade]||[],r=rows.filter(function(x){return x[0]===code})[0];return r?r[1]:""}
+  function renderPacing(){
+    var src=sources(); if(!src.some(function(s){return s.k===st.src}))st.src=src[0].k;
+    var cur=src.filter(function(s){return s.k===st.src})[0], c=coverage(), col="var(--"+st.subj+")", html="";
+    document.getElementById("psrc").innerHTML=src.map(function(s){return '<button data-v="'+s.k+'" aria-pressed="'+(s.k===st.src)+'">'+esc(s.label)+'</button>'}).join("");
+    var who=P.d?P.d.label:P.j.label;
+    document.getElementById("sum").innerHTML='<span class="setname">'+esc(who)+' · '+NAMES[st.subj]+' · Grade '+st.grade+' · Pacing</span>';
+    if(cur.k==="mine")return renderMine(c,col);
+    var note=cur.dist?cur.dist.note:"", curKey=cur.cur;
+    if(curKey)note=(note?note+" ":"")+PC.sources[curKey].note;
+    if(!curKey){document.getElementById("out").innerHTML='<div class="pnote"><b>'+esc(cur.dist.name)+'</b>: '+esc(note)+
+      '<br><br>There is no public '+NAMES[st.subj]+' pacing guide to show. Use <b>My pacing</b> to set your own, or paste your district guide there.</div>';return}
+    var units=curUnits(curKey),byQ={1:[],2:[],3:[],4:[]};units.forEach(function(u){byQ[u.q].push(u)});
+    html='<div class="pnote">'+esc(note)+' Quarters are approximate, based on unit order and length.'+(PC.sources[curKey].url?' <a href="'+PC.sources[curKey].url+'" target="_blank" rel="noopener">Source</a>':'')+'</div><div class="qgrid">';
+    [1,2,3,4].forEach(function(q){
+      html+='<section class="qcol" aria-label="Quarter '+q+'"><h3>Quarter '+q+'<small>'+byQ[q].length+' unit'+(byQ[q].length===1?"":"s")+'</small></h3>';
+      byQ[q].forEach(function(u){var codes=uniq([].concat.apply([],u.c.map(toPlace))),apps=appsOf(codes,c.cov);
+        html+='<div class="unit" style="--c:'+col+'"><b>'+esc(u.u)+'</b><div class="ut">'+esc(u.t)+'</div>'+
+          (codes.length?'<div class="codes">'+codes.map(function(k){return '<span title="'+esc(stdText(k)||k)+'">'+esc(k)+'</span>'}).join("")+'</div>':'<div class="none">Review and projects</div>')+
+          (apps.length?appChips(apps):'')+'</div>'});
+      html+='</section>'});
+    document.getElementById("out").innerHTML=html+'</div>';
+  }
+  function renderMine(c,col){
+    var set=setFor(st.subj),rows=((D[dataKey(set)]||{})[st.subj]||{})[st.grade]||[],m=myPace(),srcs=sources().filter(function(s,i,a){return s.cur&&a.findIndex(function(x){return x.cur===s.cur})===i});
+    var html='<div class="pnote"><b>My pacing</b> is saved in this browser. Set a quarter for each standard, start from a curriculum, or paste your district pacing guide. Print or copy it when you\'re done.</div>'+
+      '<div class="tools">'+srcs.map(function(s){return '<button data-pa="from" data-c="'+s.cur+'">Start from '+esc(PC.sources[s.cur].name)+'</button>'}).join("")+
+      '<button data-pa="paste">Paste a pacing guide</button><button data-pa="copy">Copy for a spreadsheet</button><button data-pa="print">Print</button><button data-pa="clear">Clear</button></div>'+
+      '<div id="paste" hidden><label for="pastebox"><b>Paste rows with a standard code and a quarter</b>, like <code>4.NF.1, Q2</code> or <code>NC.4.NF.1 [tab] 2</code>. One per line; copy two columns from your district guide spreadsheet.</label>'+
+      '<textarea class="paste" id="pastebox"></textarea><div class="tools"><button class="pri" data-pa="apply">Add to my pacing</button><span class="note" id="pastemsg"></span></div></div>';
+    var byQ={1:[],2:[],3:[],4:[],0:[]};rows.forEach(function(r){var q=+m[r[0]]||0;byQ[q].push(r)});
+    html+='<div class="qgrid">'+[1,2,3,4].map(function(q){var apps=appsOf(byQ[q].map(function(r){return r[0]}),c.cov);
+      return '<section class="qcol"><h3>Quarter '+q+'<small>'+byQ[q].length+' standards</small></h3>'+
+        (byQ[q].length?'<div class="codes">'+byQ[q].map(function(r){return '<span title="'+esc(r[1])+'">'+esc(r[0])+'</span>'}).join("")+'</div>':'<div class="none">None yet</div>')+
+        (apps.length?'<div style="margin-top:6px">'+appChips(apps)+'</div>':'')+'</section>'}).join("")+'</div>';
+    html+='<h2 class="strand" style="margin-top:26px">Set the quarter for each standard</h2><div>'+rows.map(function(r){var q=m[r[0]]||"";
+      return '<div class="prow"><span class="code">'+esc(r[0])+'</span><p>'+esc(r[1])+'</p><select data-code="'+esc(r[0])+'" aria-label="Quarter for '+esc(r[0])+'"><option value="">—</option>'+
+        [1,2,3,4].map(function(n){return '<option value="'+n+'"'+(String(q)===String(n)?" selected":"")+'>Q'+n+'</option>'}).join("")+'</select></div>'}).join("")+'</div>';
+    document.getElementById("out").innerHTML=html;
+  }
+  document.getElementById("out").addEventListener("change",function(e){var s=e.target.closest("select[data-code]");if(!s)return;var m=myPace();
+    if(s.value)m[s.dataset.code]=+s.value;else delete m[s.dataset.code];savePace(m);render()});
+  document.getElementById("out").addEventListener("click",function(e){var b=e.target.closest("[data-pa]");if(!b)return;var a=b.dataset.pa,m=myPace();
+    var set=setFor(st.subj),rows=((D[dataKey(set)]||{})[st.subj]||{})[st.grade]||[],have=rows.map(function(r){return r[0]});
+    if(a==="from"){curUnits(b.dataset.c).forEach(function(u){u.c.forEach(function(cc){toPlace(cc).forEach(function(k){
+        var t=have.indexOf(k)>=0?k:(have.indexOf(baseCode(k))>=0?baseCode(k):null);if(t&&!m[t])m[t]=u.q})})});savePace(m);render()}
+    if(a==="clear"){if(confirm("Clear your pacing for this subject and grade?")){savePace({});render()}}
+    if(a==="paste"){var p=document.getElementById("paste");p.hidden=!p.hidden;if(!p.hidden)document.getElementById("pastebox").focus()}
+    if(a==="apply"){var n=0,miss=[];document.getElementById("pastebox").value.split(/\r?\n/).forEach(function(line){
+        var code=(line.match(/(?:NC\.)?(?:K|\d)\.[A-Z]{1,4}\.\d+[a-z]?|(?:RL|RI|RF|W|SL|L)\.\d\.\d+[a-z]?|\d-(?:PS|LS|ESS)\d-\d|(?:PS|LS|ESS)\.\d\.\d\.\d|\d\.(?:H|G|E|B|C&G)\.\d\.\d|\d\.\d|D2\.\w+\.\d+\.3-5/)||[])[0],
+            q=(line.replace(code||"","").match(/\b(?:Q|quarter\s*)?([1-4])\b/i)||[])[1];
+        if(!code||!q)return;var t=have.indexOf(code)>=0?code:(have.indexOf(baseCode(code))>=0?baseCode(code):null);
+        if(t){m[t]=+q;n++}else miss.push(code)});
+      savePace(m);render();setTimeout(function(){var msg=document.getElementById("pastemsg");document.getElementById("paste").hidden=false;
+        if(msg)msg.textContent=n+" standard"+(n===1?"":"s")+" placed."+(miss.length?" Not in this list: "+miss.slice(0,8).join(", ")+(miss.length>8?"…":""):"")},0)}
+    if(a==="copy"){var t="Standard\tQuarter\tDescription\n"+rows.filter(function(r){return m[r[0]]}).sort(function(x,y){return m[x[0]]-m[y[0]]}).map(function(r){return r[0]+"\tQ"+m[r[0]]+"\t"+r[1]}).join("\n");
+      try{navigator.clipboard.writeText(t).then(function(){b.textContent="Copied ✓"})}catch(x){prompt("Copy this:",t)}}
+    if(a==="print")window.print();
+  });
+  document.getElementById("psrc").onclick=function(e){var b=e.target.closest("button");if(b){st.src=b.dataset.v;render()}};
+  document.getElementById("view").onclick=function(e){var b=e.target.closest("button");if(b){st.view=b.dataset.v;render()}};
+
   function render(){
+    document.querySelectorAll("#view button").forEach(function(b){b.setAttribute("aria-pressed",b.dataset.v===st.view)});
+    document.getElementById("pacerow").hidden=st.view!=="pacing";document.getElementById("listrow").hidden=st.view==="pacing";
+    if(st.view==="pacing"){document.querySelectorAll("#subj button").forEach(function(b){b.setAttribute("aria-pressed",b.dataset.v===st.subj)});
+      document.querySelectorAll("#grade button").forEach(function(b){b.setAttribute("aria-pressed",b.dataset.v===st.grade)});
+      renderPacing();try{sessionStorage.setItem("ec-explorer",JSON.stringify(st))}catch(e){}return}
     var set=setFor(st.subj), rows=((D[dataKey(set)]||{})[st.subj]||{})[st.grade]||[], c=coverage(), q=st.q.trim().toLowerCase();
     var col="var(--"+st.subj+")";
     document.querySelectorAll("#subj button").forEach(function(b){b.setAttribute("aria-pressed",b.dataset.v===st.subj)});
@@ -150,7 +269,7 @@ a.chip:hover{border-color:var(--ink)}
   var q=document.getElementById("q");q.value=st.q;q.oninput=function(){st.q=q.value;render()};
   var only=document.getElementById("only");only.checked=st.only;only.onchange=function(){st.only=only.checked;render()};
   /* ?subject=sci&grade=5 links */
-  var u=new URLSearchParams(location.search);if(NAMES[u.get("subject")])st.subj=u.get("subject");if(/^[45]$/.test(u.get("grade")||""))st.grade=u.get("grade");
+  var u=new URLSearchParams(location.search);if(NAMES[u.get("subject")])st.subj=u.get("subject");if(/^[45]$/.test(u.get("grade")||""))st.grade=u.get("grade");if(u.get("view")==="pacing")st.view="pacing";
   render();
 })();
 </script>
