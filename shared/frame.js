@@ -72,7 +72,7 @@
 
   /* note under the bar when the page shows standards other than North Carolina's */
   function stdNote(){
-    if(!STD_ON||!STD||PICK==="nc"||document.querySelector(".ec-std-note"))return;
+    if(!STD_ON||!STD||place(PICK).state==="nc"||document.querySelector(".ec-std-note"))return;
     var p=place(PICK),j=p.j,who=p.d?p.d.label:j.label;
     var n=document.createElement("div");n.className="ec-std-note";
     n.innerHTML='<b>Showing '+esc(who)+' standards.</b> <span class="ec-more">'+esc(p.d&&p.d.note?p.d.note:(j.note||""))+
@@ -83,7 +83,7 @@
   }
   var RX=/\bNC\.(?:K|\d)\.[A-Z]{1,4}\.\d+[a-z]?(?:-[a-z])?|\b(?:RL|RI|RF|W|SL|L)\.\d\.\d+[a-z]?\b|\b(?:PS|LS|ESS)\.\d\.\d(?:\.\d)?\b|\b[45]\.(?:H|G|E|B|C&G)\.\d\.\d\b/g;
   function swapIn(root){
-    if(!STD_ON||!STD||PICK==="nc"||!root)return;
+    if(!STD_ON||!STD||place(PICK).state==="nc"||!root)return;
     var st=place(PICK).state, w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:function(t){
       var p=t.parentNode;if(!p||/^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(p.nodeName)||(p.closest&&p.closest(".ec-std,.ec-std-note,.ec-noswap,[contenteditable]")))return NodeFilter.FILTER_REJECT;
       RX.lastIndex=0;return RX.test(t.nodeValue)?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_SKIP}}), list=[];

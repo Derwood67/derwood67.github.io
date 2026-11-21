@@ -24,7 +24,11 @@
   /* ---------- the choices in the switch ---------- */
   var JURIS={
     nc:{label:"North Carolina", short:"NC", kind:"state", math:"nc", ela:"nc", sci:"nc", ss:"nc",
-        tests:"EOG tests in reading and math (grades 3–8) and science (grades 5 and 8)"},
+        tests:"EOG tests in reading and math (grades 3–8) and science (grades 5 and 8)",
+        districts:{
+          dps:{label:"Durham Public Schools (DPS)", short:"DPS",
+               note:"DPS teaches the NC Standard Course of Study.", url:"https://www.dpsnc.net/page/curriculum-and-instruction/"}
+        }},
     us:{label:"Common Core + NGSS", short:"Common Core", kind:"national", math:"ccss", ela:"ccss", sci:"ngss", ss:"c3",
         note:"Common Core for math and ELA, NGSS for science, and the C3 Framework for social studies (there is no Common Core for social studies)."},
     ca:{label:"California", short:"CA", kind:"state", math:"cacc", ela:"cacc", sci:"cangss", ss:"cahss",

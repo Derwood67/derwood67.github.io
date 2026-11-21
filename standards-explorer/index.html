@@ -86,15 +86,19 @@ textarea.paste{width:100%;min-height:120px;font:13px ui-monospace,Menlo,monospac
 <body>
 <main class="ec-noswap">
   <h1>Standards Explorer</h1>
-  <p class="lead">Pick a set of standards, a core subject and a grade to read the standards, see which classroom apps practice each one, and see when they are taught in a pacing guide. Use the <b>Standards</b> menu at the top to switch between North Carolina, Common Core, a state or a district.</p>
+  <p class="lead">Pick a set of standards, a core subject and a grade to read the standards, see which classroom apps practice each one, and see when they are taught in a pacing guide. Choose <b>Common Core</b> or a <b>state</b>, then one of its <b>districts</b>.</p>
 
   <div class="controls" role="region" aria-label="Filters">
+    <div class="row" id="placerow">
+      <label class="fld" for="stpick">State <select id="stpick"></select></label>
+      <label class="fld" for="dipick">District <select id="dipick"></select></label>
+    </div>
     <div class="row">
       <div class="seg" id="subj" role="group" aria-label="Subject">
         <button class="s-ela" data-v="ela">ELA</button><button class="s-math" data-v="math">Math</button>
         <button class="s-sci" data-v="sci">Science</button><button class="s-ss" data-v="ss">Social Studies</button>
       </div>
-      <div class="seg" id="grade" role="group" aria-label="Grade"><button data-v="4">Grade 4</button><button data-v="5">Grade 5</button></div>
+      <div class="seg" id="grade" role="group" aria-label="Grade"><button data-v="K">K</button><button data-v="1">1</button><button data-v="2">2</button><button data-v="3">3</button><button data-v="4">4</button><button data-v="5">5</button><button data-v="6">6</button></div>
       <div class="seg" id="view" role="group" aria-label="View" style="margin-left:auto"><button data-v="list">Standards</button><button data-v="pacing">Pacing guide</button></div>
     </div>
     <div class="row" id="pacerow" hidden><div class="seg" id="psrc" role="group" aria-label="Pacing source"></div></div>
@@ -172,7 +176,7 @@ textarea.paste{width:100%;min-height:120px;font:13px ui-monospace,Menlo,monospac
     var cur=src.filter(function(s){return s.k===st.src})[0], c=coverage(), col="var(--"+st.subj+")", html="";
     document.getElementById("psrc").innerHTML=src.map(function(s){return '<button data-v="'+s.k+'" aria-pressed="'+(s.k===st.src)+'">'+esc(s.label)+'</button>'}).join("");
     var who=P.d?P.d.label:P.j.label;
-    document.getElementById("sum").innerHTML='<span class="setname">'+esc(who)+' · '+NAMES[st.subj]+' · Grade '+st.grade+' · Pacing</span>';
+    document.getElementById("sum").innerHTML='<span class="setname">'+esc(who)+' · '+NAMES[st.subj]+' · '+GNAME(st.grade)+' · Pacing</span>';
     if(cur.k==="mine")return renderMine(c,col);
     var note=cur.dist?cur.dist.note:"", curKey=cur.cur;
     if(curKey)note=(note?note+" ":"")+PC.sources[curKey].note;
@@ -228,7 +232,22 @@ textarea.paste{width:100%;min-height:120px;font:13px ui-monospace,Menlo,monospac
   document.getElementById("psrc").onclick=function(e){var b=e.target.closest("button");if(b){st.src=b.dataset.v;render()}};
   document.getElementById("view").onclick=function(e){var b=e.target.closest("button");if(b){st.view=b.dataset.v;render()}};
 
+  /* state, then district */
+  (function(){var cur=(function(){try{return localStorage.getItem("ec-standards")||"nc"}catch(e){return "nc"}})(),parts=cur.split("/"),
+      sp=document.getElementById("stpick"),dp=document.getElementById("dipick");
+    sp.innerHTML=Object.keys(S.JURIS).map(function(k){var j=S.JURIS[k];return '<option value="'+k+'"'+(k===parts[0]?" selected":"")+'>'+esc(j.kind==="national"?"Common Core (national)":j.label)+'</option>'}).join("");
+    function fillD(state,sel){var j=S.JURIS[state],ds=(j&&j.districts)||{};
+      dp.innerHTML='<option value="">'+(j&&j.kind==="national"?"Not a state":"Whole state")+'</option>'+Object.keys(ds).map(function(k){return '<option value="'+k+'"'+(k===sel?" selected":"")+'>'+esc(ds[k].label)+'</option>'}).join("");
+      dp.disabled=!Object.keys(ds).length}
+    fillD(parts[0],parts[1]||"");
+    function go(v){try{localStorage.setItem("ec-standards",v)}catch(e){}location.reload()}
+    sp.onchange=function(){go(sp.value)};
+    dp.onchange=function(){go(sp.value+(dp.value?"/"+dp.value:""))};
+  })();
+  var GNAME=function(g){return g==="K"?"Kindergarten":"Grade "+g};
+
   function render(){
+    var setInfo0=S.SETS[setFor(st.subj)]||{name:"NC Standard Course of Study"};
     document.querySelectorAll("#view button").forEach(function(b){b.setAttribute("aria-pressed",b.dataset.v===st.view)});
     document.getElementById("pacerow").hidden=st.view!=="pacing";document.getElementById("listrow").hidden=st.view==="pacing";
     if(st.view==="pacing"){document.querySelectorAll("#subj button").forEach(function(b){b.setAttribute("aria-pressed",b.dataset.v===st.subj)});
@@ -252,9 +271,9 @@ textarea.paste{width:100%;min-height:120px;font:13px ui-monospace,Menlo,monospac
         (P.state!=="nc"&&ncm.length?'<span class="chip nc" title="North Carolina standards that match">NC: '+esc(ncm.slice(0,4).join(", "))+(ncm.length>4?" +"+(ncm.length-4):"")+'</span>':'')+
         '</div></article>';
     });
-    document.getElementById("out").innerHTML=shown?'<div class="list">'+html+'</div>':'<div class="empty">No standards match. Try another word or turn off “Only standards my apps practice.”</div>';
+    document.getElementById("out").innerHTML=shown?'<div class="list">'+html+'</div>':(!rows.length?'<div class="empty">'+esc(setInfo0.name)+' for '+esc(NAMES[st.subj])+', '+esc(GNAME(st.grade))+' aren\u2019t in the Explorer yet. Grades K–6 are ready for Common Core and California math and ELA; the rest are being added.</div>':'<div class="empty">No standards match. Try another word or turn off “Only standards my apps practice.”</div>');
     var who=P.d?P.d.label:P.j.label, setInfo=S.SETS[set]||{name:"NC Standard Course of Study"};
-    document.getElementById("sum").innerHTML='<span class="setname">'+esc(who)+' · '+NAMES[st.subj]+' · Grade '+st.grade+'</span>'+
+    document.getElementById("sum").innerHTML='<span class="setname">'+esc(who)+' · '+NAMES[st.subj]+' · '+GNAME(st.grade)+'</span>'+
       '<span><b>'+rows.length+'</b> standards in '+esc(setInfo.name)+'</span><span><b>'+covered+'</b> practiced in the apps</span>'+
       (set==="c3"?'<span>C3 lists grades 3–5 together; shown here are the indicators the apps match.</span>':'')+
       (set==="cahss"?'<span>Main standards shown; each has numbered sub-standards on the CDE site.</span>':'')+
@@ -269,7 +288,7 @@ textarea.paste{width:100%;min-height:120px;font:13px ui-monospace,Menlo,monospac
   var q=document.getElementById("q");q.value=st.q;q.oninput=function(){st.q=q.value;render()};
   var only=document.getElementById("only");only.checked=st.only;only.onchange=function(){st.only=only.checked;render()};
   /* ?subject=sci&grade=5 links */
-  var u=new URLSearchParams(location.search);if(NAMES[u.get("subject")])st.subj=u.get("subject");if(/^[45]$/.test(u.get("grade")||""))st.grade=u.get("grade");if(u.get("view")==="pacing")st.view="pacing";
+  var u=new URLSearchParams(location.search);if(NAMES[u.get("subject")])st.subj=u.get("subject");if(/^[K1-6]$/.test(u.get("grade")||""))st.grade=u.get("grade");if(u.get("view")==="pacing")st.view="pacing";
   render();
 })();
 </script>
