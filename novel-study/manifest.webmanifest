@@ -1,6 +1,6 @@
 {
- "name": "Novel Study",
- "short_name": "Novel Study",
+ "name": "Read & Unlock",
+ "short_name": "Read & Unlock",
  "start_url": "./",
  "scope": "./",
  "display": "standalone",

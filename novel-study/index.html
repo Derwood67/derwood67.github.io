@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Novel Study: Chapter Quest</title>
+<title>Read &amp; Unlock</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
 :root{--sand:#f5ecd6;--paper:#fffaf0;--ink:#2a2018;--soft:#6b5a48;--lapis:#1d4e7c;--lapis2:#163b5e;--gold:#c8962e;--gold2:#f0d28a;--teal:#1f857b;--clay:#b4502c;--line:#dccba3;--ok:#1e7a4a;--okbg:#e2f3e8;--bad:#a8401f;--badbg:#f9e3da}
@@ -132,7 +132,7 @@ td .cell{display:inline-block;min-width:34px;border-radius:7px;padding:2px 5px;f
 <script>
 if(!window.NOVEL_BOOK||!window.NOVEL_BOOK.chapters){window.NOVEL_MISSING=window.NOVEL_ID;window.NOVEL_ID="egypt-game";document.write('<script src="books/egypt-game.js"><\/script>')}
 </script>
-<script>window.EC_APP_NAME=window.NOVEL_BOOK.title+": Chapter Quest";document.title=window.EC_APP_NAME;</script>
+<script>window.EC_APP_NAME="Read & Unlock · "+window.NOVEL_BOOK.title;document.title=window.EC_APP_NAME;</script>
 <script src="/shared/frame.js" data-app="Novel Study" data-subject="ela" data-tags="Grades 4–5|Novel study" data-guest="#nm" data-standards="off"></script>
 </head>
 <body>
@@ -277,7 +277,7 @@ function render(){const bt=$("#booktitle");if(bt)bt.textContent=BOOK.title;
 }
 
 function vSignin(){return `<div class="card center">
-  <h1>Chapter Quest</h1>
+  <h1>Read &amp; Unlock</h1>
   <p class="lead">Read a chapter of <em>${esc(BOOK.title)}</em>${BOOK.author?" by "+esc(BOOK.author):""}, then show what you know.</p>
   <form data-form="signin"><label for="nm">Type your first name</label>
   <input type="text" id="nm" maxlength="20" autocomplete="off" autocapitalize="words" placeholder="First name">
