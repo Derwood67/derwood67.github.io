@@ -1,0 +1,122 @@
+/* Darren Echols · Classroom Apps — shared look for every app on this site.
+   Load it after the app's own <style> so the shared reading font and frame win.
+   Each app keeps its own title font and accent colors; this file only sets what must match. */
+@import url("https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=JetBrains+Mono:wght@500;700&display=swap");
+
+:root{
+  --ec-ink:#14213a; --ec-ink-2:#1c2c4c; --ec-muted:#55627a; --ec-line:#dde3ea; --ec-paper:#ffffff; --ec-bg:#f4f6f8;
+  --ec-pencil:#f2b705; --ec-blue:#1f5fbf;
+  /* subject colors — the same ones the portfolio filter chips use */
+  --ec-ela:#7a3fb0; --ec-flu:#c2410c; --ec-math:#1f5fbf; --ec-sci:#0f8a5f; --ec-rev:#b4235a; --ec-tool:#475569;
+  --ec-body:"Atkinson Hyperlegible","Segoe UI",Verdana,sans-serif;
+  --ec-display:"Bricolage Grotesque","Segoe UI",Arial,sans-serif;
+  --ec-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  --ec-radius:14px; --ec-shadow:0 10px 30px rgba(20,33,58,.18);
+  --ec-subject:var(--ec-tool);
+}
+html[data-ec-subject="ela"]{--ec-subject:var(--ec-ela)}
+html[data-ec-subject="flu"]{--ec-subject:var(--ec-flu)}
+html[data-ec-subject="math"]{--ec-subject:var(--ec-math)}
+html[data-ec-subject="sci"]{--ec-subject:var(--ec-sci)}
+html[data-ec-subject="rev"]{--ec-subject:var(--ec-rev)}
+
+/* one reading font everywhere; apps keep their own heading font */
+body{font-family:var(--ec-body);margin:0}
+
+/* ---------- top bar, the same in every app ---------- */
+.ec-bar{position:relative;z-index:2147483001;background:var(--ec-ink);color:#fff;font:600 14px/1.2 var(--ec-body);
+  border-bottom:3px solid var(--ec-subject)}
+.ec-bar *{box-sizing:border-box}
+.ec-bar-in{max-width:1180px;margin:0 auto;height:46px;padding:0 max(16px,env(safe-area-inset-left,0px));display:flex;align-items:center;gap:14px}
+.ec-bar a{color:inherit;text-decoration:none}
+.ec-me{display:flex;align-items:center;gap:9px;white-space:nowrap}
+.ec-mono{width:26px;height:26px;border-radius:7px;display:block}
+.ec-name{font:800 15px/1 var(--ec-display);letter-spacing:-.01em}
+.ec-sub{color:#9fb0c9;font-weight:400}
+.ec-app{display:flex;align-items:center;gap:10px;min-width:0;margin-left:6px;padding-left:16px;border-left:1px solid #2c3d60}
+.ec-dot{width:9px;height:9px;border-radius:50%;background:var(--ec-subject);box-shadow:0 0 0 3px rgba(255,255,255,.12);flex:none}
+.ec-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ec-tag{font:600 11.5px/1 var(--ec-mono);letter-spacing:.04em;padding:5px 8px;border-radius:999px;background:#22345a;color:#cfe0ff;white-space:nowrap}
+.ec-back{margin-left:auto;display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;border:1px solid #3a4c72;white-space:nowrap}
+.ec-back:hover{background:#22345a}
+.ec-back:focus-visible{outline:3px solid var(--ec-pencil);outline-offset:2px}
+@media (max-width:820px){.ec-tag,.ec-sub{display:none}}
+@media (max-width:560px){.ec-app{display:none}}
+
+/* ---------- class sign-in gate, restyled to match (overrides the gate's built-in look) ---------- */
+html #cg-ov{top:49px;background:var(--ec-ink);background-image:radial-gradient(#22345a 1px,transparent 1.4px);background-size:22px 22px;font-family:var(--ec-body)}
+html #cg-ov .cg-card{border-radius:18px;padding:0;gap:0;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.45);color:var(--ec-ink);max-width:440px}
+html #cg-ov .ec-gate-head{padding:22px 26px 18px;border-top:6px solid var(--ec-subject);background:linear-gradient(180deg,#f7f8fb,#fff)}
+html #cg-ov .ec-eyebrow{font:700 12px/1 var(--ec-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ec-subject)}
+html #cg-ov .ec-gate-title{font:800 28px/1.1 var(--ec-display);letter-spacing:-.015em;margin:8px 0 4px;color:var(--ec-ink)}
+html #cg-ov .cg-card > h2,html #cg-ov .cg-card > p.cg-small{display:none}
+html #cg-ov .cg-card > form,html #cg-ov .cg-card > details,html #cg-ov .cg-card > h2:not(:first-child)+p{margin:0 26px}
+html #cg-ov .cg-card > form{padding:6px 0 4px}
+html #cg-ov label{font-weight:700;color:var(--ec-ink)}
+html #cg-ov input{border:2px solid var(--ec-line);border-radius:10px;background:#fff}
+html #cg-ov input:focus{outline:3px solid var(--ec-pencil);outline-offset:1px;border-color:var(--ec-ink)}
+html #cg-ov button{background:var(--ec-ink);border-radius:10px;padding:13px 16px}
+html #cg-ov button:hover{background:var(--ec-ink-2)}
+.ec-guest{margin:4px 26px 24px;padding:14px 16px;border-radius:12px;background:#fff8e1;border:1px solid #f3dc8f;display:flex;flex-direction:column;gap:10px;font-size:15px;line-height:1.4;color:#4a3f1a}
+html #cg-ov .ec-guest button,.ec-guest button{background:#fff;color:var(--ec-ink);border:2px solid var(--ec-ink);padding:10px 14px;font-weight:700;border-radius:10px;cursor:pointer}
+html #cg-ov .ec-guest button:hover,.ec-guest button:hover{background:var(--ec-ink);color:#fff}
+.ec-guest.ec-inline{margin:16px 0 0}
+
+/* signed-in badge */
+html #cg-badge{background:var(--ec-ink);font-family:var(--ec-body);border:2px solid var(--ec-subject)}
+html #cg-badge button{background:var(--ec-pencil);color:var(--ec-ink)}
+
+/* guest ribbon */
+.ec-guest-note{background:#fff8e1;color:#4a3f1a;border-bottom:1px solid #f3dc8f;font:600 14px/1.3 var(--ec-body);text-align:center;padding:7px 12px}
+
+/* ---------- phones and small tablets ---------- */
+/* the student's name + Sign out lives in the top bar instead of floating over the app */
+.ec-bar #cg-badge{position:static;box-shadow:none;border:0;background:#22345a;padding:4px 4px 4px 12px;font-size:13px;flex:none}
+.ec-bar #cg-badge button{padding:6px 10px}
+@media (max-width:640px){
+  .ec-bar-in{height:52px;gap:8px}
+  .ec-name{font-size:14px}
+  .ec-back{padding:9px 11px;font-size:13px}
+  .ec-back .ec-long{display:none}
+  .ec-guest-note{font-size:13px}
+  /* wide score tables scroll sideways instead of running off the screen */
+  table{display:block;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  /* the sign-in card fills the phone */
+  html #cg-ov{top:55px;align-items:flex-start;padding:18px 12px}
+  html #cg-ov .ec-gate-title{font-size:24px}
+  html #cg-ov input,html #cg-ov button{min-height:48px;font-size:17px}
+}
+.ec-bar #cg-badge{margin-left:auto}
+.ec-bar #cg-badge + .ec-back{margin-left:0}
+@media (max-width:430px){.ec-bar #cg-badge ~ .ec-back .ec-long{display:none}.ec-bar:has(#cg-badge) .ec-name{display:none}}
+
+/* ---------- standards switch ---------- */
+.ec-pick{display:flex;align-items:center;gap:7px;margin-left:auto;font-size:12.5px;color:#9fb0c9;white-space:nowrap}
+.ec-pick + .ec-back,.ec-bar .ec-pick ~ .ec-back{margin-left:0}
+.ec-bar #cg-badge + .ec-pick{margin-left:0}
+.ec-pick select{font:600 13px/1.2 var(--ec-body);color:#fff;background:#22345a;border:1px solid #3a4c72;border-radius:999px;padding:7px 28px 7px 12px;max-width:230px;
+  appearance:none;-webkit-appearance:none;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23cfe0ff' stroke-width='1.6' fill='none'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 11px center}
+.ec-pick select:focus-visible{outline:3px solid var(--ec-pencil);outline-offset:2px}
+.ec-pick option{color:#14213a;background:#fff}
+.ec-std{font-variant-numeric:tabular-nums;text-decoration:underline dotted 1px;text-underline-offset:3px;cursor:help}
+.ec-std-note{background:#eaf1ff;color:#14213a;border-bottom:1px solid #c9d8f5;font:14px/1.45 var(--ec-body);padding:9px max(16px,env(safe-area-inset-left,0px))}
+.ec-std-note a{color:var(--ec-blue);font-weight:700;white-space:nowrap}
+.ec-std-note .ec-tests{color:var(--ec-muted)}
+@media (max-width:1320px){.ec-tag{display:none}}
+.ec-app{min-width:120px}
+@media (max-width:640px){
+  .ec-pick-l{display:none}
+  .ec-pick select{max-width:118px;padding:8px 24px 8px 10px;font-size:12.5px}
+  .ec-std-note{font-size:13px}
+  .ec-std-note .ec-tests{display:none}
+  .ec-bar:has(#cg-badge) .ec-name,.ec-bar:has(.ec-pick) .ec-sub{display:none}
+}
+@media (max-width:640px){
+  .ec-std-note .ec-more{display:none}
+  .ec-bar #cg-badge > span{display:none}
+  .ec-bar #cg-badge{padding:4px}
+  .ec-bar .ec-pick ~ .ec-back .ec-word,.ec-bar .ec-pick ~ .ec-back .ec-long{display:none}
+  .ec-bar .ec-pick ~ .ec-back{padding:9px 12px}
+}

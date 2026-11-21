@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Novel Study: Chapter Quest</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--sand:#f5ecd6;--paper:#fffaf0;--ink:#2a2018;--soft:#6b5a48;--lapis:#1d4e7c;--lapis2:#163b5e;--gold:#c8962e;--gold2:#f0d28a;--teal:#1f857b;--clay:#b4502c;--line:#dccba3;--ok:#1e7a4a;--okbg:#e2f3e8;--bad:#a8401f;--badbg:#f9e3da}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;font-family:Nunito,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:18px;line-height:1.5;color:var(--ink);background:var(--sand);background-image:radial-gradient(circle at 20% 0,#fbf4e2 0,transparent 55%),repeating-linear-gradient(0deg,rgba(160,120,50,.045) 0 2px,transparent 2px 7px)}
+h1,h2,h3{font-family:Cinzel,Georgia,serif;margin:0;line-height:1.2;text-wrap:balance}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.top{background:var(--lapis2);color:#fff;border-bottom:5px solid var(--gold)}
+.top-in{max-width:1000px;margin:0 auto;padding:12px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.brand{font-family:Cinzel,Georgia,serif;font-weight:800;font-size:1.2rem;letter-spacing:.04em;display:flex;align-items:center;gap:10px;margin-right:auto}
+.brand svg{flex:none}
+.who{font-weight:600;opacity:.95}
+.link{background:none;border:1px solid rgba(255,255,255,.45);color:#fff;border-radius:999px;padding:6px 14px;font-weight:600;font-size:.9rem}
+.link:hover{background:rgba(255,255,255,.14)}
+main{max-width:1000px;margin:0 auto;padding:24px 18px 70px}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:22px;box-shadow:0 2px 0 rgba(120,90,30,.12)}
+.center{max-width:480px;margin:30px auto}
+.lead{color:var(--soft);margin:.4em 0 1em}
+label{font-weight:800;display:block;margin-bottom:6px}
+input[type=text],input[type=password],textarea{width:100%;border:2px solid var(--line);border-radius:12px;padding:12px 14px;background:#fff;font-size:1.05rem}
+input:focus,textarea:focus{border-color:var(--lapis);outline:none}
+textarea{min-height:210px;resize:vertical;line-height:1.55}
+.btn{background:var(--lapis);color:#fff;border:0;border-radius:12px;padding:12px 22px;font-weight:800;font-size:1.05rem;box-shadow:0 3px 0 var(--lapis2)}
+.btn:hover{background:#235d93}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--lapis2)}
+.btn[disabled]{background:#b9b0a0;box-shadow:none;cursor:not-allowed}
+.btn.gold{background:var(--gold);color:#2a2018;box-shadow:0 3px 0 #9a7220}
+.btn.ghost{background:transparent;color:var(--lapis);box-shadow:none;border:2px solid var(--lapis)}
+.btn.small{padding:7px 14px;font-size:.92rem;border-radius:10px}
+.btn.danger{background:var(--clay);box-shadow:0 3px 0 #7d3519}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.msg{margin-top:10px;font-weight:700;color:var(--bad);min-height:1.4em}
+.hero{display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-bottom:20px}
+.hero h1{font-size:1.8rem}
+.meter{height:14px;background:#eadfc2;border-radius:99px;overflow:hidden;min-width:180px;flex:1}
+.meter i{display:block;height:100%;background:linear-gradient(90deg,var(--teal),var(--gold))}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(225px,1fr));gap:14px}
+.chap{text-align:left;background:var(--paper);border:2px solid var(--line);border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;min-height:138px;box-shadow:0 3px 0 rgba(120,90,30,.15)}
+.chap:hover:not([disabled]){border-color:var(--gold);transform:translateY(-2px)}
+.chap.locked{opacity:.55;cursor:not-allowed;box-shadow:none;background:#efe6cc}
+.chap.done{border-color:var(--teal);background:#f3fbf6}
+.num{font-family:Cinzel,Georgia,serif;font-weight:800;color:var(--gold);font-size:.85rem;letter-spacing:.12em}
+.chap b{font-size:1.06rem;line-height:1.25}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto}
+.chip{font-size:.78rem;font-weight:800;border-radius:99px;padding:3px 10px;background:#efe5c9;color:var(--soft);white-space:nowrap}
+.chip.on{background:var(--okbg);color:var(--ok)}
+.chip.part{background:#fdf0cf;color:#8a6412}
+.back{background:none;border:0;color:var(--lapis);font-weight:800;padding:4px 0;margin-bottom:10px}
+.tabs{display:flex;gap:8px;margin:16px 0;flex-wrap:wrap}
+.tab{flex:1;min-width:150px;background:#efe5c9;border:2px solid transparent;border-radius:12px;padding:10px 12px;font-weight:800;text-align:left;color:var(--soft)}
+.tab small{display:block;font-weight:600;font-size:.8rem}
+.tab.cur{background:var(--paper);border-color:var(--lapis);color:var(--ink)}
+.tab.ok small{color:var(--ok)}
+.q{margin-bottom:16px}
+.tag{display:inline-block;font-family:Cinzel,Georgia,serif;font-weight:800;font-size:.8rem;letter-spacing:.1em;color:#fff;background:var(--teal);border-radius:8px;padding:3px 10px;margin-bottom:8px}
+.q p.stem{font-weight:800;font-size:1.1rem;margin:.2em 0 .7em}
+.opts{display:grid;gap:8px}
+.opt{text-align:left;background:#fff;border:2px solid var(--line);border-radius:12px;padding:11px 14px;display:flex;gap:10px;align-items:flex-start}
+.opt:hover:not([disabled]){border-color:var(--lapis)}
+.opt .dot{flex:none;width:26px;height:26px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-weight:800;font-size:.85rem;color:var(--soft);margin-top:1px}
+.opt.sel{border-color:var(--lapis);background:#eaf2fa}
+.opt.sel .dot{background:var(--lapis);border-color:var(--lapis);color:#fff}
+.opt.right{border-color:var(--ok);background:var(--okbg)}
+.opt.right .dot{background:var(--ok);border-color:var(--ok);color:#fff}
+.opt.wrong{border-color:var(--bad);background:var(--badbg)}
+.opt.wrong .dot{background:var(--bad);border-color:var(--bad);color:#fff}
+.opt[disabled]{cursor:default;color:var(--ink)}
+.fb{margin-top:10px;border-radius:12px;padding:10px 14px;font-weight:600}
+.fb.ok{background:var(--okbg);color:#14532f}
+.fb.no{background:var(--badbg);color:#6e2a12}
+.hint{background:#fdf5dc;border:1px dashed var(--gold);border-radius:12px;padding:12px 16px;margin:10px 0 14px}
+.hint ul{margin:.3em 0 0;padding-left:1.2em}
+.count{font-weight:800;color:var(--soft)}
+.count.good{color:var(--ok)}
+.big{font-family:Cinzel,Georgia,serif;font-size:3rem;font-weight:800;color:var(--lapis)}
+.lock{text-align:center;padding:30px 10px;color:var(--soft)}
+.prog{display:flex;gap:4px;margin-bottom:14px}
+.prog i{flex:1;height:8px;border-radius:4px;background:#eadfc2}
+.prog i.y{background:var(--ok)}.prog i.n{background:var(--bad)}.prog i.c{background:var(--gold)}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:#fff}
+th,td{padding:7px 8px;border-bottom:1px solid #eee3c6;text-align:center;white-space:nowrap}
+th{background:#f3e9cc;font-size:.78rem;position:sticky;top:0}
+td.name,th.name{text-align:left;position:sticky;left:0;background:#fffaf0;font-weight:800;z-index:1}
+th.name{background:#f3e9cc}
+td .cell{display:inline-block;min-width:34px;border-radius:7px;padding:2px 5px;font-weight:800}
+.s4{background:#d5efdf;color:#14532f}.s3{background:#e8f3cf;color:#44591a}.s2{background:#fdeec4;color:#7a5a10}.s1{background:#f9dccf;color:#7a2c12}.s0{color:#b9ad92}
+.pill{border:0;background:none;color:var(--lapis);font-weight:800;text-decoration:underline;padding:0}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:14px 0}
+.stat{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.stat b{display:block;font-size:1.5rem;font-family:Cinzel,Georgia,serif;color:var(--lapis)}
+.stat span{font-size:.85rem;color:var(--soft);font-weight:700}
+.bar{display:grid;grid-template-columns:130px 1fr 48px;gap:10px;align-items:center;margin:6px 0;font-weight:700;font-size:.92rem}
+.bar .meter{min-width:0}
+.detail{border-top:2px solid var(--line);padding:16px 0}
+.detail h3{font-size:1.02rem;margin-bottom:8px}
+.sumtext{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 14px;white-space:pre-wrap;margin:8px 0}
+.marks{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+.mark{font-size:.8rem;font-weight:800;border-radius:8px;padding:3px 8px}
+.mark.y{background:var(--okbg);color:var(--ok)}.mark.n{background:var(--badbg);color:var(--bad)}.mark.e{background:#efe5c9;color:var(--soft)}
+.scorebtn{width:38px;height:38px;border-radius:10px;border:2px solid var(--line);background:#fff;font-weight:800}
+.scorebtn.on{background:var(--lapis);border-color:var(--lapis);color:#fff}
+.note{font-size:.88rem;color:var(--soft)}
+.sec{margin-top:26px}
+.sec>h2{font-size:1.15rem;margin-bottom:10px}
+@media (max-width:560px){body{font-size:17px}.hero h1{font-size:1.4rem}.bar{grid-template-columns:105px 1fr 44px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<link rel="stylesheet" href="/shared/brand.css">
+<script src="/shared/standards.js"></script>
+<script>
+/* Which book? ?book=<id> in the link (what students get), else the last book picked on this device. */
+(function(){var id=new URLSearchParams(location.search).get("book");
+  try{id=id||localStorage.getItem("novel-study-book")}catch(e){}
+  id=String(id||"egypt-game").replace(/[^a-z0-9-]/gi,"").toLowerCase()||"egypt-game";
+  try{if(new URLSearchParams(location.search).get("book"))localStorage.setItem("novel-study-book",id)}catch(e){}
+  window.NOVEL_ID=id;
+  if(/^custom-/.test(id)){try{window.NOVEL_BOOK=JSON.parse(localStorage.getItem("novel-study-custom:"+id))}catch(e){}}
+  else document.write('<script src="books/'+id+'.js"><\/script>');
+})();
+</script>
+<script src="books/index.js"></script>
+<script>
+if(!window.NOVEL_BOOK||!window.NOVEL_BOOK.chapters){window.NOVEL_MISSING=window.NOVEL_ID;window.NOVEL_ID="egypt-game";document.write('<script src="books/egypt-game.js"><\/script>')}
+</script>
+<script>window.EC_APP_NAME=window.NOVEL_BOOK.title+": Chapter Quest";document.title=window.EC_APP_NAME;</script>
+<script src="/shared/frame.js" data-app="Novel Study" data-subject="ela" data-tags="Grades 4–5|Novel study" data-guest="#nm" data-standards="off"></script>
+</head>
+<body>
+<!-- Class sign-in gate: first-name sign-in, blocked names, teacher unlock. The live blocked list is /classgate.json -->
+<style>
+#cg-ov{position:fixed;inset:0;z-index:2147483000;background:#141c24;display:flex;align-items:center;justify-content:center;padding:16px;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+#cg-ov *{box-sizing:border-box}
+#cg-ov .cg-card{background:#fff;color:#1b2420;border-radius:14px;max-width:420px;width:100%;padding:24px;display:flex;flex-direction:column;gap:12px;box-shadow:0 12px 32px rgba(0,0,0,.35);font-size:18px;line-height:1.45}
+#cg-ov h2{margin:0;font-size:1.45rem;line-height:1.2}
+#cg-ov p{margin:0}
+#cg-ov label{font-weight:700}
+#cg-ov input{font:inherit;width:100%;padding:12px;border:2px solid #c9d1cc;border-radius:8px;background:#f6f8f6;color:#1b2420}
+#cg-ov input:focus{outline:3px solid #f2c230;outline-offset:1px}
+#cg-ov button{font:inherit;font-weight:700;border:0;border-radius:8px;padding:12px 16px;background:#0b6b4a;color:#fff;cursor:pointer}
+#cg-ov .cg-msg{min-height:1.4em;color:#a83226;font-size:.95rem}
+#cg-ov .cg-small{font-size:.9rem;color:#55625b}
+#cg-ov details{border-top:1px solid #e1e6e2;padding-top:10px}
+#cg-ov summary{cursor:pointer;font-size:.9rem;color:#55625b}
+#cg-ov form{display:flex;flex-direction:column;gap:10px;margin:0}
+#cg-badge{position:fixed;right:10px;bottom:10px;z-index:2147482000;background:#1b2430;color:#fff;font:600 14px/1.2 system-ui,-apple-system,"Segoe UI",Arial,sans-serif;border-radius:999px;padding:7px 8px 7px 14px;display:flex;gap:10px;align-items:center;box-shadow:0 3px 10px rgba(0,0,0,.25)}
+#cg-badge button{font:inherit;background:#f2c230;color:#1b1b1b;border:0;border-radius:999px;padding:4px 10px;cursor:pointer}
+</style>
+<script src="realwords.js"></script>
+<script>
+(function(){
+  var BLOCKED=["james"];          /* fallback list; /classgate.json on the site replaces it when it loads */
+  var CODE_HASH="cf2d0fe7ea0a7780592080ef0bf415a6043a3d59aa5d72ace64d39c6e0837285";  /* scrambled teacher code; the code itself is not stored in this page */
+  var TRY_KEY="echols-classgate-tries";
+  function sha(t){return crypto.subtle.digest("SHA-256",new TextEncoder().encode(t)).then(function(b){return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0")}).join("")})}
+  /* Checks a teacher code. Three wrong tries locks code entry on this device for 10 minutes. Resolves "ok", "wrong" or "wait". */
+  function checkCode(code){var t={};try{t=JSON.parse(lsGet(TRY_KEY))||{}}catch(x){}
+    if(t.until&&Date.now()<t.until)return Promise.resolve("wait");
+    return sha("echols-room2:"+String(code||"").trim()).then(function(h){
+      if(h===CODE_HASH){lsSet(TRY_KEY,null);return "ok"}
+      t.n=(t.n||0)+1;if(t.n>=3){t={n:0,until:Date.now()+600000};lsSet(TRY_KEY,JSON.stringify(t));return "wait"}
+      lsSet(TRY_KEY,JSON.stringify(t));return "wrong"},function(){return "wrong"})}
+  var CODE_MSG={wrong:"That code is not right.",wait:"Too many tries. Wait 10 minutes and try again."};
+  var LOCK_KEY="echols-classgate-lock", NAME_KEY="echols-classgate-name";
+  var me=document.currentScript, needLogin=!!(me&&me.getAttribute("data-login")!==null);
+      function attr(a){return (me&&me.getAttribute(a))||""}
+      /* data-watch: name inputs of an app's own sign-in. data-pick: buttons whose text is a name. data-session: saved sign-ins (s:key or l:key:prop). */
+      var WATCH=attr("data-watch"), PICK=attr("data-pick"), SESS=attr("data-session").split(",").filter(Boolean);
+      var current="", locked=false;
+  function first(n){return String(n||"").trim().split(/[\s\-_]+/)[0].toLowerCase().replace(/[^a-z]/g,"")}
+  function isBlocked(n){return BLOCKED.indexOf(first(n))>-1}
+  function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
+  function lsSet(k,v){try{v===null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}}
+  function ssGet(k){try{return sessionStorage.getItem(k)}catch(e){return null}}
+  function ssSet(k,v){try{v===null?sessionStorage.removeItem(k):sessionStorage.setItem(k,v)}catch(e){}}
+  function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+  function tidy(n){return String(n).replace(/\s+/g," ").trim().split(" ").map(function(w){return w.charAt(0).toUpperCase()+w.slice(1)}).join(" ")}
+  function overlay(html){var o=document.getElementById("cg-ov");if(!o){o=document.createElement("div");o.id="cg-ov";o.setAttribute("role","dialog");o.setAttribute("aria-modal","true");document.body.appendChild(o)}o.innerHTML='<div class="cg-card">'+html+'</div>';var i=o.querySelector("input");if(i)setTimeout(function(){i.focus()},30);return o}
+  function close(){var o=document.getElementById("cg-ov");if(o)o.remove()}
+  function badge(){var b=document.getElementById("cg-badge");if(b)b.remove();var n=ssGet(NAME_KEY);if(!needLogin||!n)return;b=document.createElement("div");b.id="cg-badge";b.innerHTML='<span>'+esc(n)+'</span><button type="button">Sign out</button>';b.querySelector("button").onclick=function(){ssSet(NAME_KEY,null);location.reload()};document.body.appendChild(b)}
+  function showBlocked(){
+    var o=overlay('<h2>This activity is not available</h2><p>This app is not open to you right now. Please check with Mr. Echols.</p>'+
+      '<details><summary>Teacher unlock</summary><form id="cg-unlock" style="margin-top:10px"><label for="cg-code">Teacher code</label><input id="cg-code" type="password" inputmode="numeric" autocomplete="off"><button type="submit">Unlock this device</button><p class="cg-msg" id="cg-umsg"></p></form></details>');
+    o.querySelector("#cg-unlock").onsubmit=function(e){e.preventDefault();var c=o.querySelector("#cg-code");
+      checkCode(c.value).then(function(r){if(r==="ok"){lsSet(LOCK_KEY,null);ssSet(NAME_KEY,null);location.reload();return}
+        c.value="";o.querySelector("#cg-umsg").textContent=CODE_MSG[r]})};
+  }
+  function lock(){if(locked)return;locked=true;lsSet(LOCK_KEY,"1");ssSet(NAME_KEY,null);var b=document.getElementById("cg-badge");if(b)b.remove();showBlocked()}
+  function showLogin(){
+    var o=overlay('<h2>Sign in</h2><p class="cg-small">Mr. Echols’ Room 2</p><form id="cg-form"><label for="cg-name">Type your first name</label><input id="cg-name" type="text" maxlength="30" autocomplete="off" autocapitalize="words" placeholder="First name"><button type="submit">Start</button><p class="cg-msg" id="cg-msg"></p></form>');
+    o.querySelector("#cg-form").onsubmit=function(e){e.preventDefault();
+      var raw=o.querySelector("#cg-name").value.replace(/\s+/g," ").trim();
+      if(!/^[A-Za-zÀ-ɏ][A-Za-zÀ-ɏ .'\-]{0,29}$/.test(raw)){o.querySelector("#cg-msg").textContent="Please type your first name using letters.";return}
+      if(isBlocked(raw)){lock();return}
+      var n=tidy(raw);current=n;ssSet(NAME_KEY,n);close();badge();
+      try{document.dispatchEvent(new CustomEvent("classgate:signin",{detail:{name:n}}))}catch(err){}
+    };
+  }
+  window.ClassGate={
+    /* Apps with their own sign-in call this; returns false (and locks the device) for a blocked name. */
+    check:function(n){if(lsGet(LOCK_KEY)&&BLOCKED.length){showBlocked();return false}if(isBlocked(n)){lock();return false}current=String(n||"");return true},
+    name:function(){return ssGet(NAME_KEY)||""},
+    /* Teacher code check for in-app teacher tools: resolves "ok", "wrong" or "wait". */
+    checkCode:checkCode, codeMsg:function(r){return CODE_MSG[r]||""}
+  };
+  function saved(){var out=[];SESS.forEach(function(s){var p=s.split(":"),v=null;try{v=(p[0]==="l"?localStorage:sessionStorage).getItem(p[1])}catch(e){}
+          if(v&&p[2]){try{v=(JSON.parse(v)||{})[p[2]]}catch(e){v=null}}if(v)out.push(String(v))});return out}
+      function watched(){var out=[];if(!WATCH)return out;try{Array.prototype.forEach.call(document.querySelectorAll(WATCH),function(i){if(i!==document.activeElement&&i.value)out.push(i.value)})}catch(e){}return out}
+      /* Signs a blocked student out of anything already open. */
+      function sweep(){if(locked||!BLOCKED.length)return;
+        if(lsGet(LOCK_KEY)){locked=true;showBlocked();return}
+        var all=[ssGet(NAME_KEY),current].concat(saved(),watched());
+        for(var i=0;i<all.length;i++)if(all[i]&&isBlocked(all[i])){lock();return}}
+      function refresh(){if(!window.fetch)return;
+        fetch("/classgate.json",{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(j){
+          if(j&&Array.isArray(j.blocked)){BLOCKED=j.blocked.map(first).filter(Boolean);sweep()}}).catch(function(){})}
+      function guard(e){if(locked)return;var bad=false;
+        if(WATCH){try{Array.prototype.forEach.call(document.querySelectorAll(WATCH),function(i){if(i.value&&isBlocked(i.value))bad=true;else if(i.value)current=i.value})}catch(x){}}
+        if(!bad&&PICK&&e.type==="click"&&e.target.closest){var b=e.target.closest(PICK);if(b&&isBlocked(b.getAttribute("data-n")||b.textContent))bad=true}
+        if(bad){e.preventDefault();e.stopImmediatePropagation();lock()}}
+      function start(){
+        if(lsGet(LOCK_KEY)&&BLOCKED.length){locked=true;showBlocked();return}
+        var n=ssGet(NAME_KEY);
+        if(n&&isBlocked(n)){lock();return}
+        if(needLogin&&!n)showLogin();else badge();
+        if(WATCH||PICK){["submit","click","change"].forEach(function(t){document.addEventListener(t,guard,true)});
+          document.addEventListener("keydown",function(e){if(e.key==="Enter")guard(e)},true)}
+        sweep();refresh();setInterval(sweep,2000);setInterval(refresh,30000);
+        document.addEventListener("visibilitychange",function(){if(!document.hidden)refresh()});
+      }
+      if(document.body)start();else document.addEventListener("DOMContentLoaded",start);
+})();
+</script>
+<!-- /Class sign-in gate -->
+
+<header class="top"><div class="top-in">
+  <div class="brand"><svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><path d="M4 7c4-2 8-2 12 1v19c-4-3-8-3-12-1Z" fill="#f0d28a"/><path d="M28 7c-4-2-8-2-12 1v19c4-3 8-3 12-1Z" fill="#c8962e"/></svg><span id="booktitle"></span></div>
+  <span class="who" id="who"></span>
+  <button class="link" id="out" hidden data-act="signout">Sign out</button>
+</div></header>
+<main id="app"></main>
+<script>
+const C=[];
+const BOOK=window.NOVEL_BOOK;C.push(...BOOK.chapters);
+const SK=BOOK.skills||["Text Structure","Point of View","Main Idea","Voice","Setting","Characters"],NS=SK.length;
+const KEY=BOOK.storageKey||("novel-study-"+window.NOVEL_ID),MINW=BOOK.minWords||40,NQ=BOOK.quizSize||15;
+let db={students:{}},me=null,teacher=false,view={name:"signin"},ord={};
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function load(){try{const d=JSON.parse(localStorage.getItem(KEY));if(d&&d.students)db=d}catch(e){}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){}}
+function shuf(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function order(k,opts){return ord[k]||(ord[k]=shuf(opts))}
+const words=t=>window.RealWords?RealWords.countReal(t):(String(t||"").trim().match(/\S+/g)||[]).length; /* only real words count */
+const fakes=t=>window.RealWords?RealWords.problems(t):[];
+const fakeList=t=>fakes(t).map(x=>"<li>"+esc(x)+"</li>").join("");
+const stu=()=>db.students[me];
+function rec(s,n){s.ch=s.ch||{};return s.ch[n]||(s.ch[n]={sk:SK.map(()=>null),sum:{},qz:{}})}
+function status(s,n){const r=(s.ch||{})[n];if(!r)return{sk:0,skOk:0,sum:false,qz:null,done:false};
+  const a=r.sk.filter(Boolean);return{sk:a.length,skOk:a.filter(x=>x.ok).length,sum:!!(r.sum&&r.sum.at),qz:r.qz&&r.qz.tries?r.qz.best:null,done:a.length===NS&&!!(r.sum&&r.sum.at)&&!!(r.qz&&r.qz.tries)}}
+function go(v){view=v;render();window.scrollTo(0,0)}
+
+function render(){const bt=$("#booktitle");if(bt)bt.textContent=BOOK.title;
+  $("#who").textContent=teacher?"Teacher":me?stu().name:"";
+  $("#out").hidden=!(me||teacher);
+  const f={signin:vSignin,gate:vGate,home:vHome,chapter:vChapter,dash:vDash,student:vStudent,builder:()=>teacher?vBuilder():vSignin()}[view.name];
+  $("#app").innerHTML=f();
+}
+
+function vSignin(){return `<div class="card center">
+  <h1>Chapter Quest</h1>
+  <p class="lead">Read a chapter of <em>${esc(BOOK.title)}</em>${BOOK.author?" by "+esc(BOOK.author):""}, then show what you know.</p>
+  <form data-form="signin"><label for="nm">Type your first name</label>
+  <input type="text" id="nm" maxlength="20" autocomplete="off" autocapitalize="words" placeholder="First name">
+  <p class="note">Does someone in class have the same first name? Add your last initial, like Sam T.</p>
+  <div class="row" style="margin-top:14px"><button class="btn" type="submit">Start</button></div>
+  <div class="msg" id="msg" role="alert"></div></form></div>
+  <p style="text-align:center"><button class="pill" data-act="gate">Teacher dashboard</button></p>`}
+
+function vGate(){return `<div class="card center"><h1>Teacher Dashboard</h1>
+  <form data-form="gate" style="margin-top:14px"><label for="code">Entry code</label>
+  <input type="password" id="code" inputmode="numeric" autocomplete="off">
+  <div class="row" style="margin-top:14px"><button class="btn" type="submit">Open</button><button class="btn ghost" type="button" data-act="signout">Back</button></div>
+  <div class="msg" id="msg" role="alert"></div></form></div>`}
+
+function vHome(){const s=stu();let done=0;
+  const cards=C.map((c,i)=>{const n=i+1,st=status(s,n);if(st.done)done++;
+    if(n>1&&!status(s,n-1).done)return `<button class="chap locked" disabled aria-label="Chapter ${n}, locked. Finish Chapter ${n-1} first."><span class="num">CHAPTER ${n}</span><b>${esc(c.t)}</b><span class="chips"><span class="chip">Locked: finish Chapter ${n-1} first</span></span></button>`;
+    return `<button class="chap${st.done?" done":""}" data-act="open" data-n="${n}"><span class="num">CHAPTER ${n}</span><b>${esc(c.t)}</b>
+    <span class="chips"><span class="chip ${st.sk===NS?"on":st.sk?"part":""}">Skills ${st.sk}/${NS}</span><span class="chip ${st.sum?"on":""}">Summary${st.sum?" ✓":""}</span><span class="chip ${st.qz!=null?"on":""}">Quiz ${st.qz!=null?st.qz+"/"+NQ:"–"}</span></span></button>`}).join("");
+  return `<div class="hero"><div><h1>Welcome, ${esc(s.name)}!</h1><div class="note">Finish all three steps of a chapter to unlock the next one.</div></div>
+  <div class="meter" role="img" aria-label="${done} of ${C.length} chapters finished"><i style="width:${done/C.length*100}%"></i></div><b>${done}/${C.length} chapters</b></div>
+  <div class="grid">${cards}</div>`}
+
+function optHtml(list,sel,ans,correct,act,extra){return `<div class="opts">${list.map((o,j)=>{let c="";
+  if(ans!=null){if(o===correct)c=" right";else if(o===ans)c=" wrong"}else if(o===sel)c=" sel";
+  return `<button class="opt${c}" ${ans!=null?"disabled":""} data-act="${act}" ${extra} data-j="${j}"><span class="dot">${"ABCD"[j]}</span><span>${esc(o)}</span></button>`}).join("")}</div>`}
+
+function vChapter(){const n=view.n,c=C[n-1],s=stu(),r=rec(s,n),st=status(s,n);
+  const unlocked=st.sk===NS&&st.sum;
+  const tabs=[["skills","1. Story Skills",st.sk===NS?"Done ✓":st.sk+" of "+NS+" answered"],["summary","2. Summary",st.sum?"Turned in ✓":"Not turned in yet"],["quiz","3. Quiz",st.qz!=null?"Best: "+st.qz+"/"+NQ:unlocked?"Ready":"Locked"]]
+    .map(t=>`<button class="tab${view.tab===t[0]?" cur":""}${/✓|Best/.test(t[2])?" ok":""}" data-act="tab" data-t="${t[0]}">${t[1]}<small>${t[2]}</small></button>`).join("");
+  let body="";
+  if(view.tab==="skills"){
+    body=c.sk.map((q,i)=>{const a=r.sk[i],list=order(n+"s"+i,q.slice(1,5)),sel=(view.sel||{})[i];
+      return `<div class="card q"><span class="tag">${SK[i].toUpperCase()}</span><p class="stem">${esc(q[0])}</p>
+      ${optHtml(list,sel,a?a.p:null,q[1],"skpick",`data-i="${i}"`)}
+      ${a?`<div class="fb ${a.ok?"ok":"no"}">${a.ok?"Correct! ":"Not quite. "}${esc(q[5])}</div>`:`<div class="row" style="margin-top:10px"><button class="btn small" data-act="skcheck" data-i="${i}" ${sel==null?"disabled":""}>Check my answer</button></div>`}</div>`}).join("")
+      +(st.sk===NS?`<div class="row"><button class="btn gold" data-act="tab" data-t="summary">Next: write your summary</button></div>`:"");
+  }else if(view.tab==="summary"){
+    const t=view.draft!=null?view.draft:(r.sum.text||""),w=words(t);
+    body=`<div class="card"><h2>Comprehension Summary</h2>
+    <p class="lead">In your own words, tell what happened in Chapter ${n}. Write at least ${MINW} words.</p>
+    <div class="hint"><b>A strong summary tells:</b><ul><li><b>Who</b> the chapter is mostly about</li><li>What they <b>wanted</b> or what the <b>problem</b> was</li><li>The most important things that <b>happened</b>, in order</li><li>How the chapter <b>ended</b></li></ul></div>
+    <label for="sum">My summary of “${esc(c.t)}”</label>
+    <textarea id="sum" spellcheck="true">${esc(t)}</textarea>
+    <div class="row" style="justify-content:space-between;margin-top:10px"><span class="count${w>=MINW?" good":""}" id="wc">${w} words${w>=MINW?" ✓":" (need "+MINW+")"}</span>
+    <button class="btn" id="turnin" data-act="turnin" ${w>=MINW&&!fakes(t).length?"":"disabled"}>${r.sum.at?"Turn in again":"Turn in"}</button></div>
+    <ul class="fb no" id="fakes" ${fakes(t).length?"":"hidden"} style="margin-top:8px">${fakeList(t)}</ul>
+    ${r.sum.at?`<div class="fb ok">Your summary was turned in. You can fix it and turn it in again.${r.sum.score?" Your teacher's score: <b>"+r.sum.score+" out of 4</b>.":""}</div>`:""}</div>
+    ${r.sum.at?`<div class="row" style="margin-top:14px"><button class="btn gold" data-act="tab" data-t="quiz">Next: take the quiz</button></div>`:""}`;
+  }else{
+    const z=view.quiz;
+    if(!unlocked)body=`<div class="card lock"><h2>The quiz is locked</h2><p>Finish all ${NS} Story Skills questions and turn in your summary first.</p></div>`;
+    else if(!z)body=`<div class="card" style="text-align:center"><h2>Chapter ${n} Quiz</h2><p class="lead">${NQ} questions. Take your time and think back to the chapter.</p>
+      ${r.qz.tries?`<p>Best score: <b>${r.qz.best}/${NQ}</b> · Tries: <b>${r.qz.tries}</b></p>`:""}
+      <button class="btn gold" data-act="qstart">${r.qz.tries?"Try again":"Start the quiz"}</button></div>`;
+    else if(z.done){const pct=z.score/NQ;
+      body=`<div class="card" style="text-align:center"><h2>Quiz finished!</h2><div class="big">${z.score}/${NQ}</div>
+      <p class="lead">${pct>=.87?"Outstanding work, "+esc(s.name)+"!":pct>=.67?"Nice job! Look over the ones you missed.":"Good effort. Reread the chapter and try again."}</p>
+      ${z.missed.length?`<div style="text-align:left"><b>Questions to review</b>${z.missed.map(i=>`<div class="fb no" style="margin-top:8px"><b>${esc(c.qz[i][0])}</b><br>Answer: ${esc(c.qz[i][1])}</div>`).join("")}</div>`:""}
+      <div class="row" style="justify-content:center;margin-top:16px"><button class="btn ghost" data-act="qstart">Try again</button>${view.n<C.length?`<button class="btn gold" data-act="open" data-n="${view.n+1}">Go to Chapter ${view.n+1}</button>`:""}<button class="btn" data-act="home">Back to chapters</button></div></div>`;
+    }else{const qi=z.order[z.i],q=c.qz[qi],list=order(n+"q"+qi+"-"+z.id,q.slice(1,5));
+      body=`<div class="card"><div class="prog" aria-hidden="true">${z.order.map((_,k)=>`<i class="${k<z.res.length?(z.res[k]?"y":"n"):k===z.i?"c":""}"></i>`).join("")}</div>
+      <div class="note"><b>Question ${z.i+1} of ${NQ}</b></div><p class="stem" style="font-weight:800;font-size:1.15rem">${esc(q[0])}</p>
+      ${optHtml(list,z.sel,z.ans,q[1],"qpick","")}
+      ${z.ans!=null?`<div class="fb ${z.ans===q[1]?"ok":"no"}">${z.ans===q[1]?"Correct!":"Not quite. The answer is: "+esc(q[1])}</div><div class="row" style="margin-top:12px"><button class="btn" data-act="qnext">${z.i===NQ-1?"See my score":"Next question"}</button></div>`
+        :`<div class="row" style="margin-top:12px"><button class="btn" data-act="qcheck" ${z.sel==null?"disabled":""}>Submit answer</button></div>`}</div>`}
+  }
+  return `<button class="back" data-act="home">← All chapters</button>
+  <div class="num">CHAPTER ${n}</div><h1>${esc(c.t)}</h1><div class="tabs">${tabs}</div>${body}`}
+
+/* ---------- teacher ---------- */
+const list=()=>Object.keys(db.students).map(k=>({k,...db.students[k]})).sort((a,b)=>a.name.localeCompare(b.name));
+const lvl=p=>p>=.87?4:p>=.67?3:p>=.5?2:1;
+function vDash(){const L=list();let sums=0,qsum=0,qn=0,need=0;const skT=SK.map(()=>0),skN=SK.map(()=>0);
+  L.forEach(s=>Object.values(s.ch||{}).forEach(r=>{if(r.sum&&r.sum.at){sums++;if(!r.sum.score)need++}if(r.qz&&r.qz.tries){qsum+=r.qz.best;qn++}r.sk.forEach((a,i)=>{if(a){skN[i]++;if(a.ok)skT[i]++}})}));
+  const head=C.map((c,i)=>`<th title="${esc(c.t)}">Ch ${i+1}</th>`).join("");
+  const rows=L.map(s=>`<tr><td class="name"><button class="pill" data-act="stu" data-k="${esc(s.k)}">${esc(s.name)}</button></td>${C.map((c,i)=>{const st=status(s,i+1);
+    if(st.qz!=null)return `<td><span class="cell s${lvl(st.qz/NQ)}" title="Quiz best ${st.qz}/${NQ} · Skills ${st.skOk}/${NS}">${st.qz}</span></td>`;
+    return `<td><span class="cell s0" title="${st.sk||st.sum?"Started: skills "+st.sk+"/"+NS+(st.sum?", summary in":""):"Not started"}">${st.sk||st.sum?"…":"·"}</span></td>`}).join("")}</tr>`).join("");
+  return `<div class="hero"><div><h1>Teacher Dashboard</h1><div class="note">Showing student work for <b>${esc(BOOK.title)}</b> saved in this browser on this device.</div></div></div>
+  ${vBookPanel()}
+  <div class="stats"><div class="stat"><b>${L.length}</b><span>Students</span></div><div class="stat"><b>${qn?(qsum/qn).toFixed(1):"–"}</b><span>Average quiz score (of ${NQ})</span></div><div class="stat"><b>${sums}</b><span>Summaries turned in</span></div><div class="stat"><b>${need}</b><span>Summaries to score</span></div></div>
+  <div class="sec"><h2>Quiz scores by chapter</h2>${L.length?`<div class="scroll"><table><thead><tr><th class="name">Student</th>${head}</tr></thead><tbody>${rows}</tbody></table></div>
+  <p class="note">Numbers are each student's best quiz score out of ${NQ}. … means started. Select a name to read summaries and see every answer.</p>`:`<div class="card lock">No student work yet. Students sign in with their first name on this device to begin.</div>`}</div>
+  <div class="sec"><h2>Class accuracy by skill</h2><div class="card">${SK.map((k,i)=>{const p=skN[i]?Math.round(skT[i]/skN[i]*100):null;
+    return `<div class="bar"><span>${k}</span><div class="meter"><i style="width:${p||0}%"></i></div><span>${p==null?"–":p+"%"}</span></div>`}).join("")}</div></div>
+  ${L.length?`<div class="sec"><h2>Export</h2><div class="row"><button class="btn small ghost" data-act="csv">Copy all results for a spreadsheet</button><span class="note" id="csvmsg"></span></div><textarea id="csvbox" hidden readonly style="margin-top:10px;min-height:120px;font-size:.8rem"></textarea></div>`:""}`}
+
+function vStudent(){const s=db.students[view.k];if(!s)return vDash();
+  const blocks=C.map((c,i)=>{const n=i+1,r=(s.ch||{})[n];if(!r)return"";const st=status(s,n);if(!st.sk&&!r.sum.at&&!st.sum&&st.qz==null)return"";
+    return `<div class="detail"><h3>Chapter ${n}: ${esc(c.t)}</h3>
+    <div class="marks">${SK.map((k,j)=>{const a=r.sk[j];return `<span class="mark ${a?(a.ok?"y":"n"):"e"}" title="${a?esc("Chose: "+a.p):"Not answered"}">${k} ${a?(a.ok?"✓":"✗"):"–"}</span>`}).join("")}</div>
+    ${r.qz&&r.qz.tries?`<div><b>Quiz:</b> first try ${r.qz.first}/${NQ} · best ${r.qz.best}/${NQ} · ${r.qz.tries} ${r.qz.tries===1?"try":"tries"}${r.qz.missed&&r.qz.missed.length?`<details><summary class="note">Missed on latest try (${r.qz.missed.length})</summary><ul class="note">${r.qz.missed.map(m=>`<li>${esc(c.qz[m][0])}</li>`).join("")}</ul></details>`:""}</div>`:`<div class="note">Quiz not taken yet.</div>`}
+    ${r.sum&&r.sum.at?`<div class="sumtext">${esc(r.sum.text)}</div><div class="row"><span class="note">${words(r.sum.text)} words · turned in ${esc(new Date(r.sum.at).toLocaleDateString())}</span><span style="margin-left:auto;font-weight:800">Summary score</span>${[1,2,3,4].map(v=>`<button class="scorebtn${r.sum.score===v?" on":""}" data-act="score" data-n="${n}" data-v="${v}" aria-label="Score ${v} of 4" aria-pressed="${r.sum.score===v}">${v}</button>`).join("")}</div>`:`<div class="note">Summary not turned in yet.</div>`}</div>`}).join("");
+  return `<button class="back" data-act="dash">← Dashboard</button><div class="card"><div class="row" style="justify-content:space-between"><h1>${esc(s.name)}</h1>
+  ${view.ask?`<span class="row"><b>Remove all of ${esc(s.name)}'s work?</b><button class="btn small danger" data-act="del">Yes, remove</button><button class="btn small ghost" data-act="delno">Cancel</button></span>`:`<button class="btn small ghost" data-act="delask">Remove student</button>`}</div>
+  ${blocks||`<p class="lead">No work yet.</p>`}</div>`}
+
+function csv(){const q=v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"';
+  const out=[["Student","Chapter","Title",...SK,"Skills correct (of "+NS+")","Quiz first try","Quiz best","Quiz tries","Summary words","Summary score (1-4)","Summary"]];
+  list().forEach(s=>C.forEach((c,i)=>{const r=(s.ch||{})[i+1];if(!r)return;const st=status(s,i+1);
+    out.push([s.name,i+1,c.t,...r.sk.map(a=>a?(a.ok?1:0):""),st.skOk,r.qz.first??"",r.qz.best??"",r.qz.tries||"",r.sum.at?words(r.sum.text):"",r.sum.score||"",r.sum.at?r.sum.text:""])}));
+  return out.map(r=>r.map(q).join("\t")).join("\n")}
+
+
+/* ---------- books: switch, share, and build from a spreadsheet ---------- */
+const LIB=()=>{const site=(window.NOVEL_BOOKS||[]).map(b=>({...b,where:"site"}));let mine=[];
+  try{mine=JSON.parse(localStorage.getItem("novel-study-custom-list")||"[]")}catch(e){}
+  return site.concat(mine.map(b=>({...b,where:"device"})))};
+const studentLink=id=>location.origin+location.pathname+"?book="+encodeURIComponent(id);
+function vBookPanel(){const id=window.NOVEL_ID,custom=/^custom-/.test(id);
+  const opts=LIB().map(b=>`<option value="${esc(b.id)}"${b.id===id?" selected":""}>${esc(b.title)}${b.where==="device"?" (this device only)":""}</option>`).join("");
+  return `<div class="sec"><h2>Book</h2><div class="card">
+    ${window.NOVEL_MISSING?`<div class="fb no" style="margin-bottom:12px">No book called “${esc(window.NOVEL_MISSING)}” was found, so The Egypt Game opened instead.</div>`:""}
+    <div class="row" style="justify-content:space-between;align-items:flex-start"><div><b style="font-size:1.15rem">${esc(BOOK.title)}</b>${BOOK.author?` <span class="note">by ${esc(BOOK.author)}</span>`:""}
+      <div class="note">${C.length} chapters · ${NS} story skills per chapter · ${NQ}-question quiz${BOOK.grade?" · "+esc(BOOK.grade):""}</div></div>
+      <label class="row" style="gap:8px;font-weight:800">Switch book <select id="bookpick" style="font:inherit;padding:8px 10px;border-radius:10px;border:2px solid var(--line)">${opts}</select></label></div>
+    ${custom?`<div class="fb no" style="margin-top:12px">This book is saved on <b>this device only</b>, so students can't open it yet. Use <b>Download book file</b> below and send it to be added to the website. Then students get their own link.</div>`
+      :`<p style="margin:14px 0 6px"><b>Student link for this book</b> (post it in Google Classroom):</p>
+      <div class="row"><input type="text" readonly value="${esc(studentLink(id))}" id="booklink" style="flex:1;min-width:0"><button class="btn small" data-act="copylink">Copy link</button><span class="note" id="linkmsg"></span></div>`}
+    <div class="row" style="margin-top:14px"><button class="btn small gold" data-act="builder">Make a new book</button>
+      ${custom?`<button class="btn small ghost" data-act="dlbook">Download book file</button><button class="btn small danger" data-act="rmbook">Remove from this device</button>`:""}</div>
+  </div></div>`}
+
+const COLS=["Chapter","Chapter title","Type","Skill","Question","Correct answer","Wrong answer 1","Wrong answer 2","Wrong answer 3","Explanation"];
+function templateCSV(){const q=v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"',rows=[COLS];
+  const ex=window.NOVEL_BOOK.chapters[0];
+  ex.sk.forEach((s,i)=>rows.push([1,ex.t,"Skill",SK[i],s[0],s[1],s[2],s[3],s[4],s[5]]));
+  ex.qz.forEach(s=>rows.push([1,ex.t,"Quiz","",s[0],s[1],s[2],s[3],s[4],""]));
+  return rows.map(r=>r.map(q).join(",")).join("\r\n")}
+/* CSV or tab-separated (pasted from Google Sheets / Excel) */
+function parseTable(t){t=String(t||"").replace(/^﻿/,"");const first=t.split(/\r?\n/)[0]||"",sep=first.split("\t").length>first.split(",").length?"\t":",";
+  const rows=[];let row=[],f="",q=false;
+  for(let i=0;i<t.length;i++){const ch=t[i];
+    if(q){if(ch==='"'){if(t[i+1]==='"'){f+='"';i++}else q=false}else f+=ch}
+    else if(ch==='"'&&f==="")q=true;
+    else if(ch===sep){row.push(f);f=""}
+    else if(ch==="\n"||ch==="\r"){if(ch==="\r"&&t[i+1]==="\n")i++;row.push(f);rows.push(row);row=[];f=""}
+    else f+=ch}
+  if(f!==""||row.length){row.push(f);rows.push(row)}
+  return rows.map(r=>r.map(x=>x.trim())).filter(r=>r.some(Boolean))}
+function buildBook(info,rows){const errs=[],warn=[];
+  if(rows.length&&/^chapter/i.test(rows[0][0]))rows=rows.slice(1);
+  if(!info.title)errs.push("Type the book title.");
+  const ch={},skills=[];
+  rows.forEach((r,i)=>{const L="Row "+(i+2)+": ",n=parseInt(r[0],10),type=(r[2]||"").toLowerCase();
+    if(!n||n<1){errs.push(L+"the Chapter column needs a number.");return}
+    const c=ch[n]||(ch[n]={t:"",sk:{},qz:[]});if(r[1]&&!c.t)c.t=r[1];
+    const qa=[r[4],r[5],r[6],r[7],r[8]];
+    if(qa.some(x=>!x)){errs.push(L+"needs a question, a correct answer and three wrong answers.");return}
+    if(new Set(qa.slice(1).map(x=>x.toLowerCase())).size<4){errs.push(L+"has two answer choices that are the same.");return}
+    if(type.startsWith("skill")){const s=r[3];if(!s){errs.push(L+"Skill rows need a skill name, like Main Idea.");return}
+      if(skills.indexOf(s)<0)skills.push(s);if(c.sk[s])warn.push(L+"Chapter "+n+" already has a "+s+" question; this one replaces it.");
+      c.sk[s]=[...qa,r[9]||"The correct answer is: "+r[5]]}
+    else if(type.startsWith("quiz"))c.qz.push(qa);
+    else errs.push(L+"the Type column must say Skill or Quiz.")});
+  const nums=Object.keys(ch).map(Number).sort((a,b)=>a-b);
+  if(!nums.length)errs.push("No question rows were found. Paste the rows from your spreadsheet, including the header row.");
+  nums.forEach((n,i)=>{const c=ch[n];if(n!==i+1)errs.push("Chapters must be numbered 1, 2, 3… without gaps (Chapter "+(i+1)+" is missing).");
+    skills.forEach(s=>{if(!c.sk[s])errs.push("Chapter "+n+" has no "+s+" question.")});
+    if(c.qz.length<NQB(info))errs.push("Chapter "+n+" has "+c.qz.length+" quiz questions; it needs at least "+NQB(info)+".");
+    if(!c.t)warn.push("Chapter "+n+" has no title, so it will be called Chapter "+n+".")});
+  const book={id:"custom-"+(String(info.title).toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,40)||"book"),
+    title:info.title,author:info.author||"",grade:info.grade||"",skills,quizSize:NQB(info),
+    chapters:nums.map(n=>({t:ch[n].t||"Chapter "+n,sk:skills.map(s=>ch[n].sk[s]),qz:ch[n].qz}))};
+  return {book,errs:[...new Set(errs)],warn:[...new Set(warn)]}}
+const NQB=info=>Math.max(5,Math.min(30,parseInt(info.quiz,10)||15));
+function vBuilder(){const b=view.b||(view.b={title:"",author:"",grade:"Grades 4–5",quiz:"15",text:"",res:null});const r=b.res;
+  return `<button class="back" data-act="dash">← Dashboard</button><div class="card"><h1>Make a new book</h1>
+  <p class="lead">Each chapter gets the same three steps as The Egypt Game: Story Skills questions, a written summary, and a quiz. Write the questions in a spreadsheet, then paste them here.</p>
+  <h2>1. About the book</h2>
+  <div class="row" style="align-items:flex-end;gap:12px">
+    <div style="flex:2 1 220px"><label for="bt">Title</label><input type="text" id="bt" data-f="title" value="${esc(b.title)}" placeholder="Because of Winn-Dixie"></div>
+    <div style="flex:1 1 180px"><label for="ba">Author</label><input type="text" id="ba" data-f="author" value="${esc(b.author)}" placeholder="Kate DiCamillo"></div>
+    <div style="flex:1 1 140px"><label for="bg">Grade</label><input type="text" id="bg" data-f="grade" value="${esc(b.grade)}"></div>
+    <div style="flex:0 1 130px"><label for="bq">Quiz length</label><input type="text" id="bq" data-f="quiz" inputmode="numeric" value="${esc(b.quiz)}"></div></div>
+  <h2 style="margin-top:22px">2. Write the questions</h2>
+  <ol class="note" style="font-size:1rem;line-height:1.6"><li><button class="btn small ghost" data-act="tplcsv">Download the spreadsheet template</button> and open it in Google Sheets or Excel. It has Chapter 1 of The Egypt Game filled in as an example.</li>
+    <li>Use one row per question. <b>Skill</b> rows: one per skill in every chapter (use the same skill names in every chapter). <b>Quiz</b> rows: at least ${NQB(b)} per chapter. If you write more, students get a different mix each try.</li>
+    <li>Select all the cells, copy, and paste them below. You can also upload the file saved as .csv.</li></ol>
+  <label for="bx">Paste your spreadsheet rows</label><textarea id="bx" data-f="text" spellcheck="false" style="min-height:180px;font-family:ui-monospace,Menlo,monospace;font-size:.85rem" placeholder="Chapter	Chapter title	Type	Skill	Question	Correct answer	Wrong answer 1	…">${esc(b.text)}</textarea>
+  <div class="row" style="margin-top:10px"><label class="btn small ghost" style="cursor:pointer">Upload .csv<input type="file" id="bfile" accept=".csv,.tsv,.txt,text/csv" hidden></label>
+    <button class="btn" data-act="bcheck">Check my book</button></div>
+  ${r?`<h2 style="margin-top:22px">3. Check and use it</h2>
+    ${r.errs.length?`<div class="fb no"><b>Fix ${r.errs.length} ${r.errs.length===1?"thing":"things"} first:</b><ul>${r.errs.slice(0,25).map(x=>"<li>"+esc(x)+"</li>").join("")}</ul>${r.errs.length>25?"<p>…and "+(r.errs.length-25)+" more.</p>":""}</div>`
+      :`<div class="fb ok"><b>Ready!</b> ${esc(r.book.title)}: ${r.book.chapters.length} chapters, ${r.book.skills.length} skills (${esc(r.book.skills.join(", "))}), ${r.book.quizSize}-question quiz.</div>`}
+    ${r.warn.length?`<details class="note" style="margin-top:8px"><summary>${r.warn.length} note${r.warn.length===1?"":"s"}</summary><ul>${r.warn.map(x=>"<li>"+esc(x)+"</li>").join("")}</ul></details>`:""}
+    ${r.errs.length?"":`<div class="row" style="margin-top:12px"><button class="btn gold" data-act="buse">Use it on this device</button><button class="btn ghost" data-act="bdl">Download book file</button></div>
+    <p class="note">“Use it on this device” lets you try the book now. To give it to students, download the book file and send it to be added to the website; then the dashboard shows a student link for it.</p>`}`:""}
+  </div>`}
+function saveCustom(book){try{localStorage.setItem("novel-study-custom:"+book.id,JSON.stringify(book));
+  const l=JSON.parse(localStorage.getItem("novel-study-custom-list")||"[]").filter(x=>x.id!==book.id);l.push({id:book.id,title:book.title,author:book.author});
+  localStorage.setItem("novel-study-custom-list",JSON.stringify(l));return true}catch(e){return false}}
+function download(name,text,type){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
+function bookFile(book){const b={...book,id:book.id.replace(/^custom-/,"")};delete b.storageKey;
+  return "/* Novel Study book file for "+b.title+". Put it in novel-study/books/ and add it to books/index.js. */\nwindow.NOVEL_BOOK="+JSON.stringify(b)+";\n"}
+function switchBook(id){try{localStorage.setItem("novel-study-book",id)}catch(e){}
+  const u=new URL(location.href);u.searchParams.set("book",id);sessionStorage.setItem("novel-study-teacher","1");location.href=u.toString()}
+document.addEventListener("change",e=>{
+  if(e.target.id==="bookpick")return switchBook(e.target.value);
+  if(e.target.id==="bfile"&&e.target.files[0]){const f=e.target.files[0],rd=new FileReader();rd.onload=()=>{view.b.text=String(rd.result);view.b.res=null;render()};rd.readAsText(f)}});
+document.addEventListener("input",e=>{const f=e.target.dataset&&e.target.dataset.f;if(f&&view.b){view.b[f]=e.target.value;view.b.res=null}});
+document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(!b||!teacher)return;const a=b.dataset.act;
+  if(a==="builder")return go({name:"builder"});
+  if(a==="copylink"){const v=$("#booklink").value,m=$("#linkmsg");try{navigator.clipboard.writeText(v).then(()=>m.textContent="Copied.",()=>{$("#booklink").select();m.textContent="Press Ctrl+C to copy."})}catch(x){$("#booklink").select()}}
+  if(a==="tplcsv")download("novel-study-template.csv","﻿"+templateCSV(),"text/csv");
+  if(a==="bcheck"){view.b.res=buildBook(view.b,parseTable(view.b.text));render();return}
+  if(a==="buse"&&view.b.res&&!view.b.res.errs.length){if(saveCustom(view.b.res.book))switchBook(view.b.res.book.id);else alert("This browser could not save the book.")}
+  if(a==="bdl"&&view.b.res&&!view.b.res.errs.length){const bk=view.b.res.book;download(bk.id.replace(/^custom-/,"")+".js",bookFile(bk),"text/javascript")}
+  if(a==="dlbook")download(BOOK.id.replace(/^custom-/,"")+".js",bookFile(BOOK),"text/javascript");
+  if(a==="rmbook"){try{localStorage.removeItem("novel-study-custom:"+BOOK.id);localStorage.setItem("novel-study-custom-list",JSON.stringify(JSON.parse(localStorage.getItem("novel-study-custom-list")||"[]").filter(x=>x.id!==BOOK.id)))}catch(x){}switchBook("egypt-game")}
+});
+
+/* ---------- events ---------- */
+document.addEventListener("submit",e=>{e.preventDefault();const f=e.target.dataset.form;
+  if(f==="signin"){const raw=$("#nm").value.replace(/\s+/g," ").trim();
+    if(!/^[A-Za-zÀ-ɏ][A-Za-zÀ-ɏ .'\-]{0,19}$/.test(raw)){$("#msg").textContent="Please type your first name using letters.";return}
+    if(!ClassGate.check(raw))return;
+    const name=raw.split(" ").map(w=>w[0].toUpperCase()+w.slice(1)).join(" "),k=name.toLowerCase();
+    if(!db.students[k]){db.students[k]={name,ch:{},joined:Date.now()};save()}
+    me=k;teacher=false;go({name:"home"})}
+  if(f==="gate"){ClassGate.checkCode($("#code").value).then(r=>{if(r==="ok"){teacher=true;me=null;go({name:"dash"})}else{$("#msg").textContent=ClassGate.codeMsg(r);$("#code").value=""}})}
+});
+document.addEventListener("input",e=>{if(e.target.id==="sum"){view.draft=e.target.value;const w=words(view.draft),el=$("#wc");
+  el.textContent=w+" words"+(w>=MINW?" ✓":" (need "+MINW+")");el.className="count"+(w>=MINW?" good":"");const fk=fakes(view.draft),ul=$("#fakes");$("#turnin").disabled=w<MINW||fk.length>0;
+  if(ul){ul.innerHTML=fakeList(view.draft);ul.hidden=!fk.length}
+  const r=rec(stu(),view.n);r.sum.draft=view.draft;save()}});
+document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(!b)return;const a=b.dataset.act,d=b.dataset;
+  if(a==="signout"){me=null;teacher=false;ord={};return go({name:"signin"})}
+  if(a==="gate")return go({name:"gate"});
+  if(a==="home")return go({name:"home"});
+  if(a==="dash")return go({name:"dash"});
+  if(a==="stu")return go({name:"student",k:d.k});
+  if(a==="open"){const n=+d.n;if(n>1&&!status(stu(),n-1).done)return;const st=status(stu(),n),r=rec(stu(),n);
+    return go({name:"chapter",n,tab:st.sk<NS?"skills":!st.sum?"summary":"quiz",sel:{},draft:r.sum.at?null:(r.sum.draft||null)})}
+  if(a==="tab"){view.tab=d.t;view.quiz=null;render();window.scrollTo(0,0);return}
+  const c=view.n?C[view.n-1]:null;
+  if(a==="skpick"){view.sel[d.i]=order(view.n+"s"+d.i,c.sk[d.i].slice(1,5))[d.j];return render()}
+  if(a==="skcheck"){const i=+d.i,p=view.sel[i];if(p==null)return;const r=rec(stu(),view.n);if(!r.sk[i]){r.sk[i]={p,ok:p===c.sk[i][1],at:Date.now()};save()}return render()}
+  if(a==="turnin"){const t=$("#sum").value.trim();if(words(t)<MINW||fakes(t).length)return;const r=rec(stu(),view.n);
+    const changed=r.sum.text!==t;r.sum.text=t;r.sum.at=Date.now();delete r.sum.draft;if(changed)delete r.sum.score;view.draft=null;save();return render()}
+  if(a==="qstart"){view.quiz={id:Date.now(),order:shuf(c.qz.map((_,i)=>i)).slice(0,NQ),i:0,sel:null,ans:null,res:[],missed:[],score:0,done:false};render();window.scrollTo(0,0);return}
+  const z=view.quiz;
+  if(a==="qpick"&&z){const qi=z.order[z.i];z.sel=order(view.n+"q"+qi+"-"+z.id,c.qz[qi].slice(1,5))[d.j];return render()}
+  if(a==="qcheck"&&z&&z.sel!=null){const qi=z.order[z.i],ok=z.sel===c.qz[qi][1];z.ans=z.sel;z.res.push(ok);if(ok)z.score++;else z.missed.push(qi);return render()}
+  if(a==="qnext"&&z){if(z.i<NQ-1){z.i++;z.sel=null;z.ans=null}else{z.done=true;const r=rec(stu(),view.n),q=r.qz;
+      q.tries=(q.tries||0)+1;if(q.first==null)q.first=z.score;q.best=Math.max(q.best||0,z.score);q.last=z.score;q.missed=z.missed.slice();q.at=Date.now();save()}
+    render();window.scrollTo(0,0);return}
+  if(a==="score"){const r=db.students[view.k].ch[d.n],v=+d.v;r.sum.score=r.sum.score===v?null:v;save();return render()}
+  if(a==="delask"){view.ask=true;return render()}
+  if(a==="delno"){view.ask=false;return render()}
+  if(a==="del"){delete db.students[view.k];save();return go({name:"dash"})}
+  if(a==="csv"){const t=csv(),m=$("#csvmsg"),box=$("#csvbox");
+    const fall=()=>{box.hidden=false;box.value=t;box.select();m.textContent="Select all of the text below, copy it, and paste it into a spreadsheet."};
+    try{navigator.clipboard.writeText(t).then(()=>{m.textContent="Copied. Paste into Google Sheets or Excel."},fall)}catch(x){fall()}}
+});
+load();if(sessionStorage.getItem("novel-study-teacher")){sessionStorage.removeItem("novel-study-teacher");view={name:"gate"}}render();
+</script>
+</body>
+</html>

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Standards Explorer · Darren Echols</title>
+<meta name="description" content="Browse grade 4 and 5 standards for North Carolina, Common Core, California and LAUSD by subject, and see which classroom apps practice each one.">
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--ink:#14213a;--muted:#55627a;--line:#dde3ea;
+  --ela:#7a3fb0;--math:#1f5fbf;--sci:#0f8a5f;--ss:#b4235a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.5}
+main{max-width:1100px;margin:0 auto;padding:26px max(16px,env(safe-area-inset-left,0px)) 70px}
+h1{font:800 clamp(28px,4.4vw,40px)/1.08 var(--ec-display);letter-spacing:-.02em;margin:0 0 6px}
+.lead{color:var(--muted);max-width:68ch;margin:0 0 20px}
+.controls{position:sticky;top:0;z-index:5;background:var(--bg);padding:12px 0;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:12px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{font:700 15px/1 var(--ec-body);border:2px solid var(--line);background:#fff;color:var(--ink);border-radius:999px;padding:10px 16px;min-height:44px;cursor:pointer}
+.seg button[aria-pressed="true"]{color:#fff;border-color:var(--c,var(--ink));background:var(--c,var(--ink))}
+.seg button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid #f2b705;outline-offset:2px}
+.seg .s-ela{--c:var(--ela)}.seg .s-math{--c:var(--math)}.seg .s-sci{--c:var(--sci)}.seg .s-ss{--c:var(--ss)}
+label.fld{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;color:var(--muted)}
+select,input[type=search]{font:16px var(--ec-body);border:2px solid var(--line);border-radius:10px;padding:9px 12px;background:#fff;color:var(--ink);min-height:44px}
+input[type=search]{flex:1 1 220px;min-width:0}
+.chk{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600;min-height:44px}
+.chk input{width:20px;height:20px}
+.summary{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:baseline;margin:18px 0 8px;color:var(--muted);font-size:14.5px}
+.summary b{color:var(--ink)}
+.setname{font:800 18px/1.25 var(--ec-display);color:var(--ink)}
+.strand{font:700 12px/1 var(--ec-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:26px 0 10px}
+.list{display:grid;gap:10px}
+.std{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--c,var(--ink));border-radius:12px;padding:14px 16px;display:grid;grid-template-columns:150px 1fr;gap:6px 18px}
+.std .code{font:700 14px/1.3 var(--ec-mono);color:var(--c,var(--ink));word-break:break-word}
+.std .sub{grid-column:1}
+.std p{margin:0}
+.std .meta{grid-column:2;display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.chip{font-size:13px;font-weight:700;border-radius:999px;padding:4px 10px;background:#eef2f7;color:var(--ink);text-decoration:none;border:1px solid var(--line)}
+a.chip:hover{border-color:var(--ink)}
+.chip.app{background:#fff8e1;border-color:#f3dc8f}
+.chip.nc{background:#eaf1ff;border-color:#c9d8f5}
+.none{color:var(--muted);font-size:13px}
+.std.child{margin-left:28px;padding:10px 14px}
+.empty{padding:30px;text-align:center;color:var(--muted);background:#fff;border:1px dashed var(--line);border-radius:12px}
+.src{margin-top:34px;font-size:13.5px;color:var(--muted)}
+.src a{color:#1f5fbf}
+@media (max-width:640px){
+  .std{grid-template-columns:1fr;gap:4px}
+  .std .meta{grid-column:1}
+  .std.child{margin-left:12px}
+  .controls{position:static}
+}
+</style>
+<link rel="stylesheet" href="/shared/brand.css">
+<script src="/shared/standards.js"></script>
+<script src="/shared/std-data.js"></script>
+<script src="/shared/frame.js" data-app="Standards Explorer" data-subject="tool" data-tags="Grades 4–5"></script>
+</head>
+<body>
+<main class="ec-noswap">
+  <h1>Standards Explorer</h1>
+  <p class="lead">Pick a set of standards, a core subject and a grade to read the standards and see which classroom apps practice each one. Use the <b>Standards</b> menu at the top to switch between North Carolina, Common Core, a state or a district.</p>
+
+  <div class="controls" role="region" aria-label="Filters">
+    <div class="row">
+      <div class="seg" id="subj" role="group" aria-label="Subject">
+        <button class="s-ela" data-v="ela">ELA</button><button class="s-math" data-v="math">Math</button>
+        <button class="s-sci" data-v="sci">Science</button><button class="s-ss" data-v="ss">Social Studies</button>
+      </div>
+      <div class="seg" id="grade" role="group" aria-label="Grade"><button data-v="4">Grade 4</button><button data-v="5">Grade 5</button></div>
+    </div>
+    <div class="row">
+      <input type="search" id="q" placeholder="Search codes or words, like 4.NF or theme" aria-label="Search standards">
+      <label class="chk"><input type="checkbox" id="only"> Only standards my apps practice</label>
+    </div>
+  </div>
+
+  <div class="summary" id="sum" aria-live="polite"></div>
+  <div id="out"></div>
+  <div class="src" id="src"></div>
+</main>
+<script>
+(function(){
+  var D=window.ECStdData, S=window.ECStandards, P=window.ECPlace?window.ECPlace():{state:"nc",j:S.JURIS.nc};
+  var st={subj:"math",grade:"4",q:"",only:false};
+  try{var saved=JSON.parse(sessionStorage.getItem("ec-explorer")||"{}");Object.assign(st,saved)}catch(e){}
+  var NAMES={ela:"English Language Arts",math:"Math",sci:"Science",ss:"Social Studies"};
+  var ORDER=function(c){return String(c).split(/(\d+)/).map(function(x){return /^\d+$/.test(x)?("000"+x).slice(-4):x}).join("")};
+  function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+
+  /* which set of codes this place uses for a subject */
+  function setFor(subj){var k=P.j[subj];return k==="nc"?"nc":k}
+  /* California math, ELA and science codes are the same as Common Core / NGSS */
+  function dataKey(set){return set==="cangss"?"ngss":set}
+
+  /* For every NC code an app practices: the codes it becomes in this place, and which apps */
+  function coverage(){
+    var cov={}, back={};
+    Object.keys(D.apps).forEach(function(k){var app=D.apps[k];
+      app.codes.forEach(function(nc){
+        var targets;
+        if(P.state==="nc")targets=[nc];
+        else{var r=S.match(nc,P.state);if(!r)return;targets=r.codes}
+        targets.forEach(function(t){(cov[t]=cov[t]||[]);if(!cov[t].some(function(x){return x.k===k}))cov[t].push({k:k,name:app.name});
+          if(P.state!=="nc"){(back[t]=back[t]||[]);if(back[t].indexOf(nc)<0)back[t].push(nc)}})})});
+    /* NC codes from the full NC list too, so every standard shows its NC match */
+    if(P.state!=="nc")Object.keys(D.nc).forEach(function(subj){Object.keys(D.nc[subj]).forEach(function(g){D.nc[subj][g].forEach(function(row){
+      var r=S.match(row[0],P.state);if(!r)return;r.codes.forEach(function(t){(back[t]=back[t]||[]);if(back[t].indexOf(row[0])<0)back[t].push(row[0])})})})});
+    return {cov:cov,back:back};
+  }
+  /* an app that practices L.4.4b also counts for L.4.4; NC.4.NF.1 rows match app code NC.4.NF.1 */
+  function appsFor(code,cov){
+    var out=[];Object.keys(cov).forEach(function(t){
+      if(t===code||(t.indexOf(code)===0&&/^[a-z]$/.test(t.slice(code.length))))cov[t].forEach(function(x){if(!out.some(function(y){return y.k===x.k}))out.push(x)})});
+    return out}
+
+  function render(){
+    var set=setFor(st.subj), rows=((D[dataKey(set)]||{})[st.subj]||{})[st.grade]||[], c=coverage(), q=st.q.trim().toLowerCase();
+    var col="var(--"+st.subj+")";
+    document.querySelectorAll("#subj button").forEach(function(b){b.setAttribute("aria-pressed",b.dataset.v===st.subj)});
+    document.querySelectorAll("#grade button").forEach(function(b){b.setAttribute("aria-pressed",b.dataset.v===st.grade)});
+    var shown=0, covered=0, html="", lastStrand=null;
+    rows.forEach(function(r){
+      var code=r[0],text=r[1],strand=r[2]||"", apps=appsFor(code,c.cov), ncm=(c.back[code]||[]).slice().sort(function(a,b){return ORDER(a)<ORDER(b)?-1:1});
+      if(apps.length)covered++;
+      if(st.only&&!apps.length)return;
+      if(q&&(code+" "+text+" "+strand).toLowerCase().indexOf(q)<0)return;
+      shown++;
+      if(strand!==lastStrand){html+='<div class="strand">'+esc(strand)+'</div>';lastStrand=strand}
+      var child=/[a-z]$/.test(code)&&!/\d-\d/.test(code);
+      html+='<article class="std'+(child?' child':'')+'" style="--c:'+col+'"><div class="code">'+esc(code)+'</div><p>'+esc(text)+'</p><div class="meta">'+
+        (apps.length?apps.map(function(x){return '<a class="chip app" href="/'+x.k+'/">'+esc(x.name.replace(/\s*[·|—-]\s*Darren Echols.*/,""))+'</a>'}).join(""):'<span class="none">No app practices this yet.</span>')+
+        (P.state!=="nc"&&ncm.length?'<span class="chip nc" title="North Carolina standards that match">NC: '+esc(ncm.slice(0,4).join(", "))+(ncm.length>4?" +"+(ncm.length-4):"")+'</span>':'')+
+        '</div></article>';
+    });
+    document.getElementById("out").innerHTML=shown?'<div class="list">'+html+'</div>':'<div class="empty">No standards match. Try another word or turn off “Only standards my apps practice.”</div>';
+    var who=P.d?P.d.label:P.j.label, setInfo=S.SETS[set]||{name:"NC Standard Course of Study"};
+    document.getElementById("sum").innerHTML='<span class="setname">'+esc(who)+' · '+NAMES[st.subj]+' · Grade '+st.grade+'</span>'+
+      '<span><b>'+rows.length+'</b> standards in '+esc(setInfo.name)+'</span><span><b>'+covered+'</b> practiced in the apps</span>'+
+      (set==="c3"?'<span>C3 lists grades 3–5 together; shown here are the indicators the apps match.</span>':'')+
+      (set==="cahss"?'<span>Main standards shown; each has numbered sub-standards on the CDE site.</span>':'')+
+      (set==="nc"&&st.subj==="sci"?'<span>NC 2023 science standards.</span>':'');
+    var src=[];["nc","ccss","cacc","ngss","cangss","c3","cahss"].forEach(function(k){var s=S.SETS[k];if(s&&s.url)src.push('<a href="'+s.url+'" target="_blank" rel="noopener">'+esc(s.name)+'</a>')});
+    document.getElementById("src").innerHTML='Official sources: '+src.join(" · ")+(P.d&&P.d.url?' · <a href="'+P.d.url+'" target="_blank" rel="noopener">'+esc(P.d.label)+' standards page</a>':'')+
+      '. Common Core text © 2010 NGA Center and CCSSO. NGSS © 2013 Achieve, Inc. Matches between sets are my own alignment; ≈ in the apps means closest match.';
+    try{sessionStorage.setItem("ec-explorer",JSON.stringify(st))}catch(e){}
+  }
+  document.getElementById("subj").onclick=function(e){var b=e.target.closest("button");if(b){st.subj=b.dataset.v;render()}};
+  document.getElementById("grade").onclick=function(e){var b=e.target.closest("button");if(b){st.grade=b.dataset.v;render()}};
+  var q=document.getElementById("q");q.value=st.q;q.oninput=function(){st.q=q.value;render()};
+  var only=document.getElementById("only");only.checked=st.only;only.onchange=function(){st.only=only.checked;render()};
+  /* ?subject=sci&grade=5 links */
+  var u=new URLSearchParams(location.search);if(NAMES[u.get("subject")])st.subj=u.get("subject");if(/^[45]$/.test(u.get("grade")||""))st.grade=u.get("grade");
+  render();
+})();
+</script>
+</body>
+</html>

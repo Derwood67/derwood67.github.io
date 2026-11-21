@@ -90,6 +90,10 @@ footer{border-top:1px solid var(--line);padding:28px 0 48px;color:var(--muted);f
 @media (max-width:760px){.hero{grid-template-columns:1fr}.stats{gap:22px}}
 @media (prefers-reduced-motion:no-preference){.card{transition:transform .15s}.card:hover{transform:translateY(-2px)}}
 </style>
+<link rel="icon" type="image/svg+xml" href="/shared/favicon.svg">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="/shared/apple-touch-icon.png">
+<meta name="theme-color" content="#14213a">
 </head>
 <body>
 <header>
@@ -100,6 +104,7 @@ footer{border-top:1px solid var(--line);padding:28px 0 48px;color:var(--muted);f
       <p class="lede">I'm a 4th and 5th grade teacher in North Carolina, and I design and build interactive learning tools for my own classroom. Each one starts from an NC standard and a problem I saw with real students: who needs more practice, who is ready to move on, and what the teacher needs to see.</p>
       <div class="links">
         <a class="btn primary" href="#projects">See the projects</a>
+        <a class="btn" href="/standards-explorer/">Standards Explorer</a>
         <a class="btn" href="https://github.com/derwood67">GitHub: derwood67</a>
       </div>
     </div>
@@ -149,6 +154,7 @@ const SUBJ = {
 const P = [
   // Reading & Writing
   {s:"ela", t:"The Egypt Game: Chapter Quest", k:["Answer questions on text structure, point of view, main idea, voice, setting and characters for each chapter", "Write a summary of each chapter", "Take a chapter quiz once the other sections are done"],  d:"A chapter-by-chapter novel study: text structure, point of view, main idea, voice, setting and characters, a written summary, and a quiz that unlocks only when the chapter is done.", f:["Mastery gating","Teacher dashboard","Written response"], u:GH+"egypt-game/"},
+  {s:"ela", t:"Novel Study Builder", k:["Work through any class novel chapter by chapter", "Answer story-skill questions, write a summary, then take a quiz"], d:"The Egypt Game's chapter-by-chapter setup, turned into a template for any book. Teachers write questions in a spreadsheet, paste them in, and get a student link.", f:["Reusable template","Spreadsheet import","Teacher dashboard"], u:GH+"novel-study/"},
   {s:"ela", t:"Love, Amalia — Story Explorer", k:["Map the story's structure", "Answer 25 comprehension questions that adjust to how they're doing", "Write a summary of the book"],  d:"Story structure and 25 comprehension questions that adapt to the reader, plus a written summary.", f:["Adaptive difficulty","Story structure"], u:GH+"love-amalia/"},
   {s:"ela", t:"Lemonade War Reading Stand", k:["Answer at least 10 questions per section", "Show mastery before moving to the next section", "Track their progress through the book"],  d:"Novel study for The Lemonade War with at least 10 questions per section; students move on only after showing mastery.", f:["Mastery gating","Teacher dashboard"], u:GH+"lemonade-war/"},
   {s:"ela", t:"Story Trail", k:["Read stories, poems and articles", "Answer questions on theme, main idea and point of view", "Get their own set of passages and questions"],  d:"Stories, poems and articles with questions on theme, main idea and point of view. Every student gets a different set.", f:["NC ELA","Randomized sets","Teacher results"], u:GH+"story-trail/"},
@@ -188,6 +194,7 @@ const P = [
   // Teacher tools
   {s:"tool", t:"Text Analyzer for Teachers", tk:["Type a book or story title to get summary, theme, point of view and more", "Get results written for a chosen grade level"],  d:"Type a book or story title to get summary, main idea, text structure, theme, point of view, narrator, characters and setting, with evidence.", f:["Lesson planning","Grade-level output"], u:GH+"text-analyzer/"},
   {s:"tool", t:"NC 4–5 Standards Planner", tk:["Search NC standards with I-can statements", "Check off what's been taught and tag quarters", "Share notes with their PLC"],  d:"Searchable NCDPI standards for ELA, math, science and social studies with I-can statements, quarter tags, taught checkboxes and PLC notes. Installs as an app.", f:["Installable app","PLC planning"], u:GH+"standards/"},
+  {s:"tool", t:"Standards Explorer", tk:["Choose Common Core, a state or a district", "Pick ELA, math, science or social studies and a grade", "See which apps practice each standard"], d:"Grade 4–5 standards for North Carolina, Common Core with NGSS and C3, California and LAUSD, each matched to the NC standards and to the apps that practice it.", f:["Standards crosswalk","State and district switch"], u:GH+"standards-explorer/"},
   {s:"tool", t:"Scan to Doc", tk:["Turn scans, photos and PDFs into one clean PDF or Word file", "Convert scanned pages to typed text"],  d:"Turns scans, photos and PDFs into one cleaned-up PDF or Word file, with optional typed-text conversion.", f:["Workflow tool"], u:"https://claude.ai/artifact/5WZ7wUJXJk7LnEwFGfHcAn"},
   {s:"tool", t:"Echols Standards Gradebook", tk:["Score students 1–4 on NCDPI standards in ELA, math, science and social studies", "Upload photos or PDFs of student work, mark them up and get suggested scores", "See class charts and print a PDF grade list for each student"],  d:"A standards-based gradebook for a combined 4th/5th grade class: 1–4 scores on objective-level NC standards, marked-up student work, class charts and per-student PDF reports. Built to install as an app on Mac and PC.", f:["NCDPI standards","1–4 scoring","PDF reports"]},
   {s:"tool", t:"Grade 4–5 Plan Book", tk:["See each day's lessons with I Do, We Do and You Do steps", "Switch between day, week and pacing views for Q2–Q4", "Filter by 4th grade, 5th grade or both"],  d:"A combined-class plan book with daily lessons for math, ELA and science tied to NC standards, plus week and pacing views across quarters 2–4.", f:["NC standards","Gradual release","Pacing"], u:"https://claude.ai/artifact/STrszV3LWpiXT71hq9G7C8"},
@@ -207,7 +214,7 @@ grid.innerHTML = P.map(p=>{
     <p>${esc(p.d)}</p>
     ${p.k||p.tk?`<div class="can"><h4>${p.k?"Students can":"Teachers can"}</h4><ul>${(p.k||p.tk).map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`:""}
     <ul class="feats">${p.f.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>
-    ${p.u?`<a class="go" href="${p.u}" target="_blank" rel="noopener">Open the tool <span aria-hidden="true">→</span></a>`:`<span class="go" style="opacity:.75">Private: holds student records. Demo on request.</span>`}
+    ${p.u?`<a class="go" href="${p.u.indexOf(GH)===0?p.u+(p.u.indexOf("?")<0?"?visitor":"&visitor"):p.u}" target="_blank" rel="noopener">Open the tool <span aria-hidden="true">→</span></a>`:`<span class="go" style="opacity:.75">Private: holds student records. Demo on request.</span>`}
   </article>`;
 }).join("");
 
