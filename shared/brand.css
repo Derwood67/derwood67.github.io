@@ -120,3 +120,6 @@ html #cg-badge button{background:var(--ec-pencil);color:var(--ec-ink)}
   .ec-bar .ec-pick ~ .ec-back .ec-word,.ec-bar .ec-pick ~ .ec-back .ec-long{display:none}
   .ec-bar .ec-pick ~ .ec-back{padding:9px 12px}
 }
+/* guest strip for apps whose name box is part of a bigger setup screen */
+.ec-guest.ec-strip{margin:0;border-radius:0;border-width:0 0 1px;flex-direction:row;align-items:center;justify-content:center;flex-wrap:wrap;gap:12px;padding:9px 16px}
+.ec-guest.ec-strip button{padding:7px 14px}

@@ -119,22 +119,40 @@
     if(form&&VISITOR)card.appendChild(guestBox(function(){var i=form.querySelector("input");i.value="Guest";form.requestSubmit?form.requestSubmit():form.onsubmit(new Event("submit"));ribbon()}));
   }
 
-  /* apps that have their own first-name box */
+  /* apps that have their own first-name box (with or without a <form> around it) */
+  var GUEST_NAME=a("data-guest-name","Guest"), GO_RX=/start|let'?s|go\b|begin|sign ?in|enter|climb|driv|research|get my|lab|read/i;
+  function goButton(i,depth){var box=i;for(var k=0;k<(depth||5)&&box&&box!==document.body;k++){box=box.parentNode;if(!box||!box.querySelectorAll)break;
+      var bs=box.querySelectorAll("button,input[type=submit],a.btn");for(var j=0;j<bs.length;j++){var b=bs[j];
+        if(b.closest(".ec-guest")||!(b.offsetWidth||b.offsetHeight))continue;
+        if(GO_RX.test(b.textContent||b.value||""))return b}}return null}
   function dressAppSignin(){
-    if(!GUEST_INPUT||!VISITOR)return;
+    if(!GUEST_INPUT||!VISITOR||ss(GUEST_KEY)||window.ECDemoRunning)return;
     var i=document.querySelector(GUEST_INPUT);
-    if(!i||!i.form||i.form.querySelector(".ec-guest"))return;
-    i.form.appendChild(guestBox(function(){i.value="Guest";i.form.requestSubmit?i.form.requestSubmit():i.form.submit();ribbon()},true));
+    if(!i||!(i.offsetWidth||i.offsetHeight)||document.querySelector(".ec-guest"))return;
+    var g=guestBox(function(){
+      var nm=/last/i.test(i.placeholder||"")&&GUEST_NAME==="Guest"?"Guest Visitor":GUEST_NAME;
+      var set=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value").set;set.call(i,nm);
+      i.dispatchEvent(new Event("input",{bubbles:true}));i.dispatchEvent(new Event("change",{bubbles:true}));
+      if(g.parentNode)g.remove();
+      if(i.form){i.form.requestSubmit?i.form.requestSubmit():i.form.submit()}
+      else{var b=goButton(i,3);if(b)b.click();else{try{i.scrollIntoView({block:"center",behavior:"smooth"})}catch(e){}}}
+      ribbon()},!!i.form);
+    if(i.form)i.form.appendChild(g);
+    else{g.classList.add("ec-strip");var h=document.querySelector(".ec-std-note")||document.querySelector(".ec-bar");if(h)h.after(g);else document.body.insertBefore(g,document.body.firstChild)}
   }
+
+  /* the guest strip goes away once the name box is gone (signed in) */
+  function stripGone(){var g=document.querySelector(".ec-guest.ec-strip");if(!g)return;var i=GUEST_INPUT&&document.querySelector(GUEST_INPUT);if(!i||!(i.offsetWidth||i.offsetHeight))g.remove()}
 
   /* move the gate's floating name badge into the bar */
   function dockBadge(){
     var b=document.getElementById("cg-badge"),back=document.querySelector(".ec-back");
     if(b&&back&&b.parentNode!==back.parentNode)back.parentNode.insertBefore(b,back);
   }
+  function loadDemo(){if(window.ECDemo||document.querySelector('script[src*="/shared/demo.js"]'))return;var d=document.createElement("script");d.src="/shared/demo.js";document.head.appendChild(d)}
   function start(){
-    bar();dressGate();dressAppSignin();dockBadge();swapIn(document.body);
-    new MutationObserver(function(recs){dressGate();dressAppSignin();dockBadge();
+    loadDemo();bar();dressGate();dressAppSignin();dockBadge();swapIn(document.body);
+    new MutationObserver(function(recs){dressGate();dressAppSignin();dockBadge();stripGone();
       recs.forEach(function(r){r.addedNodes.forEach(function(n){if(n.nodeType===1)swapIn(n);else if(n.nodeType===3&&n.parentNode)swapIn(n.parentNode)})})
     }).observe(document.body,{childList:true,subtree:true,characterData:false});
   }
