@@ -53,7 +53,9 @@
         districts:{
           lausd:{label:"Los Angeles Unified (LAUSD)", short:"LAUSD", city:"Los Angeles", pace:"ca",
                  note:"LAUSD teaches the California standards: California Common Core for ELA and math, and CA NGSS for science.",
-                 url:"https://www.lausd.org/Page/17834"}
+                 url:"https://www.lausd.org/Page/17834"},
+          sfusd:{label:"San Francisco Unified (SFUSD)", short:"SFUSD", city:"San Francisco", note:"SFUSD teaches the California standards.",
+                 url:"https://www.sfusd.edu/node/474", urlLabel:"SFUSD elementary curriculum"}
         }}
   };
   JURIS.va={label:"Virginia", short:"VA", kind:"state", math:"vamath", ela:"vaela", sci:"vasci", ss:"vahss",
@@ -104,6 +106,15 @@
       disd:{label:"Dallas ISD", short:"Dallas ISD", city:"Dallas", note:"Dallas ISD teaches the TEKS.", url:"https://www.dallasisd.org/parents-students/parent-curriculum-support"},
       aisd:{label:"Austin ISD", short:"Austin ISD", city:"Austin", note:"Austin ISD teaches the TEKS.", url:"https://austinisd.org/academics"},
       saisd:{label:"San Antonio ISD", short:"SAISD", city:"San Antonio", note:"SAISD teaches the TEKS.", url:"https://www.saisd.net/page/curriculum-home"}
+    }};
+  JURIS.ny={label:"New York", short:"NY", kind:"state", loaded:false, math:"ccss", ela:"ccss", sci:"ngss", ss:"c3",
+    stdName:"NYS Next Generation Learning Standards", stdUrl:"https://www.nysed.gov/curriculum-instruction/teachers/new-york-state-next-generation-english-language-arts-learning",
+    note:"New York teaches its Next Generation Learning Standards (ELA and math, revised from Common Core) and its own P-12 Science Learning Standards. They aren't loaded here yet, so this shows the closest national sets: Common Core, NGSS and the C3 Framework. In New York, curriculum is decided by each district.",
+    districts:{
+      nycps:{label:"New York City Public Schools", short:"NYC Public Schools", city:"New York City", note:"NYC Public Schools teaches the New York State standards.",
+             url:"https://teachnyc.net/getting-started/out-of-state-teachers", urlLabel:"Teach NYC: out-of-state teachers"},
+      rcsd:{label:"Rochester City School District (RCSD)", short:"RCSD", city:"Rochester", note:"RCSD teaches the New York State standards.",
+             url:"https://www.rcsdk12.org/Page/54209"}
     }};
   JURIS.mi={label:"Michigan", short:"MI", kind:"state", math:"ccss", ela:"ccss", sci:"ngss", ss:"c3",
     stdName:"Michigan K-12 Standards (MDE)", stdUrl:"https://www.michigan.gov/mde/Services/academic-standards",
