@@ -12,7 +12,7 @@
 (function(){
   /* ---------- where each set of codes comes from ---------- */
   var SETS={
-    nc:   {name:"NC Standard Course of Study"},
+    nc:   {name:"NC Standard Course of Study", url:"https://www.dpi.nc.gov/districts-schools/classroom-resources/academic-standards"},
     ccss: {name:"Common Core State Standards", url:"https://www.thecorestandards.org/"},
     cacc: {name:"California Common Core State Standards", url:"https://www.cde.ca.gov/be/st/ss/"},
     ngss: {name:"Next Generation Science Standards (NGSS)", url:"https://www.nextgenscience.org/"},
@@ -36,27 +36,65 @@
     nc:{label:"North Carolina", short:"NC", kind:"state", math:"nc", ela:"nc", sci:"nc", ss:"nc",
         tests:"EOG tests in reading and math (grades 3–8) and science (grades 5 and 8)",
         districts:{
-          dps:{label:"Durham Public Schools (DPS)", short:"DPS",
-               note:"DPS teaches the NC Standard Course of Study.", url:"https://www.dpsnc.net/page/curriculum-and-instruction/"}
+          dps:{label:"Durham Public Schools (DPS)", short:"DPS", city:"Durham", pace:"nc",
+               note:"DPS teaches the NC Standard Course of Study.", url:"https://www.dpsnc.net/page/curriculum-and-instruction/"},
+          abss:{label:"Alamance-Burlington School System (ABSS)", short:"ABSS", city:"Burlington · Mebane",
+               note:"ABSS teaches the NC Standard Course of Study.", url:"https://www.abss.k12.nc.us/"},
+          wcpss:{label:"Wake County Public Schools (WCPSS)", short:"WCPSS", city:"Raleigh",
+               note:"WCPSS teaches the NC Standard Course of Study.", url:"https://www.wcpss.net/academics"},
+          cms:{label:"Charlotte-Mecklenburg Schools (CMS)", short:"CMS", city:"Charlotte",
+               note:"CMS teaches the NC Standard Course of Study.", url:"https://www.cmsk12.org/academics",
+               links:{all:["K–5 curriculum resources","https://www.cmsk12.org/Page/10634"]}}
         }},
     us:{label:"Common Core + NGSS", short:"Common Core", kind:"national", math:"ccss", ela:"ccss", sci:"ngss", ss:"c3",
         note:"Common Core for math and ELA, NGSS for science, and the C3 Framework for social studies (there is no Common Core for social studies)."},
     ca:{label:"California", short:"CA", kind:"state", math:"cacc", ela:"cacc", sci:"cangss", ss:"cahss",
         tests:"CAASPP: Smarter Balanced in ELA and math (grades 3–8 and 11) and the CAST in science (grades 5, 8 and once in high school)",
         districts:{
-          lausd:{label:"Los Angeles Unified (LAUSD)", short:"LAUSD",
+          lausd:{label:"Los Angeles Unified (LAUSD)", short:"LAUSD", city:"Los Angeles", pace:"ca",
                  note:"LAUSD teaches the California standards: California Common Core for ELA and math, and CA NGSS for science.",
                  url:"https://www.lausd.org/Page/17834"}
         }}
   };
   JURIS.va={label:"Virginia", short:"VA", kind:"state", math:"vamath", ela:"vaela", sci:"vasci", ss:"vahss",
     tests:"SOL tests in reading and math (grades 3–8) and science (grades 5 and 8)",
+    districts:{
+      fcps:{label:"Fairfax County Public Schools (FCPS)", short:"FCPS", city:"Fairfax", note:"FCPS's Program of Studies is built on the Virginia SOL.",
+            url:"https://www.fcps.edu/academics/elementary-school-k-6",
+            links:{math:["FCPS mathematics","https://fcps.edu/academics/academic-overview/mathematics"],ela:["FCPS language arts","https://www.fcps.edu/academics/curriculum/subject-areas/language-arts"]}},
+      aps:{label:"Arlington Public Schools (APS)", short:"APS", city:"Arlington", note:"APS teaches the Virginia SOL.",
+            url:"https://www.apsva.us/",
+            links:{math:["APS elementary math","https://www.apsva.us/curriculum/mathematics/"],ela:["APS English language arts","https://www.apsva.us/curriculum/english-language-arts/"]}},
+      acps:{label:"Alexandria City Public Schools (ACPS)", short:"ACPS", city:"Alexandria", note:"ACPS teaches the Virginia SOL.",
+            url:"https://www.acps.k12.va.us/"},
+      rps:{label:"Richmond Public Schools (RPS)", short:"RPS", city:"Richmond", note:"RPS teaches the Virginia SOL.",
+            url:"https://www.rvaschools.net/academics/curriculum-and-instruction",
+            links:{sci:["RPS science curriculum","https://www.rvaschools.net/academics/curriculum-and-instruction/science"]}},
+      lcps:{label:"Loudoun County Public Schools (LCPS)", short:"LCPS", city:"Ashburn · Leesburg", note:"LCPS teaches the Virginia SOL.",
+            url:"https://www.lcps.org/",
+            links:{sci:["LCPS science","https://lcps.org/o/dtl/page/science"]}}
+    },
     note:"Virginia's Standards of Learning (SOL) use their own codes. Grade 4 social studies is Virginia Studies (VS), grade 5 is U.S. History to 1865 (USI) and grade 6 is U.S. History 1865 to the present (USII); divisions may order these differently. Matches to NC codes are by topic."};
   JURIS.md={label:"Maryland", short:"MD", kind:"state", math:"mdmath", ela:"mdccrs", sci:"mdngss", ss:"mdss",
     tests:"MCAP in ELA and math (grades 3–8; MSTAR from spring 2027), science (grades 5 and 8) and social studies (grade 8)",
+    districts:{
+      mcps:{label:"Montgomery County Public Schools (MCPS)", short:"MCPS", city:"Rockville · Silver Spring", note:"MCPS teaches the Maryland standards.",
+            url:"https://www.montgomeryschoolsmd.org/curriculum/",
+            links:{math:["MCPS elementary math","https://montgomeryschoolsmd.org/curriculum/math/es"],sci:["MCPS elementary science","https://www.montgomeryschoolsmd.org/curriculum/science/es.aspx"],all:["MCPS Refrigerator Curriculum (what's taught each marking period)","https://www.montgomeryschoolsmd.org/curriculum/refrigerator/2026-2027/"]}},
+      pgcps:{label:"Prince George's County Public Schools (PGCPS)", short:"PGCPS", city:"Upper Marlboro", note:"PGCPS teaches the Maryland standards.",
+            url:"https://www.pgcps.org/"},
+      bcps:{label:"Baltimore City Public Schools", short:"City Schools", city:"Baltimore", note:"City Schools teaches the Maryland standards.",
+            url:"https://baltimorecityschools.org/elementary-school",
+            links:{all:["City Schools learning guides by grade","https://www.baltimorecityschools.org/documents/departments/academics/learning-guides/825637"]}}
+    },
     note:"Maryland's revised math standards (adopted July 2025, in effect 2026–27) use new codes such as 4.NOS.D.9. ELA keeps Common Core codes (revised in 2025 with small wording changes). Science is NGSS. Social studies follows MSDE's grade-level frameworks."};
   JURIS.dc={label:"District of Columbia", short:"DC", kind:"state", math:"ccss", ela:"ccss", sci:"ngss", ss:"dcss",
     tests:"DC CAPE in ELA and math (grades 3–8) and DC Science (grades 5 and 8)",
+    districts:{
+      dcps:{label:"DC Public Schools (DCPS)", short:"DCPS", city:"Washington", note:"DCPS teaches Common Core (ELA and math) and NGSS (science).",
+            url:"https://dcps.dc.gov/",
+            links:{math:["DCPS math (units by grade)","https://dcps.dc.gov/page/math"],ela:["DCPS English language arts","https://dcps.dc.gov/page/english-language-arts-01"],sci:["DCPS science","https://dcps.dc.gov/page/science"]}}
+    },
     note:"DC uses Common Core for ELA and math, NGSS for science, and its own 2023 social studies standards."};
   /* Every other state and DC: listed so it can be picked. Until a state's own standards are loaded, it shows the
      national sets (Common Core, NGSS, C3) and says so. To load one, give it its own sets like North Carolina. */

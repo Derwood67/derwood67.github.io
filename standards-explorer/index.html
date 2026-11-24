@@ -58,6 +58,12 @@ a.chip:hover{border-color:var(--ink)}
 .unit .chip{font-size:12px;padding:3px 8px;display:inline-block;margin:2px 2px 0 0}
 .pnote{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:14px 0;color:var(--muted);font-size:14.5px}
 .pnote b{color:var(--ink)}
+.dlinks{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;gap:8px;font-size:14.5px}
+.dlinks h2{font-size:15px;margin:0}.dlinks .lk{display:flex;flex-wrap:wrap;gap:6px}
+.dlinks a.chip{display:inline-flex;align-items:center;min-height:34px}
+.dlinks a.chip.go{background:var(--ink);color:#fff;border-color:var(--ink)}
+.dlinks button.chip{cursor:pointer;font-family:inherit;min-height:34px}
+.dlinks small{color:var(--muted)}
 .prow{display:grid;grid-template-columns:110px 1fr 96px;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
 .prow .code{font:700 13px var(--ec-mono)}
 .prow p{margin:0;font-size:14px}
@@ -87,13 +93,14 @@ textarea.paste{width:100%;min-height:120px;font:13px ui-monospace,Menlo,monospac
 <body>
 <main class="ec-noswap">
   <h1>States Standards &amp; Pacing Guides</h1>
-  <p class="lead">Pick a set of standards, a core subject and a grade to read the standards, see which classroom apps practice each one, and see when they are taught in a pacing guide. Choose <b>Common Core</b> or a <b>state</b>, then one of its <b>districts</b>.</p>
+  <p class="lead">Pick a set of standards, a core subject and a grade to read the standards, see which classroom apps practice each one, and see when they are taught in a pacing guide. Choose <b>Common Core</b> or a <b>state</b>, then one of its <b>city or county districts</b> to get that district's curriculum links.</p>
 
   <div class="controls" role="region" aria-label="Filters">
     <div class="row" id="placerow">
       <label class="fld" for="stpick">State <select id="stpick"></select></label>
       <label class="fld" for="dipick">District <select id="dipick"></select></label>
     </div>
+    <div id="distlinks" class="dlinks" aria-live="polite"></div>
     <div class="row">
       <div class="seg" id="subj" role="group" aria-label="Subject">
         <button class="s-ela" data-v="ela">ELA</button><button class="s-math" data-v="math">Math</button>
@@ -163,7 +170,8 @@ textarea.paste{width:100%;min-height:120px;font:13px ui-monospace,Menlo,monospac
     return revNC[cc]||revNC[baseCode(cc)]||[];
   }
   function uniq(a){return a.filter(function(x,i){return a.indexOf(x)===i})}
-  function sources(){var out=[],dk=P.d?P.state:(P.state==="nc"?"nc":null),dist=dk&&PC.district[dk];
+  function sources(){var out=[],dk=P.d?P.d.pace:(P.state==="nc"?"nc":null),dist=dk&&PC.district[dk];
+    if(P.d&&!P.d.pace)dist={name:P.d.label,note:P.d.note+" Its quarter-by-quarter pacing guide isn't public here; paste it into My pacing, or open the district page from the links above.",math:null};
     if(dist&&st.subj==="math")out.push({k:"district",label:"District: "+dist.name.replace(/ \(LAUSD\)/,""),cur:dist.math,dist:dist});
     else if(dist)out.push({k:"district",label:"District: "+dist.name.replace(/ \(LAUSD\)/,""),cur:null,dist:dist});
     if(st.subj==="math"&&MATHSET!=="vamath")["em2","im"].forEach(function(k){out.push({k:k,label:PC.sources[k].name,cur:k})});
@@ -249,8 +257,27 @@ textarea.paste{width:100%;min-height:120px;font:13px ui-monospace,Menlo,monospac
     dp.onchange=function(){go(sp.value+(dp.value?"/"+dp.value:""))};
   })();
   var GNAME=function(g){return g==="K"?"Kindergarten":"Grade "+g};
+  /* links: the chosen district's pages, or every city/county district in the chosen state */
+  function distLinks(){var box=document.getElementById("distlinks"),ds=P.j.districts||{},keys=Object.keys(ds),set=S.SETS[setFor(st.subj)]||{},h="";
+    var stdLink=set.url?'<a class="chip" href="'+esc(set.url)+'" target="_blank" rel="noopener">'+esc(set.name)+' ↗</a>':'';
+    if(P.d){var L=P.d.links||{},sub=L[st.subj],all=L.all;
+      h='<h2>'+esc(P.d.label)+(P.d.city?' <small>· '+esc(P.d.city)+'</small>':'')+'</h2><div class="lk">'+
+        '<a class="chip go" href="'+esc(P.d.url)+'" target="_blank" rel="noopener">District curriculum page ↗</a>'+
+        (sub?'<a class="chip" href="'+esc(sub[1])+'" target="_blank" rel="noopener">'+esc(sub[0])+' ↗</a>':'')+
+        (all?'<a class="chip" href="'+esc(all[1])+'" target="_blank" rel="noopener">'+esc(all[0])+' ↗</a>':'')+stdLink+
+        '<button class="chip" type="button" data-pick="">Back to all of '+esc(P.j.label)+'</button></div>'+
+        '<small>'+esc(P.d.note||"")+' District pages open in a new tab.</small>'}
+    else if(keys.length){
+      h='<h2>City and county districts in '+esc(P.j.label)+'</h2><div class="lk">'+keys.map(function(k){var d=ds[k];
+        return '<button class="chip" type="button" data-pick="'+esc(k)+'" title="Show '+esc(d.label)+'">'+esc(d.city||d.short)+': '+esc(d.short)+'</button>'}).join("")+'</div>'+
+        '<small>Pick a district to see its curriculum links next to the '+esc(P.j.label)+' standards.'+(stdLink?' State standards: ':'')+'</small>'+(stdLink?'<div class="lk">'+stdLink+'</div>':'')}
+    else if(P.j.kind!=="national"&&stdLink)h='<h2>'+esc(P.j.label)+(P.j.loaded===false?': national standards shown for now':' standards')+'</h2><div class="lk">'+stdLink+'</div><small>No city or county districts are listed for this state yet.</small>';
+    box.innerHTML=h;box.hidden=!h}
+  document.getElementById("distlinks").onclick=function(e){var b=e.target.closest("[data-pick]");if(!b)return;
+    var v=P.state+(b.dataset.pick?"/"+b.dataset.pick:"");try{localStorage.setItem("ec-standards",v)}catch(x){}location.reload()};
 
   function render(){
+    distLinks();
     var setInfo0=S.SETS[setFor(st.subj)]||{name:"NC Standard Course of Study"};
     document.querySelectorAll("#view button").forEach(function(b){b.setAttribute("aria-pressed",b.dataset.v===st.view)});
     document.getElementById("pacerow").hidden=st.view!=="pacing";document.getElementById("listrow").hidden=st.view==="pacing";
