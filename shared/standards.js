@@ -26,7 +26,7 @@
     vahss: {name:"Virginia 2023 History and Social Science SOL", url:"https://www.doe.virginia.gov/teaching-learning-assessment/k-12-standards-instruction/history-and-social-science/standards-of-learning", summary:true},
     mdmath:{name:"Maryland 2025 Mathematics Standards (MCCRS)", url:"https://marylandpublicschools.org/about/pages/dcaa/math/revised-standards.aspx", summary:true},
     mdccrs:{name:"Maryland College and Career Ready Standards for ELA", url:"https://marylandpublicschools.org/programs/pages/ela/mccr.aspx"},
-    mdngss:{name:"Maryland Science Standards (NGSS)", url:"https://marylandpublicschools.org/about/Pages/DCAA/Science/index.aspx"},
+    mdngss:{name:"Maryland Science Standards (NGSS)", url:"https://msde.maryland.gov/academics-0/curriculum-academic-standards"},
     mdss:  {name:"Maryland Social Studies Frameworks", url:"https://marylandpublicschools.org/about/pages/dcaa/social-studies/msss.aspx", summary:true},
     dcss:  {name:"DC Social Studies Standards (2023)", url:"https://osse.dc.gov/page/social-studies-0", summary:true}
   };
@@ -43,8 +43,7 @@
           wcpss:{label:"Wake County Public Schools (WCPSS)", short:"WCPSS", city:"Raleigh",
                note:"WCPSS teaches the NC Standard Course of Study.", url:"https://www.wcpss.net/academics"},
           cms:{label:"Charlotte-Mecklenburg Schools (CMS)", short:"CMS", city:"Charlotte",
-               note:"CMS teaches the NC Standard Course of Study.", url:"https://www.cmsk12.org/academics",
-               links:{all:["K–5 curriculum resources","https://www.cmsk12.org/Page/10634"]}}
+               note:"CMS teaches the NC Standard Course of Study.", url:"https://www.cmsk12.org/academics"}
         }},
     us:{label:"Common Core + NGSS", short:"Common Core", kind:"national", math:"ccss", ela:"ccss", sci:"ngss", ss:"c3",
         note:"Common Core for math and ELA, NGSS for science, and the C3 Framework for social studies (there is no Common Core for social studies)."},
@@ -53,16 +52,16 @@
         districts:{
           lausd:{label:"Los Angeles Unified (LAUSD)", short:"LAUSD", city:"Los Angeles", pace:"ca",
                  note:"LAUSD teaches the California standards: California Common Core for ELA and math, and CA NGSS for science.",
-                 url:"https://www.lausd.org/Page/17834"},
+                 url:"https://www.lausd.org/"},
           sfusd:{label:"San Francisco Unified (SFUSD)", short:"SFUSD", city:"San Francisco", note:"SFUSD teaches the California standards.",
-                 url:"https://www.sfusd.edu/node/474", urlLabel:"SFUSD elementary curriculum"}
+                 url:"https://www.sfusd.edu/learning/curriculum/elementary-school", urlLabel:"SFUSD elementary curriculum"}
         }}
   };
   JURIS.va={label:"Virginia", short:"VA", kind:"state", math:"vamath", ela:"vaela", sci:"vasci", ss:"vahss",
     tests:"SOL tests in reading and math (grades 3–8) and science (grades 5 and 8)",
     districts:{
       fcps:{label:"Fairfax County Public Schools (FCPS)", short:"FCPS", city:"Fairfax", note:"FCPS's Program of Studies is built on the Virginia SOL.",
-            url:"https://www.fcps.edu/academics/elementary-school-k-6",
+            url:"https://www.fcps.edu/academics/elementary",
             links:{math:["FCPS mathematics","https://fcps.edu/academics/academic-overview/mathematics"],ela:["FCPS language arts","https://www.fcps.edu/academics/curriculum/subject-areas/language-arts"]}},
       aps:{label:"Arlington Public Schools (APS)", short:"APS", city:"Arlington", note:"APS teaches the Virginia SOL.",
             url:"https://www.apsva.us/",
@@ -70,8 +69,7 @@
       acps:{label:"Alexandria City Public Schools (ACPS)", short:"ACPS", city:"Alexandria", note:"ACPS teaches the Virginia SOL.",
             url:"https://www.acps.k12.va.us/"},
       rps:{label:"Richmond Public Schools (RPS)", short:"RPS", city:"Richmond", note:"RPS teaches the Virginia SOL.",
-            url:"https://www.rvaschools.net/academics/curriculum-and-instruction",
-            links:{sci:["RPS science curriculum","https://www.rvaschools.net/academics/curriculum-and-instruction/science"]}},
+            url:"https://www.rvaschools.net/academics-2"},
       lcps:{label:"Loudoun County Public Schools (LCPS)", short:"LCPS", city:"Ashburn · Leesburg", note:"LCPS teaches the Virginia SOL.",
             url:"https://www.lcps.org/",
             links:{sci:["LCPS science","https://lcps.org/o/dtl/page/science"]}}
@@ -86,7 +84,7 @@
       pgcps:{label:"Prince George's County Public Schools (PGCPS)", short:"PGCPS", city:"Upper Marlboro", note:"PGCPS teaches the Maryland standards.",
             url:"https://www.pgcps.org/"},
       bcps:{label:"Baltimore City Public Schools", short:"City Schools", city:"Baltimore", note:"City Schools teaches the Maryland standards.",
-            url:"https://baltimorecityschools.org/elementary-school",
+            url:"https://www.baltimorecityschools.org/page/elementary-school",
             links:{all:["City Schools learning guides by grade","https://www.baltimorecityschools.org/documents/departments/academics/learning-guides/825637"]}}
     },
     note:"Maryland's revised math standards (adopted July 2025, in effect 2026–27) use new codes such as 4.NOS.D.9. ELA keeps Common Core codes (revised in 2025 with small wording changes). Science is NGSS. Social studies follows MSDE's grade-level frameworks."};
@@ -99,29 +97,29 @@
     },
     note:"DC uses Common Core for ELA and math, NGSS for science, and its own 2023 social studies standards."};
   JURIS.tx={label:"Texas", short:"TX", kind:"state", loaded:false, math:"ccss", ela:"ccss", sci:"ngss", ss:"c3",
-    stdName:"Texas Essential Knowledge and Skills (TEKS)", stdUrl:"https://tea.texas.gov/teks/",
+    stdName:"Texas Essential Knowledge and Skills (TEKS)", stdUrl:"https://tea.texas.gov/curriculum-and-instruction/texas-essential-knowledge-and-skills-teks",
     note:"Texas teaches its own standards, the TEKS, which aren't loaded here yet, so this shows the national sets instead: Common Core (math and ELA), NGSS (science) and the C3 Framework (social studies). The TEKS link has the exact Texas standards.",
     districts:{
-      hisd:{label:"Houston ISD", short:"HISD", city:"Houston", note:"Houston ISD teaches the TEKS.", url:"https://www.houstonisd.org/Curriculum"},
+      hisd:{label:"Houston ISD", short:"HISD", city:"Houston", note:"Houston ISD teaches the TEKS.", url:"https://www.houstonisd.org/schools-academics/academics/curriculum-2"},
       disd:{label:"Dallas ISD", short:"Dallas ISD", city:"Dallas", note:"Dallas ISD teaches the TEKS.", url:"https://www.dallasisd.org/parents-students/parent-curriculum-support"},
       aisd:{label:"Austin ISD", short:"Austin ISD", city:"Austin", note:"Austin ISD teaches the TEKS.", url:"https://austinisd.org/academics"},
-      saisd:{label:"San Antonio ISD", short:"SAISD", city:"San Antonio", note:"SAISD teaches the TEKS.", url:"https://www.saisd.net/page/curriculum-home"}
+      saisd:{label:"San Antonio ISD", short:"SAISD", city:"San Antonio", note:"SAISD teaches the TEKS.", url:"https://www.saisd.net/page/curriculum-instruction-and-assessment"}
     }};
   JURIS.ny={label:"New York", short:"NY", kind:"state", loaded:false, math:"ccss", ela:"ccss", sci:"ngss", ss:"c3",
-    stdName:"NYS Next Generation Learning Standards", stdUrl:"https://www.nysed.gov/curriculum-instruction/teachers/new-york-state-next-generation-english-language-arts-learning",
+    stdName:"NYS Next Generation Learning Standards", stdUrl:"https://www.nysed.gov/standards-instruction/english-language-arts",
     note:"New York teaches its Next Generation Learning Standards (ELA and math, revised from Common Core) and its own P-12 Science Learning Standards. They aren't loaded here yet, so this shows the closest national sets: Common Core, NGSS and the C3 Framework. In New York, curriculum is decided by each district.",
     districts:{
       nycps:{label:"New York City Public Schools", short:"NYC Public Schools", city:"New York City", note:"NYC Public Schools teaches the New York State standards.",
-             url:"https://teachnyc.net/getting-started/out-of-state-teachers", urlLabel:"Teach NYC: out-of-state teachers"},
+             url:"https://teachnyc.net/certified-teacher/out-of-state", urlLabel:"Teach NYC: out-of-state teachers"},
       rcsd:{label:"Rochester City School District (RCSD)", short:"RCSD", city:"Rochester", note:"RCSD teaches the New York State standards.",
-             url:"https://www.rcsdk12.org/Page/54209"}
+             url:"https://www.rcsdk12.org/departments/english-language-artsintegrated-literacy/nys-next-generation-learning-standards"}
     }};
   JURIS.mi={label:"Michigan", short:"MI", kind:"state", math:"ccss", ela:"ccss", sci:"ngss", ss:"c3",
     stdName:"Michigan K-12 Standards (MDE)", stdUrl:"https://www.michigan.gov/mde/Services/academic-standards",
     note:"Michigan's K-12 standards for math and ELA are the Common Core, and its science standards are built on NGSS, so those codes match. Social studies follows Michigan's own 2019 standards; the C3 Framework shown here is the closest national set.",
     districts:{
       dpscd:{label:"Detroit Public Schools Community District (DPSCD)", short:"DPSCD", city:"Detroit", note:"DPSCD teaches the Michigan K-12 standards.",
-             url:"https://www.detroitk12.org/academics", links:{all:["DPSCD core curriculum","https://www.detroitk12.org/Page/15801"]}},
+             url:"https://www.detroitk12.org/academics"},
       grps:{label:"Grand Rapids Public Schools (GRPS)", short:"GRPS", city:"Grand Rapids", note:"GRPS teaches the Michigan K-12 standards.",
              url:"https://parents.grps.org/article/grps-curriculum-resources-supports"},
       aaps:{label:"Ann Arbor Public Schools (AAPS)", short:"AAPS", city:"Ann Arbor", note:"AAPS teaches the Michigan K-12 standards.",

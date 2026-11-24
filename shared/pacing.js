@@ -8,10 +8,10 @@
     sources:{
       em2:{name:"Eureka Math²", kind:"curriculum", subj:"math",
            note:"Module order from Great Minds, with the standards each module lists. Durham Public Schools uses Eureka Math² for K–5 math.",
-           url:"https://greatminds.org/math/eureka-math-2"},
+           url:"https://greatminds.org/programs/math/eureka-math-2/k-8"},
       im:{name:"Illustrative Mathematics", kind:"curriculum", subj:"math",
           note:"Unit order from Illustrative Mathematics. Standards for each unit are my alignment by unit topic. LAUSD's adopted math program is Illustrative Mathematics.",
-          url:"https://im.kendallhunt.com/K5/teachers/index.html"}
+          url:"https://im.kendallhunt.com/"}
     },
     /* which curriculum is each place's district/default program */
     district:{
@@ -20,7 +20,7 @@
           url:"https://www.dpsnc.net/page/curriculum-and-instruction/"},
       ca:{name:"Los Angeles Unified (LAUSD)", math:"im",
           note:"LAUSD's adopted math program is Illustrative Mathematics; its pacing toolkit is for LAUSD staff. Other subjects: paste your district's guide into My pacing.",
-          url:"https://www.lausd.org/domain/244"},
+          url:"https://www.lausd.org/"},
       us:{name:"Common Core", math:"em2", note:"No district selected; showing Eureka Math² order for math."}
     },
     units:{
