@@ -1454,6 +1454,254 @@ Object.assign(RES,{
 });
 
 })();
+
+/* ===== CHEMICAL CHANGE UNIT · PS.5.1.2 (NCDPI 2023) =====
+   Its own unit in the rail, right under Matter & Energy, with chapter, EOG/CDA/MOY-style practice,
+   activities, games, videos and notes. Official objective: "Carry out investigations to explain whether
+   the mixing of two or more substances results in new substances." */
+(function(){
+const CC = { id:"ps-5-1-2", strand:"Physical Science", c:"--phys", code:"PS.5.1.2", name:"Chemical Change", short:"New substance or not?",
+  std:"Carry out investigations to explain whether the mixing of two or more substances results in new substances.",
+  objs:[
+    ["PS.5.1","Understand the interactions of matter and energy and the changes that occur.","The parent standard. PS.5.1.2 is its mixing objective: when substances are combined, is the result just a mixture, or a brand-new substance?"],
+    ["I can","describe the properties of substances before and after they are mixed.","Color, smell, texture, state (solid, liquid, gas), whether it dissolves, and whether it fizzes. You can only spot a change if you know what you started with."],
+    ["I can","explain that a physical change does not make a new substance.","Cutting, crushing, melting, freezing, boiling, mixing and dissolving change size, shape or state, but the substance is still the same matter."],
+    ["I can","explain that a chemical change makes one or more new substances with new properties.","Baking soda + vinegar makes a gas that was not there before. Milk + vinegar makes solid curds. Iron + air + water makes rust."],
+    ["I can","use evidence to decide whether a new substance formed.","Look for gas bubbles that are not from boiling, a color change, a new solid forming in a liquid, a temperature change, light, or a new smell. One clue is not proof; look for more than one."],
+    ["I can","tell a mixture or solution from a new substance.","In a mixture or solution each part keeps its properties and can be separated (magnet, screen, filter, evaporation). A new substance usually cannot be changed back."],
+    ["I can","carry out a fair investigation and use my data to make a claim.","Change one thing, keep everything else the same, observe before and after, record in a table, and back up the claim with evidence."],
+    ["Connects to","PS.5.1.1, PS.5.1.3","Even when a new substance forms, matter is not lost: a sealed bag weighs the same before and after (5.1.1). Heating and cooling can cause physical changes like melting, and sometimes chemical ones like burning (5.1.3)."]],
+  vocab:["substance","property","mixture","solution","dissolve","physical change","chemical change","new substance","evidence","gas","solid","reactant","rust","conservation of matter","investigation"],
+  acts:[
+    {t:"Mix Lab Stations", obj:"PS.5.1.2", time:"40 min", mat:"Salt, sand, sugar, water, milk, vinegar, baking soda, cups",
+     steps:["Set up 5 stations: salt + water, sand + water, sugar + water, milk + vinegar, baking soda + vinegar.","At each station students record properties BEFORE mixing, predict, mix, then look for bubbles, color change, or a new solid.","Record on a T-chart: New substance / No new substance, with the evidence."],
+     ask:"Which station surprised you? What evidence convinced you a new substance formed?"},
+    {t:"Milk Curds", obj:"PS.5.1.2", time:"30 min", mat:"Warm milk, white vinegar, cups, spoons, coffee filters or paper towels, rubber bands",
+     steps:["Observe and record the properties of the milk and the vinegar.","Stir 1 spoon of vinegar into a half cup of warm milk. Watch for 1 minute.","Pour through a coffee filter. Press out the liquid and observe the solid curds."],
+     ask:"The curds were not in the milk or the vinegar before. Is this a new substance? What is your evidence?"},
+    {t:"Cabbage Color Detective", obj:"PS.5.1.2", time:"40 min", mat:"Red cabbage juice (teacher-made), clear cups, droppers, vinegar, lemon juice, baking soda water, soapy water, plain water",
+     steps:["Pour the same amount of purple cabbage juice into 6 labeled cups.","Add 10 drops of a different liquid to each cup; one cup gets plain water as the control.","Record each color, then add baking soda to the vinegar cup and record again."],
+     ask:"Why did we need a plain-water cup? Is a color change ALWAYS proof of a new substance?"},
+    {t:"Sealed Bag Reaction", obj:"PS.5.1.2 · PS.5.1.1", time:"30 min", mat:"Zip bags, baking soda, vinegar, small cup, kitchen scale",
+     steps:["Put 1 spoon of baking soda in a bag. Set a small cup of vinegar inside without spilling.","Seal the bag and record the weight.","Tip the cup to mix. Record bubbles, the bag puffing up, and how the bag feels.","Weigh again, then open the bag and weigh one more time."],
+     ask:"What evidence shows a new substance formed? Why did the weight stay the same until you opened the bag?"},
+    {t:"Steel Wool Warm-Up", obj:"PS.5.1.2 · PS.5.1.3", time:"30 min + next day", mat:"Fine steel wool (no soap), vinegar, 2 jars with lids, 2 thermometers, gloves",
+     steps:["Soak one piece of steel wool in vinegar for 1 minute and squeeze it out. Leave a second piece dry as the control.","Put each piece in a jar with a thermometer and close the lid.","Record the temperature every minute for 5 minutes. Check the color again tomorrow."],
+     ask:"The soaked steel wool got warm and turned orange-brown. Which two pieces of evidence point to a new substance (rust)?"},
+    {t:"Can We Get It Back?", obj:"PS.5.1.2", time:"30 min + 2 days", mat:"Salt water, sand and water, iron filings and sand, a used baking soda + vinegar cup, magnet, coffee filters, shallow pans",
+     steps:["Try to separate each one: magnet for iron, filter for sand, a pan in the sun for salt water.","Try to get the baking soda and vinegar back from the reacted cup.","Record which original substances came back and which did not."],
+     ask:"Why could we get the salt back but not the baking soda? What does that tell you about mixtures and new substances?"}],
+  games:[
+    {type:"sort", title:"New Substance or Not?", how:"Read each change. Did it make a new substance (chemical change) or not (physical change)?",
+     bins:["New substance (chemical)","No new substance (physical)"],
+     items:[["Baking soda + vinegar fizzing",0],["Milk + vinegar forming curds",0],["A bike chain rusting",0],["Burning a log in a fire pit",0],["Baking cake batter into cake",0],["Frying an egg",0],["Toasting bread until it turns brown",0],["A cut apple turning brown",0],["Salt dissolving in water",1],["Ice cube melting",1],["Water boiling in a pot",1],["Cutting paper into strips",1],["Stirring sugar into lemonade",1],["Mixing sand and pebbles",1],["Crushing a can",1],["Butter melting in a pan",1]]},
+    {type:"sort", title:"Which Evidence?", how:"Which clue that a new substance formed does each observation show?",
+     bins:["Gas bubbles","Color change","New solid forms","Heat or light"],
+     items:[["Fizzing when vinegar is poured on baking soda",0],["Bubbles when an antacid tablet drops in water",0],["Foam rising when yeast is fed sugar",0],["A shiny nail turning orange-brown",1],["Purple cabbage juice turning pink with lemon juice",1],["A banana peel turning brown",1],["White clumps forming when vinegar is stirred into milk",2],["Cloudy bits forming when two clear liquids are mixed",2],["A glow stick lighting up when it is bent",3],["Wet steel wool getting warm in a jar",3],["A campfire giving off heat and light",3]]},
+    {type:"order", title:"Investigate Like a Scientist", how:"Tap the steps of a mixing investigation in order.",
+     items:["Ask a testable question","Predict what will happen","Observe and record each substance's properties","Mix the substances, changing only one thing","Observe and record what happens","Compare before and after for evidence","Make a claim and back it up with evidence"]},
+    {type:"quiz", title:"Chemical Change Challenge", how:"EOG, CDA and MOY-style questions on PS.5.1.2.",
+     qs:[
+      ["Which is the BEST evidence that a new substance formed?",["A gas bubbled out when two liquids at room temperature were mixed","Sugar seemed to disappear in water","Water froze in the freezer","A rock was broken in half"],0,"Gas forming when substances mix (not from boiling) is evidence of a new substance."],
+      ["Salt is stirred into water until it can't be seen. What happened?",["A physical change; the salt is still there and can be recovered","A chemical change; the salt became a new substance","The salt was destroyed","The water turned into salt"],0,"Dissolving makes a solution. If the water evaporates, the salt is left behind."],
+      ["Milk and vinegar are mixed, and white solid clumps form. What kind of change is this?",["Chemical, because a new solid formed","Physical, because nothing new formed","Physical, because milk is a liquid","No change happened"],0,"The curds are a new substance with new properties."],
+      ["Which change can be most easily undone?",["Melting chocolate","Baking a cake","Burning paper","Rusting a nail"],0,"Melted chocolate can cool and become solid again. The others make new substances."],
+      ["Water boils and bubbles form. Why is this NOT evidence of a new substance?",["The bubbles are still water, just as a gas","Boiling always makes a new substance","The bubbles are air from the pot","Water cannot change state"],0,"Boiling is a change of state. The bubbles are water vapor, not a new substance."],
+      ["A sealed bag with baking soda and vinegar weighs 120 g before mixing. After the fizzing stops, it weighs…",["120 g","less than 120 g, because gas is light","more than 120 g, because the bag puffed up","0 g"],0,"In a sealed bag no matter escapes, so the weight stays the same even though a new substance formed."],
+      ["Which is a mixture, NOT a new substance?",["Trail mix","Rust","Ash from a fire","Cooked egg"],0,"Each part of trail mix keeps its own properties and can be picked apart."],
+      ["Which tool would separate iron filings from sand?",["A magnet","A thermometer","A scale","A stopwatch"],0,"Iron is attracted to a magnet; sand is not. Separating parts shows it was only a mixture."],
+      ["A student says, \"The water got cloudy, so a new substance formed.\" What should the student do next?",["Look for more evidence, like whether the cloudy part settles or can be filtered out","Stop, because cloudiness always proves a new substance","Add more water until it is clear","Weigh only the water"],0,"One clue is not proof. Fine sand can make water cloudy without making a new substance."],
+      ["Why do scientists record the properties of substances BEFORE mixing them?",["So they can compare and tell what changed","To make the reaction faster","Because properties never change","So the mixture weighs more"],0,"You can only find new properties if you know the starting ones."],
+      ["Which everyday change makes a new substance?",["A match burning","Snow melting on a sidewalk","Chopping onions","Folding a shirt"],0,"Burning gives off heat and light and leaves ash and smoke, which are new substances."],
+      ["Four cups of vinegar get different amounts of baking soda. To keep the test fair, what should stay the SAME?",["The amount of vinegar in each cup","The amount of baking soda","The number of bubbles","The time each cup fizzes"],0,"Change only one thing (baking soda) and keep everything else, like the vinegar, the same."]]},
+    {type:"quiz", title:"Mixture, Solution, or New Substance?", how:"Decide what happened when the substances were combined.",
+     qs:[
+      ["Sand is stirred into water. After 10 minutes the sand is on the bottom.",["Mixture","Solution","New substance","Nothing changed"],0,"The sand keeps its properties and settles out. It can be filtered."],
+      ["Drink mix powder is stirred into water and spreads evenly through it.",["Solution","New substance","Mixture of solids","Gas"],0,"The powder dissolves evenly, making a solution: still a physical change."],
+      ["An antacid tablet is dropped into water and fizzes until it is gone.",["New substance","Solution only","Mixture only","Change of state"],0,"Bubbles of a new gas form when the tablet reacts with water."],
+      ["Raisins, peanuts, and pretzels are shaken together in a bag.",["Mixture","Solution","New substance","Reaction"],0,"Each piece keeps its own properties and can be picked out."],
+      ["Purple cabbage juice turns bright pink when lemon juice is added.",["New substance (color change from a reaction)","Mixture only","Solution only","Change of state"],0,"The cabbage juice reacts with the lemon juice and changes color."],
+      ["Salt water is left in a sunny pan for 3 days. White crystals are left behind.",["The salt water was a solution, and the salt was recovered","A new substance formed from the water","The salt was destroyed","The water turned into salt"],0,"Evaporation separated the solution. The salt was there all along."]]}],
+  vids:[
+    ["YouTube","Physical and chemical changes","Kid-friendly explainers comparing the two kinds of change.", YT("physical and chemical changes for kids grade 5")],
+    ["YouTube","Signs of a chemical change","Bubbles, color change, new solid, heat and light, with demos.", YT("signs of a chemical reaction for kids")],
+    ["YouTube","Mixtures and solutions","How dissolving is different from making a new substance.", YT("mixtures and solutions for kids science")],
+    ["YouTube","Baking soda and vinegar, explained","What the gas is and why the sealed bag weighs the same.", YT("baking soda and vinegar reaction explained for kids")],
+    ["YouTube","Red cabbage color change","A safe kitchen indicator that changes color.", YT("red cabbage indicator experiment for kids")],
+    ["PBS LearningMedia","Chemical and physical changes (grades 3–5)","Free classroom-ready clips and interactives.", PBS("chemical and physical changes")]]
+};
+const at = TOPICS.findIndex(t=>t.id==="ps-5-1");
+TOPICS.splice(at+1, 0, CC);
+
+READ["ps-5-1-2"] = {
+ intro:"Pour vinegar on baking soda and it fizzes. Stir salt into water and it disappears. Leave a bike out in the rain and it turns orange. Some of these changes make brand-new substances and some don't. In this chapter you will learn how scientists use evidence to decide which is which, just as North Carolina's standard asks: does mixing two or more substances make a new substance?",
+ secs:[
+  ["What the standard asks",`<p>PS.5.1.2 says to <b>carry out investigations to explain whether the mixing of two or more substances results in new substances</b>. That means you will:</p>
+   <ul><li>observe substances <b>before</b> you mix them,</li><li>mix them and observe <b>after</b>,</li><li>look for <b>evidence</b> of a new substance, and</li><li>make a <b>claim</b> backed by that evidence.</li></ul>
+   <p>A <b>substance</b> is one kind of matter with its own <b>properties</b>, such as color, smell, texture, state (solid, liquid, gas), and whether it dissolves or fizzes.</p>`],
+  ["Physical changes: same substance",`<p>In a <b>physical change</b>, matter changes size, shape, or state, but it is still the <b>same substance</b>. No new substance forms.</p>
+   <ul><li><b>Cutting, tearing, crushing</b>: paper torn into strips is still paper.</li><li><b>Melting and freezing</b>: an ice cube and the water it melts into are both water.</li><li><b>Boiling and evaporating</b>: water vapor is still water, as a gas.</li><li><b>Mixing and dissolving</b>: sugar stirred into tea is still sugar.</li></ul>
+   <p>Many physical changes are easy to undo: refreeze the water, let the tea's water evaporate to get the sugar back.</p>`],
+  ["Mixtures and solutions",`<p>A <b>mixture</b> is two or more substances combined where each one <b>keeps its own properties</b>. Trail mix, sand and pebbles, and salad are mixtures.</p>
+   <p>A <b>solution</b> is a mixture where one substance <b>dissolves</b> evenly into another, like salt in water. You can't see the salt, but it is still there and still salty.</p>
+   <p>You can <b>separate</b> mixtures by using differences in their properties:</p>
+   <div class="tablewrap"><table class="dt"><thead><tr><th>Mixture</th><th>Tool or method</th><th>Property used</th></tr></thead><tbody>
+   <tr><td>Iron filings + sand</td><td>Magnet</td><td>Iron is magnetic</td></tr>
+   <tr><td>Pebbles + sand</td><td>Screen or sieve</td><td>Size</td></tr>
+   <tr><td>Sand + water</td><td>Filter paper</td><td>Sand doesn't dissolve</td></tr>
+   <tr><td>Salt + water (solution)</td><td>Evaporation</td><td>Water evaporates; salt is left</td></tr></tbody></table></div>
+   <p><b>Test tip:</b> If the original substances can be separated and still have their properties, it was a mixture, not a new substance.</p>`],
+  ["Chemical changes: something new",`<p>In a <b>chemical change</b>, substances react and form one or more <b>new substances</b> with <b>different properties</b> from what you started with.</p>
+   <ul><li>Baking soda (a solid) + vinegar (a liquid) → a <b>gas</b> (carbon dioxide) and other new substances</li>
+   <li>Milk + vinegar → solid white <b>curds</b></li>
+   <li>Iron + oxygen in the air + water → orange-brown, flaky <b>rust</b></li>
+   <li>Wood + oxygen (burning) → <b>ash</b>, <b>smoke</b>, heat, and light</li>
+   <li>Cake batter + heat → <b>cake</b>, which is spongy and can't be poured</li></ul>
+   <p>Chemical changes are usually <b>hard or impossible to undo</b>. You can't turn ash back into wood or cake back into eggs and flour.</p>`],
+  ["Evidence of a new substance",`<p>You can't see the tiny particles in matter, so scientists look for <b>evidence</b>:</p>
+   <div class="tablewrap"><table class="dt"><thead><tr><th>Evidence</th><th>Example</th></tr></thead><tbody>
+   <tr><td><b>Gas bubbles</b> (not from boiling)</td><td>Baking soda + vinegar fizzes; an antacid tablet fizzes in water</td></tr>
+   <tr><td><b>Color change</b> (not from adding paint or dye)</td><td>A nail rusts; a cut apple browns; cabbage juice turns pink</td></tr>
+   <tr><td><b>New solid forms</b> in a liquid</td><td>Milk + vinegar makes curds</td></tr>
+   <tr><td><b>Temperature change</b> nobody added or took away</td><td>Wet steel wool gets warm; a cold pack gets cold</td></tr>
+   <tr><td><b>Light</b> or a <b>new smell</b></td><td>A glow stick shines; burning wood smells smoky</td></tr></tbody></table></div>`],
+  ["Tricky cases",`<p>Every clue can fool you, so look for <b>more than one piece of evidence</b>.</p>
+   <ul><li><b>Bubbles in boiling water</b> are water vapor. That's a change of state, not a new substance.</li>
+   <li><b>Sugar "disappearing"</b> in water is dissolving. The sugar is still there; taste it, or evaporate the water.</li>
+   <li><b>Color from food coloring</b> is just mixing. Nothing new formed.</li>
+   <li><b>Cloudy water</b> from fine sand will settle or filter out. Cloudiness from two clear liquids that makes a solid that won't dissolve is evidence of a new substance.</li>
+   <li><b>Melting</b> changes the state, not the substance. Melted butter is still butter; burnt butter is a new substance.</li></ul>`],
+  ["Matter is conserved, even when it changes",`<p>Even when a new substance forms, matter is <b>not created or destroyed</b> (PS.5.1.1). The particles rearrange into new substances.</p>
+   <ul><li>In a <b>sealed bag</b>, baking soda + vinegar weigh the <b>same</b> before and after the fizzing.</li>
+   <li>In an <b>open cup</b>, the scale shows <b>less</b> afterward, because the new gas escaped into the air. It didn't disappear; it left the cup.</li></ul>
+   <p><b>Test tip:</b> If a question says the container was <b>sealed</b>, the weight stays the same. If it was <b>open</b> and a gas formed, the weight goes down.</p>`],
+  ["Chemical changes all around North Carolina",`<ul><li><b>Cooking</b>: biscuits rise because baking powder makes gas; toast and pancakes turn brown.</li>
+   <li><b>Rust at the coast</b>: metal on the Outer Banks rusts quickly because of water and salty air.</li>
+   <li><b>Fire</b>: a campfire in the Blue Ridge Mountains turns wood into ash, smoke, heat, and light.</li>
+   <li><b>Your body</b>: digestion breaks food down into new substances your body can use.</li>
+   <li><b>Fireworks</b> on the Fourth of July make light, sound, smoke, and color.</li></ul>`],
+  ["Running a fair investigation",`<p>To find out whether mixing makes a new substance, plan a <b>fair test</b>:</p>
+   <ol><li>Ask a <b>testable question</b>: Does the amount of baking soda change how much gas forms?</li>
+   <li>Change only <b>one thing</b> (the amount of baking soda). Keep everything else the <b>same</b> (amount of vinegar, cup size, temperature).</li>
+   <li>Record properties <b>before</b> and <b>after</b> in a table.</li>
+   <li>Repeat trials and compare.</li>
+   <li>Make a <b>claim</b> and support it with <b>evidence</b> from your data.</li></ol>
+   <p><b>Safety:</b> Wear goggles, don't taste anything in a lab, and only mix what your teacher says to mix.</p>`],
+  ["Getting ready for CDAs, MOY, and the EOG",`<p>District CDAs, the middle-of-year (MOY) benchmark, and the EOG test PS.5.1.2 in a few common ways:</p>
+   <ol class="lvl"><li><b>Pick the evidence</b>: Which observation BEST shows a new substance formed?</li>
+   <li><b>Physical or chemical</b>: sort everyday examples like melting, dissolving, rusting, burning, and baking.</li>
+   <li><b>Investigation data</b>: read a table of observations before and after mixing and choose the claim the data support.</li>
+   <li><b>Mixtures and separating</b>: which tool separates a mixture, and what that tells you.</li>
+   <li><b>Weight questions</b> that connect to PS.5.1.1: sealed vs. open containers.</li>
+   <li><b>Select TWO / tap to place</b> items with more than one right answer.</li></ol>
+   <p><b>Strategies:</b> Underline the evidence words (bubbles, color, solid, warm, light). Ask: Is it the <b>same substance</b> in a new shape or state, or something <b>new</b>? Watch out for boiling bubbles and dissolving, which are physical.</p>`]
+ ],
+ tips:["New substance = <b>chemical change</b>. Same substance in a new size, shape, or state = <b>physical change</b>.",
+  "Evidence of a new substance: <b>gas bubbles</b> (not boiling), <b>color change</b>, <b>new solid</b>, <b>temperature change</b>, <b>light</b> or new smell.",
+  "Dissolving, melting, freezing, boiling, cutting, and mixing are <b>physical</b>.",
+  "Rusting, burning, baking, cooking an egg, and milk + vinegar curds are <b>chemical</b>.",
+  "If you can separate it and get the original substances back, it was a <b>mixture</b>.",
+  "Sealed container: weight stays the <b>same</b>. Open container with a gas: weight goes <b>down</b>.",
+  "One clue is not proof. Look for <b>more than one</b> piece of evidence."]
+};
+
+FIGS["ps-5-1-2"] = {
+ 4: {cap:"Four common clues that mixing made a new substance. Look for more than one before you decide.",
+  svg:`<svg viewBox="0 0 640 210" role="img" aria-label="Four kinds of evidence of a new substance">
+   <rect x="10" y="10" width="145" height="190" rx="14" class="f-panel"/><rect x="168" y="10" width="145" height="190" rx="14" class="f-panel"/>
+   <rect x="326" y="10" width="145" height="190" rx="14" class="f-panel"/><rect x="484" y="10" width="145" height="190" rx="14" class="f-panel"/>
+   <path d="M47,70 L50,150 Q50,160 60,160 L105,160 Q115,160 115,150 L118,70" fill="none" class="s-ink"/>
+   <rect x="51" y="115" width="63" height="42" class="f-sky"/>
+   <g class="f-bubble"><circle cx="65" cy="105" r="6"/><circle cx="85" cy="92" r="5"/><circle cx="100" cy="108" r="7"/><circle cx="78" cy="78" r="4"/><circle cx="95" cy="70" r="5"/></g>
+   <rect x="200" y="66" width="80" height="12" rx="4" class="f-metal"/><path d="M232,78 L248,78 L248,145 L240,165 L232,145 Z" class="f-metal"/><path d="M232,92 L248,92 L248,108 L232,112 Z" fill="#b5602a"/><path d="M232,124 L248,120 L248,138 L232,140 Z" fill="#b5602a"/><circle cx="262" cy="112" r="3" fill="#b5602a"/><circle cx="222" cy="132" r="2.5" fill="#b5602a"/><circle cx="258" cy="150" r="2.5" fill="#b5602a"/>
+   <path d="M363,70 L366,150 Q366,160 376,160 L421,160 Q431,160 431,150 L434,70" fill="none" class="s-ink"/>
+   <rect x="367" y="105" width="63" height="52" class="f-sky"/>
+   <g class="f-snow"><circle cx="383" cy="148" r="6" stroke="var(--ink)"/><circle cx="398" cy="143" r="7" stroke="var(--ink)"/><circle cx="414" cy="149" r="6" stroke="var(--ink)"/><circle cx="392" cy="127" r="5" stroke="var(--ink)"/></g>
+   <g class="f-flame"><path d="M556,160 C530,140 540,110 556,80 C560,100 575,105 572,125 C582,118 584,140 576,160 Z"/></g>
+   <g class="s-heat" fill="none"><path d="M520,90 q6,-8 0,-16 q-6,-8 0,-16"/><path d="M600,90 q6,-8 0,-16 q-6,-8 0,-16"/></g>
+   <g class="lbl"><text x="82" y="40" class="c">Gas bubbles</text><text x="240" y="40" class="c">Color change</text><text x="398" y="40" class="c">New solid</text><text x="556" y="40" class="c">Heat or light</text>
+   <text x="82" y="185" class="c sm">baking soda + vinegar</text><text x="240" y="185" class="c sm">a nail rusting</text><text x="398" y="185" class="c sm">milk + vinegar curds</text><text x="556" y="185" class="c sm">wood burning</text></g></svg>`}
+};
+
+EOG["ps-5-1-2"] = [
+ {t:"The Mystery Powders", obj:"PS.5.1.2", p:`<p>Ms. Patel's class in Mebane, North Carolina, had three white powders labeled A, B, and C. The students knew the powders were baking soda, salt, and cornstarch, but not which was which. They put one spoonful of each powder into two cups. They added 20 mL of water to one cup and 20 mL of vinegar to the other. Here is what they saw.</p>
+  <div class="tablewrap"><table class="dt"><thead><tr><th>Powder</th><th>+ Water</th><th>+ Vinegar</th></tr></thead><tbody>
+  <tr><td>A</td><td>Dissolved; liquid stayed clear</td><td>Dissolved; liquid stayed clear</td></tr>
+  <tr><td>B</td><td>Mostly dissolved; slightly cloudy</td><td>Fizzed with many bubbles; cup felt a little cooler</td></tr>
+  <tr><td>C</td><td>Did not dissolve; thick and pasty</td><td>Did not dissolve; thick and pasty</td></tr></tbody></table></div>
+  <div class="wtk"><div class="wtkh">Words to know</div><dl><div><dt>property</dt><dd>something about a substance you can observe or measure, like color or whether it dissolves</dd></div><div><dt>substance</dt><dd>one kind of matter with its own properties</dd></div></dl></div>`,
+  qs:[
+   ["Which powder made a new substance when it was mixed with vinegar?",["Powder B","Powder A","Powder C","None of them"],0,"Powder B fizzed and got cooler: gas bubbles and a temperature change are evidence of a new substance.","PS.5.1.2"],
+   ["Powder A dissolved in water. What kind of change is this?",["A physical change, because the powder is still there in the water","A chemical change, because the powder disappeared","A chemical change, because the water stayed clear","No change at all"],0,"Dissolving makes a solution. The powder is still there and can be recovered by evaporating the water.","PS.5.1.2"],
+   {k:"ms",n:2,q:"Which TWO observations are evidence that a new substance formed with Powder B and vinegar? Select TWO answers.",o:["Bubbles of gas formed.","The cup felt cooler.","The vinegar was a liquid.","The powder was white.","The students used a spoon."],a:[0,1],why:"A gas forming and a temperature change nobody caused are both evidence of a new substance.",obj:"PS.5.1.2"},
+   ["Why did the class use the same amount of water and vinegar in every cup?",["To make it a fair test so only the powder changed","To make the powders dissolve faster","Because vinegar and water are the same","To make more bubbles"],0,"Keeping everything else the same means any difference comes from the powder.","PS.5.1.2"],
+   ["Based on the data, which powder was most likely baking soda?",["Powder B","Powder A","Powder C","Can't tell"],0,"Baking soda fizzes with vinegar. That is the reaction Powder B showed.","PS.5.1.2"]]},
+ {t:"Saturday Pancake Breakfast", obj:"PS.5.1.2 · PS.5.1.3", p:`<p>Marcus helped his grandmother make pancakes in Greensboro. Here is what they did:</p>
+  <ol><li>They stirred sugar into a cup of warm milk. The sugar disappeared.</li>
+  <li>They melted a stick of butter in a pan.</li>
+  <li>They mixed flour, eggs, the sweet milk, and baking powder into a batter. Small bubbles appeared in the batter.</li>
+  <li>They poured batter onto the hot pan. The pancakes puffed up, turned golden brown, and smelled toasty. They could not be poured anymore.</li>
+  <li>They sliced strawberries for the top.</li></ol>
+  <p>Grandma said, "Once a pancake is cooked, there's no turning it back into batter!"</p>`,
+  qs:[
+   ["Which step shows a chemical change?",["Step 4, cooking the batter","Step 1, stirring in sugar","Step 2, melting butter","Step 5, slicing strawberries"],0,"Cooking made a new substance: it turned brown, smelled different, became solid, and can't be changed back.","PS.5.1.2"],
+   {k:"td",q:"Tap to place each step as a physical change or a chemical change.",bins:["Physical change","Chemical change"],items:[["Sugar dissolving in milk",0],["Butter melting",0],["Slicing strawberries",0],["Batter cooking into a brown pancake",1]],why:"Dissolving, melting, and cutting keep the same substances. Cooking makes new ones.",obj:"PS.5.1.2"},
+   ["What is the BEST evidence that the cooked pancake is a new substance?",["It changed color, smelled different, and can't be turned back into batter","It was warm","It was round","It was on a plate"],0,"Several pieces of evidence together (color, smell, can't be undone) point to a chemical change.","PS.5.1.2"],
+   ["Why is melting the butter a physical change?",["It is still butter, just a liquid instead of a solid","It made a new gas","It turned into oil forever","It changed color"],0,"Melting changes the state, not the substance. Cooled butter becomes solid again.","PS.5.1.3"],
+   ["The bubbles in the batter came from the baking powder reacting with the wet ingredients. What do the bubbles show?",["A gas, which is evidence of a new substance","That the batter was boiling","That air was stirred in, so nothing changed","That the milk was too cold"],0,"The gas formed from a reaction, not boiling, so it is evidence of a new substance.","PS.5.1.2"]]},
+ {t:"Nails at the Beach House", obj:"PS.5.1.2", p:`<p>Lily noticed the nails on her family's beach house deck at Emerald Isle were orange and flaky. She wondered if water and salt make nails rust. She set up four jars with one new, shiny steel nail in each and checked them every day for one week.</p>
+  <div class="tablewrap"><table class="dt"><thead><tr><th>Jar</th><th>What was in the jar</th><th>Day 7 observations</th></tr></thead><tbody>
+  <tr><td>1</td><td>Nail only (dry air)</td><td>Still shiny gray</td></tr>
+  <tr><td>2</td><td>Nail in fresh water</td><td>A few orange-brown spots</td></tr>
+  <tr><td>3</td><td>Nail in salt water</td><td>Covered in orange-brown flakes; orange bits on the bottom</td></tr>
+  <tr><td>4</td><td>Nail in cooking oil</td><td>Still shiny gray</td></tr></tbody></table></div>
+  <div class="wtk"><div class="wtkh">Words to know</div><dl><div><dt>rust</dt><dd>an orange-brown, flaky substance that forms when iron or steel reacts with oxygen and water</dd></div></dl></div>`,
+  qs:[
+   ["What evidence shows a new substance formed in Jar 3?",["The nail changed color and orange flakes formed","The nail stayed in the jar","The water was clear at the start","The jar had a lid"],0,"A color change and a new flaky solid are evidence of a new substance: rust.","PS.5.1.2"],
+   ["Which claim do Lily's data BEST support?",["Water helps nails rust, and salt water makes them rust faster.","Oil makes nails rust fastest.","Dry air makes nails rust.","All nails rust the same amount."],0,"Fresh water caused some rust; salt water caused the most. Dry air and oil caused none.","PS.5.1.2"],
+   ["Why did Lily include Jar 1?",["To compare against a nail with no water","To grow more rust","To make the test take longer","Because the jar was empty"],0,"Jar 1 is the control. It shows what happens without water.","PS.5.1.2"],
+   {k:"ms",n:2,q:"Which TWO ideas help explain why metal at the North Carolina coast rusts quickly? Select TWO answers.",o:["Salty sea air and spray reach the metal.","There is a lot of moisture in the air.","Sand makes metal shiny.","Oil from the ocean covers the metal.","The sun turns metal orange."],a:[0,1],why:"Water and salt both sped up rusting in Lily's data, and the coast has both.",obj:"PS.5.1.2"},
+   ["Can Lily turn the rust back into a shiny nail by drying it off?",["No, rust is a new substance and drying won't change it back","Yes, rust is just wet metal","Yes, if she freezes it","Yes, if she paints it gray"],0,"Chemical changes are hard to undo. Drying removes water but not rust.","PS.5.1.2"]]},
+ {t:"Benchmark Check A: The Sealed Bag (CDA · MOY · EOG style)", obj:"PS.5.1.2 · PS.5.1.1", p:`<p>Jordan's group did an investigation with purple cabbage juice, which changes color when it reacts with some substances.</p>
+  <ol><li>They put 2 spoonfuls of baking soda in a zip-top bag.</li>
+  <li>They poured 30 mL of purple cabbage juice and 30 mL of vinegar into a small cup and set it upright inside the bag.</li>
+  <li>They sealed the bag and weighed it: <b>215 g</b>.</li>
+  <li>They tipped the cup so the liquids poured onto the baking soda.</li></ol>
+  <p><b>Observations:</b> The liquid fizzed, and the bag puffed up. The purple liquid turned blue-green where it touched the baking soda. The bag felt cooler. When the fizzing stopped, the sealed bag weighed <b>215 g</b>. Then they opened the bag, let it sit for 5 minutes, and weighed it again: <b>213 g</b>.</p>`,
+  qs:[
+   {k:"ms",n:3,q:"Which THREE observations are evidence that a new substance formed? Select THREE answers.",o:["The bag puffed up with gas.","The liquid changed color.","The bag felt cooler.","The bag was made of plastic.","The cabbage juice was a liquid.","The bag was sealed."],a:[0,1,2],why:"Gas, a color change, and a temperature change are all evidence of a new substance.",obj:"PS.5.1.2"},
+   ["Why did the sealed bag weigh 215 g both before and after the fizzing?",["No matter could get in or out of the sealed bag","The gas has no weight","The new substances were lighter","The scale was broken"],0,"Matter is conserved. In a sealed bag, the new gas stayed inside.","PS.5.1.1"],
+   ["Why did the bag weigh only 213 g after it was opened?",["Some of the new gas escaped into the air","The baking soda disappeared","Opening the bag made the liquid evaporate instantly","The cabbage juice was destroyed"],0,"The gas formed in the reaction left the bag when it was opened, taking its weight with it.","PS.5.1.1"],
+   ["What is the purpose of the cabbage juice in this investigation?",["It changes color, which helps show that a reaction happened","It makes the bag heavier","It keeps the bag cold","It stops the fizzing"],0,"The color change gives one more piece of evidence that substances reacted.","PS.5.1.2"],
+   {k:"td",q:"Tap to place each event as a physical change or a chemical change.",bins:["Physical change","Chemical change"],items:[["Pouring vinegar into the cup",0],["Baking soda and vinegar fizzing",1],["Purple juice turning blue-green",1],["Tipping the cup over",0]],why:"Pouring and tipping only move matter. Fizzing and color change show new substances forming.",obj:"PS.5.1.2"},
+   ["Jordan wants to test whether MORE baking soda makes MORE gas. What should stay the same?",["The amount of vinegar and cabbage juice","The amount of baking soda","The size of the bubbles","The color at the end"],0,"Change only the baking soda; keep the liquids the same to make it a fair test.","PS.5.1.2"]]},
+ {t:"Benchmark Check B: Separate It or Not? (CDA · MOY · EOG style)", obj:"PS.5.1.2", p:`<p>Mr. Ortiz gave each group in his Durham classroom four cups and asked them to try to get the original substances back.</p>
+  <div class="tablewrap"><table class="dt"><thead><tr><th>Cup</th><th>What was mixed</th><th>What the group tried</th><th>Result</th></tr></thead><tbody>
+  <tr><td>1</td><td>Iron filings + sand</td><td>Moved a magnet over the cup</td><td>Iron filings stuck to the magnet; sand stayed behind</td></tr>
+  <tr><td>2</td><td>Salt + water</td><td>Left it in a sunny window for 3 days</td><td>Water gone; white salt crystals left in the cup</td></tr>
+  <tr><td>3</td><td>Sand + water</td><td>Poured it through a coffee filter</td><td>Sand caught in the filter; clear water below</td></tr>
+  <tr><td>4</td><td>Milk + vinegar</td><td>Poured it through a coffee filter</td><td>Rubbery white curds in the filter; a cloudy yellow liquid below. The curds did not look, feel, or smell like milk or vinegar.</td></tr></tbody></table></div>`,
+  qs:[
+   ["In which cup did mixing make a new substance?",["Cup 4","Cup 1","Cup 2","Cup 3"],0,"The curds had new properties and were not milk or vinegar. That is a new substance.","PS.5.1.2"],
+   {k:"ms",n:2,q:"Which TWO statements about Cup 2 are true? Select TWO answers.",o:["Salt water is a solution.","The salt was still in the water the whole time.","The salt and water made a new substance.","The sun destroyed the water and salt.","The salt crystals are a new substance."],a:[0,1],why:"Salt dissolves to make a solution. Evaporation separated it and the salt was recovered, so no new substance formed.",obj:"PS.5.1.2"},
+   ["Which property did the group use to separate Cup 1?",["Iron is attracted to a magnet","Iron dissolves in water","Sand is magnetic","Iron is lighter than sand"],0,"Iron filings are magnetic; sand is not.","PS.5.1.2"],
+   {k:"td",q:"Tap to place each cup as a mixture or a new substance.",bins:["Mixture (no new substance)","New substance formed"],items:[["Cup 1: iron + sand",0],["Cup 2: salt + water",0],["Cup 3: sand + water",0],["Cup 4: milk + vinegar",1]],why:"Cups 1 to 3 were separated and the original substances came back. Cup 4 made curds with new properties.",obj:"PS.5.1.2"},
+   ["Which conclusion do the results of all four cups BEST support?",["If the original substances can be separated and still have their properties, no new substance formed.","Every time two substances are mixed, a new substance forms.","Filters can always undo chemical changes.","Magnets separate all mixtures."],0,"Separating and getting the originals back shows a mixture. New properties that can't be undone show a new substance.","PS.5.1.2"]]}
+];
+
+RELEASED["ps-5-1-2"] = (RELEASED["ps-5-1"]||[]).filter(x=>x[2]==="PS.5.1.2");
+
+Object.assign(RES,{
+"Milk Curds":{g:"Groups of 3–4",m:["1/2 cup per group|Warm milk (not hot)","2 tbsp per group|White vinegar","2|Clear cups","1|Spoon","1|Coffee filter or paper towel","1|Rubber band"],
+  p:["Before/after chart: Substance · Color · Texture · Smell · State","Claim-evidence-reasoning frame: Did a new substance form?"],prep:"Warm the milk in a microwave until warm to the touch. Have paper towels ready.",safe:"No tasting. Check for milk allergies; students with allergies can observe or wear gloves."},
+"Cabbage Color Detective":{g:"Groups of 4",m:["1 cup per group|Red cabbage juice (teacher-made)","6|Clear cups, labeled","6|Droppers","2 tbsp each|Vinegar, lemon juice, baking soda water, soapy water, plain water","1 tsp|Baking soda"],
+  p:["Color chart: Liquid added · Starting color · Ending color · New substance?","Crayons or colored pencils to record colors"],prep:"Chop half a red cabbage, cover with hot water for 15 minutes, and strain. Keep it in the fridge up to 3 days.",safe:"Goggles on. No tasting. Wipe spills; cabbage juice can stain."},
+"Steel Wool Warm-Up":{g:"Groups of 4",m:["2|Pads of fine steel wool with no soap","1/2 cup|White vinegar","2|Jars with lids","2|Thermometers that fit in the jars","1 pair per student|Gloves"],
+  p:["Data table: Minute · Temperature (soaked) · Temperature (dry)","Line graph template: Temperature over 5 minutes"],prep:"Pull steel wool apart into loose pieces. Test that thermometers fit through the jar mouth.",safe:"Gloves and goggles: steel wool splinters. Wash hands after."},
+"Can We Get It Back?":{g:"Groups of 4",m:["1 cup|Salt water","1 cup|Sand and water","2 tbsp|Iron filings mixed with sand (in a zip bag)","1|Cup from an earlier baking soda + vinegar reaction","1|Magnet (in a zip bag)","2|Coffee filters and funnels","2|Shallow pans"],
+  p:["Separation chart: Mixture · Method · What came back? · Mixture or new substance?"],prep:"Put the magnet inside a zip bag so filings are easy to remove. Set pans in a sunny window.",safe:"Keep iron filings in bags; don't rub eyes."}
+});
+})();
 function resHTML(a){
   const r=RES[a.t]; if(!r) return `<div class="mat"><b>Materials:</b> ${esc(a.mat)}</div>`;
   return `<details class="res" open><summary>Resources needed <span>${esc(r.g)}</span></summary>

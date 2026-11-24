@@ -1067,6 +1067,34 @@ const last = store.get("subject"); if(last && S[last]){ cur=last; $("subject").v
 /* opened from the Science Lab: start on Science and fill in the signed-in name */
 try{ const qp=new URLSearchParams(location.search);
   const qs=qp.get("subject"); if(qs && S[qs]){ cur=qs; $("subject").value=qs; }
+  if(/PS\.5\.1\.2/.test(qp.get("topic")||"")) Object.assign(S.sci,{
+    title:"Did Mixing Make Something New?",
+    look:["Science vocabulary","Evidence","Example","Main idea"],
+    sentences:[
+      {t:"When two or more substances are mixed, sometimes they make a brand-new substance and sometimes they don't.", k:"Main idea", w:"This is the big question of the whole passage. Write it first."},
+      {t:"In a physical change, matter changes size, shape, or state, but it is still the same substance.", k:"Vocabulary", w:"Key word with its meaning: no new substance forms."},
+      {t:"Dissolving salt in water is a physical change, because the salt is still there and can be recovered when the water evaporates.", k:"Example + evidence", w:"Tests love this tricky example. Dissolving looks like disappearing but it is physical."},
+      {t:"In a chemical change, substances react and form a new substance with different properties.", k:"Vocabulary", w:"Second key word. Chemical = something NEW."},
+      {t:"Many people like the smell of fresh pancakes on Saturday mornings.", k:null, w:"True, but it doesn't help explain chemical change. Skip it."},
+      {t:"Evidence of a new substance includes gas bubbles, a color change, a new solid, a temperature change, or light.", k:"Evidence", w:"The list of clues. Write them short: gas, color, solid, temp, light."},
+      {t:"When milk and vinegar are mixed, white solid curds form that were not there before.", k:"Example", w:"A real example of a new solid forming. Good evidence for a test answer."},
+      {t:"Even when a new substance forms, matter is not lost, so a sealed bag weighs the same before and after.", k:"Main idea + connection", w:"Connects to PS.5.1.1: matter is conserved. Sealed = same weight."}
+    ],
+    fields:[
+      ["Topic / question","What are we learning?"],
+      ["Key vocabulary","Word = meaning"],
+      ["Evidence of a new substance","List the clues"],
+      ["Example or evidence","Real-world proof"],
+      ["Physical vs. chemical","Show the difference"],
+      ["I still wonder…","A question to ask"]],
+    model:[
+      ["Topic / question","Does mixing substances make a new substance?"],
+      ["Key vocabulary","physical change = same substance, new size/shape/state; chemical change = NEW substance, new properties"],
+      ["Evidence of a new substance","gas bubbles (not boiling), color change, new solid, temp change, light"],
+      ["Example or evidence","milk + vinegar → curds; baking soda + vinegar → gas; nail → rust"],
+      ["Physical vs. chemical","salt dissolving = physical (can get it back); cake baking = chemical (can't undo)"],
+      ["I still wonder…","Why does a cut apple turn brown?"]]
+  });
   if(/ESS\.5\.1\.4/.test(qp.get("topic")||"")) Object.assign(S.sci,{
     title:"The Sun Powers the Water Cycle",
     sentences:[
