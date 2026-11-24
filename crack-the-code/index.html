@@ -73,13 +73,15 @@ button.ylw{background:var(--yel);border-color:var(--line);color:#16181c}
 .ch{display:flex;justify-content:space-between;font:500 15px Fredoka,sans-serif;color:var(--mute)}
 .code{display:flex;justify-content:center}.code i{width:42px;height:44px;border:2.5px solid var(--line);margin-left:-2.5px}
 .key{margin-top:18px}.key ol{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:4px 16px;font:500 18px Fredoka,sans-serif}
-.key summary{cursor:pointer;font:500 16px Fredoka,sans-serif;min-height:44px;display:flex;align-items:center}
+.keylock{display:flex;flex-wrap:wrap;gap:8px;align-items:end;margin-top:18px}.keylock label{display:grid;gap:4px;font-size:14px;color:var(--mute)}.keylock input{width:9em}
+.kmsg{color:var(--red);font:500 15px Fredoka,sans-serif;min-height:1.4em;margin:6px 0 0}
+.key h2{margin-bottom:8px}
 .note{color:var(--mute);font-size:14px}
 [hidden]{display:none!important}
 @media(max-width:820px){.game{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:420px){.slots button{width:54px;height:58px}.digits b{width:34px;height:40px;font-size:21px}}
 @media (prefers-reduced-motion:reduce){#door,#dial{transition:none}.shake{animation:none}}
-@media print{body{background:#fff;color:#000}.top,.bar,.note,#play{display:none!important}#sets{display:block!important}.grid{grid-template-columns:1fr 1fr}.card{break-inside:avoid}.key{break-before:page}.key ol{display:block}}
+@media print{body{background:#fff;color:#000}.keylock,.kmsg,#hidekey{display:none!important}.top,.bar,.note,#play{display:none!important}#sets{display:block!important}.grid{grid-template-columns:1fr 1fr}.card{break-inside:avoid}.key{break-before:page}.key ol{display:block}}
 </style>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="stylesheet" href="/shared/brand.css">
@@ -258,9 +260,11 @@ button.ylw{background:var(--yel);border-color:var(--line);color:#16181c}
  <label>Set number<input id="seed" inputmode="numeric"></label>
  <button class="go" id="newset">New set</button>
 </div>
-<p class="note">The same set number and level always make the same puzzles, so the whole class can work on one set. Use your browser's Print to print a set; the answer key prints on its own page.</p>
+<p class="note">The same set number and level always make the same puzzles, so the whole class can work on one set. Use your browser's Print to print a set. The answer key prints on its own page only when it has been unlocked with the teacher code.</p>
 <div class="grid" id="grid"></div>
-<details class="key"><summary>Show answer key</summary><ol id="key"></ol></details>
+<form class="keylock" id="keylock"><label>Teacher code for the answer key<input id="tcode" type="password" inputmode="numeric" autocomplete="off"></label><button class="go" type="submit">Show answer key</button></form>
+<p class="kmsg" id="kmsg" aria-live="polite"></p>
+<div class="key" id="keybox" hidden><h2>Answer key</h2><ol id="key"></ol><button type="button" id="hidekey">Hide answer key</button></div>
 </section>
 </div>
 <script>
@@ -399,6 +403,15 @@ function sets(){const lv=$('#slvl').value,n=+$('#cnt').value;let seed=parseInt($
   $('#grid').innerHTML=ps.map((p,i)=>`<article class="card"><div class="ch"><span>Safe ${i+1}</span><span>Set ${tag}</span></div><div class="code">${'<i></i>'.repeat(p.n)}</div>${p.clues.map(c=>`<div class="clue"><div class="digits">${[...c.g].map(d=>`<b>${d}</b>`).join('')}</div><div class="ct">${clueText(c.f)}</div></div>`).join('')}</article>`).join('');
   $('#key').innerHTML=ps.map(p=>`<li>${p.secret}</li>`).join('')}
 $('#grid').addEventListener('click',e=>{const b=e.target.closest('.digits b');if(b)cycle(b)});
+/* answer key: teacher code only. The code itself is not stored in the page, only a scrambled version. */
+const KEY_HASH='cf2d0fe7ea0a7780592080ef0bf415a6043a3d59aa5d72ace64d39c6e0837285';
+function checkTeacher(code){
+  if(window.ClassGate&&ClassGate.checkCode)return ClassGate.checkCode(code);
+  try{return crypto.subtle.digest('SHA-256',new TextEncoder().encode('echols-room2:'+String(code||'').trim())).then(b=>Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('')===KEY_HASH?'ok':'wrong',()=>'wrong')}catch(e){return Promise.resolve('wrong')}}
+function showKey(on){$('#keybox').hidden=!on;$('#keylock').hidden=on;$('#kmsg').textContent='';try{on?sessionStorage.setItem('ctc-key','1'):sessionStorage.removeItem('ctc-key')}catch(e){}}
+$('#keylock').addEventListener('submit',e=>{e.preventDefault();const c=$('#tcode');checkTeacher(c.value).then(r=>{c.value='';if(r==='ok')showKey(true);else $('#kmsg').textContent=r==='wait'?'Too many tries. Wait 10 minutes and try again.':'That code is not right.'})});
+$('#hidekey').onclick=()=>showKey(false);
+try{if(sessionStorage.getItem('ctc-key'))showKey(true)}catch(e){}
 $('#newset').onclick=()=>{$('#seed').value='';sets()};$('#slvl').onchange=sets;$('#cnt').onchange=sets;$('#seed').onchange=sets;
 stats();newLock();
 }
