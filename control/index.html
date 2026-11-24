@@ -51,18 +51,60 @@ input[type=search]{font:16px var(--ec-body);border:2px solid var(--line);border-
 .note{color:var(--muted);font-size:13.5px}
 .tag.lk-open{background:#e3f4eb;color:#0f7a4f;text-decoration:none}.tag.lk-locked{background:#fbe7e5;color:#b3261e;text-decoration:none}.tag.lk-assigned{background:#fff4d6;color:#8a5a00;text-decoration:none}.tag.lk-none{background:#f1f1f1;color:#777}
 .lockall{background:#fbe7e5;border:2px solid #b3261e;border-radius:12px;padding:10px 14px;margin:14px 0 0;font-weight:700;color:#7a1d16}
+
+/* central controls */
+.hub{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:12px;margin:0 0 16px}
+@media(max-width:820px){.hub{grid-template-columns:1fr}}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.panel h2{margin:0;font:800 18px/1.2 var(--ec-display)}
+.panel.lockon{border:2px solid #b3261e;background:#fdf1f0}
+.mrow{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;justify-content:space-between}
+.switch{position:relative;width:70px;height:38px;border-radius:999px;border:0;background:#c9d1da;cursor:pointer;flex:none}
+.switch::after{content:"";position:absolute;top:4px;left:4px;width:30px;height:30px;border-radius:50%;background:#fff;transition:left .15s;box-shadow:0 2px 4px rgba(0,0,0,.2)}
+.switch[aria-checked="true"]{background:#b3261e}.switch[aria-checked="true"]::after{left:36px}
+.switch[disabled]{opacity:.5;cursor:not-allowed}
+.counts{display:flex;flex-wrap:wrap;gap:8px}
+.cnt{border-radius:999px;padding:5px 11px;font:700 13.5px/1.2 var(--ec-body);border:0;cursor:pointer}
+.cnt.o{background:#e3f4eb;color:#0f7a4f}.cnt.l{background:#fbe7e5;color:#b3261e}.cnt.a{background:#fff4d6;color:#8a5a00}.cnt.n{background:#eef2f7;color:#33415c}
+.cnt[aria-pressed="true"]{outline:3px solid var(--ink);outline-offset:1px}
+.links{display:flex;flex-wrap:wrap;gap:8px}
+.lseg{display:inline-flex;border:2px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}
+.lseg button{border:0;background:none;padding:7px 10px;font:700 13.5px/1 var(--ec-body);cursor:pointer;color:var(--ink);min-height:36px}
+.lseg button+button{border-left:2px solid var(--line)}
+.lseg button[aria-pressed="true"][data-m="open"]{background:#0f7a4f;color:#fff}
+.lseg button[aria-pressed="true"][data-m="locked"]{background:#b3261e;color:#fff}
+.lseg button[aria-pressed="true"][data-m="assigned"]{background:#a65d00;color:#fff}
+.lockbox{border-top:1px dashed var(--line);padding-top:8px;display:flex;flex-direction:column;gap:8px}
+.stu{display:flex;flex-wrap:wrap;gap:5px}
+.stu button{border:2px solid var(--line);background:#fff;border-radius:999px;padding:5px 10px;font:600 13.5px/1 var(--ec-body);cursor:pointer;min-height:32px;color:var(--ink)}
+.stu button[aria-pressed="true"]{background:#a65d00;border-color:#a65d00;color:#fff}
+.app.is-locked{background:#fbfbfc}
+.savebar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--ink);color:#fff;padding:12px max(16px,env(safe-area-inset-left,0px)) calc(12px + env(safe-area-inset-bottom,0px));display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:center}
+.savebar .btn{border-color:#fff;background:#fff;color:var(--ink)}
+.savebar .btn.go{background:#f2b705;border-color:#f2b705}
+.gate-in{display:flex;gap:8px;flex-wrap:wrap}
+.gate-in input{font:16px var(--ec-body);border:2px solid var(--line);border-radius:10px;padding:8px 12px;min-height:40px;width:150px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 <link rel="stylesheet" href="/shared/brand.css">
 <script src="/shared/frame.js" data-app="Control Center" data-subject="tool" data-tags="All apps" data-standards="off"></script>
 <script src="apps.js"></script>
 <script src="/shared/student-apps.js"></script>
+<script src="/shared/gate-admin.js"></script>
 </head>
 <body>
 <main>
   <h1>Control Center</h1>
-  <p class="lead">Every interactive app in one place. <b>Open</b> starts the app in a new tab, just as students see it. <b>Copy link</b> gives you the link to post in Google Classroom. <b>Update</b> opens Claude with a request for that app already filled in; type the change and send. Tap the ☆ to pin the apps you use most to the top.</p>
-  <div class="row" style="margin:0 0 16px"><a class="btn pri" href="/control/assign/">🔒 Lock & Assign apps</a><a class="btn gh" href="/my-apps/" target="_blank" rel="noopener">Student My Apps page ↗</a><button class="btn gh" data-copy="" id="copyMy" data-name="My Apps">Copy My Apps link</button></div>
+  <p class="lead">Your one place for every classroom app: open it, copy the link for Google Classroom, see a teacher dashboard, ask Claude for an update, and lock, open or assign it to students. Tap the ☆ to pin the apps you use most.</p>
+  <div class="hub">
+    <section class="panel" id="lockpanel" aria-label="Student access"></section>
+    <section class="panel" aria-label="Links">
+      <h2>Students and setup</h2>
+      <div class="links"><a class="btn pri" href="/my-apps/" target="_blank" rel="noopener">My Apps (students) ↗</a><button class="btn gh" id="copyMy">Copy My Apps link</button></div>
+      <div class="links"><a class="btn gh" href="/control/assign/">Class list, blocked names & GitHub key</a><a class="btn gh" href="/portfolio/" target="_blank" rel="noopener">Portfolio ↗</a></div>
+      <p class="note" style="margin:0">Post <b>My Apps</b> in Google Classroom once. Students see only the apps you open or assign to them.</p>
+    </section>
+  </div>
   <div class="stats" id="stats"></div>
   <div class="controls">
     <div class="row"><input type="search" id="q" placeholder="Search apps, like fractions or summary" aria-label="Search apps">
@@ -70,36 +112,64 @@ input[type=search]{font:16px var(--ec-body);border:2px solid var(--line);border-
     <div class="seg" id="subj" role="group" aria-label="Subject"></div>
   </div>
   <div id="out"></div>
-  <p class="note" style="margin-top:28px">Student links never need to be re-sent: when an app is updated, the same link opens the newest version. Apps marked <b>claude.ai</b> open on claude.ai. <b>Private</b> apps hold student records, so they have no public link. Teacher dashboards are inside each app; open the app and choose Teacher dashboard.</p>
+  <p class="note" style="margin-top:28px">Student links never need to be re-sent: when an app is updated, the same link opens the newest version. Apps marked <b>claude.ai</b> open on claude.ai and can't be locked from here. <b>Private</b> apps hold student records, so they have no public link. Teacher dashboards are inside each app; open the app and choose Teacher dashboard.</p>
 </main>
 <div id="toast" role="status" aria-live="polite"></div>
 <script>
 (function(){
-  var APPS=window.EC_APPS||[];
+  var APPS=window.EC_APPS||[], GA=window.GateAdmin, SA=window.EC_STUDENT_APPS||[];
   var SUBJ=[["all","All apps","var(--ink)"],["pin","★ Pinned","#e0a400"],["ela","Reading & Writing","var(--ela)"],["flu","Fluency & Phonics","var(--flu)"],["math","Math","var(--math)"],
     ["sci","Science & Social Studies","var(--sci)"],["rev","Review & Test Prep","var(--rev)"],["tool","Teacher Tools","var(--tool)"]];
   var COL={ela:"var(--ela)",flu:"var(--flu)",math:"var(--math)",sci:"var(--sci)",rev:"var(--rev)",tool:"var(--tool)"};
   var NAME={};SUBJ.forEach(function(x){NAME[x[0]]=x[1]});
   function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
   var pins=[];try{pins=JSON.parse(ls("ec-control-pins")||"[]")}catch(e){}
-  var st={s:"all",q:"",dash:false};
+  var st={s:"all",q:"",dash:false,lk:""};
   try{Object.assign(st,JSON.parse(sessionStorage.getItem("ec-control")||"{}"))}catch(e){}
   function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
   function full(a){return a.where==="site"?location.origin+a.u:a.u}
+  function tidy(n){n=String(n).trim();return n.charAt(0).toUpperCase()+n.slice(1).toLowerCase()}
   /* Update link: opens a new Claude chat with the request filled in. Type the change at the end, then send. */
   function updURL(a){var where=a.where==="site"?"on my GitHub Pages site derwood67.github.io ("+full(a)+")":a.where==="claude"?"(my claude.ai artifact "+a.u+")":"(my private app; it is a claude.ai artifact)";
     var t="Update my classroom app \""+a.t+"\" "+where+". Keep everything else the same, test it, then push it live.\n\nChange: ";
     return "https://claude.ai/new?q="+encodeURIComponent(t)}
   function isPin(a){return pins.indexOf(a.t)>=0}
-  /* Lock status from /classgate.json (set on Lock & Assign) */
-  var GATE=null, SA=window.EC_STUDENT_APPS||[];
+
+  /* ---------- student access (class gate) ---------- */
+  var GATE=null, SAVED="", editing=GA&&GA.teacher(), live="";
+  function norm(j){j=j||{};var c={blocked:Array.isArray(j.blocked)?j.blocked:["james"],lockAll:!!j.lockAll,roster:Array.isArray(j.roster)?j.roster:[],apps:{}};
+    Object.keys(j.apps||{}).forEach(function(k){var s=j.apps[k]||{};c.apps[k]={mode:/^(open|locked|assigned)$/.test(s.mode)?s.mode:"open",students:Array.isArray(s.students)?s.students.slice():[]}});return c}
+  function sOf(id){return (GATE&&GATE.apps[id])||{mode:"open",students:[]}}
+  function setS(id,s){GATE.apps[id]={mode:s.mode,students:s.students||[]}}
   function gid(a){if(a.where!=="site")return null;var m=SA.filter(function(x){return x.u===a.u||(a.u==="/science-lab/"&&x.id==="science-lab")})[0];return m?m.id:null}
-  function lockTag(a){var id=gid(a);if(!id)return a.s==="tool"?'':'<span class="tag lk-none" title="Only apps on your GitHub site can be locked">No lock</span>';
-    if(!GATE)return '';var s=(GATE.apps||{})[id]||{mode:"open"};
-    if(GATE.lockAll||s.mode==="locked")return '<a class="tag lk-locked" href="/control/assign/" title="Change on Lock & Assign">🔒 Locked</a>';
-    if(s.mode==="assigned")return '<a class="tag lk-assigned" href="/control/assign/" title="'+esc((s.students||[]).join(", ")||"nobody yet")+'">Assigned: '+(s.students||[]).length+'</a>';
-    return '<a class="tag lk-open" href="/control/assign/" title="Change on Lock & Assign">Open</a>'}
-  fetch("/classgate.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(j){GATE=j||{apps:{}};render()}).catch(function(){});
+  function modeOf(a){var id=gid(a);if(!id)return a.s==="tool"?"tool":"none";if(!GATE)return "";if(GATE.lockAll)return "locked";return sOf(id).mode}
+  function dirty(){return GATE&&JSON.stringify(GATE)!==SAVED}
+  function load(){if(!GA)return;GA.load().then(function(j){GATE=norm(j);SAVED=JSON.stringify(GATE);render()})}
+
+  function lockPanel(){var p=document.getElementById("lockpanel");if(!GATE){p.innerHTML='<h2>Student access</h2><p class="note">Loading…</p>';return}
+    var c={open:0,locked:0,assigned:0,none:0};APPS.forEach(function(a){var m=modeOf(a);if(m&&m!=="tool")c[m]=(c[m]||0)+1});
+    p.className="panel"+(GATE.lockAll?" lockon":"");
+    p.innerHTML='<div class="mrow"><h2>'+(GATE.lockAll?'🔒 Every student app is locked':'Student access')+'</h2>'+
+      '<div class="row"><span style="font-weight:700">Lock all apps</span><button class="switch" id="lockAll" role="switch" aria-checked="'+GATE.lockAll+'" aria-label="Lock all apps"'+(editing?'':' disabled title="Enter the teacher code to change"')+'></button></div></div>'+
+      '<div class="counts" role="group" aria-label="Show apps by access">'+[["o","open","Open"],["l","locked","Locked"],["a","assigned","Assigned"],["n","none","No lock (claude.ai)"]].map(function(x){
+        return '<button class="cnt '+x[0]+'" data-lk="'+x[1]+'" aria-pressed="'+(st.lk===x[1])+'">'+c[x[1]]+' '+x[2]+'</button>'}).join("")+(st.lk?'<button class="mini" data-lk="" style="border:0;background:none;text-decoration:underline;font-weight:700;cursor:pointer">Show all</button>':'')+'</div>'+
+      (editing?'<p class="note" style="margin:0">Change any app below with <b>Open</b>, <b>🔒</b> or <b>Assign</b>, then press <b>Save</b>. '+(GA.hasKey()?'Saves go straight to your site.':'No GitHub key on this computer yet, so Save opens Claude to finish it. <a href="/control/assign/">Add the key</a>.')+' <button id="endEdit" style="border:0;background:none;text-decoration:underline;cursor:pointer;font:inherit;color:inherit">Stop editing</button></p>'
+        :'<form class="gate-in" id="tform"><input id="tcode" type="password" inputmode="numeric" autocomplete="off" placeholder="Teacher code" aria-label="Teacher code"><button class="btn pri" type="submit">Edit locks</button><span class="note" id="tmsg" style="align-self:center"></span></form>')}
+
+  function lockUI(a){var id=gid(a),m=modeOf(a);
+    if(m==="tool")return "";
+    if(m==="none")return '<span class="tag lk-none" title="Only apps on your GitHub site can be locked">No lock</span>';
+    if(!GATE)return "";
+    var s=sOf(id);
+    if(!editing){if(m==="locked")return '<span class="tag lk-locked">🔒 Locked</span>';
+      if(m==="assigned")return '<span class="tag lk-assigned" title="'+esc((s.students||[]).map(tidy).join(", ")||"nobody yet")+'">Assigned: '+(s.students||[]).length+'</span>';return '<span class="tag lk-open">Open</span>'}
+    var h='<div class="lockbox"><div class="row" style="justify-content:space-between"><span class="lseg" role="group" aria-label="Access for '+esc(a.t)+'">'+
+      [["open","Open"],["locked","🔒"],["assigned","Assign"]].map(function(x){return '<button data-id="'+esc(id)+'" data-m="'+x[0]+'" aria-pressed="'+(s.mode===x[0])+'" title="'+({open:"Every student",locked:"Nobody",assigned:"Only the students you pick"})[x[0]]+'">'+x[1]+'</button>'}).join("")+'</span>'+
+      (GATE.lockAll?'<span class="note">Locked by Lock all</span>':s.mode==="assigned"?'<span class="note">'+(s.students.length||"No")+' student'+(s.students.length===1?"":"s")+'</span>':'')+'</div>';
+    if(s.mode==="assigned"){var roster=GATE.roster||[],extra=s.students.filter(function(n){return roster.map(GA.first).indexOf(GA.first(n))<0});
+      h+=roster.length||extra.length?'<div class="stu">'+roster.concat(extra).map(function(n){var on=s.students.map(GA.first).indexOf(GA.first(n))>-1;return '<button data-stu="'+esc(GA.first(n))+'" data-id="'+esc(id)+'" aria-pressed="'+on+'">'+(on?"✓ ":"")+esc(tidy(n))+'</button>'}).join("")+'</div>':'';
+      h+='<div class="row"><input class="addn" data-id="'+esc(id)+'" placeholder="Add a name" style="font:15px var(--ec-body);border:2px solid var(--line);border-radius:8px;padding:6px 10px;width:150px"><button class="btn gh" data-add="'+esc(id)+'" style="min-height:34px;padding:6px 10px">Add</button>'+(roster.length?'<button class="btn gh" data-all="'+esc(id)+'" style="min-height:34px;padding:6px 10px">Whole class</button>':'')+'</div>';}
+    return h+'</div>'}
 
   function card(a){
     var where=a.where==="claude"?'<span class="tag cl">claude.ai</span>':a.where==="private"?'<span class="tag pv">Private</span>':'<span class="tag">'+esc(a.u)+'</span>';
@@ -107,10 +177,12 @@ input[type=search]{font:16px var(--ec-body);border:2px solid var(--line);border-
       :'<button class="btn gh" disabled>No public link</button>';
     acts+='<a class="btn gh" href="'+esc(updURL(a))+'" target="_blank" rel="noopener" title="Opens Claude with an update request for this app">Update <span aria-hidden="true">✎</span></a>'+
       '<button class="btn gh" data-copy="'+esc(updURL(a))+'" data-name="update link for '+esc(a.t)+'" title="Copy a link that opens Claude with an update request for this app">Copy update link</button>';
-    return '<article class="app" style="--c:'+COL[a.s]+'"><h3><span>'+esc(a.t)+'</span><button class="pin" data-pin="'+esc(a.t)+'" aria-pressed="'+isPin(a)+'" aria-label="'+(isPin(a)?"Unpin ":"Pin ")+esc(a.t)+'">'+(isPin(a)?"★":"☆")+'</button></h3>'+
-      '<p>'+esc(a.d)+'</p><div class="tags"><span class="tag">'+esc(NAME[a.s])+'</span>'+where+(a.dash?'<span class="tag dash">'+esc(a.dash)+'</span>':'')+lockTag(a)+'</div><div class="acts">'+acts+'</div></article>'}
+    var m=modeOf(a),lk=lockUI(a),inline=editing&&m!=="none"&&m!=="tool";
+    return '<article class="app'+(m==="locked"?' is-locked':'')+'" style="--c:'+COL[a.s]+'"><h3><span>'+esc(a.t)+'</span><button class="pin" data-pin="'+esc(a.t)+'" aria-pressed="'+isPin(a)+'" aria-label="'+(isPin(a)?"Unpin ":"Pin ")+esc(a.t)+'">'+(isPin(a)?"★":"☆")+'</button></h3>'+
+      '<p>'+esc(a.d)+'</p><div class="tags"><span class="tag">'+esc(NAME[a.s])+'</span>'+where+(a.dash?'<span class="tag dash">'+esc(a.dash)+'</span>':'')+(inline?'':lk)+'</div>'+(inline?lk:'')+'<div class="acts">'+acts+'</div></article>'}
 
   function render(){
+    lockPanel();
     document.getElementById("subj").innerHTML=SUBJ.map(function(x){var n=x[0]==="all"?APPS.length:x[0]==="pin"?pins.filter(function(t){return APPS.some(function(a){return a.t===t})}).length:APPS.filter(function(a){return a.s===x[0]}).length;
       return '<button data-s="'+x[0]+'" style="--c:'+x[2]+'" aria-pressed="'+(st.s===x[0])+'">'+esc(x[1])+' · '+n+'</button>'}).join("");
     var q=st.q.trim().toLowerCase();
@@ -118,38 +190,68 @@ input[type=search]{font:16px var(--ec-body);border:2px solid var(--line);border-
       if(st.s==="pin"&&!isPin(a))return false;
       if(st.s!=="all"&&st.s!=="pin"&&a.s!==st.s)return false;
       if(st.dash&&!a.dash)return false;
+      if(st.lk&&modeOf(a)!==st.lk)return false;
       if(q&&(a.t+" "+a.d+" "+NAME[a.s]).toLowerCase().indexOf(q)<0)return false;
       return true});
     var html="";
-    if(!list.length)html='<div class="empty">'+(st.s==="pin"&&!pins.length?"No pinned apps yet. Tap the ☆ on any app to pin it here.":"No apps match. Try another word or subject.")+'</div>';
+    if(!list.length)html='<div class="empty">'+(st.s==="pin"&&!pins.length?"No pinned apps yet. Tap the ☆ on any app to pin it here.":"No apps match. Try another word, subject or access filter.")+'</div>';
     else{
-      var pinned=st.s==="all"&&!q&&!st.dash?list.filter(isPin):[];
+      var pinned=st.s==="all"&&!q&&!st.dash&&!st.lk?list.filter(isPin):[];
       if(pinned.length)html+='<div class="grp"><i style="--c:#e0a400"></i>Pinned</div><div class="grid">'+pinned.map(card).join("")+'</div>';
       SUBJ.slice(2).forEach(function(x){var L=list.filter(function(a){return a.s===x[0]});if(!L.length)return;
         html+='<div class="grp"><i style="--c:'+x[2]+'"></i>'+esc(x[1])+'</div><div class="grid">'+L.map(card).join("")+'</div>'});
     }
-    if(GATE&&GATE.lockAll)html='<div class="lockall">🔒 Every student app is locked right now. <a href="/control/assign/">Change on Lock & Assign</a></div>'+html;
     document.getElementById("out").innerHTML=html;
     document.getElementById("stats").innerHTML=
       '<div class="stat"><b>'+APPS.length+'</b><span>Apps</span></div>'+
       '<div class="stat"><b>'+APPS.filter(function(a){return a.s!=="tool"}).length+'</b><span>Student apps</span></div>'+
       '<div class="stat"><b>'+APPS.filter(function(a){return a.dash}).length+'</b><span>With a teacher dashboard</span></div>'+
       '<div class="stat"><b>'+pins.length+'</b><span>Pinned</span></div>';
+    bar();
     try{sessionStorage.setItem("ec-control",JSON.stringify(st))}catch(e){}
   }
-  var tt;function toast(m){var t=document.getElementById("toast");t.textContent=m;t.classList.add("on");clearTimeout(tt);tt=setTimeout(function(){t.classList.remove("on")},2200)}
+  function bar(){var b=document.getElementById("sbar");
+    if(!dirty()&&!live){if(b)b.remove();document.body.style.paddingBottom="";return}
+    if(!b){b=document.createElement("div");b.id="sbar";b.className="savebar";document.body.appendChild(b)}document.body.style.paddingBottom="80px";
+    if(dirty())b.innerHTML='<b>You have access changes that are not live yet.</b><button class="btn" id="undo">Undo</button><button class="btn go" id="save">Save</button>';
+    else b.innerHTML='<b>'+esc(live)+'</b>'+(live.indexOf("Live")===0?'<button class="btn" id="okb">OK</button>':'');
+    var u=document.getElementById("undo");if(u)u.onclick=function(){GATE=JSON.parse(SAVED);render()};
+    var s=document.getElementById("save");if(s)s.onclick=save;
+    var o=document.getElementById("okb");if(o)o.onclick=function(){live="";bar()}}
+  function save(){var btn=document.getElementById("save");btn.disabled=true;btn.textContent="Saving…";
+    GA.save(GATE).then(function(r){SAVED=JSON.stringify(GATE);live="Saved. Going live in about a minute…";render();
+      GA.waitLive(r.stamp,function(ok){live=ok?"Live on students' Chromebooks now.":"Saved. GitHub is still publishing; it should be live in a few minutes.";bar();if(ok)toast("Live now.")})})
+    .catch(function(e){btn.disabled=false;btn.textContent="Save";
+      if(e.message==="nokey"){window.open(GA.claudeURL(GATE),"_blank","noopener");toast("Opened Claude with your settings. Send the message to make them live.");return}
+      toast(e.message==="key"?"GitHub turned the key down. Make a new one on the setup page.":e.message==="conflict"?"The settings changed somewhere else. Press Save again.":"Couldn't save. Check the internet connection.")})}
+
+  var tt;function toast(m){var t=document.getElementById("toast");t.textContent=m;t.classList.add("on");clearTimeout(tt);tt=setTimeout(function(){t.classList.remove("on")},2600)}
   document.getElementById("subj").onclick=function(e){var b=e.target.closest("button");if(b){st.s=b.dataset.s;render()}};
+  document.getElementById("lockpanel").onclick=function(e){
+    var f=e.target.closest("[data-lk]");if(f){st.lk=st.lk===f.dataset.lk?"":f.dataset.lk;render();return}
+    if(e.target.id==="lockAll"&&editing){GATE.lockAll=!GATE.lockAll;render();return}
+    if(e.target.id==="endEdit"){editing=false;GA.endTeacher();render()}};
+  document.getElementById("lockpanel").onsubmit=function(e){if(e.target.id!=="tform")return;e.preventDefault();var c=document.getElementById("tcode");
+    GA.checkCode(c.value).then(function(r){if(r==="ok"){editing=true;load();render();toast("You can change app access now.")}else{c.value="";document.getElementById("tmsg").textContent=r==="wait"?"Too many tries. Wait 10 minutes.":"That code is not right."}})};
   document.getElementById("out").onclick=function(e){
     var p=e.target.closest("[data-pin]");
     if(p){var t=p.dataset.pin,i=pins.indexOf(t);if(i>=0)pins.splice(i,1);else pins.push(t);ls("ec-control-pins",JSON.stringify(pins));render();return}
+    var m=e.target.closest("[data-m]");if(m&&editing){var s=sOf(m.dataset.id);setS(m.dataset.id,{mode:m.dataset.m,students:s.students||[]});render();return}
+    var sb=e.target.closest("[data-stu]");if(sb&&editing){var id=sb.dataset.id,s2=sOf(id),L=(s2.students||[]).slice(),k=L.map(GA.first).indexOf(sb.dataset.stu);if(k>-1)L.splice(k,1);else L.push(sb.dataset.stu);setS(id,{mode:"assigned",students:L});render();return}
+    var al=e.target.closest("[data-all]");if(al&&editing){setS(al.dataset.all,{mode:"assigned",students:(GATE.roster||[]).map(GA.first)});render();return}
+    var ad=e.target.closest("[data-add]");if(ad&&editing){addName(ad.dataset.add);return}
     var c=e.target.closest("[data-copy]");
     if(c){var v=c.dataset.copy,ok=function(){toast("Link copied: "+c.dataset.name)},bad=function(){window.prompt("Copy this link:",v)};
       try{navigator.clipboard.writeText(v).then(ok,bad)}catch(x){bad()}}
   };
+  function addName(id){var inp=document.querySelector('.addn[data-id="'+id+'"]');if(!inp)return;var v=inp.value.split(/[\n,]+/).map(GA.first).filter(Boolean);if(!v.length)return;
+    var s=sOf(id),L=(s.students||[]).slice();v.forEach(function(n){if(L.map(GA.first).indexOf(n)<0)L.push(n)});setS(id,{mode:"assigned",students:L});render()}
+  document.getElementById("out").onkeydown=function(e){if(e.key==="Enter"&&e.target.classList.contains("addn")){e.preventDefault();addName(e.target.dataset.id)}};
   var cm=document.getElementById("copyMy");cm.onclick=function(){var v=location.origin+"/my-apps/";try{navigator.clipboard.writeText(v).then(function(){toast("Link copied: My Apps")},function(){window.prompt("Copy this link:",v)})}catch(x){window.prompt("Copy this link:",v)}};
   var q=document.getElementById("q");q.value=st.q;q.oninput=function(){st.q=q.value;render()};
   var d=document.getElementById("dashOnly");d.checked=st.dash;d.onchange=function(){st.dash=d.checked;render()};
-  render();
+  window.addEventListener("beforeunload",function(e){if(dirty()){e.preventDefault();e.returnValue=""}});
+  render();load();
 })();
 </script>
 </body>
