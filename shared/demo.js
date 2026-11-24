@@ -45,7 +45,8 @@
       /* the page is going away: don't let the app save demo work on its way out */
       try{Storage.prototype.setItem=function(){};Storage.prototype.removeItem=function(){};Storage.prototype.clear=function(){}}catch(e){}
       var u=location.pathname+location.search.replace(/([?&])ecdemo=1&?/,"$1").replace(/[?&]$/,"")+location.hash;
-      location.replace(u);
+      /* same address (common when it ends in a #section): replace() would only jump within the page, so reload instead */
+      if(u===location.pathname+location.search+location.hash)location.reload();else location.replace(u);
     }
   }
   function begin(){
