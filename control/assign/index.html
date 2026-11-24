@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lock & Assign · Control Center</title>
+<meta name="description" content="Lock every student app at once, lock or open single apps, and assign apps to students.">
+<meta name="robots" content="noindex">
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--ink:#14213a;--muted:#55627a;--line:#dde3ea;--ok:#0f7a4f;--ok-bg:#e3f4eb;--bad:#b3261e;--bad-bg:#fbe7e5;--warn:#a65d00;--warn-bg:#fff4d6;
+  --ela:#7a3fb0;--flu:#c2410c;--math:#1f5fbf;--sci:#0f8a5f;--rev:#b4235a;--tool:#475569}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.5}
+main{max-width:1180px;margin:0 auto;padding:24px max(16px,env(safe-area-inset-left,0px)) 120px}
+h1{font:800 clamp(28px,4.4vw,40px)/1.08 var(--ec-display);letter-spacing:-.02em;margin:0 0 6px}
+h2{font:800 20px/1.2 var(--ec-display);margin:0 0 4px}
+.lead{color:var(--muted);max-width:72ch;margin:0 0 18px}
+.back{display:inline-block;margin-bottom:10px;color:var(--ink);font-weight:700}
+.sec{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin-bottom:16px}
+.hint{color:var(--muted);font-size:14.5px;margin:0 0 12px}
+button,input,textarea{font:inherit}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid #f2b705;outline-offset:2px}
+.btn{font:700 15px/1 var(--ec-body);border-radius:10px;padding:11px 16px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;text-decoration:none;border:2px solid var(--ink);background:#fff;color:var(--ink)}
+.btn.pri{background:var(--ink);color:#fff}
+.btn.danger{border-color:var(--bad);color:var(--bad)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.inp{border:2px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff;color:var(--ink);width:100%;min-width:0}
+textarea.inp{min-height:120px;resize:vertical;line-height:1.5}
+/* gate */
+.gate{max-width:420px;margin:40px auto;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:10px}
+.msg{color:var(--bad);font-weight:700;min-height:1.4em;margin:0}
+/* master switch */
+.master{display:flex;flex-wrap:wrap;gap:14px 20px;align-items:center;justify-content:space-between;border-left:8px solid var(--ok)}
+.master.on{border-left-color:var(--bad);background:var(--bad-bg)}
+.master b{font:800 22px/1.2 var(--ec-display)}
+.switch{position:relative;width:76px;height:42px;border-radius:999px;border:0;background:#c9d1da;cursor:pointer;flex:none}
+.switch::after{content:"";position:absolute;top:5px;left:5px;width:32px;height:32px;border-radius:50%;background:#fff;transition:left .15s;box-shadow:0 2px 4px rgba(0,0,0,.2)}
+.switch[aria-checked="true"]{background:var(--bad)}
+.switch[aria-checked="true"]::after{left:39px}
+/* roster */
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:600 14px/1 var(--ec-body);border:2px solid var(--line);background:#fff;border-radius:999px;padding:7px 12px;cursor:pointer;min-height:36px;color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--c,var(--ink));border-color:var(--c,var(--ink));color:#fff}
+.chip.x{cursor:default}
+/* apps */
+.grp{font:800 13px/1 var(--ec-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:22px 0 10px;display:flex;align-items:center;gap:10px}
+.grp i{width:10px;height:10px;border-radius:50%;background:var(--c)}
+.apps{display:grid;gap:10px}
+.app{background:var(--card);border:1px solid var(--line);border-left:6px solid var(--c);border-radius:14px;padding:12px 16px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 16px;align-items:center}
+.app.locked{background:#f7f8fa}
+.app h3{margin:0;font:800 16.5px/1.25 var(--ec-display)}
+.app .st{font-size:13.5px;color:var(--muted)}
+.app .st.l{color:var(--bad);font-weight:700}.app .st.a{color:var(--warn);font-weight:700}.app .st.o{color:var(--ok);font-weight:700}
+.seg{display:inline-flex;border:2px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.seg button{border:0;background:none;padding:9px 13px;font-weight:700;font-size:14.5px;cursor:pointer;color:var(--ink);min-height:42px}
+.seg button+button{border-left:2px solid var(--line)}
+.seg button[aria-pressed="true"][data-m="open"]{background:var(--ok);color:#fff}
+.seg button[aria-pressed="true"][data-m="locked"]{background:var(--bad);color:#fff}
+.seg button[aria-pressed="true"][data-m="assigned"]{background:var(--warn);color:#fff}
+.who{grid-column:1/-1;border-top:1px dashed var(--line);padding-top:10px;display:flex;flex-direction:column;gap:8px}
+.who .row{gap:8px}
+.mini{font-size:13.5px;font-weight:700;border:0;background:none;color:var(--ink);text-decoration:underline;cursor:pointer;padding:4px}
+@media (max-width:640px){.app{grid-template-columns:1fr}}
+/* save bar */
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--ink);color:#fff;padding:12px max(16px,env(safe-area-inset-left,0px)) calc(12px + env(safe-area-inset-bottom,0px));display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:center}
+.bar .t{font-weight:700}
+.bar .btn{border-color:#fff}
+.bar .btn.pri{background:#f2b705;border-color:#f2b705;color:#14213a}
+.ok{color:var(--ok);font-weight:700}.bad{color:var(--bad);font-weight:700}
+details.setup{border:2px dashed var(--line);border-radius:12px;padding:12px 14px}
+details.setup summary{cursor:pointer;font-weight:700}
+details.setup ol{margin:10px 0;padding-left:22px}
+details.setup li{margin:4px 0}
+code{font-family:var(--ec-mono);font-size:.92em;background:#eef2f7;padding:1px 5px;border-radius:5px}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:999px;font-weight:700;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;max-width:92vw;z-index:20}
+#toast.on{opacity:1}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<link rel="stylesheet" href="/shared/brand.css">
+<script src="/shared/frame.js" data-app="Lock & Assign" data-subject="tool" data-tags="Teacher only" data-standards="off" data-home="/control/"></script>
+<script src="/shared/student-apps.js"></script>
+</head>
+<body>
+<main>
+  <a class="back" href="/control/">← Control Center</a>
+  <h1>Lock & Assign</h1>
+  <p class="lead">Lock every student app with one switch, lock or open single apps, and assign apps to just the students who need them. Students see their apps on <a href="/my-apps/" target="_blank" rel="noopener"><b>My Apps</b></a>. Changes reach open Chromebooks within about a minute of saving.</p>
+  <div id="app"></div>
+</main>
+<div id="toast" role="status" aria-live="polite"></div>
+<script>
+(function(){
+  var REPO="Derwood67/derwood67.github.io", PATH="classgate.json", BRANCH="main";
+  var CODE_HASH="cf2d0fe7ea0a7780592080ef0bf415a6043a3d59aa5d72ace64d39c6e0837285";
+  var KEY_STORE="ec-assign-ghkey", OK_STORE="ec-assign-ok";
+  var APPS=window.EC_STUDENT_APPS||[];
+  var SUBJ=[["ela","Reading & Writing","var(--ela)"],["flu","Fluency & Phonics","var(--flu)"],["math","Math","var(--math)"],["sci","Science & Social Studies","var(--sci)"],["rev","Review & Test Prep","var(--rev)"]];
+  var cfg=null, saved="", sha=null, open={}, liveStamp=null;
+  function $(id){return document.getElementById(id)}
+  function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+  function first(n){return String(n||"").trim().split(/[\s\-_]+/)[0].toLowerCase().replace(/[^a-z]/g,"")}
+  function tidy(n){n=String(n).trim();return n.charAt(0).toUpperCase()+n.slice(1).toLowerCase()}
+  function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);v===null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){return null}}
+  function ss(k,v){try{if(v===undefined)return sessionStorage.getItem(k);v===null?sessionStorage.removeItem(k):sessionStorage.setItem(k,v)}catch(e){return null}}
+  var tt;function toast(m){var t=$("toast");t.textContent=m;t.classList.add("on");clearTimeout(tt);tt=setTimeout(function(){t.classList.remove("on")},2600)}
+  function sha256(t){return crypto.subtle.digest("SHA-256",new TextEncoder().encode(t)).then(function(b){return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0")}).join("")})}
+  function b64(s){return btoa(unescape(encodeURIComponent(s)))}
+  function unb64(s){return decodeURIComponent(escape(atob(String(s).replace(/\s/g,""))))}
+
+  /* ---------- teacher code ---------- */
+  function gate(){
+    $("app").innerHTML='<form class="gate" id="g"><h2>Teacher code</h2><p class="hint">Lock & Assign is for Mr. Echols only.</p><input class="inp" id="code" type="password" inputmode="numeric" autocomplete="off" aria-label="Teacher code"><button class="btn pri" type="submit">Open</button><p class="msg" id="gm" role="alert"></p></form>';
+    setTimeout(function(){$("code").focus()},30);
+    $("g").onsubmit=function(e){e.preventDefault();sha256("echols-room2:"+$("code").value.trim()).then(function(h){
+      if(h===CODE_HASH){ss(OK_STORE,"1");load()}else{$("code").value="";$("gm").textContent="That code is not right."}})}
+  }
+
+  /* ---------- load ---------- */
+  function norm(j){j=j||{};var c={blocked:Array.isArray(j.blocked)?j.blocked:["james"],lockAll:!!j.lockAll,roster:Array.isArray(j.roster)?j.roster:[],apps:{}};
+    APPS.forEach(function(a){var s=(j.apps||{})[a.id]||{};c.apps[a.id]={mode:/^(open|locked|assigned)$/.test(s.mode)?s.mode:"open",students:Array.isArray(s.students)?s.students.slice():[]}});
+    Object.keys(j.apps||{}).forEach(function(k){if(!c.apps[k])c.apps[k]=j.apps[k]});
+    return c}
+  function load(){
+    $("app").innerHTML='<p class="hint">Loading the current settings…</p>';
+    var key=ls(KEY_STORE);
+    var p=key?fetch("https://api.github.com/repos/"+REPO+"/contents/"+PATH+"?ref="+BRANCH,{headers:{Authorization:"Bearer "+key,Accept:"application/vnd.github+json"},cache:"no-store"})
+        .then(function(r){if(!r.ok)throw r;return r.json()}).then(function(j){sha=j.sha;return JSON.parse(unb64(j.content))})
+        .catch(function(){sha=null;return fetchSite()})
+      :fetchSite();
+    p.then(function(j){cfg=norm(j);saved=JSON.stringify(cfg);draw()})
+  }
+  function fetchSite(){return fetch("/"+PATH+"?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():{}}).catch(function(){return {}})}
+
+  /* ---------- draw ---------- */
+  function counts(){var o=0,l=0,a=0;APPS.forEach(function(x){var m=cfg.apps[x.id].mode;if(m==="locked")l++;else if(m==="assigned")a++;else o++});return {o:o,l:l,a:a}}
+  function draw(){
+    var c=counts(), key=ls(KEY_STORE);
+    var h='';
+    h+='<section class="sec master'+(cfg.lockAll?' on':'')+'"><div><b>'+(cfg.lockAll?'🔒 Every app is locked':'Apps follow the settings below')+'</b><p class="hint" style="margin:4px 0 0">'+
+      (cfg.lockAll?'No student can open any app, even assigned ones. Turn this off to go back to the settings below; they are kept.':'Turn this on to lock every student app at once, for example during a test or at the end of the day.')+'</p></div>'+
+      '<div class="row"><span style="font-weight:700">Lock all apps</span><button class="switch" id="lockAll" role="switch" aria-checked="'+cfg.lockAll+'" aria-label="Lock all apps"></button></div></section>';
+    h+='<section class="sec"><h2>My class</h2><p class="hint">First names, one per line or separated by commas. These become the buttons you tap to assign apps.</p>'+
+      '<textarea class="inp" id="roster" placeholder="Ravi&#10;Maya&#10;Jose">'+esc(cfg.roster.join("\n"))+'</textarea>'+
+      '<p class="hint" style="margin:10px 0 6px">Blocked from every app (already in place): '+(cfg.blocked.length?cfg.blocked.map(function(b){return '<span class="chip x">'+esc(tidy(b))+'</span>'}).join(" "):'nobody')+
+      ' <button class="mini" id="editBlocked" type="button">Change</button></p></section>';
+    h+='<section class="sec"><div class="row" style="justify-content:space-between"><div><h2>Apps</h2><p class="hint" style="margin:0"><b class="ok">'+c.o+' open</b> · <b class="bad">'+c.l+' locked</b> · <b style="color:var(--warn)">'+c.a+' assigned</b></p></div>'+
+      '<div class="row"><button class="btn danger" id="allLock" type="button">Lock every app</button><button class="btn" id="allOpen" type="button">Open every app</button></div></div>'+
+      '<p class="hint" style="margin-top:10px"><b>Open</b>: every student. <b>Locked</b>: nobody. <b>Assigned</b>: only the students you tap.</p>';
+    SUBJ.forEach(function(s){var L=APPS.filter(function(a){return a.s===s[0]});if(!L.length)return;
+      h+='<div class="grp" style="--c:'+s[2]+'"><i></i>'+esc(s[1])+'</div><div class="apps">'+L.map(appRow).join("")+'</div>'});
+    h+='</section>';
+    h+='<section class="sec"><h2>Saving to your site</h2>'+
+      (key?'<p class="hint">Your GitHub key is saved in this browser. <b>Save changes</b> updates your site directly. <button class="mini" id="forget" type="button">Remove the key from this browser</button></p>'
+          :'<p class="hint">To save straight from this page, add a GitHub key once on this computer. Without one, <b>Save changes</b> opens Claude with your settings filled in so Claude can push them.</p>')+
+      '<details class="setup"'+(key?'':' open')+'><summary>'+(key?'Replace the GitHub key':'Set up the GitHub key (about 3 minutes, once)')+'</summary><ol>'+
+      '<li>Open <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">GitHub → New fine-grained token</a> and sign in as <b>Derwood67</b>.</li>'+
+      '<li><b>Token name</b>: <code>Room 2 Lock and Assign</code>. <b>Expiration</b>: pick the longest choice (you can make a new one later).</li>'+
+      '<li><b>Repository access</b>: choose <b>Only select repositories</b> and pick <code>derwood67.github.io</code>.</li>'+
+      '<li><b>Permissions</b> → <b>Repository permissions</b> → <b>Contents</b>: <b>Read and write</b>. Leave everything else alone.</li>'+
+      '<li>Click <b>Generate token</b>, copy it, and paste it below. It is kept only in this browser and only works on your app site.</li></ol>'+
+      '<div class="row"><input class="inp" id="ghkey" type="password" autocomplete="off" placeholder="github_pat_…" style="flex:1 1 280px"><button class="btn pri" id="saveKey" type="button">Save key</button></div><p class="msg" id="km"></p></details></section>';
+    $("app").innerHTML=h;
+    wire();bar();
+  }
+  function appRow(a){var s=cfg.apps[a.id], roster=cfg.roster;
+    var st=s.mode==="locked"?'<span class="st l">Locked for everyone</span>':s.mode==="assigned"?'<span class="st a">Assigned to '+(s.students.length?s.students.length+' student'+(s.students.length>1?'s':'')+': '+esc(s.students.map(tidy).join(", ")):'nobody yet')+'</span>':'<span class="st o">Open to everyone</span>';
+    var h='<article class="app'+(s.mode==="locked"?' locked':'')+'" style="--c:'+({ela:"var(--ela)",flu:"var(--flu)",math:"var(--math)",sci:"var(--sci)",rev:"var(--rev)"}[a.s])+'" data-id="'+esc(a.id)+'"><div><h3>'+esc(a.t)+'</h3>'+st+'</div>'+
+      '<div class="seg" role="group" aria-label="'+esc(a.t)+'">'+[["open","Open"],["locked","🔒 Locked"],["assigned","Assigned"]].map(function(m){return '<button type="button" data-m="'+m[0]+'" aria-pressed="'+(s.mode===m[0])+'">'+m[1]+'</button>'}).join("")+'</div>';
+    if(s.mode==="assigned"){
+      var extra=s.students.filter(function(n){return roster.map(first).indexOf(first(n))<0});
+      h+='<div class="who">'+(roster.length?'<div class="chips">'+roster.concat(extra).map(function(n){var on=s.students.map(first).indexOf(first(n))>-1;return '<button type="button" class="chip" data-stu="'+esc(first(n))+'" aria-pressed="'+on+'" style="--c:var(--warn)">'+(on?'✓ ':'')+esc(tidy(n))+'</button>'}).join("")+'</div>'+
+        '<div class="row"><button class="mini" type="button" data-all="1">Everyone in my class</button><button class="mini" type="button" data-all="0">Nobody</button></div>'
+        :'<p class="hint" style="margin:0">Add your class list above to tap names here, or type names: </p>')+
+        '<div class="row"><input class="inp" data-add placeholder="Add a name" style="flex:1 1 180px;max-width:260px"><button class="btn" type="button" data-addbtn>Add</button></div></div>'}
+    return h+'</article>'}
+
+  /* ---------- wiring ---------- */
+  function setStu(id,list){cfg.apps[id].students=list.map(tidy).filter(function(n,i,a){return n&&a.map(first).indexOf(first(n))===i})}
+  function wire(){
+    $("lockAll").onclick=function(){cfg.lockAll=!cfg.lockAll;draw()};
+    $("roster").onchange=function(){cfg.roster=$("roster").value.split(/[\n,]+/).map(function(s){return s.trim()}).filter(Boolean).map(tidy).filter(function(n,i,a){return a.map(first).indexOf(first(n))===i});draw()};
+    $("editBlocked").onclick=function(){var v=window.prompt("First names blocked from every app, separated by commas:",cfg.blocked.map(tidy).join(", "));
+      if(v===null)return;cfg.blocked=v.split(/[\n,]+/).map(first).filter(Boolean);draw()};
+    $("allLock").onclick=function(){APPS.forEach(function(a){cfg.apps[a.id].mode="locked"});draw();toast("Every app set to Locked. Save to make it live.")};
+    $("allOpen").onclick=function(){APPS.forEach(function(a){cfg.apps[a.id].mode="open"});draw();toast("Every app set to Open. Save to make it live.")};
+    document.querySelectorAll(".app").forEach(function(el){var id=el.dataset.id;
+      el.querySelectorAll(".seg button").forEach(function(b){b.onclick=function(){cfg.apps[id].mode=b.dataset.m;draw();
+        if(b.dataset.m==="assigned"){var n=document.querySelector('.app[data-id="'+id+'"]');if(n)n.scrollIntoView({block:"nearest"})}}});
+      el.querySelectorAll("[data-stu]").forEach(function(b){b.onclick=function(){var s=cfg.apps[id].students,f=b.dataset.stu,i=s.map(first).indexOf(f);
+        if(i>-1)s.splice(i,1);else s.push(tidy(f));setStu(id,s);draw()}});
+      el.querySelectorAll("[data-all]").forEach(function(b){b.onclick=function(){setStu(id,b.dataset.all==="1"?cfg.roster.slice():[]);draw()}});
+      var inp=el.querySelector("[data-add]"),ab=el.querySelector("[data-addbtn]");
+      if(inp){var add=function(){var v=inp.value.split(/[\n,]+/).map(function(s){return s.trim()}).filter(Boolean);if(!v.length)return;setStu(id,cfg.apps[id].students.concat(v));draw()};
+        ab.onclick=add;inp.onkeydown=function(e){if(e.key==="Enter"){e.preventDefault();add()}}}
+    });
+    var sk=$("saveKey");if(sk)sk.onclick=testKey;
+    var fg=$("forget");if(fg)fg.onclick=function(){ls(KEY_STORE,null);sha=null;draw();toast("Key removed from this browser.")};
+  }
+  function testKey(){var k=$("ghkey").value.trim();if(!k){$("km").textContent="Paste the key first.";return}
+    $("km").textContent="Checking the key…";
+    fetch("https://api.github.com/repos/"+REPO,{headers:{Authorization:"Bearer "+k,Accept:"application/vnd.github+json"}}).then(function(r){return r.ok?r.json():Promise.reject(r)}).then(function(j){
+      if(!j.permissions||!j.permissions.push){$("km").textContent="That key can see your site but can't save to it. Set Contents to Read and write.";return}
+      ls(KEY_STORE,k);sha=null;draw();toast("Key saved. You can save changes now.")})
+      .catch(function(){$("km").textContent="That key didn't work. Check that you copied all of it and picked derwood67.github.io."})}
+
+  /* ---------- save ---------- */
+  function dirty(){return cfg&&JSON.stringify(cfg)!==saved}
+  function bar(){var b=$("sbar");if(!b){b=document.createElement("div");b.id="sbar";b.className="bar";document.body.appendChild(b)}
+    var d=dirty();
+    b.innerHTML='<span class="t" id="bt">'+(d?'You have changes that are not live yet.':(liveStamp?'✓ Saved. '+liveStamp:'Everything here is live.'))+'</span>'+
+      (d?'<button class="btn" id="undo" type="button">Undo changes</button><button class="btn pri" id="save" type="button">Save changes</button>':'<a class="btn" href="/my-apps/" target="_blank" rel="noopener">Open My Apps ↗</a>');
+    if(d){$("undo").onclick=function(){cfg=JSON.parse(saved);liveStamp=null;draw()};$("save").onclick=save}}
+  function out(){var o={blocked:cfg.blocked.map(first).filter(Boolean),lockAll:cfg.lockAll,roster:cfg.roster,apps:{},updated:new Date().toISOString()};
+    Object.keys(cfg.apps).forEach(function(k){var s=cfg.apps[k];o.apps[k]=s.mode==="assigned"?{mode:"assigned",students:s.students.map(first).filter(Boolean)}:{mode:s.mode}});return o}
+  function save(){var key=ls(KEY_STORE), o=out(), text=JSON.stringify(o,null,2)+"\n";
+    if(!key){var q="Update classgate.json on my GitHub Pages site derwood67.github.io (Lock & Assign settings for my student apps) to exactly this, then push it live:\n\n"+text;
+      window.open("https://claude.ai/new?q="+encodeURIComponent(q),"_blank","noopener");toast("Opened Claude with your settings. Send the message to make them live.");return}
+    $("bt").textContent="Saving…";$("save").disabled=true;
+    var H={Authorization:"Bearer "+key,Accept:"application/vnd.github+json","Content-Type":"application/json"};
+    var getSha=sha?Promise.resolve(sha):fetch("https://api.github.com/repos/"+REPO+"/contents/"+PATH+"?ref="+BRANCH,{headers:H,cache:"no-store"}).then(function(r){return r.ok?r.json():{}}).then(function(j){return j.sha||null});
+    getSha.then(function(s){var body={message:"Lock & Assign: update student app access",content:b64(text),branch:BRANCH};if(s)body.sha=s;
+      return fetch("https://api.github.com/repos/"+REPO+"/contents/"+PATH,{method:"PUT",headers:H,body:JSON.stringify(body)})})
+    .then(function(r){if(r.status===409||r.status===422){sha=null;throw new Error("conflict")}if(r.status===401||r.status===403)throw new Error("key");if(!r.ok)throw new Error("other");return r.json()})
+    .then(function(j){sha=j.content&&j.content.sha;saved=JSON.stringify(cfg);liveStamp="Going live…";bar();waitLive(o.updated)})
+    .catch(function(e){var m=e.message==="key"?"GitHub turned the key down. It may have expired; make a new one below.":e.message==="conflict"?"The settings changed somewhere else. Press Save again.":"Couldn't save. Check the internet connection and try again.";
+      $("bt").innerHTML='<span style="color:#ffb4ab">'+esc(m)+'</span>';var s=$("save");if(s)s.disabled=false})}
+  /* GitHub Pages takes about a minute to publish; watch for the new settings on the live site. */
+  function waitLive(stamp){var tries=0;(function poll(){tries++;
+    fetch("/"+PATH+"?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():{}}).then(function(j){
+      if(j.updated===stamp){liveStamp="Live on students' Chromebooks now.";bar();toast("Live now.");return}
+      if(tries<40)setTimeout(poll,6000);else{liveStamp="Saved. GitHub is still publishing; it should be live in a few minutes.";bar()}}).catch(function(){if(tries<40)setTimeout(poll,6000)})})()}
+  window.addEventListener("beforeunload",function(e){if(dirty()){e.preventDefault();e.returnValue=""}});
+
+  if(ss(OK_STORE)==="1")load();else gate();
+})();
+</script>
+</body>
+</html>

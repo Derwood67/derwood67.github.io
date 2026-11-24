@@ -1,3 +1,6 @@
 {
-  "blocked": ["james"]
+  "blocked": ["james"],
+  "lockAll": false,
+  "roster": [],
+  "apps": {}
 }

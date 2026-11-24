@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>My Apps · Mr. Echols' Room 2</title>
+<meta name="description" content="Students sign in with their first name to see the apps Mr. Echols has opened or assigned to them.">
+<meta name="robots" content="noindex">
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--ink:#14213a;--muted:#55627a;--line:#dde3ea;--ok:#0f7a4f;--warn:#a65d00;
+  --ela:#7a3fb0;--flu:#c2410c;--math:#1f5fbf;--sci:#0f8a5f;--rev:#b4235a;--tool:#475569}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-size:17px;line-height:1.5}
+main{max-width:1040px;margin:0 auto;padding:26px max(16px,env(safe-area-inset-left,0px)) 70px}
+h1{font:800 clamp(28px,5vw,42px)/1.08 var(--ec-display);letter-spacing:-.02em;margin:0 0 6px}
+h2{font:800 20px/1.2 var(--ec-display);margin:28px 0 12px;display:flex;align-items:center;gap:10px}
+.lead{color:var(--muted);max-width:62ch;margin:0 0 18px}
+.signin{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;max-width:460px;display:flex;flex-direction:column;gap:10px}
+.signin label{font-weight:700}
+.signin input{font:inherit;font-size:20px;padding:12px 14px;border:2px solid var(--line);border-radius:10px;width:100%}
+.signin input:focus,button:focus-visible,a:focus-visible{outline:3px solid #f2b705;outline-offset:2px}
+.btn{font:700 17px/1 var(--ec-body);border:0;border-radius:10px;padding:13px 18px;background:var(--ink);color:#fff;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:46px}
+.btn.gh{background:#fff;color:var(--ink);border:2px solid var(--line)}
+.msg{color:#a83226;min-height:1.4em;margin:0;font-weight:700}
+.who{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 16px}
+.who b{font:800 22px/1.1 var(--ec-display)}
+.who .sp{flex:1}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.app{background:var(--card);border:1px solid var(--line);border-left:6px solid var(--c);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px;color:var(--ink);text-decoration:none;min-height:150px}
+.app:hover{border-color:var(--c);box-shadow:0 6px 18px rgba(20,33,58,.1)}
+.app h3{margin:0;font:800 18px/1.25 var(--ec-display)}
+.app p{margin:0;color:var(--muted);font-size:14.5px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.app .go{margin-top:auto;font-weight:700;color:var(--c)}
+.pill{font:700 12px/1 var(--ec-mono);letter-spacing:.04em;text-transform:uppercase;padding:5px 9px;border-radius:999px;background:#fff4d6;color:#6b4e00;align-self:flex-start}
+.empty{background:#fff;border:1px dashed var(--line);border-radius:14px;padding:22px;color:var(--muted);text-align:center}
+.lockall{background:#fff;border:2px solid var(--warn);border-radius:16px;padding:22px;display:flex;gap:14px;align-items:center}
+.lockall .i{font-size:2.4rem;line-height:1}
+.note{color:var(--muted);font-size:14px;margin-top:26px}
+</style>
+<link rel="stylesheet" href="/shared/brand.css">
+<script src="/shared/frame.js" data-app="My Apps" data-subject="tool" data-tags="Mr. Echols' Room 2" data-standards="off"></script>
+<script src="/shared/student-apps.js"></script>
+</head>
+<body>
+<main>
+  <h1>My Apps</h1>
+  <p class="lead">Type your first name to see the apps Mr. Echols has opened for you. Apps assigned to you are at the top.</p>
+  <div id="out"></div>
+  <p class="note">Don't see an app you need? It may be locked right now. Check with Mr. Echols. This page updates by itself.</p>
+</main>
+<script>
+(function(){
+  var APPS=window.EC_STUDENT_APPS||[];
+  var NAME_KEY="echols-classgate-name", LOCK_KEY="echols-classgate-lock";
+  var COL={ela:"var(--ela)",flu:"var(--flu)",math:"var(--math)",sci:"var(--sci)",rev:"var(--rev)",tool:"var(--tool)"};
+  var CFG={blocked:["james"],lockAll:false,apps:{}}, loaded=false;
+  function ssGet(k){try{return sessionStorage.getItem(k)}catch(e){return null}}
+  function ssSet(k,v){try{v===null?sessionStorage.removeItem(k):sessionStorage.setItem(k,v)}catch(e){}}
+  function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
+  function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+  function first(n){return String(n||"").trim().split(/[\s\-_]+/)[0].toLowerCase().replace(/[^a-z]/g,"")}
+  function tidy(n){return String(n).replace(/\s+/g," ").trim().split(" ").map(function(w){return w.charAt(0).toUpperCase()+w.slice(1)}).join(" ")}
+  function setting(id){var a=CFG.apps||{};if(a[id])return a[id];var base=id.split(":")[0];return a[base]||{mode:"open"}}
+  function blocked(n){return (CFG.blocked||[]).map(first).indexOf(first(n))>-1}
+
+  function signIn(){
+    var o=document.getElementById("out");
+    o.innerHTML='<form class="signin" id="f" autocomplete="off"><label for="nm">Your first name</label><input id="nm" maxlength="30" autocapitalize="words" placeholder="First name"><button class="btn" type="submit">Show my apps</button><p class="msg" id="msg" role="alert"></p></form>';
+    var i=document.getElementById("nm");setTimeout(function(){i.focus()},30);
+    document.getElementById("f").onsubmit=function(e){e.preventDefault();var raw=i.value.replace(/\s+/g," ").trim();
+      if(!/^[A-Za-zÀ-ɏ][A-Za-zÀ-ɏ .'\-]{0,29}$/.test(raw)){document.getElementById("msg").textContent="Please type your first name using letters.";return}
+      ssSet(NAME_KEY,tidy(raw));render()};
+  }
+  function card(a,assigned){
+    return '<a class="app" style="--c:'+COL[a.s]+'" href="'+esc(a.u)+'">'+(assigned?'<span class="pill">Assigned to you</span>':'')+
+      '<h3>'+esc(a.t)+'</h3><p>'+esc(a.d)+'</p><span class="go">Open →</span></a>'}
+  function render(){
+    var n=ssGet(NAME_KEY), o=document.getElementById("out");
+    if(!n){if(!document.getElementById("f"))signIn();return}
+    if(lsGet(LOCK_KEY)||blocked(n)){o.innerHTML='<div class="empty"><b>Apps are not available to you right now.</b><br>Please check with Mr. Echols.</div>';return}
+    var me=first(n), mine=[], open=[], locked=0;
+    APPS.forEach(function(a){var s=setting(a.id);
+      if(CFG.lockAll||s.mode==="locked"){locked++;return}
+      if(s.mode==="assigned"){if((s.students||[]).map(first).indexOf(me)>-1)mine.push(a);else locked++;return}
+      open.push(a)});
+    var html='<div class="who"><span>Signed in as</span><b>'+esc(n)+'</b><span class="sp"></span><button class="btn gh" type="button" id="out-btn">Not you? Sign out</button></div>';
+    if(CFG.lockAll)html+='<h2>&nbsp;</h2><div class="lockall"><span class="i" aria-hidden="true">🔒</span><div><b>All apps are locked right now.</b><br>Mr. Echols will open them when it’s time. This page will update by itself.</div></div>';
+    else if(!mine.length&&!open.length)html+='<h2>&nbsp;</h2><div class="empty">No apps are open for you right now. Check with Mr. Echols.</div>';
+    else{
+      if(mine.length)html+='<h2>📋 Assigned to you</h2><div class="grid">'+mine.map(function(a){return card(a,true)}).join("")+'</div>';
+      if(open.length)html+='<h2>'+(mine.length?'More apps':'Your apps')+'</h2><div class="grid">'+open.map(function(a){return card(a,false)}).join("")+'</div>';
+    }
+    if(!loaded)html+='<p class="note">Checking which apps are open…</p>';
+    o.innerHTML=html;
+    document.getElementById("out-btn").onclick=function(){ssSet(NAME_KEY,null);render()};
+  }
+  function refresh(){if(!window.fetch){loaded=true;render();return}
+    fetch("/classgate.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(j){
+      if(j){CFG={blocked:Array.isArray(j.blocked)?j.blocked:CFG.blocked,lockAll:!!j.lockAll,apps:(j.apps&&typeof j.apps==="object")?j.apps:{}}}
+      loaded=true;if(ssGet(NAME_KEY))render()}).catch(function(){loaded=true;if(ssGet(NAME_KEY))render()})}
+  render();refresh();setInterval(refresh,30000);
+  document.addEventListener("visibilitychange",function(){if(!document.hidden)refresh()});
+})();
+</script>
+</body>
+</html>

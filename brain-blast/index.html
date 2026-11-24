@@ -139,7 +139,7 @@ select.pill{max-width:230px;color:var(--ink);appearance:auto}
       <button class="pill" id="addBtn">+ Add team</button>
       <button class="pill" id="randBtn">Random pick</button>
       <button class="pill" id="voiceBtn" aria-pressed="true">Voice: On</button>
-      <select class="pill" id="voiceSel" aria-label="Host accent"></select>
+      <select class="pill" id="voiceSel" aria-label="Host voice" disabled title="Locked. Mr. Echols can change the host voice."></select><button class="pill" id="voiceLock" title="Teacher: change the host voice">🔒 Voice</button>
       <button class="pill" id="introBtn">🎤 Intro</button>
       <button class="pill" id="newGame">New game</button>
     </div>
@@ -262,7 +262,7 @@ let accent="us";
 function bestFor(k){const A=ACCENTS[k];const pool=voices.filter(v=>A.lang.test(v.lang.replace("_","-"))).sort((x,y)=>rank(x)-rank(y));
   return pool.find(v=>A.male.test(v.name))||null}
 function loadVoices(){if(!synth)return;voices=synth.getVoices();if(!voices.length)return;
-  let saved="a:us";try{saved=localStorage.getItem("bb-voice2")||"a:us"}catch(e){}
+  let saved="a:us";try{saved=localStorage.getItem("bb-voice2")||"a:us";if(localStorage.getItem("bb-voice-teacher")!=="1"&&!isEnglishVal(saved))saved="a:us"}catch(e){}
   const sel=$("voiceSel");sel.innerHTML="";
   const g1=document.createElement("optgroup");g1.label="Host accents";
   Object.entries(ACCENTS).forEach(([k,A])=>{const v=bestFor(k),o=document.createElement("option");o.value="a:"+k;
@@ -272,6 +272,12 @@ function loadVoices(){if(!synth)return;voices=synth.getVoices();if(!voices.lengt
     const o=document.createElement("option");o.value="v:"+v.name;
     o.textContent=(rank(v)<3?"★ ":"")+v.name.replace(/Microsoft |Google |Online |\(Natural\)/g,"").replace(/\s+-\s+/," · ").trim().slice(0,40);g2.appendChild(o)});
   sel.append(g1,g2);applyVoice(saved)}
+/* Only Mr. Echols can change the host voice. English is the default; other languages and accents need the teacher code. */
+const VOICE_CODE="cf2d0fe7ea0a7780592080ef0bf415a6043a3d59aa5d72ace64d39c6e0837285";
+function isEnglishVal(val){if(!val||val.startsWith("a:"))return /^a:(us|tt|jm)$/.test(val||"a:us");const v=voices.find(x=>x.name===val.slice(2));return !v||/^en/i.test(v.lang)}
+function voiceUnlocked(){try{return sessionStorage.getItem("bb-voice-unlock")==="1"}catch(e){return false}}
+function showVoiceLock(){const u=voiceUnlocked(),sel=$("voiceSel"),b=$("voiceLock");sel.disabled=!u;b.textContent=u?"🔓 Lock voice":"🔒 Voice";
+  sel.title=u?"Pick the host voice":"Locked. Mr. Echols can change the host voice.";b.title=u?"Lock the voice menu again":"Teacher: change the host voice"}
 function applyVoice(val){
   let v=null;
   if(val.startsWith("a:")){accent=val.slice(2);v=ACCENTS[accent]&&bestFor(accent)}
@@ -407,8 +413,14 @@ $("introBtn").onclick=()=>{interacted=true;intro()};
 document.addEventListener("pointerdown",()=>{interacted=true},{once:true,capture:true});
 document.addEventListener("keydown",()=>{interacted=true},{once:true,capture:true});
 $("voiceBtn").onclick=()=>{voiceOn=!voiceOn;$("voiceBtn").setAttribute("aria-pressed",String(voiceOn));$("voiceBtn").textContent="Voice: "+(voiceOn?"On":"Off");if(voiceOn)speak($("bubble").textContent);else synth&&synth.cancel()};
-$("voiceSel").onchange=e=>{const val=applyVoice(e.target.value);try{localStorage.setItem("bb-voice2",val)}catch(_){}applause(3.5);setTimeout(()=>speak(`Hi, I'm ${HOST}, and this is Brain Blast Live!`),600)};
-if(synth){loadVoices();synth.onvoiceschanged=loadVoices}else{$("voiceBtn").hidden=true;$("voiceSel").hidden=true}
+$("voiceSel").onchange=e=>{if(!voiceUnlocked()){loadVoices();return}const val=applyVoice(e.target.value);try{localStorage.setItem("bb-voice2",val);localStorage.setItem("bb-voice-teacher","1")}catch(_){}applause(3.5);setTimeout(()=>speak(`Hi, I'm ${HOST}, and this is Brain Blast Live!`),600)};
+if(synth){loadVoices();synth.onvoiceschanged=loadVoices}else{$("voiceBtn").hidden=true;$("voiceSel").hidden=true;$("voiceLock").hidden=true}
+$("voiceLock").onclick=async()=>{
+  if(voiceUnlocked()){try{sessionStorage.removeItem("bb-voice-unlock")}catch(e){}showVoiceLock();return}
+  const c=window.prompt("Teacher code to change the host voice:");if(c===null)return;
+  let h="";try{const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode("echols-room2:"+c.trim()));h=[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}catch(e){}
+  if(h===VOICE_CODE){try{sessionStorage.setItem("bb-voice-unlock","1")}catch(e){}showVoiceLock();$("voiceSel").focus()}else alert("That code is not right.")};
+showVoiceLock();
 loadRoster().forEach(addPlayer);setMode(false);
 </script>
 

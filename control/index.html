@@ -59,6 +59,7 @@ input[type=search]{font:16px var(--ec-body);border:2px solid var(--line);border-
 <main>
   <h1>Control Center</h1>
   <p class="lead">Every interactive app in one place. <b>Open</b> starts the app in a new tab, just as students see it. <b>Copy link</b> gives you the link to post in Google Classroom. <b>Update</b> opens Claude with a request for that app already filled in; type the change and send. Tap the ☆ to pin the apps you use most to the top.</p>
+  <div class="row" style="margin:0 0 16px"><a class="btn pri" href="/control/assign/">🔒 Lock & Assign apps</a><a class="btn gh" href="/my-apps/" target="_blank" rel="noopener">Student My Apps page ↗</a><button class="btn gh" data-copy="" id="copyMy" data-name="My Apps">Copy My Apps link</button></div>
   <div class="stats" id="stats"></div>
   <div class="controls">
     <div class="row"><input type="search" id="q" placeholder="Search apps, like fractions or summary" aria-label="Search apps">
@@ -132,6 +133,7 @@ input[type=search]{font:16px var(--ec-body);border:2px solid var(--line);border-
     if(c){var v=c.dataset.copy,ok=function(){toast("Link copied: "+c.dataset.name)},bad=function(){window.prompt("Copy this link:",v)};
       try{navigator.clipboard.writeText(v).then(ok,bad)}catch(x){bad()}}
   };
+  var cm=document.getElementById("copyMy");cm.onclick=function(){var v=location.origin+"/my-apps/";try{navigator.clipboard.writeText(v).then(function(){toast("Link copied: My Apps")},function(){window.prompt("Copy this link:",v)})}catch(x){window.prompt("Copy this link:",v)}};
   var q=document.getElementById("q");q.value=st.q;q.oninput=function(){st.q=q.value;render()};
   var d=document.getElementById("dashOnly");d.checked=st.dash;d.onchange=function(){st.dash=d.checked;render()};
   render();

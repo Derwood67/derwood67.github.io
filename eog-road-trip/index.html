@@ -110,17 +110,20 @@ td.code{font-family:var(--display);font-weight:800;white-space:nowrap}
 <script src="/shared/frame.js" data-guest="#name" data-app="Murphy to Manteo EOG Road Trip" data-subject="rev" data-tags="Grades 4–5|Reading · Math"></script>
 </head>
 <body>
-<!-- Class sign-in gate: first-name sign-in, blocked names, teacher unlock. The live blocked list is /classgate.json -->
+<!-- Class sign-in gate: first-name sign-in, blocked names, locked and assigned apps, teacher unlock. Live settings: /classgate.json (edited from Control Center → Lock & Assign). Source: /shared/classgate-block.html -->
 <style>
 #cg-ov{position:fixed;inset:0;z-index:2147483000;background:#141c24;display:flex;align-items:center;justify-content:center;padding:16px;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
 #cg-ov *{box-sizing:border-box}
 #cg-ov .cg-card{background:#fff;color:#1b2420;border-radius:14px;max-width:420px;width:100%;padding:24px;display:flex;flex-direction:column;gap:12px;box-shadow:0 12px 32px rgba(0,0,0,.35);font-size:18px;line-height:1.45}
 #cg-ov h2{margin:0;font-size:1.45rem;line-height:1.2}
 #cg-ov p{margin:0}
+#cg-ov a{color:#0b6b4a;font-weight:700}
 #cg-ov label{font-weight:700}
 #cg-ov input{font:inherit;width:100%;padding:12px;border:2px solid #c9d1cc;border-radius:8px;background:#f6f8f6;color:#1b2420}
 #cg-ov input:focus{outline:3px solid #f2c230;outline-offset:1px}
 #cg-ov button{font:inherit;font-weight:700;border:0;border-radius:8px;padding:12px 16px;background:#0b6b4a;color:#fff;cursor:pointer}
+#cg-ov button.cg-alt{background:#e7ece9;color:#1b2420}
+#cg-ov .cg-icon{font-size:2.2rem;line-height:1}
 #cg-ov .cg-msg{min-height:1.4em;color:#a83226;font-size:.95rem}
 #cg-ov .cg-small{font-size:.9rem;color:#55625b}
 #cg-ov details{border-top:1px solid #e1e6e2;padding-top:10px}
@@ -132,6 +135,7 @@ td.code{font-family:var(--display);font-weight:800;white-space:nowrap}
 <script>
 (function(){
   var BLOCKED=["james"];          /* fallback list; /classgate.json on the site replaces it when it loads */
+  var CFG={lockAll:false,apps:{}}; /* locked and assigned apps; filled in from /classgate.json */
   var CODE_HASH="cf2d0fe7ea0a7780592080ef0bf415a6043a3d59aa5d72ace64d39c6e0837285";  /* scrambled teacher code; the code itself is not stored in this page */
   var TRY_KEY="echols-classgate-tries";
   function sha(t){return crypto.subtle.digest("SHA-256",new TextEncoder().encode(t)).then(function(b){return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0")}).join("")})}
@@ -143,74 +147,104 @@ td.code{font-family:var(--display);font-weight:800;white-space:nowrap}
       t.n=(t.n||0)+1;if(t.n>=3){t={n:0,until:Date.now()+600000};lsSet(TRY_KEY,JSON.stringify(t));return "wait"}
       lsSet(TRY_KEY,JSON.stringify(t));return "wrong"},function(){return "wrong"})}
   var CODE_MSG={wrong:"That code is not right.",wait:"Too many tries. Wait 10 minutes and try again."};
-  var LOCK_KEY="echols-classgate-lock", NAME_KEY="echols-classgate-name";
+  var LOCK_KEY="echols-classgate-lock", NAME_KEY="echols-classgate-name", TEACH_KEY="echols-classgate-teacher";
   var me=document.currentScript, needLogin=!!(me&&me.getAttribute("data-login")!==null);
-      function attr(a){return (me&&me.getAttribute(a))||""}
-      /* data-watch: name inputs of an app's own sign-in. data-pick: buttons whose text is a name. data-session: saved sign-ins (s:key or l:key:prop). */
-      var WATCH=attr("data-watch"), PICK=attr("data-pick"), SESS=attr("data-session").split(",").filter(Boolean);
-      var current="", locked=false;
+  function attr(a){return (me&&me.getAttribute(a))||""}
+  /* data-watch: name inputs of an app's own sign-in. data-pick: buttons whose text is a name. data-session: saved sign-ins (s:key or l:key:prop). data-app: app id (default: first folder of the address). */
+  var WATCH=attr("data-watch"), PICK=attr("data-pick"), SESS=attr("data-session").split(",").filter(Boolean);
+  var APP=attr("data-app")||(function(){var p=decodeURIComponent(location.pathname).split("/").filter(Boolean)[0]||"";
+    return p.replace(/\.html?$/i,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")})();
+  var BOOK=(function(){try{return new URLSearchParams(location.search).get("book")||""}catch(e){return ""}})();
+  var current="", locked=false, shown="", denied="";
   function first(n){return String(n||"").trim().split(/[\s\-_]+/)[0].toLowerCase().replace(/[^a-z]/g,"")}
   function isBlocked(n){return BLOCKED.indexOf(first(n))>-1}
+  /* Mr. Echols (teacher preview) and portfolio guests (?visitor) are not held by app locks or assignments; guest work never reaches class records. */
+  function teacher(){return ssGet(TEACH_KEY)==="1"||ssGet("ec-guest")==="1"||ssGet("ec-visitor")==="1"||/[?&]visitor\b/.test(location.search)}
+  /* This app's setting: {mode:"open"|"locked"|"assigned", students:[first names]} */
+  function setting(){var a=CFG.apps||{};return (BOOK&&a[APP+":"+BOOK])||a[APP]||{mode:"open"}}
+  function appLocked(){if(teacher())return false;return !!CFG.lockAll||setting().mode==="locked"}
+  function notAssigned(n){if(teacher()||!n)return false;var s=setting();if(s.mode!=="assigned")return false;
+    return (s.students||[]).map(first).indexOf(first(n))<0}
   function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
   function lsSet(k,v){try{v===null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}}
   function ssGet(k){try{return sessionStorage.getItem(k)}catch(e){return null}}
   function ssSet(k,v){try{v===null?sessionStorage.removeItem(k):sessionStorage.setItem(k,v)}catch(e){}}
   function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
   function tidy(n){return String(n).replace(/\s+/g," ").trim().split(" ").map(function(w){return w.charAt(0).toUpperCase()+w.slice(1)}).join(" ")}
-  function overlay(html){var o=document.getElementById("cg-ov");if(!o){o=document.createElement("div");o.id="cg-ov";o.setAttribute("role","dialog");o.setAttribute("aria-modal","true");document.body.appendChild(o)}o.innerHTML='<div class="cg-card">'+html+'</div>';var i=o.querySelector("input");if(i)setTimeout(function(){i.focus()},30);return o}
-  function close(){var o=document.getElementById("cg-ov");if(o)o.remove()}
+  function overlay(html){var o=document.getElementById("cg-ov");if(!o){o=document.createElement("div");o.id="cg-ov";o.setAttribute("role","dialog");o.setAttribute("aria-modal","true");document.body.appendChild(o)}o.innerHTML='<div class="cg-card">'+html+'</div>';var i=o.querySelector("input:not([type=password])");if(i)setTimeout(function(){i.focus()},30);return o}
+  function close(){var o=document.getElementById("cg-ov");if(o)o.remove();shown=""}
   function badge(){var b=document.getElementById("cg-badge");if(b)b.remove();var n=ssGet(NAME_KEY);if(!needLogin||!n)return;b=document.createElement("div");b.id="cg-badge";b.innerHTML='<span>'+esc(n)+'</span><button type="button">Sign out</button>';b.querySelector("button").onclick=function(){ssSet(NAME_KEY,null);location.reload()};document.body.appendChild(b)}
-  function showBlocked(){
+  function showBlocked(){shown="blocked";
     var o=overlay('<h2>This activity is not available</h2><p>This app is not open to you right now. Please check with Mr. Echols.</p>'+
       '<details><summary>Teacher unlock</summary><form id="cg-unlock" style="margin-top:10px"><label for="cg-code">Teacher code</label><input id="cg-code" type="password" inputmode="numeric" autocomplete="off"><button type="submit">Unlock this device</button><p class="cg-msg" id="cg-umsg"></p></form></details>');
     o.querySelector("#cg-unlock").onsubmit=function(e){e.preventDefault();var c=o.querySelector("#cg-code");
       checkCode(c.value).then(function(r){if(r==="ok"){lsSet(LOCK_KEY,null);ssSet(NAME_KEY,null);location.reload();return}
         c.value="";o.querySelector("#cg-umsg").textContent=CODE_MSG[r]})};
   }
+  /* Locked app or not assigned: no device lock, and the page opens again by itself when Mr. Echols opens it. */
+  function teacherPreview(o){var f=o.querySelector("#cg-tp");if(!f)return;f.onsubmit=function(e){e.preventDefault();var c=o.querySelector("#cg-tcode");
+    checkCode(c.value).then(function(r){if(r==="ok"){ssSet(TEACH_KEY,"1");location.reload();return}c.value="";o.querySelector("#cg-tmsg").textContent=CODE_MSG[r]})}}
+  var TP='<details><summary>Teacher preview</summary><form id="cg-tp" style="margin-top:10px"><label for="cg-tcode">Teacher code</label><input id="cg-tcode" type="password" inputmode="numeric" autocomplete="off"><button type="submit">Open for this tab</button><p class="cg-msg" id="cg-tmsg"></p></form></details>';
+  var MY='<p class="cg-small"><a href="/my-apps/">See my apps</a></p>';
+  function showAppLocked(){if(shown==="applocked")return;shown="applocked";var b=document.getElementById("cg-badge");if(b)b.remove();
+    teacherPreview(overlay('<div class="cg-icon" aria-hidden="true">🔒</div><h2>This app is locked</h2><p>Mr. Echols has locked this app for now. It will open again when he unlocks it.</p>'+MY+TP))}
+  function showNotAssigned(n){if(shown==="notassigned")return;shown="notassigned";denied=String(n||"");var b=document.getElementById("cg-badge");if(b)b.remove();
+    var o=overlay('<div class="cg-icon" aria-hidden="true">📋</div><h2>Not assigned to you</h2><p>'+(n?esc(tidy(first(n)))+', this':'This')+' app is not on your list right now. Check with Mr. Echols.</p>'+MY+
+      '<button type="button" class="cg-alt" id="cg-other">I typed the wrong name</button>'+TP);
+    o.querySelector("#cg-other").onclick=function(){ssSet(NAME_KEY,null);location.reload()};teacherPreview(o)}
   function lock(){if(locked)return;locked=true;lsSet(LOCK_KEY,"1");ssSet(NAME_KEY,null);var b=document.getElementById("cg-badge");if(b)b.remove();showBlocked()}
-  function showLogin(){
+  /* One name check for every sign-in path: false when the name may not use this app. */
+  function allow(n){if(isBlocked(n)){lock();return false}if(appLocked()){showAppLocked();return false}if(notAssigned(n)){showNotAssigned(n);return false}return true}
+  function showLogin(){shown="login";
     var o=overlay('<h2>Sign in</h2><p class="cg-small">Mr. Echols’ Room 2</p><form id="cg-form"><label for="cg-name">Type your first name</label><input id="cg-name" type="text" maxlength="30" autocomplete="off" autocapitalize="words" placeholder="First name"><button type="submit">Start</button><p class="cg-msg" id="cg-msg"></p></form>');
     o.querySelector("#cg-form").onsubmit=function(e){e.preventDefault();
       var raw=o.querySelector("#cg-name").value.replace(/\s+/g," ").trim();
       if(!/^[A-Za-zÀ-ɏ][A-Za-zÀ-ɏ .'\-]{0,29}$/.test(raw)){o.querySelector("#cg-msg").textContent="Please type your first name using letters.";return}
-      if(isBlocked(raw)){lock();return}
+      if(!allow(raw))return;
       var n=tidy(raw);current=n;ssSet(NAME_KEY,n);close();badge();
       try{document.dispatchEvent(new CustomEvent("classgate:signin",{detail:{name:n}}))}catch(err){}
     };
   }
   window.ClassGate={
-    /* Apps with their own sign-in call this; returns false (and locks the device) for a blocked name. */
-    check:function(n){if(lsGet(LOCK_KEY)&&BLOCKED.length){showBlocked();return false}if(isBlocked(n)){lock();return false}current=String(n||"");return true},
+    /* Apps with their own sign-in call this; returns false for a blocked name (and locks the device), a locked app, or a student this app isn't assigned to. */
+    check:function(n){if(lsGet(LOCK_KEY)&&BLOCKED.length){showBlocked();return false}if(!allow(n))return false;current=String(n||"");return true},
     name:function(){return ssGet(NAME_KEY)||""},
+    app:function(){return APP},
     /* Teacher code check for in-app teacher tools: resolves "ok", "wrong" or "wait". */
     checkCode:checkCode, codeMsg:function(r){return CODE_MSG[r]||""}
   };
   function saved(){var out=[];SESS.forEach(function(s){var p=s.split(":"),v=null;try{v=(p[0]==="l"?localStorage:sessionStorage).getItem(p[1])}catch(e){}
-          if(v&&p[2]){try{v=(JSON.parse(v)||{})[p[2]]}catch(e){v=null}}if(v)out.push(String(v))});return out}
-      function watched(){var out=[];if(!WATCH)return out;try{Array.prototype.forEach.call(document.querySelectorAll(WATCH),function(i){if(i!==document.activeElement&&i.value)out.push(i.value)})}catch(e){}return out}
-      /* Signs a blocked student out of anything already open. */
-      function sweep(){if(locked||!BLOCKED.length)return;
-        if(lsGet(LOCK_KEY)){locked=true;showBlocked();return}
-        var all=[ssGet(NAME_KEY),current].concat(saved(),watched());
-        for(var i=0;i<all.length;i++)if(all[i]&&isBlocked(all[i])){lock();return}}
-      function refresh(){if(!window.fetch)return;
-        fetch("/classgate.json",{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(j){
-          if(j&&Array.isArray(j.blocked)){BLOCKED=j.blocked.map(first).filter(Boolean);sweep()}}).catch(function(){})}
-      function guard(e){if(locked)return;var bad=false;
-        if(WATCH){try{Array.prototype.forEach.call(document.querySelectorAll(WATCH),function(i){if(i.value&&isBlocked(i.value))bad=true;else if(i.value)current=i.value})}catch(x){}}
-        if(!bad&&PICK&&e.type==="click"&&e.target.closest){var b=e.target.closest(PICK);if(b&&isBlocked(b.getAttribute("data-n")||b.textContent))bad=true}
-        if(bad){e.preventDefault();e.stopImmediatePropagation();lock()}}
-      function start(){
-        if(lsGet(LOCK_KEY)&&BLOCKED.length){locked=true;showBlocked();return}
-        var n=ssGet(NAME_KEY);
-        if(n&&isBlocked(n)){lock();return}
-        if(needLogin&&!n)showLogin();else badge();
-        if(WATCH||PICK){["submit","click","change"].forEach(function(t){document.addEventListener(t,guard,true)});
-          document.addEventListener("keydown",function(e){if(e.key==="Enter")guard(e)},true)}
-        sweep();refresh();setInterval(sweep,2000);setInterval(refresh,30000);
-        document.addEventListener("visibilitychange",function(){if(!document.hidden)refresh()});
-      }
-      if(document.body)start();else document.addEventListener("DOMContentLoaded",start);
+    if(v&&p[2]){try{v=(JSON.parse(v)||{})[p[2]]}catch(e){v=null}}if(v)out.push(String(v))});return out}
+  function watched(){var out=[];if(!WATCH)return out;try{Array.prototype.forEach.call(document.querySelectorAll(WATCH),function(i){if(i!==document.activeElement&&i.value)out.push(i.value)})}catch(e){}return out}
+  /* Signs a blocked student out of anything already open, and closes the app when it is locked or not assigned. */
+  function sweep(){if(locked)return;
+    if(lsGet(LOCK_KEY)&&BLOCKED.length){locked=true;showBlocked();return}
+    if(appLocked()){showAppLocked();return}
+    var all=[ssGet(NAME_KEY),current,denied].concat(saved(),watched());
+    for(var i=0;i<all.length;i++)if(all[i]&&isBlocked(all[i])){lock();return}
+    for(i=0;i<all.length;i++)if(all[i]&&notAssigned(all[i])){showNotAssigned(all[i]);return}
+    /* reopened by the teacher while the lock screen was up */
+    if(shown==="applocked"||shown==="notassigned")location.reload()}
+  function refresh(){if(!window.fetch)return;
+    fetch("/classgate.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(j){if(!j)return;
+      if(Array.isArray(j.blocked))BLOCKED=j.blocked.map(first).filter(Boolean);
+      CFG={lockAll:!!j.lockAll,apps:(j.apps&&typeof j.apps==="object")?j.apps:{}};sweep()}).catch(function(){})}
+  function guard(e){if(locked||shown==="applocked"||shown==="notassigned")return;var bad=null;
+    if(WATCH){try{Array.prototype.forEach.call(document.querySelectorAll(WATCH),function(i){if(!i.value||bad)return;if(isBlocked(i.value))bad="b";else if(notAssigned(i.value))bad=i.value;else current=i.value})}catch(x){}}
+    if(!bad&&PICK&&e.type==="click"&&e.target.closest){var b=e.target.closest(PICK);if(b){var nm=b.getAttribute("data-n")||b.textContent;if(isBlocked(nm))bad="b";else if(notAssigned(nm))bad=nm}}
+    if(!bad&&(WATCH||PICK)&&appLocked())bad="l";
+    if(bad){e.preventDefault();e.stopImmediatePropagation();if(bad==="b")lock();else if(bad==="l")showAppLocked();else showNotAssigned(bad)}}
+  function start(){
+    if(lsGet(LOCK_KEY)&&BLOCKED.length){locked=true;showBlocked();return}
+    var n=ssGet(NAME_KEY);
+    if(n&&isBlocked(n)){lock();return}
+    if(needLogin&&!n)showLogin();else badge();
+    if(WATCH||PICK){["submit","click","change"].forEach(function(t){document.addEventListener(t,guard,true)});
+      document.addEventListener("keydown",function(e){if(e.key==="Enter")guard(e)},true)}
+    sweep();refresh();setInterval(sweep,2000);setInterval(refresh,30000);
+    document.addEventListener("visibilitychange",function(){if(!document.hidden)refresh()});
+  }
+  if(document.body)start();else document.addEventListener("DOMContentLoaded",start);
 })();
 </script>
 <!-- /Class sign-in gate -->
