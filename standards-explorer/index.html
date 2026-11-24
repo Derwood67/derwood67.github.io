@@ -259,7 +259,8 @@ textarea.paste{width:100%;min-height:120px;font:13px ui-monospace,Menlo,monospac
   var GNAME=function(g){return g==="K"?"Kindergarten":"Grade "+g};
   /* links: the chosen district's pages, or every city/county district in the chosen state */
   function distLinks(){var box=document.getElementById("distlinks"),ds=P.j.districts||{},keys=Object.keys(ds),set=S.SETS[setFor(st.subj)]||{},h="";
-    var stdLink=set.url?'<a class="chip" href="'+esc(set.url)+'" target="_blank" rel="noopener">'+esc(set.name)+' ↗</a>':'';
+    var stdLink=(P.j.stdUrl?'<a class="chip" href="'+esc(P.j.stdUrl)+'" target="_blank" rel="noopener">'+esc(P.j.stdName||P.j.label+" standards")+' ↗</a>':'')+
+      (set.url&&!(P.j.loaded===false&&P.j.stdUrl)?'<a class="chip" href="'+esc(set.url)+'" target="_blank" rel="noopener">'+esc(set.name)+' ↗</a>':'');
     if(P.d){var L=P.d.links||{},sub=L[st.subj],all=L.all;
       h='<h2>'+esc(P.d.label)+(P.d.city?' <small>· '+esc(P.d.city)+'</small>':'')+'</h2><div class="lk">'+
         '<a class="chip go" href="'+esc(P.d.url)+'" target="_blank" rel="noopener">District curriculum page ↗</a>'+

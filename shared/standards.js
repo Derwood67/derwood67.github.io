@@ -96,6 +96,26 @@
             links:{math:["DCPS math (units by grade)","https://dcps.dc.gov/page/math"],ela:["DCPS English language arts","https://dcps.dc.gov/page/english-language-arts-01"],sci:["DCPS science","https://dcps.dc.gov/page/science"]}}
     },
     note:"DC uses Common Core for ELA and math, NGSS for science, and its own 2023 social studies standards."};
+  JURIS.tx={label:"Texas", short:"TX", kind:"state", loaded:false, math:"ccss", ela:"ccss", sci:"ngss", ss:"c3",
+    stdName:"Texas Essential Knowledge and Skills (TEKS)", stdUrl:"https://tea.texas.gov/teks/",
+    note:"Texas teaches its own standards, the TEKS, which aren't loaded here yet, so this shows the national sets instead: Common Core (math and ELA), NGSS (science) and the C3 Framework (social studies). The TEKS link has the exact Texas standards.",
+    districts:{
+      hisd:{label:"Houston ISD", short:"HISD", city:"Houston", note:"Houston ISD teaches the TEKS.", url:"https://www.houstonisd.org/Curriculum"},
+      disd:{label:"Dallas ISD", short:"Dallas ISD", city:"Dallas", note:"Dallas ISD teaches the TEKS.", url:"https://www.dallasisd.org/parents-students/parent-curriculum-support"},
+      aisd:{label:"Austin ISD", short:"Austin ISD", city:"Austin", note:"Austin ISD teaches the TEKS.", url:"https://austinisd.org/academics"},
+      saisd:{label:"San Antonio ISD", short:"SAISD", city:"San Antonio", note:"SAISD teaches the TEKS.", url:"https://www.saisd.net/page/curriculum-home"}
+    }};
+  JURIS.mi={label:"Michigan", short:"MI", kind:"state", math:"ccss", ela:"ccss", sci:"ngss", ss:"c3",
+    stdName:"Michigan K-12 Standards (MDE)", stdUrl:"https://www.michigan.gov/mde/Services/academic-standards",
+    note:"Michigan's K-12 standards for math and ELA are the Common Core, and its science standards are built on NGSS, so those codes match. Social studies follows Michigan's own 2019 standards; the C3 Framework shown here is the closest national set.",
+    districts:{
+      dpscd:{label:"Detroit Public Schools Community District (DPSCD)", short:"DPSCD", city:"Detroit", note:"DPSCD teaches the Michigan K-12 standards.",
+             url:"https://www.detroitk12.org/academics", links:{all:["DPSCD core curriculum","https://www.detroitk12.org/Page/15801"]}},
+      grps:{label:"Grand Rapids Public Schools (GRPS)", short:"GRPS", city:"Grand Rapids", note:"GRPS teaches the Michigan K-12 standards.",
+             url:"https://parents.grps.org/article/grps-curriculum-resources-supports"},
+      aaps:{label:"Ann Arbor Public Schools (AAPS)", short:"AAPS", city:"Ann Arbor", note:"AAPS teaches the Michigan K-12 standards.",
+             url:"https://www.a2schools.org/"}
+    }};
   /* Every other state and DC: listed so it can be picked. Until a state's own standards are loaded, it shows the
      national sets (Common Core, NGSS, C3) and says so. To load one, give it its own sets like North Carolina. */
   var STATES={al:"Alabama",ak:"Alaska",az:"Arizona",ar:"Arkansas",ca:"California",co:"Colorado",ct:"Connecticut",de:"Delaware",dc:"District of Columbia",
