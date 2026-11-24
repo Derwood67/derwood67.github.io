@@ -70,6 +70,16 @@ a.chip:hover{border-color:var(--ink)}
 .lic dt{font-weight:800;color:var(--ink)}.lic dd{margin:0;color:#2b3850}
 .lic .lk{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}
 .lic .lkh{font-weight:800;margin:2px 0 6px}
+.rgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;margin-top:14px}
+.rcard{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;font-size:14.5px}
+.rcard h3{margin:0 0 4px;font-size:17px}.rcard .tag{display:inline-block;font-size:12px;font-weight:800;border-radius:999px;padding:2px 9px;background:#eef2f7;margin-bottom:8px}
+.rcard.to .tag{background:#e6f4ea;color:#0f6b3f}.rcard.from .tag{background:#eaf1ff;color:#1f4fa8}
+.rcard dl{display:grid;gap:4px 0;margin:6px 0 10px}.rcard dt{font-weight:800;margin-top:6px}.rcard dd{margin:0;color:#2b3850}
+.rcard ol{margin:6px 0 10px;padding-left:1.3em}.rcard li{margin:4px 0}
+.rcard .lk{display:flex;flex-wrap:wrap;gap:6px}.rcard a.chip{display:inline-flex;align-items:center;min-height:34px}
+.rcard a.chip.go{background:var(--ink);color:#fff;border-color:var(--ink)}
+.rsteps{grid-column:1/-1}
+@media(max-width:760px){.rgrid{grid-template-columns:minmax(0,1fr)}}
 .lic a.chip{display:inline-flex;align-items:center;min-height:34px}.lic a.chip.go{background:var(--ink);color:#fff;border-color:var(--ink)}
 .lic small{display:block;color:var(--muted);margin-bottom:12px}
 @media(max-width:600px){.lic dl{grid-template-columns:minmax(0,1fr)}.lic dd{margin-bottom:6px}}
@@ -117,7 +127,13 @@ textarea.paste{width:100%;min-height:120px;font:13px ui-monospace,Menlo,monospac
         <button class="s-sci" data-v="sci">Science</button><button class="s-ss" data-v="ss">Social Studies</button>
       </div>
       <div class="seg" id="grade" role="group" aria-label="Grade"><button data-v="K">K</button><button data-v="1">1</button><button data-v="2">2</button><button data-v="3">3</button><button data-v="4">4</button><button data-v="5">5</button><button data-v="6">6</button></div>
-      <div class="seg" id="view" role="group" aria-label="View" style="margin-left:auto"><button data-v="list">Standards</button><button data-v="pacing">Pacing guide</button></div>
+      <div class="seg" id="view" role="group" aria-label="View" style="margin-left:auto"><button data-v="list">Standards</button><button data-v="pacing">Pacing guide</button><button data-v="recip">Reciprocity</button></div>
+    </div>
+    <div class="row" id="reciprow" hidden>
+      <label class="fld" for="rfrom">From <select id="rfrom"></select></label>
+      <span aria-hidden="true" style="font-weight:800;color:var(--muted)">→</span>
+      <label class="fld" for="rto">To <select id="rto"></select></label>
+      <button class="chip" type="button" id="rswap" style="cursor:pointer;min-height:36px;font-family:inherit">⇄ Swap</button>
     </div>
     <div class="row" id="pacerow" hidden><div class="seg" id="psrc" role="group" aria-label="Pacing source"></div></div>
     <div class="row" id="listrow">
@@ -286,42 +302,50 @@ textarea.paste{width:100%;min-height:120px;font:13px ui-monospace,Menlo,monospac
     box.innerHTML=h;box.hidden=!h}
   /* Teacher licensing: moving to a state with a license and a master's degree. Checked against official state pages, Nov 2026. */
   var LIC={
-    nc:{start:[["Apply for an NC license (out-of-state)","https://www.dpi.nc.gov/educators/educators-licensure/apply-nc-educator-license/further-educator-license-information"]], who:"North Carolina (NCDPI)",
+    nc:{exp:"3 or more years of verified teaching for a Continuing Professional License; fewer years means an Initial license.",ask:"Form E (Verification of K-12 Educator Experience) from each school you taught in, your out-of-state license, degree-dated transcripts, and test score reports.",self:"NCDPI Online Licensure System: your current NC license and the license verification other states may ask for.",
+      start:[["Apply for an NC license (out-of-state)","https://www.dpi.nc.gov/educators/educators-licensure/apply-nc-educator-license/further-educator-license-information"]], who:"North Carolina (NCDPI)",
       route:"Licensed out-of-state teachers apply online. With 3 or more years of verified teaching (plus a comparable licensing test or effectiveness data), the result is a Continuing Professional License, a 5-year renewable license.",
       tests:"Elementary and EC teachers with fewer than 3 years of experience get an Initial Professional License and must meet NC's testing requirements.",
       masters:"Master's (\"M\") pay has eligibility rules: an M-level license with at least one class taken before Aug 1, 2013 is paid automatically; otherwise you request graduate pay with a degree-dated transcript.",
       link:["NCDPI licensure FAQs","https://www.dpi.nc.gov/educators/educators-licensure/forms-and-faqs"]},
-    va:{start:[["VDOE: how reciprocity works and how to apply","https://doe.virginia.gov/teaching-learning-assessment/teaching-in-virginia/licensure-reciprocity"]], who:"Virginia (VDOE)",
+    va:{exp:"3 or more years of in-person classroom teaching for universal licensure by reciprocity.",ask:"A copy of your valid out-of-state license and verification of your years of teaching; transcripts, including your master's for the Postgraduate Professional License.",self:"VDOE licensure: your Virginia license and its endorsements.",
+      start:[["VDOE: how reciprocity works and how to apply","https://doe.virginia.gov/teaching-learning-assessment/teaching-in-virginia/licensure-reciprocity"]], who:"Virginia (VDOE)",
       route:"Universal licensure by reciprocity for teachers with a valid out-of-state license with full credentials and at least 3 years of teaching in non-virtual classrooms. Otherwise, a valid full out-of-state license in a comparable area, or a completed state-approved program, can qualify.",
       tests:"Virginia law exempts holders of a valid out-of-state license with full credentials and no deficiencies from Virginia's professional teacher assessments.",
       masters:"Postgraduate Professional License: a 5-year renewable license for teachers who qualify for the Collegiate Professional License and hold an appropriate earned graduate degree.",
       link:["VDOE licensure reciprocity","https://doe.virginia.gov/teaching-learning-assessment/teaching-in-virginia/licensure-reciprocity"]},
-    md:{start:[["MSDE: pathways to licensure (out-of-state license)","https://msde.maryland.gov/educator-licensure-certification/educator-licensure/pathways-initial-licensure"],["MSDE license types","https://msde.maryland.gov/educator-licensure-certification/educator-licensure/types-licenses"]], who:"Maryland (MSDE)",
+    md:{exp:"No minimum for the out-of-state license pathway; 3 years of effective performance (or Maryland induction) for the Advanced Professional License.",ask:"A copy of your active license in the area you want, verification of the tests you took for it, and transcripts, including your master's for the Advanced Professional License.",self:"MSDE educator licensure: your Maryland license and license type.",
+      start:[["MSDE: pathways to licensure (out-of-state license)","https://msde.maryland.gov/educator-licensure-certification/educator-licensure/pathways-initial-licensure"],["MSDE license types","https://msde.maryland.gov/educator-licensure-certification/educator-licensure/types-licenses"]], who:"Maryland (MSDE)",
       route:"Out-of-state license pathway: a bachelor's degree or higher plus a valid professional license from another state in the area you want. A district that hires you can also request a Temporary Professional License while you finish.",
       tests:"Applicants who completed an out-of-state program send verification of the licensing tests used for their out-of-state license.",
       masters:"Advanced Professional License: 5-year renewable. Requires a master's degree (or National Board Certification or 30 post-bachelor's credits) plus a Maryland induction program or 3 years of effective performance.",
       link:["MSDE: out-of-state certificate","https://msde.maryland.gov/educator-licensure-certification/educator-licensure/pathways-initial-licensure"]},
-    dc:{start:[["OSSE: reciprocity for out-of-state credential holders","https://osse.dc.gov/page/out-state-credential-holders-reciprocity"],["OSSE: Standard Teacher Credential","https://osse.dc.gov/page/standard-teacher-credential"]], who:"District of Columbia (OSSE)",
+    dc:{exp:"No minimum listed for reciprocity; you need an active, full license from another state.",ask:"A copy of your active full out-of-state license and official transcripts. DC public charter schools don't require an OSSE license.",self:"OSSE: your DC credential and its endorsements.",
+      start:[["OSSE: reciprocity for out-of-state credential holders","https://osse.dc.gov/page/out-state-credential-holders-reciprocity"],["OSSE: Standard Teacher Credential","https://osse.dc.gov/page/standard-teacher-credential"]], who:"District of Columbia (OSSE)",
       route:"Teachers with an active full license from another state may get a DC credential by reciprocity. Reciprocity applies only to your first DC application; later renewals must meet DC's own requirements. The Standard Teaching Credential lasts 4 years and is renewable.",
       tests:"A Transitional credential is available, at the school's request, for teachers new to DC who meet everything except DC's licensing exams.",
       masters:"We didn't find a separate master's-level DC credential. Note: DC public charter schools don't require an OSSE license; DCPS does.",
       link:["OSSE: out-of-state credential holders","https://osse.dc.gov/page/out-state-credential-holders-reciprocity"]},
-    tx:{start:[["TEA: out-of-state certified educators (Review of Credentials)","https://tea.texas.gov/educators/certification/out-state-certification/out-state-certified-educators"],["TEA out-of-state checklist (PDF)","https://tea.texas.gov/educators/certification/out-state-certification/out-of-state-application-check-list_0.pdf"],["TEA test exemption review","https://tea.texas.gov/educators/certification/out-state-certification/out-state-educator-test-exemption-review"]], who:"Texas (TEA)",
+    tx:{exp:"Not required for the Review of Credentials; teaching experience can help you get a Texas test exemption.",ask:"Your valid, active standard certificate, official transcripts, TEA's Verification of Experience form for a test exemption, and official score reports for your licensing tests.",self:"TEA Educator Certification Online System (ECOS): your Texas certificate.",
+      start:[["TEA: out-of-state certified educators (Review of Credentials)","https://tea.texas.gov/educators/certification/out-state-certification/out-state-certified-educators"],["TEA out-of-state checklist (PDF)","https://tea.texas.gov/educators/certification/out-state-certification/out-of-state-application-check-list_0.pdf"],["TEA test exemption review","https://tea.texas.gov/educators/certification/out-state-certification/out-state-educator-test-exemption-review"]], who:"Texas (TEA)",
       route:"Texas has no full reciprocity. You apply for a Review of Credentials ($164 fee as of the Jan 2025 checklist); your out-of-state certificate must be valid and active when you apply. After the review you can get a nonrenewable One-Year Certificate, then a 5-year Standard Certificate once Texas tests are done.",
       tests:"You can ask for a test exemption review with your experience verification and official score reports; TEA decides which TExES exams you still need. Texas also has a Science of Teaching Reading (STR) exam requirement.",
       masters:"A master's degree isn't part of the certification route in TEA's out-of-state rules; pay depends on the district's salary schedule.",
       link:["TEA: out-of-state certified educators","https://tea.texas.gov/educators/certification/out-state-certification/out-state-certified-educators"]},
-    mi:{start:[["MDE: out-of-state applicants (apply in MOECS)","https://www.michigan.gov/mde/services/ed-serv/educator-recruitment/new-michigan-teachers/becoming-a-michigan-teacher/out-of-state-applicants"]], who:"Michigan (MDE)",
+    mi:{exp:"3 years of successful teaching for the Professional Teaching Certificate (or to skip Michigan's tests for the Standard certificate).",ask:"Your standard out-of-state certificate and documentation of 3 years of successful teaching; transcripts.",self:"MOECS: your Michigan certificate.",
+      start:[["MDE: out-of-state applicants (apply in MOECS)","https://www.michigan.gov/mde/services/ed-serv/educator-recruitment/new-michigan-teachers/becoming-a-michigan-teacher/out-of-state-applicants"]], who:"Michigan (MDE)",
       route:"Michigan accepts other states' standard certificates through the NASDTEC Interstate Agreement for initial certification. With a valid or expired standard-level certificate and at least 3 years of successful teaching, you may get a Professional Teaching Certificate (5 years, renewable).",
       tests:"With 3 years of successful teaching you may qualify for the Standard Teaching Certificate without Michigan's tests; otherwise MDE lists the MTTC tests you need.",
       masters:"Michigan also issues an Advanced Professional Teaching Certificate; ask MDE whether your degree and experience qualify.",
       link:["MDE: out-of-state applicants","https://www.michigan.gov/mde/services/ed-serv/educator-recruitment/new-michigan-teachers/becoming-a-michigan-teacher/out-of-state-applicants"]},
-    ny:{start:[["NYSED: out-of-state applicants","https://www.nysed.gov/teaching-initiatives/out-state-reciprocity"],["Create your TEACH account (then apply online)","https://www.nysed.gov/teaching-initiatives/creating-personal-teach-online-account"],["TEACH Online Services login","https://my.ny.gov/LoginV4/login.xhtml"],["NYC Public Schools: out-of-state teachers","https://teachnyc.net/certified-teacher/out-of-state"]], who:"New York (NYSED)",
+    ny:{exp:"3 years of certified public school teaching in other states, rated effective or highly effective.",ask:"NYSED's Classroom Teacher Rating Form, filled out by your out-of-state employer(s), plus a copy of your certificate and transcripts, including your master's for the Professional certificate.",self:"TEACH Online Services: your New York certificate.",
+      start:[["NYSED: out-of-state applicants","https://www.nysed.gov/teaching-initiatives/out-state-reciprocity"],["Create your TEACH account (then apply online)","https://www.nysed.gov/teaching-initiatives/creating-personal-teach-online-account"],["TEACH Online Services login","https://my.ny.gov/LoginV4/login.xhtml"],["NYC Public Schools: out-of-state teachers","https://teachnyc.net/certified-teacher/out-of-state"]], who:"New York (NYSED)",
       route:"Endorsement of a Classroom Teaching Certificate: three years of certified public school teaching in other U.S. states, with your out-of-state employer sending NYSED's Classroom Teacher Rating Form showing effective or highly effective ratings for those years. You apply online through TEACH.",
       tests:"Certified out-of-state teachers with effective experience in the certificate title they want don't have to take New York's certification exams.",
       masters:"New York's Professional certificate, the level after the Initial certificate, requires a master's degree along with three years of teaching.",
       link:["NYSED: out-of-state applicants","https://www.nysed.gov/teaching-initiatives/out-state-reciprocity"]},
-    ca:{start:[["CTC: out-of-state applicants","https://www.ctc.ca.gov/aspiring-educators/out-of-state/"],["CTC Route 2 (2+ years of experience)","https://www.ctc.ca.gov/aspiring-educators/roadmap-to-teaching/prepared-out-of-state/route-2/"],["CTC: apply (CTC Online)","https://www.ctc.ca.gov/aspiring-educators/apply/"]], who:"California (CTC)",
+    ca:{exp:"2 or more years of full-time teaching for Route 2 (Preliminary or Clear); less than 2 years uses Route 1.",ask:"A letter from your out-of-state employer verifying 2+ years of full-time teaching, two satisfactory summative evaluations, a copy of your license, and official transcripts.",self:"CTC Online: your California credential.",
+      start:[["CTC: out-of-state applicants","https://www.ctc.ca.gov/aspiring-educators/out-of-state/"],["CTC Route 2 (2+ years of experience)","https://www.ctc.ca.gov/aspiring-educators/roadmap-to-teaching/prepared-out-of-state/route-2/"],["CTC: apply (CTC Online)","https://www.ctc.ca.gov/aspiring-educators/apply/"]], who:"California (CTC)",
       route:"Two tiers: a Preliminary credential (up to 5 years), then a Clear credential. With a professional-level out-of-state license and 2 or more years of full-time out-of-state teaching (Route 2), you may qualify for the Preliminary or the Clear credential, with an employer letter and two satisfactory evaluations.",
       tests:"An English Learner authorization isn't needed for your first Preliminary credential but is required for the Clear.",
       masters:"A master's degree isn't required for either credential.",
@@ -335,14 +359,52 @@ textarea.paste{width:100%;min-height:120px;font:13px ui-monospace,Menlo,monospac
       '<dl><dt>Reciprocity route</dt><dd>'+esc(L.route)+'</dd><dt>Tests</dt><dd>'+esc(L.tests)+'</dd><dt>With a master\'s</dt><dd>'+esc(L.masters)+'</dd></dl>'+
       '<div class="lkh">Start the reciprocity process</div><div class="lk">'+(L.start||[L.link]).map(function(x,i){return '<a class="chip'+(i?'':' go')+'" href="'+esc(x[1])+'" target="_blank" rel="noopener">'+esc(x[0])+' ↗</a>'}).join("")+'</div>'+
       '<small>Summarized from '+esc(L.who)+' pages, checked November 2026. Rules change often, so confirm with the state before you apply. This isn\'t legal advice.</small>'}
+  /* Reciprocity: from one state to another */
+  var RNAMES={nc:"North Carolina",va:"Virginia",md:"Maryland",dc:"District of Columbia",tx:"Texas",mi:"Michigan",ny:"New York",ca:"California"};
+  var RK=Object.keys(RNAMES).sort(function(a,b){return RNAMES[a].localeCompare(RNAMES[b])});
+  var R2=(function(){try{return JSON.parse(localStorage.getItem("ec-recip")||"{}")}catch(e){return {}}})();
+  if(!LIC[R2.from])R2.from="nc";if(!LIC[R2.to]||R2.to===R2.from)R2.to=(LIC[P.state]&&P.state!==R2.from)?P.state:(R2.from==="va"?"md":"va");
+  function rOpts(sel){return RK.map(function(k){return '<option value="'+k+'"'+(k===sel?" selected":"")+'>'+esc(RNAMES[k])+'</option>'}).join("")}
+  function renderRecip(){var f=LIC[R2.from],t=LIC[R2.to],F=RNAMES[R2.from],T=RNAMES[R2.to];
+    document.getElementById("rfrom").innerHTML=rOpts(R2.from);document.getElementById("rto").innerHTML=rOpts(R2.to);
+    try{localStorage.setItem("ec-recip",JSON.stringify(R2))}catch(e){}
+    document.getElementById("sum").innerHTML='<span class="setname">Reciprocity · '+esc(F)+' → '+esc(T)+'</span>';
+    document.getElementById("src").innerHTML='Summarized from each state\'s official licensing pages, checked November 2026. Rules change often; confirm with the state before you apply. This isn\'t legal advice.';
+    if(R2.from===R2.to){document.getElementById("out").innerHTML='<div class="pnote">Pick two different states.</div>';return}
+    var links=function(L){return '<div class="lk">'+(L.start||[L.link]).map(function(x,i){return '<a class="chip'+(i?'':' go')+'" href="'+esc(x[1])+'" target="_blank" rel="noopener">'+esc(x[0])+' ↗</a>'}).join("")+'</div>'};
+    var h='<div class="rgrid">'+
+      '<section class="rcard from"><span class="tag">From · where you\'re licensed now</span><h3>'+esc(F)+'</h3>'+
+        '<dl><dt>Keep your license active</dt><dd>Don\'t let your '+esc(F)+' license lapse while you apply. Some states (Texas, for one) only accept a license that is valid and active when you apply.</dd>'+
+        '<dt>Where your license lives</dt><dd>'+esc(f.self)+'</dd>'+
+        '<dt>Ask your current district\'s HR for</dt><dd>Experience verification on the form '+esc(T)+' asks for (see the right side), copies of your evaluations, and your official transcripts from each college.</dd></dl>'+
+        '<div class="lk"><a class="chip" href="'+esc(f.link[1])+'" target="_blank" rel="noopener">'+esc(f.link[0])+' ↗</a></div></section>'+
+      '<section class="rcard to"><span class="tag">To · where you want to teach</span><h3>'+esc(T)+'</h3>'+
+        '<dl><dt>Reciprocity route</dt><dd>'+esc(t.route)+'</dd><dt>Experience needed</dt><dd>'+esc(t.exp)+'</dd>'+
+        '<dt>Tests</dt><dd>'+esc(t.tests)+'</dd><dt>With a master\'s</dt><dd>'+esc(t.masters)+'</dd>'+
+        '<dt>Documents '+esc(T)+' asks for</dt><dd>'+esc(t.ask)+'</dd></dl>'+links(t)+'</section>'+
+      '<section class="rcard rsteps"><h3>Your steps: '+esc(F)+' → '+esc(T)+'</h3><ol>'+
+        '<li>Make sure your '+esc(F)+' license is current, full (not provisional) and in the subject and grades you want to teach.</li>'+
+        '<li>Ask your '+esc(F)+' district HR for experience verification on '+esc(T)+'\'s form and copies of your evaluations.</li>'+
+        '<li>Order official transcripts (bachelor\'s and master\'s) sent to '+esc(T)+'\'s licensing office.</li>'+
+        '<li>Gather your licensing test score reports.</li>'+
+        '<li>Open '+esc(T)+'\'s application (first link on the right), upload your documents and pay the fee.</li>'+
+        '<li>Complete '+esc(T)+'\'s fingerprint and background check when the application asks for it.</li>'+
+        '<li>Watch for a letter saying what\'s still needed: tests, coursework or experience. A district that hires you may be able to get you a temporary license while you finish.</li></ol></section>'+
+      '</div>';
+    document.getElementById("out").innerHTML=h}
+  document.getElementById("rfrom").onchange=function(e){R2.from=e.target.value;render()};
+  document.getElementById("rto").onchange=function(e){R2.to=e.target.value;render()};
+  document.getElementById("rswap").onclick=function(){var x=R2.from;R2.from=R2.to;R2.to=x;render()};
   document.getElementById("distlinks").onclick=function(e){var b=e.target.closest("[data-pick]");if(!b)return;
     var v=P.state+(b.dataset.pick?"/"+b.dataset.pick:"");try{localStorage.setItem("ec-standards",v)}catch(x){}location.reload()};
 
   function render(){
-    distLinks();licBox();
+    distLinks();licBox();document.getElementById("src").innerHTML="";
     var setInfo0=S.SETS[setFor(st.subj)]||{name:"NC Standard Course of Study"};
     document.querySelectorAll("#view button").forEach(function(b){b.setAttribute("aria-pressed",b.dataset.v===st.view)});
-    document.getElementById("pacerow").hidden=st.view!=="pacing";document.getElementById("listrow").hidden=st.view==="pacing";
+    document.getElementById("pacerow").hidden=st.view!=="pacing";document.getElementById("listrow").hidden=st.view!=="list";
+    document.getElementById("reciprow").hidden=st.view!=="recip";document.getElementById("subj").hidden=st.view==="recip";document.getElementById("grade").hidden=st.view==="recip";
+    if(st.view==="recip"){document.getElementById("lic").hidden=true;renderRecip();try{sessionStorage.setItem("ec-explorer",JSON.stringify(st))}catch(e){}return}
     if(st.view==="pacing"){document.querySelectorAll("#subj button").forEach(function(b){b.setAttribute("aria-pressed",b.dataset.v===st.subj)});
       document.querySelectorAll("#grade button").forEach(function(b){b.setAttribute("aria-pressed",b.dataset.v===st.grade)});
       renderPacing();try{sessionStorage.setItem("ec-explorer",JSON.stringify(st))}catch(e){}return}
