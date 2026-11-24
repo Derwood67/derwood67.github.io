@@ -2230,5 +2230,14 @@ route();
 
 
 <script src="/shared/demo.js"></script>
+<script src="/shared/student-apps.js"></script>
+<script>
+/* Back / Next between student apps (same order as the rest of the site) */
+(function(){try{var L=(window.EC_STUDENT_APPS||[]).filter(function(x){return !x.lead}),i=-1;
+  L.forEach(function(x,k){if(x.id==="science-lab")i=k});if(i<0||L.length<2)return;
+  var p=L[(i-1+L.length)%L.length],n=L[(i+1)%L.length],box=document.querySelector(".toplinks");if(!box)return;
+  var e=function(t){return String(t).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})};
+  box.insertAdjacentHTML("afterbegin",'<a href="'+e(p.u)+'" title="Back: '+e(p.t)+'">‹ Back</a><a href="'+e(n.u)+'" title="Next: '+e(n.t)+'">Next ›</a>')}catch(err){}})();
+</script>
 </body>
 </html>

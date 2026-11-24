@@ -90,6 +90,17 @@ html #cg-badge button{background:var(--ec-pencil);color:var(--ec-ink)}
 .ec-bar #cg-badge + .ec-back{margin-left:0}
 @media (max-width:430px){.ec-bar #cg-badge ~ .ec-back .ec-long{display:none}.ec-bar:has(#cg-badge) .ec-name{display:none}}
 
+/* ---------- back / next between apps ---------- */
+.ec-nav{display:flex;gap:6px;flex:none}
+.ec-step{display:flex;align-items:center;gap:4px;padding:7px 12px;border-radius:999px;border:1px solid #3a4c72;white-space:nowrap;font-size:15px}
+.ec-step:hover,.ec-back:hover{background:#22345a}
+.ec-step:focus-visible{outline:3px solid #f2b705;outline-offset:2px}
+@media (max-width:640px){.ec-step{padding:9px 11px}.ec-step .ec-long{display:none}}
+/* the bar wraps to a second line instead of running off narrow screens */
+.ec-bar-in{flex-wrap:wrap;height:auto!important;min-height:46px;row-gap:6px;padding-top:6px;padding-bottom:6px}
+.ec-app{min-width:0}.ec-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (max-width:1000px){.ec-bar .ec-tag{display:none}}
+
 /* ---------- standards switch ---------- */
 .ec-pick{display:flex;align-items:center;gap:7px;margin-left:auto;font-size:12.5px;color:#9fb0c9;white-space:nowrap}
 .ec-pick + .ec-back,.ec-bar .ec-pick ~ .ec-back{margin-left:0}

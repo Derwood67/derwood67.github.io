@@ -62,7 +62,29 @@
     var sel=h.querySelector(".ec-pick select");if(sel)sel.onchange=function(){ls(JKEY,sel.value);location.reload()};
     stdNote();
     ribbon();
+    appNav(h);
   }
+  /* Back / Next: step to the previous or next app. Student apps step only through student apps;
+     teacher tools step through every app on the site. Order = the portfolio's order. */
+  function loadList(src,name,cb){if(window[name])return cb(window[name]);var sc=document.createElement("script");sc.src=src;
+    sc.onload=function(){cb(window[name]||[])};sc.onerror=function(){cb([])};document.head.appendChild(sc)}
+  function here(list){var path=decodeURI(location.pathname).replace(/index\.html$/,""),q=location.search,best=null,len=-1;
+    list.forEach(function(x,i){var u=String(x.u||""),uq=u.indexOf("?")>-1?u.slice(u.indexOf("?")):"",up=decodeURI(u.split("?")[0]);
+      if(!up||path.indexOf(up)!==0)return;if(uq&&q.indexOf(uq.slice(1))<0)return;
+      var l=up.length+(uq?1000:0);if(l>len){len=l;best=i}});return best}
+  function appNav(h){
+    loadList("/shared/student-apps.js","EC_STUDENT_APPS",function(stu){
+      stu=stu.filter(function(x){return !x.lead});
+      var i=here(stu);
+      if(i!==null)return draw(h,stu,i);
+      loadList("/control/apps.js","EC_APPS",function(all){all=all.filter(function(x){return x.where==="site"&&x.u});var j=here(all);if(j!==null)draw(h,all,j)})})}
+  function draw(h,list,i){if(list.length<2||h.querySelector(".ec-nav"))return;
+    var prev=list[(i-1+list.length)%list.length],next=list[(i+1)%list.length],
+        go=function(x){return esc(x.u)+(VISITOR?(x.u.indexOf("?")>-1?"&":"?")+"visitor":"")};
+    var n=document.createElement("nav");n.className="ec-nav";n.setAttribute("aria-label","Other apps");
+    n.innerHTML='<a class="ec-step" href="'+go(prev)+'" title="Back: '+esc(prev.t)+'" aria-label="Back to '+esc(prev.t)+'">‹<span class="ec-long"> Back</span></a>'+
+      '<a class="ec-step" href="'+go(next)+'" title="Next: '+esc(next.t)+'" aria-label="Next: '+esc(next.t)+'"><span class="ec-long">Next </span>›</a>';
+    var back=h.querySelector(".ec-back");if(back)back.after(n);else h.querySelector(".ec-bar-in").appendChild(n)}
   function ribbon(){
     var h=document.querySelector(".ec-bar");
     if(!h||!ss(GUEST_KEY)||document.querySelector(".ec-guest-note"))return;
