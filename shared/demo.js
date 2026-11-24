@@ -21,7 +21,7 @@
   var SLUG=(ME&&ME.getAttribute("data-demo"))||location.pathname.replace(/index\.html?$/,"").split("/").filter(Boolean).join("-")||"home";
   var HAS=["behavior-log","brain-blast","check-in-challenge","control","eog-road-trip","fluency-sprints","fraction-bingo","fraction-hacktion",
     "fraction-summit","frog-hop-fractions","landform-word-match","lemonade-war","love-amalia","minute-math-sprint","minute-reading-sprint",
-    "note-taking-lab","novel-study","paragraph-quest","phonics-sprint","phonics-voice","research-lab","science-lab","science-lab-echols",
+    "note-taking-lab","novel-study","paragraph-quest","phonics-sprint","phonics-voice","research-lab","science-lab","science-lab-echols","spelling",
     "standards","standards-explorer","story-trail","text-analyzer","water-cycle-games","word-parts"];
   var RUN="ec-demo-run", SNAP="ec-demo-snap", KEEP=/^(ec-standards$|ec-demo-)/;
   var LS=window.localStorage, SS=window.sessionStorage;

@@ -80,6 +80,7 @@ h2{font:800 20px/1.2 var(--ec-display);margin:28px 0 12px;display:flex;align-ite
     if(lsGet(LOCK_KEY)||blocked(n)){o.innerHTML='<div class="empty"><b>Apps are not available to you right now.</b><br>Please check with Mr. Echols.</div>';return}
     var me=first(n), mine=[], open=[], locked=0;
     APPS.forEach(function(a){var s=setting(a.id);
+      if(a.lead&&s.mode!=="assigned")return;
       if(CFG.lockAll||s.mode==="locked"){locked++;return}
       if(s.mode==="assigned"){if((s.students||[]).map(first).indexOf(me)>-1)mine.push(a);else locked++;return}
       open.push(a)});

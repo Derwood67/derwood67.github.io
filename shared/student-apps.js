@@ -1,5 +1,6 @@
-/* Student apps that the class gate can lock and assign. id = the app folder (Novel Study books add :book). Used by Control Center (Lock & Assign) and My Apps. */
-window.EC_STUDENT_APPS=[{"id":"novel-study:egypt-game","s":"ela","t":"Read & Unlock: The Egypt Game","d":"A chapter-by-chapter novel study: text structure, point of view, main idea, voice, setting and characters, a written summary, and a quiz that unlocks only when the chapter is done.","u":"/novel-study/?book=egypt-game"},
+/* Student apps that the class gate can lock and assign. id = the app folder (Novel Study books add :book). Used by Control Center (Lock & Assign) and My Apps. lead = run by the teacher; shown on My Apps only when assigned. */
+window.EC_STUDENT_APPS=[{"id":"spelling","s":"ela","t":"Spelling Studio","d":"Hear it, spell it, grades 3–12: letter tiles, a Spelling Bee, sentence writing with real-word checks, tests, and words that adjust to each student.","u":"/spelling/"},
+{"id":"novel-study:egypt-game","s":"ela","t":"Read & Unlock: The Egypt Game","d":"A chapter-by-chapter novel study: text structure, point of view, main idea, voice, setting and characters, a written summary, and a quiz that unlocks only when the chapter is done.","u":"/novel-study/?book=egypt-game"},
 {"id":"novel-study","s":"ela","t":"Novel Study Builder","d":"The Egypt Game's chapter-by-chapter setup, turned into a template for any book. Teachers write questions in a spreadsheet, paste them in, and get a student link.","u":"/novel-study/"},
 {"id":"love-amalia","s":"ela","t":"Love, Amalia — Story Explorer","d":"Story structure and 25 comprehension questions that adapt to the reader, plus a written summary.","u":"/love-amalia/"},
 {"id":"lemonade-war","s":"ela","t":"Lemonade War Reading Stand","d":"Novel study for The Lemonade War with at least 10 questions per section; students move on only after showing mastery.","u":"/lemonade-war/"},
@@ -22,4 +23,6 @@ window.EC_STUDENT_APPS=[{"id":"novel-study:egypt-game","s":"ela","t":"Read & Unl
 {"id":"research-lab","s":"sci","t":"Capital Research Lab","d":"A research notebook where students compare the U.S. capital with the capital of another country.","u":"/research-lab/"},
 {"id":"landform-word-match","s":"sci","t":"Landform Word Match","d":"Two-round vocabulary matching game for landform words.","u":"/landform-word-match/"},
 {"id":"eog-road-trip","s":"rev","t":"Murphy to Manteo EOG Road Trip","d":"Ten questions, ten towns across North Carolina. At Manteo students get a report of standards mastered and ones to practice.","u":"/eog-road-trip/"},
-{"id":"check-in-challenge","s":"rev","t":"Check-In Challenge","d":"EOG-style check-in with 30 Grade 5 science and 30 fraction questions, plus a score-by-standard chart.","u":"/check-in-challenge/"}];
+{"id":"check-in-challenge","s":"rev","t":"Check-In Challenge","d":"EOG-style check-in with 30 Grade 5 science and 30 fraction questions, plus a score-by-standard chart.","u":"/check-in-challenge/"},
+{"id": "brain-blast", "s": "rev", "t": "Brain Blast Live", "d": "Whole-class review game show you run from the front of the room.", "u": "/brain-blast/", "lead": true},
+{"id": "fluency-sprints", "s": "flu", "t": "Fluency Sprints", "d": "One-minute oral reading fluency checks you run with a student.", "u": "/fluency-sprints/", "lead": true}];

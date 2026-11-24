@@ -7,7 +7,7 @@ const GH = "https://derwood67.github.io/";
 const P = eval(s.slice(a + 10, b + 1));
 // apps with a teacher dashboard or teacher view inside them
 const DASH = {"fraction-summit":"Teacher dashboard","lemonade-war":"Teacher dashboard","novel-study":"Teacher dashboard",
-  "research-lab":"Teacher dashboard","word-parts":"Teacher dashboard","story-trail":"Teacher view"};
+  "research-lab":"Teacher dashboard","word-parts":"Teacher dashboard","spelling":"Teacher dashboard","story-trail":"Teacher view"};
 const apps = P.map(p => {
   let u = p.u || "", where = !u ? "private" : u.indexOf(GH) === 0 ? "site" : "claude";
   if (where === "site") u = "/" + u.slice(GH.length);

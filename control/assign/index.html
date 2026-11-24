@@ -165,7 +165,7 @@ code{font-family:var(--ec-mono);font-size:.92em;background:#eef2f7;padding:1px 5
   }
   function appRow(a){var s=cfg.apps[a.id], roster=cfg.roster;
     var st=s.mode==="locked"?'<span class="st l">Locked for everyone</span>':s.mode==="assigned"?'<span class="st a">Assigned to '+(s.students.length?s.students.length+' student'+(s.students.length>1?'s':'')+': '+esc(s.students.map(tidy).join(", ")):'nobody yet')+'</span>':'<span class="st o">Open to everyone</span>';
-    var h='<article class="app'+(s.mode==="locked"?' locked':'')+'" style="--c:'+({ela:"var(--ela)",flu:"var(--flu)",math:"var(--math)",sci:"var(--sci)",rev:"var(--rev)"}[a.s])+'" data-id="'+esc(a.id)+'"><div><h3>'+esc(a.t)+'</h3>'+st+'</div>'+
+    var h='<article class="app'+(s.mode==="locked"?' locked':'')+'" style="--c:'+({ela:"var(--ela)",flu:"var(--flu)",math:"var(--math)",sci:"var(--sci)",rev:"var(--rev)"}[a.s])+'" data-id="'+esc(a.id)+'"><div><h3>'+esc(a.t)+(a.lead?' <span style="font:600 12px/1 var(--ec-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.05em">· you run it</span>':'')+'</h3>'+st+'</div>'+
       '<div class="seg" role="group" aria-label="'+esc(a.t)+'">'+[["open","Open"],["locked","🔒 Locked"],["assigned","Assigned"]].map(function(m){return '<button type="button" data-m="'+m[0]+'" aria-pressed="'+(s.mode===m[0])+'">'+m[1]+'</button>'}).join("")+'</div>';
     if(s.mode==="assigned"){
       var extra=s.students.filter(function(n){return roster.map(first).indexOf(first(n))<0});

@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Spelling Studio · Grades 3–12</title>
+<meta name="description" content="Hear it, spell it: letter tiles, a Spelling Bee, sentence writing and tests for grades 3–12, with words that adjust to each student and a teacher dashboard.">
+<style>
+:root{--bg:#f6f3fc;--card:#fff;--ink:#1e1838;--muted:#5d5878;--line:#e2dcef;--c:#7a3fb0;--c2:#5b2a8c;--soft:#efe6fa;
+  --ok:#14804a;--ok-bg:#e3f6ea;--bad:#c0392b;--bad-bg:#fdeaea;--warn:#a65d00;--warn-bg:#fff4d6;--gold:#f2b705}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--ec-body,"Atkinson Hyperlegible",system-ui,sans-serif);font-size:18px;line-height:1.5}
+main{max-width:1000px;margin:0 auto;padding:20px max(16px,env(safe-area-inset-left,0px)) 80px}
+h1,h2,h3{font-family:var(--ec-display,"Bricolage Grotesque",system-ui,sans-serif);line-height:1.12;margin:0;text-wrap:balance}
+h1{font-size:clamp(30px,5vw,44px);font-weight:800;letter-spacing:-.02em}
+h2{font-size:clamp(22px,3vw,28px);font-weight:800}
+h3{font-size:19px;font-weight:800}
+p{margin:0}
+.muted{color:var(--muted)}
+button{font:inherit;cursor:pointer;color:inherit}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.btn{font:700 17px/1 var(--ec-body,inherit);border:2px solid var(--c);background:var(--c);color:#fff;border-radius:12px;padding:13px 20px;min-height:48px;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none}
+.btn.gh{background:#fff;color:var(--c)}
+.btn.sm{font-size:15px;padding:9px 14px;min-height:40px}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px}
+.top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:12px 20px;margin-bottom:16px}
+.stats{display:flex;flex-wrap:wrap;gap:8px}
+.stat{background:#fff;border:1px solid var(--line);border-radius:999px;padding:7px 14px;font-weight:700;font-size:15px;display:flex;gap:6px;align-items:center}
+.stat b{font-variant-numeric:tabular-nums}
+/* level meter */
+.level{display:flex;flex-wrap:wrap;align-items:center;gap:12px 18px;margin-bottom:18px}
+.meter{flex:1 1 240px;height:16px;background:#e7e0f3;border-radius:999px;overflow:hidden;position:relative}
+.meter i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,#a76be0,var(--c));border-radius:999px;transition:width .6s}
+.level .g{font:800 20px/1.1 var(--ec-display,inherit)}
+.mini{border:0;background:none;color:var(--c);font-weight:700;text-decoration:underline;padding:4px;font-size:15px}
+/* mode tiles */
+.modes{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.mode{all:unset;box-sizing:border-box;cursor:pointer;background:#fff;border:2px solid var(--line);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:6px;min-height:150px;transition:transform .15s,border-color .15s,box-shadow .15s}
+.mode:hover,.mode:focus-visible{border-color:var(--c);transform:translateY(-3px);box-shadow:0 10px 24px rgba(91,42,140,.14)}
+.mode:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.mode .ic{font-size:34px;line-height:1}
+.mode h3{color:var(--c2)}
+.mode p{color:var(--muted);font-size:15.5px}
+.mode .tag{margin-top:auto;align-self:flex-start;font:700 12px/1 var(--ec-mono,monospace);letter-spacing:.05em;text-transform:uppercase;background:var(--soft);color:var(--c2);padding:6px 9px;border-radius:999px}
+.mode[disabled]{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+.listbar{background:var(--warn-bg);border:2px solid #f0d58a;border-radius:16px;padding:14px 18px;margin-bottom:16px;display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between}
+.seg{display:inline-flex;border:2px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.seg button{border:0;background:none;padding:9px 14px;font-weight:700;font-size:15px;min-height:42px}
+.seg button+button{border-left:2px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--c);color:#fff}
+/* play */
+.playhead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+.prog{flex:1 1 200px;height:10px;background:#e7e0f3;border-radius:999px;overflow:hidden}
+.prog i{display:block;height:100%;background:var(--c);transition:width .35s}
+.hearts{font-size:24px;letter-spacing:2px}
+.streak{font-weight:800;color:#c2410c;min-width:70px;text-align:right}
+.stage{background:#fff;border:1px solid var(--line);border-radius:22px;padding:26px 22px;display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center;position:relative;overflow:hidden}
+.speak{all:unset;box-sizing:border-box;cursor:pointer;width:110px;height:110px;border-radius:50%;background:var(--c);color:#fff;display:grid;place-items:center;font-size:46px;box-shadow:0 8px 0 var(--c2);transition:transform .1s}
+.speak:active{transform:translateY(4px);box-shadow:0 4px 0 var(--c2)}
+.speak:focus-visible{outline:4px solid var(--gold);outline-offset:4px}
+.speak.talking{animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 8px 0 var(--c2),0 0 0 0 rgba(122,63,176,.45)}50%{box-shadow:0 8px 0 var(--c2),0 0 0 18px rgba(122,63,176,0)}}
+.hearrow{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.sent{font-size:20px;max-width:46ch;color:var(--ink);background:var(--soft);border-radius:14px;padding:12px 16px}
+.sent .blank{display:inline-block;min-width:90px;border-bottom:3px solid var(--c);margin:0 4px}
+.boxes{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;min-height:58px}
+.box{width:46px;height:56px;border:3px solid var(--line);border-radius:10px;display:grid;place-items:center;font:800 28px/1 var(--ec-display,inherit);background:#fff;text-transform:lowercase;transition:transform .25s,background .2s,border-color .2s}
+.box.f{border-color:var(--c)}
+.box.ok{background:var(--ok-bg);border-color:var(--ok);color:var(--ok)}
+.box.no{background:var(--bad-bg);border-color:var(--bad);color:var(--bad)}
+.box.flip{animation:flip .45s both}
+@keyframes flip{0%{transform:rotateX(90deg)}100%{transform:rotateX(0)}}
+.shake{animation:shake .4s}
+@keyframes shake{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+@media(max-width:560px){.box{width:34px;height:44px;font-size:22px}}
+.answer{font:700 26px/1.2 var(--ec-body,inherit);text-align:center;width:min(440px,100%);padding:12px 14px;border:3px solid var(--line);border-radius:14px;background:#fff;color:var(--ink);letter-spacing:.04em}
+.answer:focus{border-color:var(--c);outline:none}
+.fb{min-height:1.6em;font-weight:700;font-size:18px;max-width:52ch}
+.fb.ok{color:var(--ok)}.fb.no{color:var(--bad)}.fb.hint{color:var(--warn)}
+.reveal{font:800 clamp(30px,6vw,46px)/1.1 var(--ec-display,inherit);color:var(--c2);letter-spacing:.03em}
+.reveal span{display:inline-block;animation:flip .4s both}
+.trymine{display:flex;flex-wrap:wrap;gap:3px;justify-content:center;font:800 24px/1 var(--ec-display,inherit)}
+.trymine span{padding:6px 7px;border-radius:7px}
+.trymine .g{background:var(--ok-bg);color:var(--ok)}.trymine .r{background:var(--bad-bg);color:var(--bad);text-decoration:line-through}
+/* tiles */
+.slots{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;min-height:62px}
+.slot{width:50px;height:60px;border:3px dashed #cbbfe0;border-radius:12px;display:grid;place-items:center;background:#faf8fe}
+.slot.on{border-style:solid;border-color:var(--c)}
+.slot.ok{background:var(--ok-bg);border-color:var(--ok)}.slot.no{background:var(--bad-bg);border-color:var(--bad)}
+.tiles{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:620px}
+.tile{all:unset;box-sizing:border-box;cursor:grab;width:50px;height:58px;border-radius:12px;background:#fff7d6;border:2px solid #e0b93a;box-shadow:0 5px 0 #d1a41d;display:grid;place-items:center;font:800 28px/1 var(--ec-display,inherit);color:#5a3d00;user-select:none;touch-action:none;transition:transform .12s,opacity .15s}
+.tile:hover{transform:translateY(-2px)}
+.tile:focus-visible{outline:3px solid var(--c);outline-offset:2px}
+.tile.used{opacity:.18;pointer-events:none;box-shadow:none}
+.slot .tile{cursor:pointer;box-shadow:0 3px 0 #d1a41d;width:44px;height:52px;font-size:25px}
+.ghost{position:fixed;z-index:50;pointer-events:none;transform:translate(-50%,-50%) scale(1.12);opacity:.92}
+@media(max-width:560px){.slot{width:38px;height:48px}.tile{width:42px;height:50px;font-size:24px}.slot .tile{width:34px;height:42px;font-size:20px}}
+/* sentence */
+.swrite{width:min(640px,100%);min-height:110px;font:inherit;font-size:20px;padding:12px 14px;border:3px solid var(--line);border-radius:14px;resize:vertical;line-height:1.5}
+.swrite:focus{border-color:var(--c);outline:none}
+.checks{list-style:none;padding:0;margin:0;display:grid;gap:6px;text-align:left;width:min(640px,100%)}
+.checks li{display:flex;gap:10px;align-items:flex-start;padding:8px 12px;border-radius:10px;background:#faf8fe;font-size:16.5px}
+.checks li.ok{background:var(--ok-bg)}.checks li.no{background:var(--bad-bg)}
+.checks li b{flex:none;width:22px;text-align:center}
+.verdict{font:800 26px/1.1 var(--ec-display,inherit)}
+.verdict.m{color:var(--ok)}.verdict.a{color:var(--warn)}.verdict.n{color:var(--bad)}
+/* results */
+.big{font:800 64px/1 var(--ec-display,inherit);color:var(--c);font-variant-numeric:tabular-nums}
+.rlist{list-style:none;padding:0;margin:0;display:grid;gap:6px;width:min(560px,100%);text-align:left}
+.rlist li{display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center;background:#faf8fe;border-radius:10px;padding:8px 12px}
+.rlist li.ok{background:var(--ok-bg)}.rlist li.no{background:var(--bad-bg)}
+.rlist .w{font-weight:800}.rlist .y{color:var(--bad);text-decoration:line-through;font-size:15px}
+/* grade picker */
+.grades{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:10px;width:min(640px,100%)}
+.grades button{border:2px solid var(--line);background:#fff;border-radius:14px;padding:14px 6px;font:800 22px/1 var(--ec-display,inherit);color:var(--c2)}
+.grades button:hover{border-color:var(--c)}
+.grades small{display:block;font:600 12px/1.2 var(--ec-body,inherit);color:var(--muted);margin-top:4px}
+/* confetti */
+.conf{position:absolute;top:-10px;width:10px;height:14px;border-radius:2px;animation:fall 1.3s ease-in forwards;pointer-events:none}
+@keyframes fall{to{transform:translateY(420px) rotate(540deg);opacity:0}}
+.pop{animation:popin .35s}
+@keyframes popin{0%{transform:scale(.8)}60%{transform:scale(1.06)}100%{transform:scale(1)}}
+/* teacher */
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0}
+.tabs button{border:2px solid var(--line);background:#fff;border-radius:999px;padding:9px 16px;font-weight:700;font-size:15px}
+.tabs button[aria-pressed="true"]{background:var(--c);border-color:var(--c);color:#fff}
+.tw{overflow-x:auto;background:#fff;border:1px solid var(--line);border-radius:14px}
+table{border-collapse:collapse;width:100%;font-size:15px;font-variant-numeric:tabular-nums}
+th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{font:700 12px/1.2 var(--ec-mono,monospace);text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+tbody tr{cursor:pointer}tbody tr:hover td{background:#faf8fe}
+.pill{display:inline-block;border-radius:999px;padding:2px 9px;font:700 13px/1.5 var(--ec-mono,monospace)}
+.p-ok{background:var(--ok-bg);color:var(--ok)}.p-mid{background:var(--warn-bg);color:var(--warn)}.p-low{background:var(--bad-bg);color:var(--bad)}
+.inp{font:inherit;font-size:16px;border:2px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;background:#fff;color:var(--ink)}
+textarea.inp{min-height:180px;resize:vertical}
+.sbox{background:#faf8fe;border-radius:12px;padding:10px 14px;margin:6px 0}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:var(--soft);color:var(--c2);border-radius:999px;padding:5px 11px;font-weight:700;font-size:14px}
+.empty{color:var(--muted);text-align:center;padding:24px}
+.foot{margin-top:26px;display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:center;color:var(--muted);font-size:14.5px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media print{body{background:#fff}.ec-bar,.foot,.tabs,.noprint{display:none!important}.card{border:0}}
+</style>
+<link rel="stylesheet" href="/shared/brand.css">
+<script src="/shared/frame.js" data-app="Spelling Studio" data-subject="ela" data-tags="Grades 3–12|Spelling"></script>
+<script src="words.js"></script>
+<script src="realwords.js"></script>
+</head>
+<body>
+<!-- Class sign-in gate: first-name sign-in, blocked names, locked and assigned apps, teacher unlock. Live settings: /classgate.json (edited from Control Center → Lock & Assign). Source: /shared/classgate-block.html -->
+<style>
+#cg-ov{position:fixed;inset:0;z-index:2147483000;background:#141c24;display:flex;align-items:center;justify-content:center;padding:16px;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+#cg-ov *{box-sizing:border-box}
+#cg-ov .cg-card{background:#fff;color:#1b2420;border-radius:14px;max-width:420px;width:100%;padding:24px;display:flex;flex-direction:column;gap:12px;box-shadow:0 12px 32px rgba(0,0,0,.35);font-size:18px;line-height:1.45}
+#cg-ov h2{margin:0;font-size:1.45rem;line-height:1.2}
+#cg-ov p{margin:0}
+#cg-ov a{color:#0b6b4a;font-weight:700}
+#cg-ov label{font-weight:700}
+#cg-ov input{font:inherit;width:100%;padding:12px;border:2px solid #c9d1cc;border-radius:8px;background:#f6f8f6;color:#1b2420}
+#cg-ov input:focus{outline:3px solid #f2c230;outline-offset:1px}
+#cg-ov button{font:inherit;font-weight:700;border:0;border-radius:8px;padding:12px 16px;background:#0b6b4a;color:#fff;cursor:pointer}
+#cg-ov button.cg-alt{background:#e7ece9;color:#1b2420}
+#cg-ov .cg-icon{font-size:2.2rem;line-height:1}
+#cg-ov .cg-msg{min-height:1.4em;color:#a83226;font-size:.95rem}
+#cg-ov .cg-small{font-size:.9rem;color:#55625b}
+#cg-ov details{border-top:1px solid #e1e6e2;padding-top:10px}
+#cg-ov summary{cursor:pointer;font-size:.9rem;color:#55625b}
+#cg-ov form{display:flex;flex-direction:column;gap:10px;margin:0}
+#cg-badge{position:fixed;right:10px;bottom:10px;z-index:2147482000;background:#1b2430;color:#fff;font:600 14px/1.2 system-ui,-apple-system,"Segoe UI",Arial,sans-serif;border-radius:999px;padding:7px 8px 7px 14px;display:flex;gap:10px;align-items:center;box-shadow:0 3px 10px rgba(0,0,0,.25)}
+#cg-badge button{font:inherit;background:#f2c230;color:#1b1b1b;border:0;border-radius:999px;padding:4px 10px;cursor:pointer}
+</style>
+<script data-login>
+(function(){
+  var BLOCKED=["james"];          /* fallback list; /classgate.json on the site replaces it when it loads */
+  var CFG={lockAll:false,apps:{}}; /* locked and assigned apps; filled in from /classgate.json */
+  var CODE_HASH="cf2d0fe7ea0a7780592080ef0bf415a6043a3d59aa5d72ace64d39c6e0837285";  /* scrambled teacher code; the code itself is not stored in this page */
+  var TRY_KEY="echols-classgate-tries";
+  function sha(t){return crypto.subtle.digest("SHA-256",new TextEncoder().encode(t)).then(function(b){return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0")}).join("")})}
+  /* Checks a teacher code. Three wrong tries locks code entry on this device for 10 minutes. Resolves "ok", "wrong" or "wait". */
+  function checkCode(code){var t={};try{t=JSON.parse(lsGet(TRY_KEY))||{}}catch(x){}
+    if(t.until&&Date.now()<t.until)return Promise.resolve("wait");
+    return sha("echols-room2:"+String(code||"").trim()).then(function(h){
+      if(h===CODE_HASH){lsSet(TRY_KEY,null);return "ok"}
+      t.n=(t.n||0)+1;if(t.n>=3){t={n:0,until:Date.now()+600000};lsSet(TRY_KEY,JSON.stringify(t));return "wait"}
+      lsSet(TRY_KEY,JSON.stringify(t));return "wrong"},function(){return "wrong"})}
+  var CODE_MSG={wrong:"That code is not right.",wait:"Too many tries. Wait 10 minutes and try again."};
+  var LOCK_KEY="echols-classgate-lock", NAME_KEY="echols-classgate-name", TEACH_KEY="echols-classgate-teacher";
+  var me=document.currentScript, needLogin=!!(me&&me.getAttribute("data-login")!==null);
+  function attr(a){return (me&&me.getAttribute(a))||""}
+  /* data-watch: name inputs of an app's own sign-in. data-pick: buttons whose text is a name. data-session: saved sign-ins (s:key or l:key:prop). data-app: app id (default: first folder of the address). */
+  var WATCH=attr("data-watch"), PICK=attr("data-pick"), SESS=attr("data-session").split(",").filter(Boolean);
+  var APP=attr("data-app")||(function(){var p=decodeURIComponent(location.pathname).split("/").filter(Boolean)[0]||"";
+    return p.replace(/\.html?$/i,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")})();
+  var BOOK=(function(){try{return new URLSearchParams(location.search).get("book")||""}catch(e){return ""}})();
+  var current="", locked=false, shown="", denied="";
+  function first(n){return String(n||"").trim().split(/[\s\-_]+/)[0].toLowerCase().replace(/[^a-z]/g,"")}
+  function isBlocked(n){return BLOCKED.indexOf(first(n))>-1}
+  /* Mr. Echols (teacher preview) and portfolio guests (?visitor) are not held by app locks or assignments; guest work never reaches class records. */
+  function teacher(){return ssGet(TEACH_KEY)==="1"||ssGet("ec-guest")==="1"||ssGet("ec-visitor")==="1"||/[?&]visitor\b/.test(location.search)}
+  /* This app's setting: {mode:"open"|"locked"|"assigned", students:[first names]} */
+  function setting(){var a=CFG.apps||{};return (BOOK&&a[APP+":"+BOOK])||a[APP]||{mode:"open"}}
+  function appLocked(){if(teacher())return false;return !!CFG.lockAll||setting().mode==="locked"}
+  function notAssigned(n){if(teacher()||!n)return false;var s=setting();if(s.mode!=="assigned")return false;
+    return (s.students||[]).map(first).indexOf(first(n))<0}
+  function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
+  function lsSet(k,v){try{v===null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}}
+  function ssGet(k){try{return sessionStorage.getItem(k)}catch(e){return null}}
+  function ssSet(k,v){try{v===null?sessionStorage.removeItem(k):sessionStorage.setItem(k,v)}catch(e){}}
+  function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+  function tidy(n){return String(n).replace(/\s+/g," ").trim().split(" ").map(function(w){return w.charAt(0).toUpperCase()+w.slice(1)}).join(" ")}
+  function overlay(html){var o=document.getElementById("cg-ov");if(!o){o=document.createElement("div");o.id="cg-ov";o.setAttribute("role","dialog");o.setAttribute("aria-modal","true");document.body.appendChild(o)}o.innerHTML='<div class="cg-card">'+html+'</div>';var i=o.querySelector("input:not([type=password])");if(i)setTimeout(function(){i.focus()},30);return o}
+  function close(){var o=document.getElementById("cg-ov");if(o)o.remove();shown=""}
+  function badge(){var b=document.getElementById("cg-badge");if(b)b.remove();var n=ssGet(NAME_KEY);if(!needLogin||!n)return;b=document.createElement("div");b.id="cg-badge";b.innerHTML='<span>'+esc(n)+'</span><button type="button">Sign out</button>';b.querySelector("button").onclick=function(){ssSet(NAME_KEY,null);location.reload()};document.body.appendChild(b)}
+  function showBlocked(){shown="blocked";
+    var o=overlay('<h2>This activity is not available</h2><p>This app is not open to you right now. Please check with Mr. Echols.</p>'+
+      '<details><summary>Teacher unlock</summary><form id="cg-unlock" style="margin-top:10px"><label for="cg-code">Teacher code</label><input id="cg-code" type="password" inputmode="numeric" autocomplete="off"><button type="submit">Unlock this device</button><p class="cg-msg" id="cg-umsg"></p></form></details>');
+    o.querySelector("#cg-unlock").onsubmit=function(e){e.preventDefault();var c=o.querySelector("#cg-code");
+      checkCode(c.value).then(function(r){if(r==="ok"){lsSet(LOCK_KEY,null);ssSet(NAME_KEY,null);location.reload();return}
+        c.value="";o.querySelector("#cg-umsg").textContent=CODE_MSG[r]})};
+  }
+  /* Locked app or not assigned: no device lock, and the page opens again by itself when Mr. Echols opens it. */
+  function teacherPreview(o){var f=o.querySelector("#cg-tp");if(!f)return;f.onsubmit=function(e){e.preventDefault();var c=o.querySelector("#cg-tcode");
+    checkCode(c.value).then(function(r){if(r==="ok"){ssSet(TEACH_KEY,"1");location.reload();return}c.value="";o.querySelector("#cg-tmsg").textContent=CODE_MSG[r]})}}
+  var TP='<details><summary>Teacher preview</summary><form id="cg-tp" style="margin-top:10px"><label for="cg-tcode">Teacher code</label><input id="cg-tcode" type="password" inputmode="numeric" autocomplete="off"><button type="submit">Open for this tab</button><p class="cg-msg" id="cg-tmsg"></p></form></details>';
+  var MY='<p class="cg-small"><a href="/my-apps/">See my apps</a></p>';
+  function showAppLocked(){if(shown==="applocked")return;shown="applocked";var b=document.getElementById("cg-badge");if(b)b.remove();
+    teacherPreview(overlay('<div class="cg-icon" aria-hidden="true">🔒</div><h2>This app is locked</h2><p>Mr. Echols has locked this app for now. It will open again when he unlocks it.</p>'+MY+TP))}
+  function showNotAssigned(n){if(shown==="notassigned")return;shown="notassigned";denied=String(n||"");var b=document.getElementById("cg-badge");if(b)b.remove();
+    var o=overlay('<div class="cg-icon" aria-hidden="true">📋</div><h2>Not assigned to you</h2><p>'+(n?esc(tidy(first(n)))+', this':'This')+' app is not on your list right now. Check with Mr. Echols.</p>'+MY+
+      '<button type="button" class="cg-alt" id="cg-other">I typed the wrong name</button>'+TP);
+    o.querySelector("#cg-other").onclick=function(){ssSet(NAME_KEY,null);location.reload()};teacherPreview(o)}
+  function lock(){if(locked)return;locked=true;lsSet(LOCK_KEY,"1");ssSet(NAME_KEY,null);var b=document.getElementById("cg-badge");if(b)b.remove();showBlocked()}
+  /* One name check for every sign-in path: false when the name may not use this app. */
+  function allow(n){if(isBlocked(n)){lock();return false}if(appLocked()){showAppLocked();return false}if(notAssigned(n)){showNotAssigned(n);return false}return true}
+  function showLogin(){shown="login";
+    var o=overlay('<h2>Sign in</h2><p class="cg-small">Mr. Echols’ Room 2</p><form id="cg-form"><label for="cg-name">Type your first name</label><input id="cg-name" type="text" maxlength="30" autocomplete="off" autocapitalize="words" placeholder="First name"><button type="submit">Start</button><p class="cg-msg" id="cg-msg"></p></form>');
+    o.querySelector("#cg-form").onsubmit=function(e){e.preventDefault();
+      var raw=o.querySelector("#cg-name").value.replace(/\s+/g," ").trim();
+      if(!/^[A-Za-zÀ-ɏ][A-Za-zÀ-ɏ .'\-]{0,29}$/.test(raw)){o.querySelector("#cg-msg").textContent="Please type your first name using letters.";return}
+      if(!allow(raw))return;
+      var n=tidy(raw);current=n;ssSet(NAME_KEY,n);close();badge();
+      try{document.dispatchEvent(new CustomEvent("classgate:signin",{detail:{name:n}}))}catch(err){}
+    };
+  }
+  window.ClassGate={
+    /* Apps with their own sign-in call this; returns false for a blocked name (and locks the device), a locked app, or a student this app isn't assigned to. */
+    check:function(n){if(lsGet(LOCK_KEY)&&BLOCKED.length){showBlocked();return false}if(!allow(n))return false;current=String(n||"");return true},
+    name:function(){return ssGet(NAME_KEY)||""},
+    app:function(){return APP},
+    /* Teacher code check for in-app teacher tools: resolves "ok", "wrong" or "wait". */
+    checkCode:checkCode, codeMsg:function(r){return CODE_MSG[r]||""}
+  };
+  function saved(){var out=[];SESS.forEach(function(s){var p=s.split(":"),v=null;try{v=(p[0]==="l"?localStorage:sessionStorage).getItem(p[1])}catch(e){}
+    if(v&&p[2]){try{v=(JSON.parse(v)||{})[p[2]]}catch(e){v=null}}if(v)out.push(String(v))});return out}
+  function watched(){var out=[];if(!WATCH)return out;try{Array.prototype.forEach.call(document.querySelectorAll(WATCH),function(i){if(i!==document.activeElement&&i.value)out.push(i.value)})}catch(e){}return out}
+  /* Signs a blocked student out of anything already open, and closes the app when it is locked or not assigned. */
+  function sweep(){if(locked)return;
+    if(lsGet(LOCK_KEY)&&BLOCKED.length){locked=true;showBlocked();return}
+    if(appLocked()){showAppLocked();return}
+    var all=[ssGet(NAME_KEY),current,denied].concat(saved(),watched());
+    for(var i=0;i<all.length;i++)if(all[i]&&isBlocked(all[i])){lock();return}
+    for(i=0;i<all.length;i++)if(all[i]&&notAssigned(all[i])){showNotAssigned(all[i]);return}
+    /* reopened by the teacher while the lock screen was up */
+    if(shown==="applocked"||shown==="notassigned")location.reload()}
+  function refresh(){if(!window.fetch)return;
+    fetch("/classgate.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(j){if(!j)return;
+      if(Array.isArray(j.blocked))BLOCKED=j.blocked.map(first).filter(Boolean);
+      CFG={lockAll:!!j.lockAll,apps:(j.apps&&typeof j.apps==="object")?j.apps:{}};sweep()}).catch(function(){})}
+  function guard(e){if(locked||shown==="applocked"||shown==="notassigned")return;var bad=null;
+    if(WATCH){try{Array.prototype.forEach.call(document.querySelectorAll(WATCH),function(i){if(!i.value||bad)return;if(isBlocked(i.value))bad="b";else if(notAssigned(i.value))bad=i.value;else current=i.value})}catch(x){}}
+    if(!bad&&PICK&&e.type==="click"&&e.target.closest){var b=e.target.closest(PICK);if(b){var nm=b.getAttribute("data-n")||b.textContent;if(isBlocked(nm))bad="b";else if(notAssigned(nm))bad=nm}}
+    if(!bad&&(WATCH||PICK)&&appLocked())bad="l";
+    if(bad){e.preventDefault();e.stopImmediatePropagation();if(bad==="b")lock();else if(bad==="l")showAppLocked();else showNotAssigned(bad)}}
+  function start(){
+    if(lsGet(LOCK_KEY)&&BLOCKED.length){locked=true;showBlocked();return}
+    var n=ssGet(NAME_KEY);
+    if(n&&isBlocked(n)){lock();return}
+    if(needLogin&&!n)showLogin();else badge();
+    if(WATCH||PICK){["submit","click","change"].forEach(function(t){document.addEventListener(t,guard,true)});
+      document.addEventListener("keydown",function(e){if(e.key==="Enter")guard(e)},true)}
+    sweep();refresh();setInterval(sweep,2000);setInterval(refresh,30000);
+    document.addEventListener("visibilitychange",function(){if(!document.hidden)refresh()});
+  }
+  if(document.body)start();else document.addEventListener("DOMContentLoaded",start);
+})();
+</script>
+<!-- /Class sign-in gate -->
+<main id="app" aria-live="polite"></main>
+<script>
+(function(){
+"use strict";
+/* ================= data ================= */
+const W=window.SPELL_WORDS||{}, GRADES=Object.keys(W).map(Number).sort((a,b)=>a-b);
+const ALL=[];GRADES.forEach(g=>Object.keys(W[g]).forEach(p=>W[g][p].forEach(e=>{const i=e.indexOf("|");ALL.push({w:e.slice(0,i),s:e.slice(i+1),g,p})})));
+const BYW={};ALL.forEach(x=>BYW[x.w.toLowerCase()]=x);
+const RW=window.RealWords||null;
+if(RW){RW.addWords(ALL.map(x=>x.w).join(" ")+" Shakespeare advisor DNA Echols")}
+const $=s=>document.querySelector(s), app=$("#app");
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const norm=s=>String(s||"").trim().replace(/[‘’ʼ`]/g,"'").replace(/\s+/g," ").toLowerCase();
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const gradeName=g=>g+(g===3?"rd":"th")+" grade";
+function lsGet(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+
+/* teacher list from a link: ?list=<base64 json {n:name, w:[[word, sentence?],...]}> */
+function b64e(o){return btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")}
+function b64d(s){try{s=s.replace(/-/g,"+").replace(/_/g,"/");return JSON.parse(decodeURIComponent(escape(atob(s))))}catch(e){return null}}
+let LIST=null;(function(){const q=new URLSearchParams(location.search).get("list");const o=q&&b64d(q);
+  if(o&&Array.isArray(o.w)&&o.w.length){LIST={n:String(o.n||"My teacher's list").slice(0,60),w:o.w.map(x=>{const w=String(Array.isArray(x)?x[0]:x).trim();const k=BYW[w.toLowerCase()];
+    return {w,s:(Array.isArray(x)&&x[1])||(k&&k.s)||"",g:k?k.g:0,p:"Teacher list"}}).filter(x=>/^[A-Za-z' -]{1,40}$/.test(x.w))};
+    if(RW)RW.addWords(LIST.w.map(x=>x.w).join(" "))}})();
+
+/* ================= student record ================= */
+const KEY="spell-v1:";
+let NAME="",rec=null;
+function blank(n){return {name:n,grade:null,level:null,stars:0,bestStreak:0,bestBee:0,sessions:[],missed:{},sentences:[],seen:[],last:0}}
+function load(n){const r=lsGet(KEY+n.toLowerCase());return Object.assign(blank(n),r||{},{name:n})}
+function save(){if(!rec||isGuest())return;rec.last=Date.now();rec.sessions=rec.sessions.slice(-200);rec.sentences=rec.sentences.slice(-300);rec.seen=rec.seen.slice(-60);lsSet(KEY+NAME.toLowerCase(),rec)}
+function isGuest(){try{return sessionStorage.getItem("ec-guest")==="1"}catch(e){return false}}
+
+/* ================= sound and voice ================= */
+let MUTE=lsGet("spell-mute")===true, AC=null;
+function tone(f,d,type,vol,when){if(MUTE)return;try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain(),t=AC.currentTime+(when||0);
+  o.type=type||"sine";o.frequency.value=f;g.gain.setValueAtTime(vol||.12,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+d+.02)}catch(e){}}
+const sfx={ok(){tone(660,.12,"triangle",.14);tone(990,.18,"triangle",.14,.1)},no(){tone(190,.22,"sawtooth",.05)},pop(){tone(520,.05,"square",.04)},
+  win(){[523,659,784,1047].forEach((f,i)=>tone(f,.2,"triangle",.12,i*.1))},lose(){[392,330,262].forEach((f,i)=>tone(f,.25,"sine",.1,i*.15))}};
+const synth=window.speechSynthesis||null;let VOICE=null;
+function pickVoice(){if(!synth)return;const vs=synth.getVoices()||[];if(!vs.length)return;
+  const want=["Google US English","Samantha","Microsoft Aria","Microsoft Jenny","Microsoft Zira","Karen","Google UK English Female"];
+  for(const w of want){const v=vs.find(x=>x.name.indexOf(w)===0);if(v){VOICE=v;return}}
+  VOICE=vs.find(v=>/^en[-_]US/i.test(v.lang))||vs.find(v=>/^en/i.test(v.lang))||null}
+if(synth){pickVoice();try{synth.addEventListener("voiceschanged",pickVoice)}catch(e){synth.onvoiceschanged=pickVoice}}
+let talkId=0;
+function say(t,rate){if(!synth||!t)return Promise.resolve();const id=++talkId;return new Promise(res=>{try{synth.cancel();const u=new SpeechSynthesisUtterance(t);if(VOICE){u.voice=VOICE;u.lang=VOICE.lang}else u.lang="en-US";
+  u.rate=rate||.9;let done=false;const fin=()=>{if(!done){done=true;res()}};u.onend=fin;u.onerror=fin;synth.speak(u);setTimeout(fin,Math.max(2500,t.length*110))}catch(e){res()}}).then(()=>id)}
+async function sayItem(it,mode){const b=$("#spk");if(b)b.classList.add("talking");
+  const id=talkId+1;await say(it.w);if(talkId!==id)return off();await sleep(250);
+  if(mode!=="word"&&it.s){await say(it.s);await sleep(250);await say(it.w,.8)}off();
+  function off(){const b2=$("#spk");if(b2)b2.classList.remove("talking")}}
+function confetti(host){if(!host||matchMedia("(prefers-reduced-motion: reduce)").matches)return;const cols=["#7a3fb0","#f2b705","#14804a","#1f5fbf","#e0457b"];
+  for(let i=0;i<28;i++){const c=document.createElement("i");c.className="conf";c.style.left=(Math.random()*100)+"%";c.style.background=cols[i%cols.length];c.style.animationDelay=(Math.random()*.25)+"s";host.appendChild(c);setTimeout(()=>c.remove(),1700)}}
+
+/* ================= picking words ================= */
+function gradeOf(){return clamp(Math.floor(rec.level||rec.grade||3),3,12)}
+function pickFrom(pool,n){const seen=new Set(rec.seen.map(x=>x.toLowerCase()));let fresh=shuffle(pool.filter(x=>!seen.has(x.w.toLowerCase())));
+  if(fresh.length<n)fresh=fresh.concat(shuffle(pool.filter(x=>seen.has(x.w.toLowerCase()))));return fresh.slice(0,n)}
+function levelWord(level){const g=clamp(Math.floor(level),3,12);let pool=ALL.filter(x=>x.g===g);const r=pickFrom(pool,1)[0];return r}
+function markSeen(w){rec.seen.push(w)}
+
+/* letter match between a try and the word (longest common subsequence): which typed letters are right */
+function lcsMarks(a,b){a=a.toLowerCase();b=b.toLowerCase();const m=a.length,n=b.length,d=Array.from({length:m+1},()=>new Array(n+1).fill(0));
+  for(let i=m-1;i>=0;i--)for(let j=n-1;j>=0;j--)d[i][j]=a[i]===b[j]?d[i+1][j+1]+1:Math.max(d[i+1][j],d[i][j+1]);
+  const mark=new Array(m).fill(false);let i=0,j=0;while(i<m&&j<n){if(a[i]===b[j]){mark[i]=true;i++;j++}else if(d[i+1][j]>=d[i][j+1])i++;else j++}
+  return {mark,common:d[0][0]}}
+function notRealMsg(t){if(!RW||!t||t.length<2)return "";const w=t.replace(/[^A-Za-z']/g,"");if(!w||RW.isWord(w))return "";return "“"+t+"” is not a real word."}
+
+/* ================= screens ================= */
+let R=null; /* the round being played */
+const MODES={
+  type:{ic:"🎧",t:"Hear & Type",d:"Hear the word and a sentence, then type it. Letter boxes show how long it is.",tag:"10 words · hints"},
+  tiles:{ic:"🧩",t:"Letter Tiles",d:"Tap or drag letter tiles to build the word you hear. Watch out for extra letters!",tag:"10 words"},
+  bee:{ic:"🐝",t:"Spelling Bee",d:"Three lives. Every right answer makes the words a little harder. How far can you go?",tag:"Beat your best"},
+  sent:{ic:"✍️",t:"Write a Sentence",d:"Spell the word, then use it in your own sentence. Real words only, with a capital and an end mark.",tag:"5 words"},
+  test:{ic:"📝",t:"Spelling Test",d:"No hints and one try for each word. Your score goes to Mr. Echols.",tag:"10 or 20 words"},
+  missed:{ic:"🔁",t:"Missed Words",d:"Practice the words you missed. Spell one right twice and it leaves the list.",tag:""}
+};
+let SRC=LIST?"list":"level";
+
+function home(){
+  R=null;if(synth)synth.cancel();
+  if(!rec.grade)return gradePick();
+  const g=gradeOf(),pct=Math.round(((rec.level||g)-3)/9.99*100),nm=Object.keys(rec.missed).length;
+  let h=`<div class="top"><div><h1>Spelling Studio</h1><p class="muted">Hi, ${esc(NAME)}! Pick a way to practice.</p></div>
+    <div class="stats"><span class="stat" title="Stars for words spelled right on the first try">⭐ <b>${rec.stars}</b></span><span class="stat" title="Best streak">🔥 <b>${rec.bestStreak}</b></span><span class="stat" title="Best Spelling Bee">🐝 <b>${rec.bestBee}</b></span>
+    <button class="stat" id="mute" aria-pressed="${!MUTE}" title="Sound effects">${MUTE?"🔇":"🔊"}</button></div></div>`;
+  if(LIST)h+=`<div class="listbar"><div><b>📋 ${esc(LIST.n)}</b><br><span class="muted" style="font-size:15px">${LIST.w.length} words from Mr. Echols</span></div>
+    <div class="seg" role="group" aria-label="Which words"><button data-src="list" aria-pressed="${SRC==="list"}">Teacher's list</button><button data-src="level" aria-pressed="${SRC==="level"}">My level</button></div></div>`;
+  if(SRC==="level"||!LIST)h+=`<div class="card level"><div><div class="g">${esc(gradeName(g))} words</div><span class="muted" style="font-size:15px">The words change to fit you.</span></div><div class="meter" role="img" aria-label="Level ${(rec.level||g).toFixed(1)} of 12"><i style="width:${pct}%"></i></div>
+    <button class="mini" id="regrade">Change my grade</button></div>`;
+  h+=`<div class="modes">`+Object.keys(MODES).map(k=>{const m=MODES[k],off=k==="missed"&&!nm;
+    return `<button class="mode" data-m="${k}"${off?" disabled":""}><span class="ic" aria-hidden="true">${m.ic}</span><h3>${m.t}</h3><p>${m.d}</p><span class="tag">${k==="missed"?(nm?nm+" word"+(nm>1?"s":""):"Nothing missed yet"):k==="bee"?"Best: "+rec.bestBee:m.tag}</span></button>`}).join("")+`</div>`;
+  h+=`<div class="foot"><span>Words are read aloud. Turn your sound on. 🔊</span><button class="mini" id="teach">Teacher dashboard</button></div>`;
+  app.innerHTML=h;
+  app.querySelectorAll(".mode").forEach(b=>b.onclick=()=>{if(b.disabled)return;const m=b.dataset.m;if(m==="test")return testPick();start(m)});
+  app.querySelectorAll("[data-src]").forEach(b=>b.onclick=()=>{SRC=b.dataset.src;home()});
+  const rg=$("#regrade");if(rg)rg.onclick=gradePick;
+  $("#mute").onclick=()=>{MUTE=!MUTE;lsSet("spell-mute",MUTE);home()};
+  $("#teach").onclick=teacherGate;
+}
+function gradePick(){
+  app.innerHTML=`<div class="stage"><h2>What grade are you in?</h2><p class="muted">You'll start with words for your grade. They get harder or easier as you go.</p>
+    <div class="grades">${GRADES.map(g=>`<button data-g="${g}">${g}<small>${g===3?"3rd":g+"th"}</small></button>`).join("")}</div>
+    ${rec.grade?`<button class="btn gh sm" id="back">Back</button>`:""}</div>`;
+  app.querySelectorAll("[data-g]").forEach(b=>b.onclick=()=>{const g=+b.dataset.g;rec.grade=g;rec.level=g;save();sfx.pop();home()});
+  const bk=$("#back");if(bk)bk.onclick=home;
+}
+function testPick(){
+  app.innerHTML=`<div class="stage"><div style="font-size:44px">📝</div><h2>Spelling Test</h2><p class="muted">No hints, one try each. Listen carefully. You can hear each word as many times as you want.</p>
+    <div class="row" style="justify-content:center"><button class="btn" data-n="10">10 words</button><button class="btn" data-n="20">20 words</button></div><button class="btn gh sm" id="back">Back</button></div>`;
+  app.querySelectorAll("[data-n]").forEach(b=>b.onclick=()=>start("test",+b.dataset.n));$("#back").onclick=home;
+}
+
+/* ---------- a round ---------- */
+function start(mode,n){
+  const useList=SRC==="list"&&LIST&&mode!=="missed";
+  let words=null;
+  if(mode==="missed"){words=shuffle(Object.keys(rec.missed).map(w=>{const m=rec.missed[w];return {w,s:m.s||"",g:m.g||0,p:"Missed"}})).slice(0,10)}
+  else if(useList){words=mode==="bee"?shuffle(LIST.w):shuffle(LIST.w).slice(0,mode==="sent"?5:(n||10))}
+  const count=mode==="bee"?Infinity:mode==="sent"?5:(n||10);
+  R={mode,src:mode==="missed"?"missed":useList?"list":"level",words,count:words&&mode!=="bee"?Math.min(count,words.length):count,i:0,
+     lives:3,streak:0,res:[],level:rec.level||rec.grade||3,startLevel:rec.level||rec.grade||3,cur:null,tries:0,t:Date.now()};
+  next();
+}
+function next(){
+  if(R.mode!=="bee"&&R.i>=R.count)return finish();
+  if(R.mode==="bee"&&R.lives<=0)return finish();
+  let it;
+  if(R.words){if(R.i>=R.words.length){if(R.mode==="bee")R.words=R.words.concat(shuffle(R.words));else return finish()}it=R.words[R.i]}
+  else it=levelWord(R.mode==="bee"?R.level:(rec.level||rec.grade));
+  R.cur=it;R.tries=0;R.done=false;markSeen(it.w);
+  ({type:showType,test:showType,missed:showType,tiles:showTiles,bee:showType,sent:showSent})[R.mode]();
+  setTimeout(()=>sayItem(it),350);
+}
+function head(){
+  const m=MODES[R.mode],bee=R.mode==="bee";
+  const pct=bee?0:Math.round(R.i/R.count*100);
+  return `<div class="playhead"><button class="btn gh sm" id="quit">← Home</button>
+    ${bee?`<span class="hearts" aria-label="${R.lives} lives left">${"🐝".repeat(R.lives)}${"🤍".repeat(3-R.lives)}</span><b>Score ${R.res.filter(r=>r.ok).length}</b>`
+       :`<div class="prog" role="progressbar" aria-valuenow="${R.i}" aria-valuemax="${R.count}"><i style="width:${pct}%"></i></div><b>${R.i+1} / ${R.count}</b>`}
+    <span class="streak" aria-label="Streak">${R.streak>1?"🔥 "+R.streak:""}</span></div>
+    <p class="muted" style="text-align:center;margin:0 0 8px;font-size:15px">${m.ic} ${m.t}${R.src==="level"?" · "+gradeName(clamp(Math.floor(bee?R.level:(rec.level||3)),3,12))+" words":R.src==="list"&&LIST?" · "+esc(LIST.n):""}</p>`;
+}
+function blankSentence(it){if(!it.s)return "";const re=new RegExp("\\b"+it.w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\b","i");
+  return esc(it.s).replace(re,'<span class="blank" aria-label="blank"></span>')}
+function hearRow(){return `<button class="speak" id="spk" aria-label="Hear the word">🔊</button>
+  <div class="hearrow"><button class="btn gh sm" id="hw">🔊 Word</button>${R.cur.s?`<button class="btn gh sm" id="hs">💬 Sentence</button>`:""}<button class="btn gh sm" id="hslow">🐢 Slow</button></div>
+  ${R.cur.s?`<p class="sent">${blankSentence(R.cur)}</p>`:""}`}
+function wireHear(){const it=R.cur;$("#spk").onclick=()=>sayItem(it);$("#hw").onclick=()=>sayItem(it,"word");
+  const hs=$("#hs");if(hs)hs.onclick=()=>say(it.s);$("#hslow").onclick=()=>say(it.w,.55);$("#quit").onclick=()=>{if(R.res.length&&R.mode!=="bee")finish(true);else home()}}
+
+/* ---------- Hear & Type (also Test, Missed, Bee) ---------- */
+function showType(){
+  const it=R.cur,hints=R.mode==="type"||R.mode==="missed";
+  app.innerHTML=head()+`<div class="stage" id="stage">${hearRow()}
+    ${hints?`<div class="boxes" id="boxes" aria-hidden="true">${it.w.split("").map(()=>'<span class="box"></span>').join("")}</div>`:""}
+    <form id="f" class="row" style="justify-content:center;width:100%" autocomplete="off"><label class="sr" for="ans">Type the word</label>
+      <input class="answer" id="ans" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="40" placeholder="Type the word">
+      <button class="btn" type="submit" id="chk">Check</button></form>
+    <div id="mine"></div><p class="fb" id="fb" role="status"></p><div id="after"></div></div>`;
+  wireHear();const inp=$("#ans");setTimeout(()=>inp.focus(),50);
+  if(hints)inp.oninput=()=>{const v=inp.value.replace(/[‘’]/g,"'");app.querySelectorAll("#boxes .box").forEach((b,i)=>{b.textContent=v[i]||"";b.className="box"+(v[i]?" f":"")})};
+  $("#f").onsubmit=e=>{e.preventDefault();if(R.done)return;const v=inp.value.trim();if(!v){inp.focus();return}judgeType(v)};
+}
+function judgeType(v){
+  const it=R.cur,ok=norm(v)===norm(it.w),hints=R.mode==="type"||R.mode==="missed",oneTry=R.mode==="test"||R.mode==="bee";
+  R.tries++;const fb=$("#fb"),inp=$("#ans");
+  if(ok){R.done=true;inp.disabled=true;$("#chk").disabled=true;
+    if(hints)app.querySelectorAll("#boxes .box").forEach((b,i)=>{b.textContent=it.w[i];b.className="box ok flip";b.style.animationDelay=(i*.05)+"s"});
+    right(R.tries===1);
+    if(R.mode==="test"){fb.className="fb";fb.textContent="Got it.";setTimeout(advance,500);return}
+    fb.className="fb ok";fb.textContent=pick(["Correct! ","Yes! ","Nice spelling! ","You got it! "])+(R.tries===1?"⭐":"");sfx.ok();confetti($("#stage"));
+    setTimeout(advance,R.mode==="bee"?900:1100);return}
+  /* wrong */
+  const nr=notRealMsg(v);
+  if(oneTry){R.done=true;inp.disabled=true;$("#chk").disabled=true;wrong(v);
+    if(R.mode==="test"){fb.className="fb";fb.textContent="Got it.";setTimeout(advance,500);return}
+    sfx.no();R.lives--;fb.className="fb no";fb.textContent=(nr?nr+" ":"")+"Not this time.";
+    showReveal(v);$("#after").innerHTML=`<button class="btn" id="nx">${R.lives>0?"Next word →":"See my score"}</button>`;$("#nx").onclick=advance;$("#nx").focus();
+    $(".hearts").textContent="🐝".repeat(R.lives)+"🤍".repeat(3-R.lives);return}
+  sfx.no();$("#stage").classList.remove("shake");void $("#stage").offsetWidth;$("#stage").classList.add("shake");
+  if(R.tries===1){const {mark,common}=lcsMarks(v,it.w),miss=it.w.length-common;
+    $("#mine").innerHTML=`<div class="trymine" aria-label="Your try">${v.split("").map((c,i)=>`<span class="${mark[i]?"g":"r"}">${esc(c)}</span>`).join("")}</div>`;
+    fb.className="fb hint";fb.innerHTML=(nr?"<span style='color:var(--bad)'>"+esc(nr)+"</span> ":"")+"Almost! Green letters are right"+(mark.some(x=>!x)?", red ones don't belong":"")+(miss>0?". "+miss+" letter"+(miss>1?"s are":" is")+" missing":"")+". Try again.";
+    inp.select();return}
+  /* second miss: show the word, then type it once */
+  R.done=true;wrong(v);fb.className="fb no";fb.textContent=(nr?nr+" ":"")+"Here's how to spell it. Type it once to remember it.";
+  showReveal(v);inp.value="";inp.placeholder="Type it correctly";R.copy=true;
+  if(hints)app.querySelectorAll("#boxes .box").forEach(b=>{b.textContent="";b.className="box"});
+  $("#f").onsubmit=e=>{e.preventDefault();if(norm(inp.value)===norm(it.w)){sfx.ok();inp.disabled=true;fb.className="fb ok";fb.textContent="Good. Now you know it!";setTimeout(advance,900)}
+    else{sfx.no();inp.select();fb.className="fb no";fb.textContent="Look closely and copy each letter: "+it.w}};
+  inp.focus();
+}
+function showReveal(v){const it=R.cur;$("#mine").innerHTML=`<div class="reveal" aria-label="${esc(it.w)}">${it.w.split("").map((c,i)=>`<span style="animation-delay:${i*.06}s">${esc(c)}</span>`).join("")}</div>`;say(it.w)}
+const pick=a=>a[Math.random()*a.length|0];
+function right(first){
+  R.res.push({w:it().w,ok:first,second:!first,typed:it().w,tries:R.tries});
+  if(first){rec.stars++;R.streak++;rec.bestStreak=Math.max(rec.bestStreak,R.streak)}else R.streak=0;
+  if(R.src==="level"&&R.mode!=="test"){if(R.mode==="bee")R.level=clamp(R.level+.34,3,12.99);else if(first)rec.level=clamp((rec.level||3)+.1,3,12.99)}
+  if(R.mode==="missed"&&rec.missed[it().w]){const m=rec.missed[it().w];if(first){m.right=(m.right||0)+1;if(m.right>=2)delete rec.missed[it().w]}}
+  else if(first&&rec.missed[it().w]&&R.mode!=="test"){rec.missed[it().w].right=(rec.missed[it().w].right||0)+1;if(rec.missed[it().w].right>=2)delete rec.missed[it().w]}
+  save()}
+function wrong(v){R.res.push({w:it().w,ok:false,typed:v,tries:R.tries});R.streak=0;
+  const k=it().w,m=rec.missed[k]||{n:0,g:it().g,s:it().s,right:0};m.n++;m.right=0;m.t=Date.now();rec.missed[k]=m;
+  if(R.src==="level"&&R.mode!=="test"&&R.mode!=="bee")rec.level=clamp((rec.level||3)-.2,3,12.99);save()}
+function it(){return R.cur}
+function advance(){R.i++;next()}
+
+/* ---------- Letter Tiles ---------- */
+const DECOY={a:"eiou",e:"aiy",i:"eya",o:"aue",u:"oa",y:"ie",c:"ks",k:"c",s:"cz",z:"s",f:"vp",v:"f",g:"jq",j:"g",b:"dp",d:"bt",p:"bq",t:"d",m:"n",n:"m",l:"r",r:"l",w:"u",h:"n",q:"k",x:"z"};
+function showTiles(){
+  const it=R.cur,word=it.w.toLowerCase(),letters=word.split("");
+  const dec=[];const nDec=word.length>9?1:2;let guard=0;
+  while(dec.length<nDec&&guard++<20){const src=letters[Math.random()*letters.length|0],opts=DECOY[src]||"aeiou";const d=opts[Math.random()*opts.length|0];if(d)dec.push(d)}
+  R.tiles=shuffle(letters.concat(dec).map((c,i)=>({c,id:i})));R.slots=new Array(letters.length).fill(null);
+  app.innerHTML=head()+`<div class="stage" id="stage">${hearRow()}
+    <div class="slots" id="slots">${letters.map((_,i)=>`<div class="slot" data-s="${i}"></div>`).join("")}</div>
+    <div class="tiles" id="tiles">${R.tiles.map(t=>`<button class="tile" data-t="${t.id}" aria-label="letter ${t.c}">${t.c==="'"?"’":t.c}</button>`).join("")}</div>
+    <div class="row" style="justify-content:center"><button class="btn gh sm" id="bk">⌫ Undo</button><button class="btn gh sm" id="clr">Clear</button></div>
+    <div id="mine"></div><p class="fb" id="fb" role="status"></p><div id="after"></div></div>`;
+  wireHear();
+  $("#bk").onclick=()=>{for(let i=R.slots.length-1;i>=0;i--)if(R.slots[i]!=null){R.slots[i]=null;break}drawSlots()};
+  $("#clr").onclick=()=>{R.slots.fill(null);drawSlots()};
+  app.querySelectorAll("#tiles .tile").forEach(b=>wireTile(b));
+  document.onkeydown=e=>{if(!R||R.mode!=="tiles"||R.done||e.ctrlKey||e.metaKey)return;
+    if(e.key==="Backspace"){e.preventDefault();$("#bk").click();return}
+    const k=e.key.toLowerCase().replace("’","'");if(!/^[a-z']$/.test(k))return;const t=R.tiles.find(t=>t.c===k&&!R.slots.includes(t.id));if(t){e.preventDefault();place(t.id)}};
+}
+function wireTile(b){let sx=0,sy=0,drag=null,moved=false;const id=+b.dataset.t;
+  b.onpointerdown=e=>{if(R.done)return;sx=e.clientX;sy=e.clientY;moved=false;try{b.setPointerCapture(e.pointerId)}catch(x){}};
+  b.onpointermove=e=>{if(!e.buttons||R.done)return;if(!moved&&Math.hypot(e.clientX-sx,e.clientY-sy)>8){moved=true;drag=b.cloneNode(true);drag.classList.add("ghost");document.body.appendChild(drag)}
+    if(drag){drag.style.left=e.clientX+"px";drag.style.top=e.clientY+"px"}};
+  b.onpointerup=e=>{if(drag){drag.remove();drag=null;const el=document.elementFromPoint(e.clientX,e.clientY),sl=el&&el.closest(".slot");
+      if(sl){const s=+sl.dataset.s;if(R.slots[s]==null){R.slots[s]=id;sfx.pop();drawSlots()}else place(id)}}
+    else if(!moved)place(id)};
+  b.onclick=e=>{if(e.detail===0)place(id)};/* keyboard Enter/Space */
+}
+function place(id){if(R.done||R.slots.includes(id))return;const s=R.slots.indexOf(null);if(s<0)return;R.slots[s]=id;sfx.pop();drawSlots()}
+function drawSlots(){const used=new Set(R.slots.filter(x=>x!=null));
+  app.querySelectorAll("#tiles .tile").forEach(b=>b.classList.toggle("used",used.has(+b.dataset.t)));
+  app.querySelectorAll("#slots .slot").forEach((sl,i)=>{const id=R.slots[i];sl.className="slot"+(id!=null?" on":"");
+    if(id==null){sl.innerHTML="";return}const t=R.tiles.find(t=>t.id===id);sl.innerHTML=`<button class="tile pop" aria-label="remove ${t.c}">${t.c==="'"?"’":t.c}</button>`;
+    sl.firstChild.onclick=()=>{if(R.done)return;R.slots[i]=null;drawSlots()}});
+  if(R.slots.every(x=>x!=null))setTimeout(judgeTiles,250)}
+function judgeTiles(){if(R.done)return;const it=R.cur,word=it.w.toLowerCase(),v=R.slots.map(id=>R.tiles.find(t=>t.id===id).c).join("");R.tries++;const fb=$("#fb");
+  if(v===word){R.done=true;app.querySelectorAll("#slots .slot").forEach(s=>s.classList.add("ok"));right(R.tries===1);sfx.ok();confetti($("#stage"));
+    fb.className="fb ok";fb.textContent=pick(["Correct! ","Word built! ","Great job! "])+(R.tries===1?"⭐":"");setTimeout(advance,1100);return}
+  sfx.no();const nr=notRealMsg(v);
+  app.querySelectorAll("#slots .slot").forEach((s,i)=>s.classList.add(v[i]===word[i]?"ok":"no"));
+  if(R.tries===1){fb.className="fb hint";fb.innerHTML=(nr?"<span style='color:var(--bad)'>"+esc(nr)+"</span> ":"")+"Green tiles are in the right place. Tap a red tile to take it back, then try again.";
+    setTimeout(()=>{R.slots=R.slots.map((id,i)=>v[i]===word[i]?id:null);drawSlots();app.querySelectorAll("#slots .slot").forEach((s,i)=>{if(R.slots[i]!=null)s.classList.add("ok")})},900);return}
+  R.done=true;wrong(v);fb.className="fb no";fb.textContent=(nr?nr+" ":"")+"Here's the word. Take a good look!";showReveal(v);
+  $("#after").innerHTML=`<button class="btn" id="nx">Next word →</button>`;$("#nx").onclick=advance;$("#nx").focus()}
+
+/* ---------- Write a Sentence ---------- */
+function minWords(){const g=R.cur.g||gradeOf();return g<=5?5:g<=8?7:8}
+function showSent(){
+  const it=R.cur;
+  app.innerHTML=head()+`<div class="stage" id="stage">${hearRow()}
+    <p class="muted" style="max-width:52ch">First spell the word in the box. Then write your <b>own</b> sentence that uses it. Real words only, at least ${minWords()} words, a capital letter at the start and an end mark.</p>
+    <form id="f1" class="row" style="justify-content:center;width:100%" autocomplete="off"><label class="sr" for="ans">Spell the word</label>
+      <input class="answer" id="ans" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="40" placeholder="Spell the word"><button class="btn" id="chk">Check</button></form>
+    <div id="mine"></div><p class="fb" id="fb" role="status"></p><div id="sbox" style="width:100%;display:flex;flex-direction:column;align-items:center"></div><div id="after"></div></div>`;
+  wireHear();const inp=$("#ans");setTimeout(()=>inp.focus(),50);
+  $("#f1").onsubmit=e=>{e.preventDefault();if(R.spelled)return;const v=inp.value.trim();if(!v)return;R.tries++;const fb=$("#fb"),nr=notRealMsg(v);
+    if(norm(v)===norm(it.w)){R.spelled=true;R.firstSpell=R.tries===1;inp.disabled=true;$("#chk").disabled=true;sfx.ok();fb.className="fb ok";fb.textContent="Spelled right! Now write a sentence.";sentenceBox();return}
+    sfx.no();if(R.tries===1){const {mark}=lcsMarks(v,it.w);$("#mine").innerHTML=`<div class="trymine">${v.split("").map((c,i)=>`<span class="${mark[i]?"g":"r"}">${esc(c)}</span>`).join("")}</div>`;
+      fb.className="fb hint";fb.innerHTML=(nr?"<span style='color:var(--bad)'>"+esc(nr)+"</span> ":"")+"Almost! Green letters are right. Try again.";inp.select();return}
+    R.spelled=true;R.firstSpell=false;inp.disabled=true;$("#chk").disabled=true;fb.className="fb no";fb.textContent=(nr?nr+" ":"")+"Here's how it's spelled. Use it in your sentence.";showReveal(v);sentenceBox()};
+  R.spelled=false;
+}
+function sentenceBox(){
+  $("#sbox").innerHTML=`<label class="sr" for="sw">Your sentence</label><textarea class="swrite" id="sw" spellcheck="false" autocorrect="off" placeholder="Write your sentence using “${esc(R.cur.w)}”"></textarea>
+    <div class="row" style="justify-content:center;margin-top:10px"><button class="btn" id="schk">Check my sentence</button></div><div id="sres" style="margin-top:12px;display:flex;flex-direction:column;align-items:center;gap:10px"></div>`;
+  const ta=$("#sw");ta.focus();R.stries=0;
+  $("#schk").onclick=()=>{const t=ta.value.replace(/\s+/g," ").trim();if(!t){ta.focus();return}R.stries++;const r=checkSentence(t,R.cur);showChecks(r,t)};
+}
+function checkSentence(t,it){
+  const words=(t.match(/[A-Za-z][A-Za-z'’\-]*/g)||[]),low=t.toLowerCase().replace(/[’]/g,"'");const out=[];
+  const re=new RegExp("(^|[^a-z'])"+it.w.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"([^a-z']|$)");
+  const has=re.test(low);
+  let near="";if(!has){words.forEach(w=>{const l=w.toLowerCase();if(!near&&l.length>2&&Math.abs(l.length-it.w.length)<=2&&lcsMarks(l,it.w).common>=it.w.length-2)near=w})}
+  out.push({ok:has,t:has?`Uses “${it.w}” spelled correctly.`:near?`“${near}” is not spelled like “${it.w}”. Fix the spelling.`:`Use the word “${it.w}” in your sentence.`});
+  const probs=RW?RW.problems(t,{max:4}):[];
+  out.push({ok:!probs.length,t:probs.length?probs.join(" "):"Every word is a real word."});
+  out.push({ok:/^[“"'(]?[A-Z]/.test(t),t:/^[“"'(]?[A-Z]/.test(t)?"Starts with a capital letter.":"Start your sentence with a capital letter."});
+  out.push({ok:/[.!?]["”')]?$/.test(t),t:/[.!?]["”')]?$/.test(t)?"Ends with an end mark.":"End your sentence with a period, question mark, or exclamation point."});
+  const n=words.length,mw=minWords();out.push({ok:n>=mw,t:n>=mw?`Long enough (${n} words).`:`Write at least ${mw} words. You have ${n}.`});
+  if(/(^|\s)i(\s|'|’|$)/.test(t))out.push({ok:false,t:"Write the word I as a capital letter."});
+  if(it.s&&norm(t).replace(/[^a-z ]/g,"")===norm(it.s).replace(/[^a-z ]/g,""))out.push({ok:false,t:"That's the example sentence. Write your own!"});
+  const bad=out.filter(x=>!x.ok).length;
+  return {out,level:bad===0?"Mastery":bad===1?"Almost":"Not yet"}}
+function showChecks(r,t){const it=R.cur,cls={"Mastery":"m","Almost":"a","Not yet":"n"}[r.level];
+  $("#sres").innerHTML=`<div class="verdict ${cls} pop">${r.level==="Mastery"?"🏆 Mastery!":r.level==="Almost"?"🙂 Almost!":"😕 Not yet"}</div>
+    <ul class="checks">${r.out.map(x=>`<li class="${x.ok?"ok":"no"}"><b>${x.ok?"✓":"✗"}</b><span>${esc(x.t)}</span></li>`).join("")}</ul>`;
+  if(r.level==="Mastery"){sfx.win();confetti($("#stage"));$("#sw").disabled=true;$("#schk").disabled=true;
+    rec.sentences.push({t:Date.now(),w:it.w,text:t,lvl:"Mastery",tries:R.stries});
+    if(R.firstSpell)right(true);else{R.res.push({w:it.w,ok:false,typed:"",tries:2});const m=rec.missed[it.w]||{n:0,g:it.g,s:it.s,right:0};m.n++;rec.missed[it.w]=m;save()}
+    R.res[R.res.length-1].sent=t;save();
+    $("#after").innerHTML=`<button class="btn" id="nx">Next word →</button>`;$("#nx").onclick=advance;$("#nx").focus()}
+  else{sfx.no();if(R.stries>=3&&!$("#skip")){rec.sentences.push({t:Date.now(),w:it.w,text:t,lvl:r.level,tries:R.stries});save();
+      $("#after").innerHTML=`<button class="btn gh" id="skip">Skip this word</button>`;$("#skip").onclick=()=>{R.res.push({w:it.w,ok:false,typed:"",tries:R.stries,sent:t});save();advance()}}
+    $("#sw").focus()}}
+
+/* ---------- results ---------- */
+function finish(early){
+  const m=R.mode,res=R.res,ok=res.filter(r=>r.ok).length,tot=res.length;
+  if(tot){const s={t:Date.now(),mode:m,src:R.src,list:R.src==="list"&&LIST?LIST.n:"",grade:R.src==="level"?clamp(Math.floor(m==="bee"?R.startLevel:(rec.level||3)),3,12):0,right:ok,total:tot,words:res.map(r=>[r.w,r.ok?1:0,r.typed||""])};
+    rec.sessions.push(s);
+    if(m==="test"&&R.src==="level"&&tot>=5){const p=ok/tot;if(p>=.9)rec.level=clamp((rec.level||3)+.5,3,12.99);else if(p<.6)rec.level=clamp((rec.level||3)-.5,3,12.99)}
+    if(m==="bee"){rec.bestBee=Math.max(rec.bestBee,ok);if(R.src==="level"&&ok>=10)rec.level=clamp((rec.level||3)+.25,3,12.99)}
+    save()}
+  if(!tot)return home();
+  const pct=Math.round(ok/tot*100),best=m==="bee"&&ok>=rec.bestBee&&ok>0;
+  app.innerHTML=`<div class="stage" id="stage"><div style="font-size:46px">${m==="bee"?(best?"🏆":"🐝"):pct>=90?"🏆":pct>=70?"🌟":"💪"}</div>
+    <h2>${m==="bee"?(best?"New best!":"Spelling Bee over"):m==="test"?"Test done!":"Round done!"}</h2>
+    <div class="big">${ok}${m==="bee"?"":" / "+tot}</div><p class="muted">${m==="bee"?"words spelled in a row before losing three lives":pct>=90?"Amazing spelling!":pct>=70?"Nice work! Practice the red ones.":"Keep going. The red words are on your Missed Words list."}</p>
+    <ul class="rlist">${res.map(r=>`<li class="${r.ok?"ok":"no"}"><span>${r.ok?"✓":"✗"}</span><span class="w">${esc(r.w)}${r.sent?`<br><span class="muted" style="font-weight:400;font-size:15px">${esc(r.sent)}</span>`:""}</span><span class="y">${r.second?'<span style="color:var(--warn);text-decoration:none">2nd try</span>':!r.ok&&r.typed&&norm(r.typed)!==norm(r.w)?esc(r.typed):""}</span></li>`).join("")}</ul>
+    <div class="row" style="justify-content:center"><button class="btn" id="again">Play again</button>${Object.keys(rec.missed).length?`<button class="btn gh" id="miss">Practice missed words</button>`:""}<button class="btn gh" id="hm">Home</button></div></div>`;
+  if(pct>=90||best){sfx.win();confetti($("#stage"))}else if(m==="bee")sfx.lose();
+  $("#again").onclick=()=>m==="test"?testPick():start(m,R.count);$("#hm").onclick=home;const mi=$("#miss");if(mi)mi.onclick=()=>start("missed");
+}
+
+/* ================= teacher dashboard ================= */
+function teacherGate(){
+  app.innerHTML=`<form class="stage" id="tg" style="max-width:440px;margin:0 auto"><h2>Teacher dashboard</h2><p class="muted">Enter the teacher code.</p>
+    <input class="inp" id="tc" type="password" inputmode="numeric" autocomplete="off" aria-label="Teacher code"><button class="btn" type="submit">Open</button><p class="fb no" id="tm"></p><button class="btn gh sm" type="button" id="back">Back</button></form>`;
+  $("#tc").focus();$("#back").onclick=home;
+  $("#tg").onsubmit=e=>{e.preventDefault();const c=$("#tc").value;const done=r=>{if(r==="ok"){try{sessionStorage.setItem("spell-teacher","1")}catch(x){}dash("students")}else{$("#tc").value="";$("#tm").textContent=(window.ClassGate&&ClassGate.codeMsg(r))||"That code is not right."}};
+    if(window.ClassGate&&ClassGate.checkCode)ClassGate.checkCode(c).then(done);else done("wrong")};
+}
+function allRecs(){const out=[];try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.indexOf(KEY)===0){const r=lsGet(k);if(r&&r.name)out.push(r)}}}catch(e){}
+  return out.sort((a,b)=>a.name.localeCompare(b.name))}
+const pctPill=p=>p==null?'<span class="muted">—</span>':`<span class="pill ${p>=80?"p-ok":p>=60?"p-mid":"p-low"}">${p}%</span>`;
+const when=t=>t?new Date(t).toLocaleDateString(undefined,{month:"short",day:"numeric"}):"—";
+function stats(r){const tests=r.sessions.filter(s=>s.mode==="test"),last=tests[tests.length-1],
+  avg=tests.length?Math.round(tests.reduce((a,s)=>a+s.right/s.total,0)/tests.length*100):null,
+  words=r.sessions.reduce((a,s)=>a+s.total,0),sm=r.sentences.filter(s=>s.lvl==="Mastery").length;
+  return {tests:tests.length,last:last?Math.round(last.right/last.total*100):null,avg,words,missed:Object.keys(r.missed||{}).length,sent:r.sentences.length,sm}}
+function dash(tab,who){
+  const recs=allRecs();
+  let h=`<div class="top noprint"><div><h1>Teacher dashboard</h1><p class="muted">Spelling Studio · scores saved on this computer</p></div>
+    <div class="row"><button class="btn gh sm" id="csv">Download CSV</button><button class="btn gh sm" id="prt">Print</button><button class="btn sm" id="out">Done</button></div></div>
+    <div class="tabs noprint">${[["students","Students"],["missed","Most missed"],["sent","Sentences"],["lists","Make a list"]].map(([k,l])=>`<button data-tab="${k}" aria-pressed="${tab===k}">${l}</button>`).join("")}</div>`;
+  if(tab==="students"&&who){const r=recs.find(x=>x.name===who);if(!r)return dash("students");const s=stats(r);
+    h+=`<div class="card"><div class="row" style="justify-content:space-between"><h2>${esc(r.name)}</h2><button class="mini noprint" id="bk">← All students</button></div>
+      <p class="muted">Started in ${r.grade?esc(gradeName(r.grade)):"—"} · now at ${r.level?esc(gradeName(clamp(Math.floor(r.level),3,12))):"—"} words · ⭐ ${r.stars} · 🔥 ${r.bestStreak} · 🐝 ${r.bestBee} · last active ${when(r.last)}</p>
+      <div class="row noprint" style="margin:10px 0"><button class="btn gh sm" id="setlv">Set grade level</button><button class="btn gh sm" id="clrm">Clear missed words</button></div>
+      <h3 style="margin-top:14px">Missed words (${s.missed})</h3><div class="chips" style="margin:8px 0">${Object.keys(r.missed).sort((a,b)=>r.missed[b].n-r.missed[a].n).map(w=>`<span class="chip">${esc(w)} ×${r.missed[w].n}</span>`).join("")||'<span class="muted">None</span>'}</div>
+      <h3 style="margin-top:14px">Recent activity</h3><div class="tw" style="margin-top:8px"><table><thead><tr><th>Date</th><th>Mode</th><th>Words</th><th>Score</th><th>Missed</th></tr></thead><tbody>
+      ${r.sessions.slice(-25).reverse().map(x=>`<tr><td>${when(x.t)}</td><td>${esc((MODES[x.mode]||{}).t||x.mode)}${x.list?" · "+esc(x.list):""}</td><td>${x.grade?esc(gradeName(x.grade)):x.src==="missed"?"Missed list":"Teacher list"}</td><td>${x.mode==="bee"?x.right+" in a row":x.right+"/"+x.total+" "+pctPill(Math.round(x.right/x.total*100))}</td><td style="white-space:normal">${esc(x.words.filter(w=>!w[1]).map(w=>w[0]+(w[2]&&norm(w[2])!==norm(w[0])?" ("+w[2]+")":"")).join(", "))}</td></tr>`).join("")||'<tr><td colspan="5" class="empty">No activity yet.</td></tr>'}
+      </tbody></table></div>
+      <h3 style="margin-top:14px">Sentences</h3>${r.sentences.slice(-30).reverse().map(x=>`<div class="sbox"><b>${esc(x.w)}</b> <span class="pill ${x.lvl==="Mastery"?"p-ok":x.lvl==="Almost"?"p-mid":"p-low"}">${esc(x.lvl)}</span> <span class="muted" style="font-size:14px">${when(x.t)}</span><br>${esc(x.text)}</div>`).join("")||'<p class="muted">No sentences yet.</p>'}</div>`;
+  }else if(tab==="students"){
+    h+=recs.length?`<div class="tw"><table><thead><tr><th>Student</th><th>Level now</th><th>Tests</th><th>Last test</th><th>Test avg</th><th>Words practiced</th><th>Missed</th><th>Sentences</th><th>⭐</th><th>🐝 Best</th><th>Last active</th></tr></thead><tbody>
+      ${recs.map(r=>{const s=stats(r);return `<tr data-who="${esc(r.name)}"><td><b>${esc(r.name)}</b></td><td>${r.level?esc(gradeName(clamp(Math.floor(r.level),3,12))):"—"}</td><td>${s.tests}</td><td>${pctPill(s.last)}</td><td>${pctPill(s.avg)}</td><td>${s.words}</td><td>${s.missed}</td><td>${s.sm}/${s.sent} mastery</td><td>${r.stars}</td><td>${r.bestBee}</td><td>${when(r.last)}</td></tr>`}).join("")}</tbody></table></div>
+      <p class="muted" style="font-size:14px;margin-top:10px">Tap a student for missed words, every test and their sentences. Each Chromebook keeps its own students' scores, so open this dashboard on the computer a student used.</p>`
+      :`<div class="card empty">No students on this computer yet. Scores show up here after students practice.</div>`;
+  }else if(tab==="missed"){
+    const tally={};recs.forEach(r=>Object.keys(r.missed||{}).forEach(w=>{const t=tally[w]=tally[w]||{n:0,who:[]};t.n+=r.missed[w].n;t.who.push(r.name)}));
+    recs.forEach(r=>r.sessions.forEach(s=>s.words.forEach(w=>{if(!w[1]&&!tally[w[0]]){tally[w[0]]={n:1,who:[r.name]}}})));
+    const top=Object.keys(tally).sort((a,b)=>tally[b].n-tally[a].n).slice(0,40);
+    h+=top.length?`<div class="tw"><table><thead><tr><th>Word</th><th>Times missed</th><th>Students</th><th>Pattern</th></tr></thead><tbody>${top.map(w=>`<tr><td><b>${esc(w)}</b></td><td>${tally[w].n}</td><td style="white-space:normal">${esc([...new Set(tally[w].who)].join(", "))}</td><td>${esc((BYW[w.toLowerCase()]||{}).p||"")}</td></tr>`).join("")}</tbody></table></div>
+      <div class="row noprint" style="margin-top:12px"><button class="btn sm" id="mklist">Make a practice list from the top 15</button></div>`:`<div class="card empty">No missed words yet.</div>`;
+  }else if(tab==="sent"){
+    const all=[];recs.forEach(r=>r.sentences.forEach(s=>all.push(Object.assign({who:r.name},s))));all.sort((a,b)=>b.t-a.t);
+    h+=all.length?all.slice(0,150).map(x=>`<div class="sbox"><b>${esc(x.who)}</b> · <b>${esc(x.w)}</b> <span class="pill ${x.lvl==="Mastery"?"p-ok":x.lvl==="Almost"?"p-mid":"p-low"}">${esc(x.lvl)}</span> <span class="muted" style="font-size:14px">${when(x.t)}</span><br>${esc(x.text)}</div>`).join(""):`<div class="card empty">No sentences yet.</div>`;
+  }else if(tab==="lists"){
+    const saved=lsGet("spell-lists")||[];
+    h+=`<div class="card"><h2>Make a word list</h2><p class="muted" style="margin:6px 0 12px">Type your weekly words, like your HMH Into Reading list. One word per line. To add your own sentence, write it after a bar: <code>harvest | Farmers harvest corn in the fall.</code> Words from the built-in lists get their sentence automatically.</p>
+      <label for="ln"><b>List name</b></label><input class="inp" id="ln" placeholder="Week 12 words" style="margin:6px 0 12px">
+      <label for="lw"><b>Words</b></label><textarea class="inp" id="lw" placeholder="careful&#10;beautiful&#10;harvest | Farmers harvest corn in the fall."></textarea>
+      <div class="row" style="margin-top:12px"><button class="btn" id="mk">Make the student link</button></div><div id="lout" style="margin-top:12px"></div></div>
+      <h3 style="margin:18px 0 8px">Lists saved on this computer</h3>${saved.length?saved.map((l,i)=>`<div class="sbox row" style="justify-content:space-between"><span><b>${esc(l.n)}</b> · ${l.w.length} words</span><span class="row"><button class="btn gh sm" data-copy="${i}">Copy link</button><a class="btn gh sm" href="${esc(listURL(l))}" target="_blank" rel="noopener">Open</a><button class="btn gh sm" data-del="${i}">Delete</button></span></div>`).join(""):'<p class="muted">None yet.</p>'}`;
+  }
+  app.innerHTML=h;
+  app.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>dash(b.dataset.tab));
+  $("#out").onclick=()=>{try{sessionStorage.removeItem("spell-teacher")}catch(e){}home()};
+  $("#prt").onclick=()=>window.print();
+  $("#csv").onclick=()=>csv(recs);
+  app.querySelectorAll("tr[data-who]").forEach(tr=>tr.onclick=()=>dash("students",tr.dataset.who));
+  const bk=$("#bk");if(bk)bk.onclick=()=>dash("students");
+  const sl=$("#setlv");if(sl)sl.onclick=()=>{const v=prompt("Grade level for "+who+" (3 to 12):");const g=parseInt(v,10);if(g>=3&&g<=12){const r=lsGet(KEY+who.toLowerCase());r.level=g;r.grade=r.grade||g;lsSet(KEY+who.toLowerCase(),r);if(rec&&rec.name===who){rec.level=g}dash("students",who)}};
+  const cm=$("#clrm");if(cm)cm.onclick=()=>{if(!confirm("Clear "+who+"'s missed words?"))return;const r=lsGet(KEY+who.toLowerCase());r.missed={};lsSet(KEY+who.toLowerCase(),r);if(rec&&rec.name===who)rec.missed={};dash("students",who)};
+  const ml=$("#mklist");if(ml)ml.onclick=()=>{dash("lists");const tally={};recs.forEach(r=>Object.keys(r.missed||{}).forEach(w=>tally[w]=(tally[w]||0)+r.missed[w].n));
+    $("#ln").value="Words we missed";$("#lw").value=Object.keys(tally).sort((a,b)=>tally[b]-tally[a]).slice(0,15).join("\n")};
+  const mk=$("#mk");if(mk)mk.onclick=makeList;
+  app.querySelectorAll("[data-copy]").forEach(b=>b.onclick=()=>copy(listURL((lsGet("spell-lists")||[])[+b.dataset.copy])));
+  app.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{const s=lsGet("spell-lists")||[];s.splice(+b.dataset.del,1);lsSet("spell-lists",s);dash("lists")});
+}
+function listURL(l){return location.origin+location.pathname+"?list="+b64e({n:l.n,w:l.w})}
+function makeList(){const n=$("#ln").value.trim()||"Spelling list",lines=$("#lw").value.split(/\n+/).map(s=>s.trim()).filter(Boolean),w=[],bad=[];
+  lines.forEach(l=>{const [a,b]=l.split("|").map(s=>(s||"").trim());if(!/^[A-Za-z' -]{1,40}$/.test(a)){bad.push(a);return}
+    if(RW&&!RW.isWord(a)&&!BYW[a.toLowerCase()])bad.push(a+" (not found in the dictionary; kept)");w.push(b?[a,b]:[a])});
+  if(!w.length){$("#lout").innerHTML='<p class="fb no">Add at least one word.</p>';return}
+  const l={n,w},u=listURL(l),saved=lsGet("spell-lists")||[];saved.unshift(l);lsSet("spell-lists",saved.slice(0,30));
+  $("#lout").innerHTML=`<p class="fb ok">Made “${esc(n)}” with ${w.length} words. Post this link in Google Classroom:</p><input class="inp" readonly value="${esc(u)}" id="lurl">
+    <div class="row" style="margin-top:8px"><button class="btn sm" id="cp">Copy link</button><a class="btn gh sm" href="${esc(u)}" target="_blank" rel="noopener">Try it</a></div>${bad.length?`<p class="muted" style="margin-top:8px">Check: ${esc(bad.join(", "))}</p>`:""}`;
+  $("#cp").onclick=()=>copy(u)}
+function copy(u){const ok=()=>alert("Link copied. Paste it into Google Classroom.");try{navigator.clipboard.writeText(u).then(ok,()=>prompt("Copy this link:",u))}catch(e){prompt("Copy this link:",u)}}
+function csv(recs){const rows=[["Student","Date","Mode","Words","Score","Total","Missed words"]];
+  recs.forEach(r=>r.sessions.forEach(s=>rows.push([r.name,new Date(s.t).toISOString().slice(0,10),(MODES[s.mode]||{}).t||s.mode,s.grade?gradeName(s.grade):s.list||s.src,s.right,s.total,s.words.filter(w=>!w[1]).map(w=>w[0]).join(" ")])));
+  const t=rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(",")).join("\n");const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([t],{type:"text/csv"}));a.download="spelling-scores.csv";a.click()}
+
+/* ================= start ================= */
+window.SpellDemo={word:()=>R&&R.cur?R.cur.w:"",tileFor:(c)=>{if(!R||!R.tiles)return null;const t=R.tiles.find(t=>t.c===c&&!R.slots.includes(t.id));return t?document.querySelector('#tiles .tile[data-t="'+t.id+'"]'):null}};
+function begin(n){if(!n)return;NAME=n;rec=load(n);if(rec.level==null&&rec.grade)rec.level=rec.grade;home()}
+function boot(){const n=window.ClassGate&&ClassGate.name();if(n)begin(n);else app.innerHTML='<div class="stage"><h2>Spelling Studio</h2><p class="muted">Sign in with your first name to start.</p></div>'}
+document.addEventListener("classgate:signin",e=>begin(e.detail&&e.detail.name));
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
+})();
+</script>
+</body>
+</html>

@@ -49,11 +49,14 @@ input[type=search]{font:16px var(--ec-body);border:2px solid var(--line);border-
 #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:999px;font-weight:700;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;max-width:92vw}
 #toast.on{opacity:1}
 .note{color:var(--muted);font-size:13.5px}
+.tag.lk-open{background:#e3f4eb;color:#0f7a4f;text-decoration:none}.tag.lk-locked{background:#fbe7e5;color:#b3261e;text-decoration:none}.tag.lk-assigned{background:#fff4d6;color:#8a5a00;text-decoration:none}.tag.lk-none{background:#f1f1f1;color:#777}
+.lockall{background:#fbe7e5;border:2px solid #b3261e;border-radius:12px;padding:10px 14px;margin:14px 0 0;font-weight:700;color:#7a1d16}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 <link rel="stylesheet" href="/shared/brand.css">
 <script src="/shared/frame.js" data-app="Control Center" data-subject="tool" data-tags="All apps" data-standards="off"></script>
 <script src="apps.js"></script>
+<script src="/shared/student-apps.js"></script>
 </head>
 <body>
 <main>
@@ -88,6 +91,15 @@ input[type=search]{font:16px var(--ec-body);border:2px solid var(--line);border-
     var t="Update my classroom app \""+a.t+"\" "+where+". Keep everything else the same, test it, then push it live.\n\nChange: ";
     return "https://claude.ai/new?q="+encodeURIComponent(t)}
   function isPin(a){return pins.indexOf(a.t)>=0}
+  /* Lock status from /classgate.json (set on Lock & Assign) */
+  var GATE=null, SA=window.EC_STUDENT_APPS||[];
+  function gid(a){if(a.where!=="site")return null;var m=SA.filter(function(x){return x.u===a.u||(a.u==="/science-lab/"&&x.id==="science-lab")})[0];return m?m.id:null}
+  function lockTag(a){var id=gid(a);if(!id)return a.s==="tool"?'':'<span class="tag lk-none" title="Only apps on your GitHub site can be locked">No lock</span>';
+    if(!GATE)return '';var s=(GATE.apps||{})[id]||{mode:"open"};
+    if(GATE.lockAll||s.mode==="locked")return '<a class="tag lk-locked" href="/control/assign/" title="Change on Lock & Assign">🔒 Locked</a>';
+    if(s.mode==="assigned")return '<a class="tag lk-assigned" href="/control/assign/" title="'+esc((s.students||[]).join(", ")||"nobody yet")+'">Assigned: '+(s.students||[]).length+'</a>';
+    return '<a class="tag lk-open" href="/control/assign/" title="Change on Lock & Assign">Open</a>'}
+  fetch("/classgate.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(j){GATE=j||{apps:{}};render()}).catch(function(){});
 
   function card(a){
     var where=a.where==="claude"?'<span class="tag cl">claude.ai</span>':a.where==="private"?'<span class="tag pv">Private</span>':'<span class="tag">'+esc(a.u)+'</span>';
@@ -96,7 +108,7 @@ input[type=search]{font:16px var(--ec-body);border:2px solid var(--line);border-
     acts+='<a class="btn gh" href="'+esc(updURL(a))+'" target="_blank" rel="noopener" title="Opens Claude with an update request for this app">Update <span aria-hidden="true">✎</span></a>'+
       '<button class="btn gh" data-copy="'+esc(updURL(a))+'" data-name="update link for '+esc(a.t)+'" title="Copy a link that opens Claude with an update request for this app">Copy update link</button>';
     return '<article class="app" style="--c:'+COL[a.s]+'"><h3><span>'+esc(a.t)+'</span><button class="pin" data-pin="'+esc(a.t)+'" aria-pressed="'+isPin(a)+'" aria-label="'+(isPin(a)?"Unpin ":"Pin ")+esc(a.t)+'">'+(isPin(a)?"★":"☆")+'</button></h3>'+
-      '<p>'+esc(a.d)+'</p><div class="tags"><span class="tag">'+esc(NAME[a.s])+'</span>'+where+(a.dash?'<span class="tag dash">'+esc(a.dash)+'</span>':'')+'</div><div class="acts">'+acts+'</div></article>'}
+      '<p>'+esc(a.d)+'</p><div class="tags"><span class="tag">'+esc(NAME[a.s])+'</span>'+where+(a.dash?'<span class="tag dash">'+esc(a.dash)+'</span>':'')+lockTag(a)+'</div><div class="acts">'+acts+'</div></article>'}
 
   function render(){
     document.getElementById("subj").innerHTML=SUBJ.map(function(x){var n=x[0]==="all"?APPS.length:x[0]==="pin"?pins.filter(function(t){return APPS.some(function(a){return a.t===t})}).length:APPS.filter(function(a){return a.s===x[0]}).length;
@@ -116,6 +128,7 @@ input[type=search]{font:16px var(--ec-body);border:2px solid var(--line);border-
       SUBJ.slice(2).forEach(function(x){var L=list.filter(function(a){return a.s===x[0]});if(!L.length)return;
         html+='<div class="grp"><i style="--c:'+x[2]+'"></i>'+esc(x[1])+'</div><div class="grid">'+L.map(card).join("")+'</div>'});
     }
+    if(GATE&&GATE.lockAll)html='<div class="lockall">🔒 Every student app is locked right now. <a href="/control/assign/">Change on Lock & Assign</a></div>'+html;
     document.getElementById("out").innerHTML=html;
     document.getElementById("stats").innerHTML=
       '<div class="stat"><b>'+APPS.length+'</b><span>Apps</span></div>'+
