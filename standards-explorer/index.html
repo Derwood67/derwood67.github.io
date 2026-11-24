@@ -70,6 +70,9 @@ a.chip:hover{border-color:var(--ink)}
 .lic dt{font-weight:800;color:var(--ink)}.lic dd{margin:0;color:#2b3850}
 .lic .lk{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}
 .lic .lkh{font-weight:800;margin:2px 0 6px}
+.recipbtn{font:inherit;font-weight:800;font-size:14.5px;min-height:44px;border-radius:999px;border:2px solid var(--ink);background:#fff;color:var(--ink);padding:0 16px;cursor:pointer}
+.recipbtn[aria-pressed="true"]{background:var(--ink);color:#fff}
+#reciprow{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 14px}
 .rgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;margin-top:14px}
 .rcard{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;font-size:14.5px}
 .rcard h3{margin:0 0 4px;font-size:17px}.rcard .tag{display:inline-block;font-size:12px;font-weight:800;border-radius:999px;padding:2px 9px;background:#eef2f7;margin-bottom:8px}
@@ -118,6 +121,13 @@ textarea.paste{width:100%;min-height:120px;font:13px ui-monospace,Menlo,monospac
     <div class="row" id="placerow">
       <label class="fld" for="stpick">State <select id="stpick"></select></label>
       <label class="fld" for="dipick">District <select id="dipick"></select></label>
+      <button type="button" class="recipbtn" id="recipbtn" aria-pressed="false">⇄ Reciprocity: from one state to another</button>
+    </div>
+    <div class="row" id="reciprow" hidden>
+      <label class="fld" for="rfrom">From <select id="rfrom"></select></label>
+      <span aria-hidden="true" style="font-weight:800;color:var(--muted)">→</span>
+      <label class="fld" for="rto">To <select id="rto"></select></label>
+      <button class="chip" type="button" id="rswap" style="cursor:pointer;min-height:36px;font-family:inherit">⇄ Swap</button>
     </div>
     <div id="distlinks" class="dlinks" aria-live="polite"></div>
     <details id="lic" class="lic"></details>
@@ -127,13 +137,7 @@ textarea.paste{width:100%;min-height:120px;font:13px ui-monospace,Menlo,monospac
         <button class="s-sci" data-v="sci">Science</button><button class="s-ss" data-v="ss">Social Studies</button>
       </div>
       <div class="seg" id="grade" role="group" aria-label="Grade"><button data-v="K">K</button><button data-v="1">1</button><button data-v="2">2</button><button data-v="3">3</button><button data-v="4">4</button><button data-v="5">5</button><button data-v="6">6</button></div>
-      <div class="seg" id="view" role="group" aria-label="View" style="margin-left:auto"><button data-v="list">Standards</button><button data-v="pacing">Pacing guide</button><button data-v="recip">Reciprocity</button></div>
-    </div>
-    <div class="row" id="reciprow" hidden>
-      <label class="fld" for="rfrom">From <select id="rfrom"></select></label>
-      <span aria-hidden="true" style="font-weight:800;color:var(--muted)">→</span>
-      <label class="fld" for="rto">To <select id="rto"></select></label>
-      <button class="chip" type="button" id="rswap" style="cursor:pointer;min-height:36px;font-family:inherit">⇄ Swap</button>
+      <div class="seg" id="view" role="group" aria-label="View" style="margin-left:auto"><button data-v="list">Standards</button><button data-v="pacing">Pacing guide</button></div>
     </div>
     <div class="row" id="pacerow" hidden><div class="seg" id="psrc" role="group" aria-label="Pacing source"></div></div>
     <div class="row" id="listrow">
@@ -268,6 +272,7 @@ textarea.paste{width:100%;min-height:120px;font:13px ui-monospace,Menlo,monospac
     if(a==="print")window.print();
   });
   document.getElementById("psrc").onclick=function(e){var b=e.target.closest("button");if(b){st.src=b.dataset.v;render()}};
+  document.getElementById("recipbtn").onclick=function(){st.view=st.view==="recip"?(st.prevView||"list"):(st.prevView=st.view,"recip");render()};
   document.getElementById("view").onclick=function(e){var b=e.target.closest("button");if(b){st.view=b.dataset.v;render()}};
 
   /* state, then district */
@@ -404,7 +409,8 @@ textarea.paste{width:100%;min-height:120px;font:13px ui-monospace,Menlo,monospac
     document.querySelectorAll("#view button").forEach(function(b){b.setAttribute("aria-pressed",b.dataset.v===st.view)});
     document.getElementById("pacerow").hidden=st.view!=="pacing";document.getElementById("listrow").hidden=st.view!=="list";
     document.getElementById("reciprow").hidden=st.view!=="recip";document.getElementById("subj").hidden=st.view==="recip";document.getElementById("grade").hidden=st.view==="recip";
-    if(st.view==="recip"){document.getElementById("lic").hidden=true;renderRecip();try{sessionStorage.setItem("ec-explorer",JSON.stringify(st))}catch(e){}return}
+    document.getElementById("recipbtn").setAttribute("aria-pressed",st.view==="recip");document.getElementById("recipbtn").textContent=st.view==="recip"?"✕ Close reciprocity":"⇄ Reciprocity: from one state to another";
+    if(st.view==="recip"){document.getElementById("lic").hidden=true;document.getElementById("distlinks").hidden=true;renderRecip();try{sessionStorage.setItem("ec-explorer",JSON.stringify(st))}catch(e){}return}
     if(st.view==="pacing"){document.querySelectorAll("#subj button").forEach(function(b){b.setAttribute("aria-pressed",b.dataset.v===st.subj)});
       document.querySelectorAll("#grade button").forEach(function(b){b.setAttribute("aria-pressed",b.dataset.v===st.grade)});
       renderPacing();try{sessionStorage.setItem("ec-explorer",JSON.stringify(st))}catch(e){}return}
