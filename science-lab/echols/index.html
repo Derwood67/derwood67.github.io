@@ -695,7 +695,7 @@ const TOPICS = [
     ["YouTube","Heredity for kids","How parents pass traits to offspring.", YT("heredity for kids science")],
     ["PBS LearningMedia","Traits and inheritance (grades 3–5)","Free classroom clips.", PBS("inherited traits")]]},
 
-{ id:"ess-5-1", strand:"Earth Science", c:"--earth", code:"ESS.5.1", name:"Weather & Climate", short:"Water cycle, oceans, forecasts",
+{ id:"ess-5-1", strand:"Earth Science", c:"--earth", code:"ESS.5.1", name:"Weather & Climate", short:"Weather data, oceans, forecasts",
   std:"Understand how Earth systems (hydrosphere and atmosphere) impact patterns of weather and climate.",
   objs:[
     ["ESS.5.1.1","Analyze and interpret data to compare daily and seasonal changes in weather conditions (including wind speed, …).","Read tables and graphs of temperature, precipitation, wind, humidity, and air pressure across days and seasons."],
@@ -1215,6 +1215,245 @@ const RES = {
 "Forecast Desk":{g:"Groups of 3–4",m:["1 per group|Printed surface weather map","1 per group|Weather symbol key","1|Chart paper and markers","—|Tablet for recording (optional)"],
   p:["Forecast script template: today, tomorrow, severe weather alert","Symbol key: fronts, highs, lows, precipitation"],t:[["NOAA Weather Prediction Center maps","https://www.wpc.ncep.noaa.gov/"],["National Weather Service forecasts","https://www.weather.gov/"]],prep:"Print the day's surface map in color.",safe:"None special."}
 };
+/* ===== WATER CYCLE UNIT · ESS.5.1.4 (NCDPI 2023) =====
+   Its own unit in the rail, with chapter, EOG/CDA/MOY-style practice, activities, games, videos and notes.
+   Official objective: "Use models to explain how the sun's energy drives the processes of the water cycle
+   (including evaporation, transpiration, condensation, precipitation)." */
+(function(){
+const WC = { id:"ess-5-1-4", strand:"Earth Science", c:"--earth", code:"ESS.5.1.4", name:"The Water Cycle", short:"Sun's energy, models, the 4 processes",
+  std:"Use models to explain how the sun's energy drives the processes of the water cycle (including evaporation, transpiration, condensation, precipitation).",
+  objs:[
+    ["ESS.5.1","Understand how Earth systems (hydrosphere and atmosphere) impact patterns of weather and climate.","The parent standard. ESS.5.1.4 is its water cycle objective, and the four processes it names (evaporation, transpiration, condensation, precipitation) are what CDAs, the MOY, and the EOG assess."],
+    ["I can","explain that the sun is the source of energy for the water cycle.","Sunlight heats oceans, lakes, soil and leaves. Without the sun's energy, water would not evaporate and the cycle would stop. Gravity is what brings water back down."],
+    ["I can","explain evaporation as liquid water gaining energy and changing into water vapor.","More heat → faster evaporation. Wind and a wide surface also speed it up. Only the water evaporates, so salt is left behind in the ocean."],
+    ["I can","explain transpiration as plants releasing water vapor through their leaves.","Roots take in water from soil, it moves up the stem, and it leaves through tiny openings in leaves. More sun and heat → more transpiration."],
+    ["I can","explain condensation as water vapor losing energy (cooling) and changing back into liquid drops.","Rising vapor cools high in the air and forms clouds. Vapor also condenses on cold surfaces: dew, fog, a sweating glass, a foggy mirror."],
+    ["I can","explain precipitation as water falling from clouds because of gravity.","Tiny cloud droplets join until they are too heavy to stay up. Rain, snow, sleet and hail are all precipitation; the form depends on air temperature."],
+    ["I can","use a model (diagram, bag, bowl, flowchart) to show where the sun's energy is added and where water cools, and tell what the model can't show.","Match each part of a model to the real Earth (lamp = sun, ice = cold upper air, bowl water = ocean). Every model leaves something out."],
+    ["Connects to","ESS.5.1.2, ESS.5.1.3, PS.5.1.3","Clouds and precipitation are weather (5.1.2). The warm ocean gives off the most water vapor and fuels NC storms and hurricanes (5.1.3). Heating and cooling change water's state (PS.5.1.3)."]],
+  vocab:["water cycle","sun's energy","water vapor","evaporation","transpiration","condensation","precipitation","gravity","state of matter","dew","collection","runoff","groundwater","model"],
+  acts:[
+    {t:"Water Cycle in a Bag", obj:"ESS.5.1.4", time:"15 min + 1 week", mat:"Zip bag, water, blue food coloring, marker, tape",
+     steps:["Draw sun, clouds, and ocean on the bag; add a little colored water.","Tape it to a sunny window.","Check daily for droplets (condensation) and drips (precipitation). Label each process on the bag."],
+     ask:"Where is the sun's energy entering the bag? What part of the real water cycle is missing from this model?"},
+    {t:"Evaporation Race", obj:"ESS.5.1.4", time:"45 min", mat:"Paper towels, water, droppers, sunny spot, shady spot, small fan, stopwatch",
+     steps:["Wet 4 paper towels with exactly 10 drops each.","Place one in the sun, one in the shade, one in the sun with a fan, and one sealed in a bag in the sun.","Check every 5 minutes and record when each is dry. Make a bar graph."],
+     ask:"Which towel dried fastest and why? What happened inside the sealed bag?"},
+    {t:"Leaf Bag Transpiration", obj:"ESS.5.1.4", time:"15 min + 4 hours", mat:"Clear plastic bags, twist ties, a leafy tree or potted plants, graduated cylinder",
+     steps:["Tie a clear bag around a leafy branch on the sunny side of a tree and another on the shady side.","Tie a third bag around a bare stick as a control.","After 4 hours, pour out and measure the water in each bag."],
+     ask:"Where did the water come from? Why did the sunny side make more?"},
+    {t:"Cold Cup Condensation", obj:"ESS.5.1.4", time:"20 min", mat:"2 identical cups, ice water, room-temperature water, paper towel, food coloring",
+     steps:["Fill one cup with ice water (add food coloring) and one with room-temperature water.","Dry the outsides and wait 10 minutes.","Observe the outsides. Test a drop from the cold cup's outside: is it colored?"],
+     ask:"The drops aren't colored, so where did they come from? How is this like a cloud forming?"},
+    {t:"Bowl Model: Salt Water to Fresh Rain", obj:"ESS.5.1.4", time:"30 min + 1 day", mat:"Large bowl, small cup, salt water, plastic wrap, ice cubes in a bag, small rock, sunny window or lamp",
+     steps:["Pour salt water into the bowl and set the empty cup in the middle.","Cover with plastic wrap, put the rock in the center over the cup, and set ice on top.","Leave in the sun. Next day, taste-test (teacher only) or test with a salt meter the water in the cup."],
+     ask:"Why is the water in the cup fresh? Which parts of the model stand for the sun, the ocean, clouds, and rain?"},
+    {t:"Water Drop Journey", obj:"ESS.5.1.4", time:"40 min", mat:"8 station signs, 8 station dice (paper cubes), journey log, colored beads (optional)",
+     steps:["Set up stations: Ocean, Cloud, Plant, Lake, River, Groundwater, Glacier/Snow, Soil.","Each student rolls the station die to see where their water drop goes next and names the process (evaporation, condensation, precipitation, transpiration).","After 10 rolls, draw your drop's path and compare with a partner."],
+     ask:"Did every drop follow the same path? Why do we call it a cycle if the paths are different?"}],
+  games:[
+    {type:"order", title:"Follow One Water Drop", how:"Tap the steps in order, starting in the ocean.",
+     items:["The sun heats ocean water","Water evaporates into water vapor","Warm water vapor rises","Vapor cools and condenses into cloud droplets","Droplets join until they are heavy","Gravity pulls precipitation down","Water collects and flows back to the ocean"]},
+    {type:"sort", title:"Name That Process", how:"Which water cycle process is happening?",
+     bins:["Evaporation","Transpiration","Condensation","Precipitation"],
+     items:[["A puddle shrinks on a hot afternoon",0],["Wet clothes dry on a clothesline",0],["Water leaves through tiny openings in a corn plant's leaves",1],["A clear bag tied on a branch fills with droplets",1],["Drops form on the outside of a glass of ice water",2],["Dew covers the grass in the morning",2],["Clouds form high in the cool air",2],["Snow falls on Mount Mitchell",3],["Hail bounces on the playground",3],["Rain falls on Jordan Lake",3],["Sweat dries off your arm",0],["A bathroom mirror fogs up after a shower",2]]},
+    {type:"sort", title:"Energy In or Energy Out?", how:"Does the water gain energy (heat) or lose energy (cool) during this change?",
+     bins:["Gains energy (heating)","Loses energy (cooling)"],
+     items:[["Evaporation from the ocean",0],["Transpiration from leaves on a sunny day",0],["Snow melting in spring sunshine",0],["Water vapor condensing into a cloud",1],["Dew forming on a cold night",1],["Cloud droplets freezing into snow",1],["A puddle drying on hot pavement",0],["Fog forming over a cool river",1]]},
+    {type:"quiz", title:"Water Cycle Showdown", how:"EOG, CDA and MOY-style questions on the four processes.",
+     qs:[
+      ["What is the main source of energy that drives the water cycle?",["The sun","Wind","The moon","Clouds"],0,"Sunlight heats water and land, giving water the energy to evaporate. Without the sun, the cycle would stop."],
+      ["During evaporation, liquid water changes into…",["water vapor, a gas","ice, a solid","rain, a liquid","salt"],0,"Evaporation changes liquid water into an invisible gas called water vapor."],
+      ["What happens to water vapor so that it condenses into a cloud?",["It cools and loses energy","It heats up and gains energy","It turns into salt","It sinks into the ground"],0,"Rising water vapor cools high in the air. Losing energy changes it back into tiny liquid droplets."],
+      ["Transpiration is water vapor released from…",["the leaves of plants","the bottom of the ocean","rocks in a river","clouds"],0,"Plants pull water up from their roots and release it as vapor through their leaves."],
+      ["What force pulls precipitation down to Earth's surface?",["Gravity","Friction","Magnetism","The sun's energy"],0,"Gravity pulls heavy water droplets and ice crystals down as precipitation."],
+      ["Which is NOT a form of precipitation?",["Fog","Snow","Sleet","Hail"],0,"Fog is a cloud near the ground (condensation). Snow, sleet, and hail fall from clouds."],
+      ["On which day would a puddle most likely evaporate fastest?",["Hot, sunny, and windy","Cold and cloudy","Cool and calm at night","Rainy"],0,"More energy from the sun and moving air both speed up evaporation."],
+      ["A cold can of juice gets wet on the outside. Where did the water come from?",["Water vapor in the air condensed on the cold can","Juice leaked through the metal","The can melted","Rain fell inside the room"],0,"Water vapor in the air touches the cold can, cools, and condenses into drops."],
+      ["Ocean water is salty, but rain is fresh. Why?",["Only the water evaporates; the salt stays behind","The sun destroys the salt","Clouds filter out salt","Rain comes from space"],0,"When ocean water evaporates, the salt does not go with the water vapor."],
+      ["Where does MOST evaporation on Earth happen?",["The oceans","Lakes","Rivers","Puddles"],0,"Oceans cover most of Earth's surface, so most evaporation comes from them."],
+      ["Why do more summer thunderstorms happen on hot afternoons in North Carolina?",["More heat causes more evaporation, adding water vapor that rises and condenses","Cold air stops evaporation","The sun is closer to Earth in the afternoon","Plants stop transpiring"],0,"Afternoon heat speeds evaporation; warm moist air rises, cools, and condenses into storm clouds."],
+      ["Which process would stop first if the sun stopped shining?",["Evaporation","Gravity","Runoff down a mountain right away","Rain already falling"],0,"Evaporation needs the sun's energy. Gravity would still pull water down for a while."]]},
+    {type:"quiz", title:"Model Detective", how:"ESS.5.1.4 asks you to USE MODELS. Match models to the real water cycle.",
+     qs:[
+      ["In a water-cycle-in-a-bag model taped to a window, the sunlight stands for…",["the sun's energy","gravity","the ocean","a cloud"],0,"The sunlight through the window is the energy source, just like the sun."],
+      ["In a bowl model, students put ice on top of the plastic wrap. The ice stands for…",["the cold air high in the sky","the sun","the ocean","groundwater"],0,"The ice cools the wrap so vapor condenses, like cold air high in the atmosphere."],
+      ["Drops form on the plastic wrap under the ice. Which process does this model?",["Condensation","Evaporation","Transpiration","Collection"],0,"Water vapor touching the cold wrap cools and turns back into liquid drops."],
+      ["Drops slide down the wrap and fall into the cup. Which process does this model?",["Precipitation","Evaporation","Condensation","Transpiration"],0,"Water falling back down because of gravity models precipitation."],
+      ["Which process is MISSING from a bowl model with only salt water in it?",["Transpiration","Evaporation","Condensation","Precipitation"],0,"Transpiration needs plants. A model with no plants cannot show it."],
+      ["A student draws a water cycle diagram with arrows. What is the BEST reason scientists use models like this?",["To explain a process too big or slow to watch all at once","To make the water cycle happen faster","Because models are always exactly like the real thing","To measure rainfall"],0,"The water cycle covers the whole Earth, so models help us see and explain it. Every model leaves some details out."]]}],
+  vids:[
+    ["Scholastic Study Jams","The Water Cycle","Animated lesson with key vocabulary and a short quiz.","https://studyjams.scholastic.com/studyjams/jams/science/ecosystems/water-cycle.htm"],
+    ["YouTube","Sun's energy and the water cycle","Evaporation, transpiration, condensation, precipitation.", YT("sun's energy water cycle evaporation transpiration condensation precipitation grade 5")],
+    ["YouTube","Transpiration for kids","How plants move water from soil to air.", YT("transpiration for kids plants water cycle")],
+    ["YouTube","Condensation for kids","Why a cold glass sweats and how clouds form.", YT("condensation for kids cold glass clouds form")],
+    ["PBS LearningMedia","Water cycle (grades 3–5)","Free clips and interactives on the water cycle.", PBS("water cycle")],
+    ["PBS LearningMedia","Ways of Watersheds (PBS NC)","Where rain goes in North Carolina: runoff and groundwater.", PBS("Ways of Watersheds PBS NC Science")]],
+  more:{t:"Water Cycle Game Room",d:"Eleven more water cycle and weather games, including a 40-question challenge.",u:"/water-cycle-games/"}
+};
+const at = TOPICS.findIndex(t=>t.id==="ess-5-1");
+TOPICS.splice(at+1, 0, WC);
+
+READ["ess-5-1-4"] = {
+ intro:"The water in your water bottle may once have been part of a hurricane, a snowflake on Mount Mitchell, or a leaf in a Piedmont forest. Earth keeps using the same water over and over. In this chapter you will learn how the sun's energy drives the four water cycle processes named in North Carolina's standard (evaporation, transpiration, condensation, and precipitation) and how to use models to explain them. These are the ideas your CDAs, MOY benchmark, and the EOG ask about.",
+ secs:[
+  ["Water on the move",`<p>The <b>water cycle</b> is the nonstop movement of water between Earth's surface and the air. Water changes between three <b>states of matter</b>: solid (ice and snow), liquid (rain, rivers, oceans), and gas (<b>water vapor</b>, which is invisible).</p>
+   <p>Two things keep the cycle going: the <b>sun's energy</b>, which lifts water into the air, and <b>gravity</b>, which pulls it back down. The total amount of water on Earth stays about the same. It is not used up; it just keeps moving and changing state.</p>
+   <p>About 97 out of every 100 drops of Earth's water are in the salty ocean. That is why the ocean is where most evaporation happens.</p>`],
+  ["The sun is the engine",`<p>The water cycle needs <b>energy</b>, and almost all of it comes from the <b>sun</b>. When sunlight hits the ocean, a lake, wet soil, or a leaf, the water <b>gains energy</b> (heats up). That energy lets water change from a liquid into a gas.</p>
+   <p>When water vapor rises high into the sky, it <b>loses energy</b> (cools) and changes back into liquid drops or ice.</p>
+   <div class="tablewrap"><table class="dt"><thead><tr><th>Change</th><th>State change</th><th>Energy</th></tr></thead><tbody>
+   <tr><td>Evaporation</td><td>liquid → gas</td><td>gains energy (heat added by the sun)</td></tr>
+   <tr><td>Transpiration</td><td>liquid in plant → gas</td><td>gains energy (sun heats leaves)</td></tr>
+   <tr><td>Condensation</td><td>gas → liquid</td><td>loses energy (cools)</td></tr>
+   <tr><td>Precipitation</td><td>falls as liquid or solid</td><td>pulled down by gravity</td></tr></tbody></table></div>
+   <p><b>Test tip:</b> If a question asks what <b>drives</b> or <b>powers</b> the water cycle, the answer is the sun's energy. Gravity explains why precipitation falls, but it is not what drives the cycle.</p>`],
+  ["Evaporation",`<p><b>Evaporation</b> is when liquid water gains energy and changes into water vapor, a gas you cannot see. The sun heats water in oceans, lakes, rivers, puddles, and wet soil.</p>
+   <ul><li><b>More heat</b> → faster evaporation (a puddle dries faster on a hot day).</li><li><b>Wind</b> → faster evaporation (moving air carries vapor away).</li><li><b>More surface area</b> → faster evaporation (water spread out in a pan dries faster than water in a tall glass).</li></ul>
+   <p>When salt water evaporates, only the water leaves. The salt stays behind. That is why rain is fresh water even though most of it started in the ocean.</p>`],
+  ["Transpiration",`<p><b>Transpiration</b> is how plants release water vapor into the air. Roots take in water from the soil. The water moves up through the stem to the leaves and escapes as vapor through tiny openings on the leaves.</p>
+   <p>The sun's energy drives transpiration too: plants release more water on sunny, hot days. A large tree can release hundreds of liters of water in one summer day. Forests in North Carolina add a lot of water vapor to the air.</p>
+   <p><b>How to spot it on a test:</b> water droplets inside a clear bag tied around leaves, or a question about plants adding water to the air.</p>`],
+  ["Condensation",`<p><b>Condensation</b> is when water vapor <b>cools</b> (loses energy) and changes back into liquid drops. Warm air with water vapor rises. Higher in the sky the air is colder, so the vapor condenses onto tiny bits of dust and forms <b>clouds</b>.</p>
+   <p>Condensation also happens near the ground whenever water vapor touches something cold:</p>
+   <ul><li><b>Dew</b> on grass on a cool morning</li><li><b>Fog</b> (a cloud near the ground)</li><li>Drops on the outside of a cold glass</li><li>A foggy bathroom mirror</li></ul>
+   <p><b>Common mistake:</b> The drops on a cold glass did not leak through the glass. They came from water vapor in the air.</p>`],
+  ["Precipitation",`<p>Inside a cloud, tiny droplets bump together and grow. When drops or ice crystals get too heavy to stay up, <b>gravity</b> pulls them down. Water falling from clouds is <b>precipitation</b>.</p>
+   <ul><li><b>Rain</b>: liquid drops</li><li><b>Snow</b>: ice crystals that fall when the air is below freezing, common on North Carolina's mountains</li><li><b>Sleet</b>: rain that freezes into ice pellets as it falls</li><li><b>Hail</b>: balls of ice built up inside strong thunderstorms</li></ul>
+   <p>Which form falls depends on the air temperature between the cloud and the ground.</p>`],
+  ["Where water goes next",`<p>After precipitation, water <b>collects</b> in oceans, lakes, and rivers. Some flows over the land as <b>runoff</b> into streams. In North Carolina, rain in the Piedmont runs into rivers like the Haw and the Neuse, which flow toward the Atlantic. Some soaks into the ground and becomes <b>groundwater</b>, which plant roots can take up. Snow and ice can wait for months until the sun's energy melts them.</p>
+   <p>Then the sun heats the water again, and the cycle continues. The cycle has no real start or end.</p>
+   <p class="note" style="margin-top:8px">Collection and runoff help explain the whole cycle. The 2023 objective names four processes to know well: evaporation, transpiration, condensation, and precipitation.</p>`],
+  ["Using models to explain the water cycle",`<p>The standard says to <b>use models</b>. A model is a smaller or simpler version of something real that helps us explain it. The water cycle covers the whole planet, so we use diagrams, flowcharts, bags, and bowls to study it.</p>
+   <div class="tablewrap"><table class="dt"><thead><tr><th>Part of the model</th><th>What it stands for</th></tr></thead><tbody>
+   <tr><td>Lamp or sunny window</td><td>The sun (energy source)</td></tr>
+   <tr><td>Water in the bag or bowl</td><td>The ocean or a lake</td></tr>
+   <tr><td>Ice on top of plastic wrap</td><td>Cold air high in the sky</td></tr>
+   <tr><td>Drops on the wrap or bag</td><td>Condensation (clouds)</td></tr>
+   <tr><td>Drops sliding or falling down</td><td>Precipitation</td></tr>
+   <tr><td>A plant inside a sealed container</td><td>Transpiration</td></tr></tbody></table></div>
+   <p><b>Every model has limits.</b> A bag model has no plants, so it cannot show transpiration. It is much smaller and faster than the real cycle, and it has no wind or mountains. Test questions often ask what a model shows, what part stands for the sun, or what the model leaves out.</p>
+   <p><b>Reading a diagram:</b> Arrows going <b>up</b> from water or plants show evaporation and transpiration. Arrows into a cloud show condensation. Arrows going <b>down</b> from a cloud show precipitation.</p>`],
+  ["The water cycle and North Carolina weather",`<p>The water cycle connects to the rest of ESS.5.1:</p>
+   <ul><li><b>Weather (ESS.5.1.2):</b> Clouds and precipitation are weather. Warm, moist air rising and cooling causes clouds and storms. That is why hot summer afternoons often bring thunderstorms.</li>
+   <li><b>The ocean (ESS.5.1.3):</b> The warm Atlantic and the Gulf Stream give off huge amounts of water vapor. Hurricanes get their energy from warm ocean water evaporating and condensing.</li>
+   <li><b>Heating and cooling (PS.5.1.3):</b> Adding heat melts and evaporates water; removing heat condenses and freezes it.</li></ul>`],
+  ["Getting ready for CDAs, MOY, and the EOG",`<p>District CDAs, the middle-of-year (MOY) benchmark, and the EOG ask about the water cycle in a few common ways:</p>
+   <ol class="lvl"><li><b>Name the process</b> from an everyday example (a puddle drying, dew, a cold glass).</li>
+   <li><b>Energy questions</b>: What drives the cycle? Is energy gained or lost?</li>
+   <li><b>Model and diagram questions</b>: What does the lamp or ice represent? Which arrow shows condensation? What can't this model show?</li>
+   <li><b>Data questions</b>: tables or graphs from an investigation (drying times, water collected from leaves). Compare numbers and choose the conclusion the data support.</li>
+   <li><b>Select TWO / tap to place</b> items that ask for more than one right answer.</li></ol>
+   <p><b>Strategies:</b> Underline the evidence words (hot, cold, leaves, falling). Ask yourself whether water is going <b>up</b> (evaporation, transpiration), <b>changing in the sky</b> (condensation), or <b>coming down</b> (precipitation). On data questions, choose the answer the numbers support, not one that just sounds true.</p>`]
+ ],
+ tips:["What <b>drives</b> the water cycle? <b>The sun's energy.</b> What pulls precipitation down? <b>Gravity.</b>",
+  "Up = evaporation (water) and transpiration (plants). Sky = condensation (clouds). Down = precipitation.",
+  "Evaporation and transpiration <b>gain</b> energy. Condensation <b>loses</b> energy (cooling).",
+  "Drops on a cold glass come from water vapor in the <b>air</b>, not from inside the glass.",
+  "Fog and dew are <b>condensation</b>, not precipitation.",
+  "Salt stays behind when ocean water evaporates, so rain is fresh water.",
+  "For model questions, match each model part to the real Earth part, then ask what the model leaves out."]
+};
+
+FIGS["ess-5-1-4"] = { 0: FIGS["ess-5-1"][7],
+ 1: {cap:"Adding the sun's energy changes liquid water into water vapor (evaporation). When water vapor loses energy by cooling, it changes back into liquid drops (condensation).",
+  svg:`<svg viewBox="0 0 640 220" role="img" aria-label="Energy and changes of state">${AR}
+   <rect x="0" y="0" width="640" height="220" class="f-sky"/>
+   <circle cx="320" cy="40" r="26" class="f-sun"/>
+   <rect x="40" y="80" width="170" height="90" rx="14" class="f-panel"/><rect x="430" y="80" width="170" height="90" rx="14" class="f-panel"/>
+   <path d="M60,150 C90,140 160,160 190,150 L190,166 L60,166 z" class="f-water"/>
+   <g class="f-bubble"><circle cx="465" cy="135" r="5"/><circle cx="495" cy="152" r="5"/><circle cx="530" cy="128" r="5"/><circle cx="565" cy="148" r="5"/><circle cx="545" cy="158" r="5"/></g>
+   <g class="s-arrow" fill="none"><path d="M220,105 C290,80 350,80 420,105" marker-end="url(#ah)"/><path d="M420,150 C350,175 290,175 220,150" marker-end="url(#ah)"/></g>
+   <g class="lbl"><text x="125" y="104" class="c">Liquid water</text><text x="515" y="100" class="c">Water vapor (gas)</text>
+   <text x="320" y="80" class="c">Evaporation: gains energy</text><text x="320" y="200" class="c">Condensation: loses energy (cools)</text></g></svg>`}
+};
+
+const oldWC = (EOG["ess-5-1"]||[]).filter(s=>s.obj==="ESS.5.1.4");
+EOG["ess-5-1-4"] = [
+ {t:"Kai's Evaporation Test", obj:"ESS.5.1.4", p:`<p>Kai noticed that the wet towels at the pool dried at different speeds. He wondered what makes water evaporate faster. He set up a test in his backyard in Burlington, North Carolina, on a warm, sunny morning.</p>
+  <p>Kai wet four identical paper towels with exactly 20 drops of water each. He put each towel in a different place and checked it every 5 minutes. He wrote down how long each towel took to dry. He sealed Towel 4 inside a clear plastic bag before setting it in the sun.</p>
+  <div class="tablewrap"><table class="dt"><thead><tr><th>Towel</th><th>Where Kai placed it</th><th>Time to dry</th><th>Notes</th></tr></thead><tbody>
+  <tr><td>1</td><td>Full sun</td><td>45 minutes</td><td>Felt warm</td></tr>
+  <tr><td>2</td><td>Shade under a tree</td><td>120 minutes</td><td>Felt cool</td></tr>
+  <tr><td>3</td><td>Full sun with a fan blowing on it</td><td>25 minutes</td><td>Felt warm</td></tr>
+  <tr><td>4</td><td>Full sun, sealed in a clear bag</td><td>Did not dry</td><td>Drops formed on the inside of the bag and dripped back onto the towel</td></tr></tbody></table></div>
+  <div class="wtk"><div class="wtkh">Words to know</div><dl><div><dt>evaporation</dt><dd>when liquid water gains energy and changes into water vapor</dd></div><div><dt>water vapor</dt><dd>water in the form of a gas; it is invisible</dd></div></dl></div>`,
+  qs:[
+   ["What was Kai testing?",["How the place a towel was set affects how fast its water evaporates","How much water a paper towel can hold","Which brand of paper towel is strongest","How hot the sun is in Burlington"],0,"Kai kept the towels and water the same and changed only where each towel was placed.","ESS.5.1.4"],
+   ["Why did Towel 1 dry faster than Towel 2?",["Towel 1 got more energy from the sun, so its water evaporated faster.","Towel 2 had more water on it.","Shade makes water condense.","Trees take water out of towels."],0,"Both towels started with 20 drops. The sun gave Towel 1 more energy, which speeds up evaporation.","ESS.5.1.4"],
+   {k:"ms",n:2,q:"Which TWO conclusions are supported by Kai's data? Select TWO answers.",o:["Energy from the sun speeds up evaporation.","Moving air speeds up evaporation.","Water evaporates fastest in the shade.","The water in Towel 4 disappeared from Earth.","A fan cools water so it evaporates more slowly."],a:[0,1],why:"Sun towels dried faster than the shade towel, and the sun + fan towel dried fastest. The water in the bag did not disappear; it condensed and dripped back.",obj:"ESS.5.1.4"},
+   ["What happened to the water in Towel 4?",["It evaporated, then condensed on the cooler bag and dripped back down.","It soaked into the ground.","It was used up by the sun.","It turned into salt."],0,"The sealed bag trapped the water vapor. The vapor condensed on the bag and fell back like precipitation, so the towel stayed wet.","ESS.5.1.4"],
+   {k:"td",q:"Tap to place each part of Towel 4's bag with the water cycle process it models.",bins:["Evaporation","Condensation","Precipitation"],items:[["Water leaving the warm towel as vapor",0],["Drops forming on the inside of the bag",1],["Drops dripping back onto the towel",2]],why:"Water gains energy and leaves the towel (evaporation), cools on the bag into drops (condensation), and falls back down because of gravity (precipitation).",obj:"ESS.5.1.4"}]},
+ {t:"Leaves That Release Water", obj:"ESS.5.1.4", p:`<p>Ms. Lopez's fifth graders in Hillsborough wanted to know if plants add water to the air. At 9:00 a.m., they tied clear plastic bags around three places on a maple tree in the schoolyard:</p>
+  <ul><li><b>Bag A</b> around a leafy branch on the sunny side of the tree</li><li><b>Bag B</b> around a leafy branch on the shady side of the tree</li><li><b>Bag C</b> around a part of a branch with no leaves</li></ul>
+  <p>At 1:00 p.m., they untied the bags and measured the water inside each one.</p>
+  <div class="tablewrap"><table class="dt"><thead><tr><th>Bag</th><th>Location</th><th>Water collected (mL)</th></tr></thead><tbody>
+  <tr><td>A</td><td>Leafy branch, sunny side</td><td>18</td></tr><tr><td>B</td><td>Leafy branch, shady side</td><td>7</td></tr><tr><td>C</td><td>Branch with no leaves</td><td>0</td></tr></tbody></table></div>
+  <p>The class noticed that the inside of Bags A and B looked foggy before drops formed.</p>`,
+  qs:[
+   ["Which process put the water inside Bags A and B?",["Transpiration","Precipitation","Runoff","Freezing"],0,"Plants release water vapor through their leaves. That is transpiration.","ESS.5.1.4"],
+   ["Why did the class include Bag C?",["To show that the water came from the leaves","To catch rain","To keep insects away","To measure the temperature"],0,"Bag C had no leaves and collected no water. That shows the water in Bags A and B came from the leaves.","ESS.5.1.4"],
+   ["Bag A collected more water than Bag B. What is the BEST explanation?",["The sun's energy caused more transpiration on the sunny side.","The shady side had more leaves.","It rained only on the sunny side.","Bag B had a hole in it."],0,"More energy from the sun increases transpiration, so the sunny branch released more water vapor.","ESS.5.1.4"],
+   ["The bags looked foggy, then drops formed on the inside. Which process made the drops?",["Condensation","Evaporation","Transpiration","Precipitation"],0,"Water vapor inside the bag cooled and changed into liquid drops: condensation.","ESS.5.1.4"],
+   {k:"ms",n:2,q:"Which TWO statements explain how this tree is part of the water cycle? Select TWO answers.",o:["The tree takes in water from the soil through its roots.","The tree releases water vapor into the air through its leaves.","The tree makes new water from sunlight.","The tree stops the water cycle on sunny days.","The tree turns water vapor into salt."],a:[0,1],why:"Water moves from soil into the roots, up to the leaves, and out as vapor. Plants move water; they do not create it.",obj:"ESS.5.1.4"}]},
+ {t:"A Drop's Trip Across North Carolina", obj:"ESS.5.1.4 · ESS.5.1.3", p:`<p>Jayden made a flowchart model to show the trip one drop of water might take across North Carolina.</p>
+  <div class="tablewrap"><table class="dt"><thead><tr><th>Step</th><th>What happens</th></tr></thead><tbody>
+  <tr><td>1</td><td>The sun warms the Atlantic Ocean near the Outer Banks. The drop changes into water vapor and rises.</td></tr>
+  <tr><td>2</td><td>Wind carries the water vapor west. Over the mountains, the air rises and gets colder.</td></tr>
+  <tr><td>3</td><td>?</td></tr>
+  <tr><td>4</td><td>The drop falls as snow on Mount Mitchell.</td></tr>
+  <tr><td>5</td><td>In spring, the sun melts the snow. The water flows into a stream and then into a river toward the ocean.</td></tr></tbody></table></div>
+  <p>Jayden's teacher said the model was a good start but that it left out plants.</p>`,
+  qs:[
+   ["Which process is described in Step 1?",["Evaporation","Condensation","Precipitation","Transpiration"],0,"The sun's energy changes ocean water into water vapor: evaporation.","ESS.5.1.4"],
+   ["What should Jayden write in Step 3?",["The water vapor cools and condenses into a cloud.","The water vapor heats up and evaporates again.","The drop soaks into the soil.","The drop turns into salt."],0,"Rising air cools; cooling vapor condenses into cloud droplets before precipitation can fall.","ESS.5.1.4"],
+   ["What causes the snow in Step 4 to fall to the ground?",["Gravity","The sun's energy","Wind turning into water","Transpiration"],0,"Gravity pulls precipitation down once it is heavy enough.","ESS.5.1.4"],
+   ["Where does the energy come from that melts the snow in Step 5 and starts Step 1 again?",["The sun","The mountain","Gravity","The river"],0,"The sun's energy drives melting and evaporation, so it drives the whole cycle.","ESS.5.1.4"],
+   ["Which step could Jayden add to include plants?",["Trees on the mountain take up water and release water vapor from their leaves.","Fish swim in the river.","Snow turns into hail.","The ocean gets saltier."],0,"Transpiration is the plant part of the water cycle.","ESS.5.1.4"],
+   ["Why does most of the water vapor in Jayden's model come from the ocean?",["The ocean holds most of Earth's water and is warmed by the sun over a huge area.","The ocean is colder than land.","Mountains make water vapor.","Rivers flow uphill."],0,"The ocean covers most of Earth, so it gives off the most water vapor. This connects to ESS.5.1.3.","ESS.5.1.3"]]},
+ {t:"Benchmark Check A: Models (CDA · MOY · EOG style)", obj:"ESS.5.1.4", p:`<p>Amara's group built this model of the water cycle on a table near a sunny window.</p>
+  <ol><li>They poured warm salt water into a large clear bowl.</li><li>They set an empty cup in the middle of the bowl.</li><li>They stretched plastic wrap over the bowl and put a bag of ice on top, right above the cup.</li><li>They shined a lamp on the bowl for 2 hours.</li></ol>
+  <p><b>Observations after 2 hours:</b> The plastic wrap under the ice was covered with drops. Some drops slid to the low point under the ice and fell into the cup. The cup held 15 mL of water. When the teacher tested the water in the cup with a salt meter, it had no salt. The water left in the bowl was saltier than at the start.</p>`,
+  qs:[
+   ["In Amara's model, what does the lamp represent?",["The sun","A cloud","The ocean","Gravity"],0,"The lamp supplies energy, like the sun.","ESS.5.1.4"],
+   ["What does the bag of ice represent?",["Cold air high in the atmosphere","The sun","Groundwater","A river"],0,"The ice cools the wrap so vapor condenses, like cold air high above Earth.","ESS.5.1.4"],
+   {k:"td",q:"Tap to place each observation with the process it models.",bins:["Evaporation","Condensation","Precipitation"],items:[["Water leaving the warm salt water",0],["Drops forming on the plastic wrap",1],["Drops falling into the cup",2]],why:"Heat from the lamp evaporates water. The cold wrap makes vapor condense. Gravity makes the heavy drops fall (precipitation).",obj:"ESS.5.1.4"},
+   ["The water in the cup had no salt. What does this show about the real water cycle?",["When ocean water evaporates, the salt stays behind, so precipitation is fresh water.","Clouds remove salt with filters.","The sun destroys salt.","Salt turns into water vapor."],0,"Only water evaporates. Salt is left behind, which is why the bowl got saltier.","ESS.5.1.4"],
+   ["Which water cycle process can this model NOT show?",["Transpiration","Evaporation","Condensation","Precipitation"],0,"There are no plants in the model, so it cannot show transpiration.","ESS.5.1.4"],
+   {k:"ms",n:2,q:"Amara wants to collect MORE water in the cup in 2 hours. Which TWO changes would most likely work? Select TWO answers.",o:["Move the lamp closer to add more energy.","Use more ice to keep the wrap colder.","Take away the lamp.","Use cold salt water instead of warm.","Remove the plastic wrap."],a:[0,1],why:"More energy increases evaporation, and a colder surface increases condensation. Removing the lamp or using cold water would slow evaporation, and removing the wrap lets the vapor escape.",obj:"ESS.5.1.4"}]},
+ {t:"Benchmark Check B: Summer Week at Wrightsville Beach (CDA · MOY · EOG style)", obj:"ESS.5.1.4 · ESS.5.1.2", p:`<p>Ms. Grant's class tracked the weather near Wrightsville Beach for one summer week. They recorded the afternoon temperature, how humid the air was (how much water vapor it held), and the afternoon sky.</p>
+  <div class="tablewrap"><table class="dt"><thead><tr><th>Day</th><th>Afternoon temp (°F)</th><th>Humidity</th><th>Afternoon sky</th></tr></thead><tbody>
+  <tr><td>Mon</td><td>84</td><td>Medium</td><td>Sunny, few clouds</td></tr>
+  <tr><td>Tue</td><td>89</td><td>High</td><td>Tall clouds by 3 p.m.</td></tr>
+  <tr><td>Wed</td><td>93</td><td>High</td><td>Thunderstorm at 4 p.m.</td></tr>
+  <tr><td>Thu</td><td>94</td><td>High</td><td>Thunderstorm at 3 p.m.</td></tr>
+  <tr><td>Fri</td><td>82</td><td>Low</td><td>Clear</td></tr></tbody></table></div>
+  <p>The students noticed that the beach towels they left out dried fastest on Thursday. On Friday morning, the grass was dry, but on Thursday morning it had been covered in dew.</p>`,
+  qs:[
+   ["Which pattern do the data show?",["Hotter, more humid afternoons had more clouds and storms.","Cooler days had the most storms.","Humidity has nothing to do with clouds.","Storms happened every day."],0,"Wednesday and Thursday were hottest and most humid, and those afternoons had thunderstorms.","ESS.5.1.2"],
+   ["Which explanation BEST links the hot days to the thunderstorms?",["The sun's energy caused more evaporation from the ocean; the warm, moist air rose, cooled, and condensed into storm clouds.","Hot air stops evaporation, so clouds form.","Thunderstorms happen when there is no water vapor.","The sand made the clouds."],0,"More heat → more evaporation → more water vapor → rising air cools and condenses → clouds and rain.","ESS.5.1.4"],
+   ["Why did the towels dry fastest on Thursday?",["Thursday was the hottest day, so evaporation was fastest.","Thursday was the most humid, so towels dried faster.","It rained on the towels.","The towels were smaller."],0,"Thursday had the most heat energy, which speeds evaporation.","ESS.5.1.4"],
+   ["The dew on Thursday morning formed because…",["water vapor in the air cooled overnight and condensed on the grass","rain fell during the night","the grass made water","the ocean splashed onto the grass"],0,"Dew is condensation: humid air cools at night and vapor turns into drops on cool surfaces.","ESS.5.1.4"],
+   {k:"td",q:"Tap to place each event with the water cycle process it shows.",bins:["Evaporation","Transpiration","Condensation","Precipitation"],items:[["Ocean water warming and rising as vapor",0],["Beach grass releasing water vapor from its blades",1],["Tall clouds building by 3 p.m.",2],["Rain pouring down at 4 p.m.",3]],why:"Warm ocean water evaporates, plants transpire, vapor condenses into clouds, and gravity brings precipitation down.",obj:"ESS.5.1.4"}]},
+ ...oldWC
+];
+
+RELEASED["ess-5-1-4"] = (RELEASED["ess-5-1"]||[]).filter(x=>x[2]==="ESS.5.1.4");
+
+Object.assign(RES,{
+"Evaporation Race":{g:"Groups of 3–4",m:["4|Paper towels (same size and brand)","1|Dropper","1 cup|Water","4|Labels","1|Clear zip-top bag","1|Small battery or desk fan","1|Stopwatch"],
+  p:["Data table: Towel · Location · Time to dry (min) · Notes","Bar graph template: Time to dry by location"],prep:"Choose a sunny and a shady spot close together. Charge or test the fan.",safe:"Keep fans and cords away from water."},
+"Leaf Bag Transpiration":{g:"Groups of 4",m:["3|Clear plastic bags (quart or gallon)","3|Twist ties","1|Graduated cylinder or measuring cup (mL)","—|A leafy tree or 2 healthy potted plants"],
+  p:["Data table: Bag · Location · Water collected (mL)","Claim-evidence-reasoning frame: Where did the water come from?"],prep:"Pick branches students can reach. Tie bags in the morning on a sunny day.",safe:"Stay on school grounds; avoid poison ivy and bees."},
+"Cold Cup Condensation":{g:"Pairs",m:["2|Identical clear cups","1 cup|Ice water","1 cup|Room-temperature water","2 drops|Food coloring","1|Paper towel"],
+  p:["Observation chart: Cup · Outside after 10 min · Color of drops"],prep:"Make ice water just before class. Humid days work best.",safe:"Wipe up spills right away."},
+"Bowl Model: Salt Water to Fresh Rain":{g:"Groups of 4",m:["1|Large clear bowl","1|Short cup that fits in the bowl","2 cups|Warm water","2 tbsp|Salt","1|Plastic wrap","1|Small rock or coin","1|Zip bag of ice","—|Sunny window or desk lamp","1|Salt test strip or meter (optional)"],
+  p:["Model key: lamp = sun, bowl water = ocean, ice = cold upper air, drops = condensation, falling drops = precipitation","Labeled diagram template with arrows"],prep:"Warm water starts evaporation faster. Make sure the cup's rim is lower than the wrap.",safe:"Students do not taste the water. Lamp bulbs get hot."},
+"Water Drop Journey":{g:"Whole class at 8 stations",m:["8|Station signs (Ocean, Cloud, Plant, Lake, River, Groundwater, Glacier/Snow, Soil)","8|Station dice (paper cubes labeled with where the drop goes next)","1 per student|Journey log","—|Colored beads and string (optional)"],
+  p:["Station die nets with each face's destination and process","Journey log: Station · Process · Where I went next"],prep:"Label each die face with a destination and a process (for example, Ocean → Cloud: evaporation). Some faces say \"stay\".",safe:"Walk between stations."}
+});
+
+})();
 function resHTML(a){
   const r=RES[a.t]; if(!r) return `<div class="mat"><b>Materials:</b> ${esc(a.mat)}</div>`;
   return `<details class="res" open><summary>Resources needed <span>${esc(r.g)}</span></summary>
@@ -1253,7 +1492,7 @@ function videosHTML(){
 
 /* ---------- Games ---------- */
 function renderGames(body){
-  body.innerHTML = `<div class="gpick">${cur.games.map((g,i)=>`<button data-i="${i}" aria-pressed="${i===gi}">${g.title}</button>`).join("")}</div><div class="game" id="game"></div>`;
+  body.innerHTML = `<div class="gpick">${cur.games.map((g,i)=>`<button data-i="${i}" aria-pressed="${i===gi}">${g.title}</button>`).join("")}</div>${cur.more?`<div class="vids" style="margin:0 0 14px"><a class="vid" href="${cur.more.u}" target="_blank" rel="noopener"><span class="src">More games</span><span class="t">${esc(cur.more.t)}</span><span class="w">${esc(cur.more.d)}</span><span class="go">Opens in a new tab ↗</span></a></div>`:""}<div class="game" id="game"></div>`;
   body.querySelectorAll(".gpick button").forEach(b=>b.onclick=()=>{gi=+b.dataset.i; G=null; renderGames(body);});
   const g = cur.games[gi];
   if(!G) G = initGame(g);

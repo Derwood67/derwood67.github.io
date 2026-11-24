@@ -1067,6 +1067,33 @@ const last = store.get("subject"); if(last && S[last]){ cur=last; $("subject").v
 /* opened from the Science Lab: start on Science and fill in the signed-in name */
 try{ const qp=new URLSearchParams(location.search);
   const qs=qp.get("subject"); if(qs && S[qs]){ cur=qs; $("subject").value=qs; }
+  if(/ESS\.5\.1\.4/.test(qp.get("topic")||"")) Object.assign(S.sci,{
+    title:"The Sun Powers the Water Cycle",
+    sentences:[
+      {t:"The water cycle is the nonstop movement of water between Earth's surface and the air.", k:"Main idea", w:"This is the big idea of the whole passage. Write it first."},
+      {t:"The sun's energy drives the water cycle, and gravity pulls water back down.", k:"Main idea + cause", w:"Two forces to remember: the sun lifts water up, gravity brings it down. Tests ask what DRIVES the cycle."},
+      {t:"During evaporation, the sun heats liquid water so it changes into water vapor, an invisible gas.", k:"Vocabulary", w:"Key word with its meaning: liquid → gas, energy gained."},
+      {t:"Plants release water vapor through tiny openings in their leaves in a process called transpiration.", k:"Vocabulary", w:"Second key word. Transpiration = the plant part of the cycle."},
+      {t:"Water is fun to splash in on hot summer days at the pool.", k:null, w:"True, but it doesn't explain the water cycle. Skip it."},
+      {t:"When water vapor rises and cools, it condenses into tiny droplets that form clouds.", k:"Process + vocabulary", w:"Condensation = gas → liquid when vapor loses energy. Notice the cause: cooling."},
+      {t:"Drops on the outside of a glass of ice water are evidence of condensation.", k:"Evidence", w:"An everyday example you can use on a test."},
+      {t:"When cloud droplets join and become too heavy, gravity pulls them down as precipitation: rain, snow, sleet, or hail.", k:"Process + vocabulary", w:"Precipitation and its four forms. Gravity is the cause."}
+    ],
+    fields:[
+      ["Topic / question","What are we learning?"],
+      ["Key vocabulary","Word = meaning"],
+      ["Process (steps)","Use arrows →"],
+      ["Example or evidence","Real-world proof"],
+      ["Diagram idea","What would you sketch?"],
+      ["I still wonder…","A question to ask"]],
+    model:[
+      ["Topic / question","How does the sun's energy drive the water cycle?"],
+      ["Key vocabulary","evaporation = liquid → vapor (heat in); transpiration = vapor from leaves; condensation = vapor → drops (cools); precipitation = falls (gravity)"],
+      ["Process (steps)","sun heats water → evaporation + transpiration → vapor rises, cools → condensation (clouds) → precipitation → collects → repeat"],
+      ["Example or evidence","puddle dries on a hot day; bag on leaves fills with drops; cold glass sweats; snow on Mount Mitchell"],
+      ["Diagram idea","Sun, ocean, tree, cloud, rain, with arrows up (evap., transp.) and down (precip.)"],
+      ["I still wonder…","Why is rain fresh if it comes from the salty ocean?"]]
+  });
   const qn=qp.get("name"); if(qn){ $("student").value=qn; $("student").dispatchEvent(new Event("change")); }
 }catch(e){}
 paint();
