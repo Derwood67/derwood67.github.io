@@ -64,6 +64,13 @@ a.chip:hover{border-color:var(--ink)}
 .dlinks a.chip.go{background:var(--ink);color:#fff;border-color:var(--ink)}
 .dlinks button.chip{cursor:pointer;font-family:inherit;min-height:34px}
 .dlinks small{color:var(--muted)}
+.lic{background:#fff;border:1px solid var(--line);border-radius:12px;padding:0 14px;font-size:14.5px}
+.lic summary{cursor:pointer;font-weight:800;min-height:46px;display:flex;align-items:center;gap:8px}
+.lic dl{display:grid;grid-template-columns:minmax(0,10em) minmax(0,1fr);gap:8px 14px;margin:4px 0 10px}
+.lic dt{font-weight:800;color:var(--ink)}.lic dd{margin:0;color:#2b3850}
+.lic .lk{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}
+.lic small{display:block;color:var(--muted);margin-bottom:12px}
+@media(max-width:600px){.lic dl{grid-template-columns:minmax(0,1fr)}.lic dd{margin-bottom:6px}}
 .prow{display:grid;grid-template-columns:110px 1fr 96px;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
 .prow .code{font:700 13px var(--ec-mono)}
 .prow p{margin:0;font-size:14px}
@@ -101,6 +108,7 @@ textarea.paste{width:100%;min-height:120px;font:13px ui-monospace,Menlo,monospac
       <label class="fld" for="dipick">District <select id="dipick"></select></label>
     </div>
     <div id="distlinks" class="dlinks" aria-live="polite"></div>
+    <details id="lic" class="lic"></details>
     <div class="row">
       <div class="seg" id="subj" role="group" aria-label="Subject">
         <button class="s-ela" data-v="ela">ELA</button><button class="s-math" data-v="math">Math</button>
@@ -274,11 +282,57 @@ textarea.paste{width:100%;min-height:120px;font:13px ui-monospace,Menlo,monospac
         '<small>Pick a district to see its curriculum links next to the '+esc(P.j.label)+' standards.'+(stdLink?' State standards: ':'')+'</small>'+(stdLink?'<div class="lk">'+stdLink+'</div>':'')}
     else if(P.j.kind!=="national"&&stdLink)h='<h2>'+esc(P.j.label)+(P.j.loaded===false?': national standards shown for now':' standards')+'</h2><div class="lk">'+stdLink+'</div><small>No city or county districts are listed for this state yet.</small>';
     box.innerHTML=h;box.hidden=!h}
+  /* Teacher licensing: moving to a state with a license and a master's degree. Checked against official state pages, Nov 2026. */
+  var LIC={
+    nc:{who:"North Carolina (NCDPI)",
+      route:"Licensed out-of-state teachers apply online. With 3 or more years of verified teaching (plus a comparable licensing test or effectiveness data), the result is a Continuing Professional License, a 5-year renewable license.",
+      tests:"Elementary and EC teachers with fewer than 3 years of experience get an Initial Professional License and must meet NC's testing requirements.",
+      masters:"Master's (\"M\") pay has eligibility rules: an M-level license with at least one class taken before Aug 1, 2013 is paid automatically; otherwise you request graduate pay with a degree-dated transcript.",
+      link:["NCDPI licensure FAQs","https://www.dpi.nc.gov/educators/educators-licensure/forms-and-faqs"]},
+    va:{who:"Virginia (VDOE)",
+      route:"Universal licensure by reciprocity for teachers with a valid out-of-state license with full credentials and at least 3 years of teaching in non-virtual classrooms. Otherwise, a valid full out-of-state license in a comparable area, or a completed state-approved program, can qualify.",
+      tests:"Virginia law exempts holders of a valid out-of-state license with full credentials and no deficiencies from Virginia's professional teacher assessments.",
+      masters:"Postgraduate Professional License: a 5-year renewable license for teachers who qualify for the Collegiate Professional License and hold an appropriate earned graduate degree.",
+      link:["VDOE licensure reciprocity","https://doe.virginia.gov/teaching-learning-assessment/teaching-in-virginia/licensure-reciprocity"]},
+    md:{who:"Maryland (MSDE)",
+      route:"Out-of-state license pathway: a bachelor's degree or higher plus a valid professional license from another state in the area you want. A district that hires you can also request a Temporary Professional License while you finish.",
+      tests:"Applicants who completed an out-of-state program send verification of the licensing tests used for their out-of-state license.",
+      masters:"Advanced Professional License: 5-year renewable. Requires a master's degree (or National Board Certification or 30 post-bachelor's credits) plus a Maryland induction program or 3 years of effective performance.",
+      link:["MSDE: out-of-state certificate","https://marylandpublicschools.org/about/Pages/DEE/Certification/apply/Out-of-State-Certificate.aspx"]},
+    dc:{who:"District of Columbia (OSSE)",
+      route:"Teachers with an active full license from another state may get a DC credential by reciprocity. Reciprocity applies only to your first DC application; later renewals must meet DC's own requirements. The Standard Teaching Credential lasts 4 years and is renewable.",
+      tests:"A Transitional credential is available, at the school's request, for teachers new to DC who meet everything except DC's licensing exams.",
+      masters:"We didn't find a separate master's-level DC credential. Note: DC public charter schools don't require an OSSE license; DCPS does.",
+      link:["OSSE: out-of-state credential holders","https://osse.dc.gov/page/out-state-credential-holders-reciprocity"]},
+    tx:{who:"Texas (TEA)",
+      route:"Texas has no full reciprocity. You apply for a Review of Credentials ($164 fee as of the Jan 2025 checklist); your out-of-state certificate must be valid and active when you apply. After the review you can get a nonrenewable One-Year Certificate, then a 5-year Standard Certificate once Texas tests are done.",
+      tests:"You can ask for a test exemption review with your experience verification and official score reports; TEA decides which TExES exams you still need. Texas also has a Science of Teaching Reading (STR) exam requirement.",
+      masters:"A master's degree isn't part of the certification route in TEA's out-of-state rules; pay depends on the district's salary schedule.",
+      link:["TEA: out-of-state certified educators","https://tea.texas.gov/node/104232"]},
+    mi:{who:"Michigan (MDE)",
+      route:"Michigan accepts other states' standard certificates through the NASDTEC Interstate Agreement for initial certification. With a valid or expired standard-level certificate and at least 3 years of successful teaching, you may get a Professional Teaching Certificate (5 years, renewable).",
+      tests:"With 3 years of successful teaching you may qualify for the Standard Teaching Certificate without Michigan's tests; otherwise MDE lists the MTTC tests you need.",
+      masters:"Michigan also issues an Advanced Professional Teaching Certificate; ask MDE whether your degree and experience qualify.",
+      link:["MDE: out-of-state applicants","https://www.michigan.gov/mde/services/ed-serv/ed-cert/cert-guidance/becoming-a-teacher/out-of-state-applicants"]},
+    ca:{who:"California (CTC)",
+      route:"Two tiers: a Preliminary credential (up to 5 years), then a Clear credential. With a professional-level out-of-state license and 2 or more years of full-time out-of-state teaching (Route 2), you may qualify for the Preliminary or the Clear credential, with an employer letter and two satisfactory evaluations.",
+      tests:"An English Learner authorization isn't needed for your first Preliminary credential but is required for the Clear.",
+      masters:"A master's degree isn't required for either credential.",
+      link:["CTC: Multiple Subject credential, out-of-state (CL-561)","https://www.ctc.ca.gov/credentials/leaflets/cl-561/"]}
+  };
+  function licBox(){var box=document.getElementById("lic"),L=LIC[P.state];
+    if(P.j.kind==="national"){box.hidden=true;return}
+    box.hidden=false;
+    if(!L){box.innerHTML='<summary>Teacher licensing in '+esc(P.j.label)+' (moving here with a license and a master\'s)</summary><small>Not added for '+esc(P.j.label)+' yet. Most states belong to the NASDTEC Interstate Agreement, but that rarely means a straight swap of licenses: states may still ask for tests, coursework or experience. <a href="https://www.nasdtec.net/" target="_blank" rel="noopener">NASDTEC</a> lists each state\'s licensing office.</small>';return}
+    box.innerHTML='<summary>Teacher licensing in '+esc(P.j.label)+' (moving here with a license and a master\'s)</summary>'+
+      '<dl><dt>Reciprocity route</dt><dd>'+esc(L.route)+'</dd><dt>Tests</dt><dd>'+esc(L.tests)+'</dd><dt>With a master\'s</dt><dd>'+esc(L.masters)+'</dd></dl>'+
+      '<div class="lk"><a class="chip go" href="'+esc(L.link[1])+'" target="_blank" rel="noopener">'+esc(L.link[0])+' ↗</a></div>'+
+      '<small>Summarized from '+esc(L.who)+' pages, checked November 2026. Rules change often, so confirm with the state before you apply. This isn\'t legal advice.</small>'}
   document.getElementById("distlinks").onclick=function(e){var b=e.target.closest("[data-pick]");if(!b)return;
     var v=P.state+(b.dataset.pick?"/"+b.dataset.pick:"");try{localStorage.setItem("ec-standards",v)}catch(x){}location.reload()};
 
   function render(){
-    distLinks();
+    distLinks();licBox();
     var setInfo0=S.SETS[setFor(st.subj)]||{name:"NC Standard Course of Study"};
     document.querySelectorAll("#view button").forEach(function(b){b.setAttribute("aria-pressed",b.dataset.v===st.view)});
     document.getElementById("pacerow").hidden=st.view!=="pacing";document.getElementById("listrow").hidden=st.view==="pacing";
