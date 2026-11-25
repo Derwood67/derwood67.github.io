@@ -54,14 +54,36 @@ h1 .hl{background:linear-gradient(transparent 62%,var(--pencil) 62%,var(--pencil
 .stat:hover{border-color:var(--c)}
 .btn{display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border-radius:8px;font-weight:700;text-decoration:none;border:1px solid var(--line);color:var(--ink);background:var(--surface)}
 
-nav.jump{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(6px);border-block:1px solid var(--line)}
-nav.jump .wrap{display:flex;gap:6px;overflow-x:auto;padding-block:10px}
-nav.jump a{white-space:nowrap;font-weight:700;font-size:.95rem;text-decoration:none;color:var(--ink);padding:6px 14px;border-radius:999px;border:1px solid transparent}
-nav.jump a:hover,nav.jump a.on{border-color:var(--line);background:var(--surface)}
-nav.jump a .n{color:var(--muted);font-weight:600;margin-left:6px}
+nav.jump{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 94%,transparent);backdrop-filter:blur(6px);border-block:1px solid var(--line)}
+nav.jump .wrap{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding-block:10px}
+.tab-a,.tab-b{font:inherit;white-space:nowrap;font-weight:700;font-size:.97rem;text-decoration:none;color:var(--ink);padding:7px 14px;border-radius:999px;border:1px solid transparent;background:none;cursor:pointer;display:inline-flex;align-items:center;gap:6px;min-height:40px}
+.tab-a:hover,.tab-b:hover,.tab-b[aria-expanded="true"],.dd.on .tab-b{border-color:var(--line);background:var(--surface)}
+.tab-b .n{color:var(--muted);font-weight:600}
+.tab-b .car{font-size:.7em;transition:transform .15s}
+.tab-b[aria-expanded="true"] .car{transform:rotate(180deg)}
+.dd{position:relative}
+.menu{position:absolute;top:calc(100% + 6px);left:0;min-width:270px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 34px rgba(20,33,58,.16);padding:6px;list-style:none;margin:0;display:none}
+.dd.open .menu{display:block}
+.menu a{display:flex;align-items:center;gap:10px;justify-content:space-between;padding:9px 12px;border-radius:8px;text-decoration:none;color:var(--ink);font-weight:600}
+.menu a:hover,.menu a:focus-visible,.menu a[aria-current="true"]{background:var(--bg)}
+.menu a .l{display:flex;align-items:center;gap:9px}
+.menu .dot{width:10px;height:10px;border-radius:50%;flex:none;background:var(--c)}
+.menu a .n{color:var(--muted);font-weight:600;font-size:.9rem;font-variant-numeric:tabular-nums}
+.menu .sep{height:1px;background:var(--line);margin:5px 8px}
+.menu .all{font-weight:800}
+.viewing{display:none;margin-left:auto;align-items:center;gap:10px;font-size:.92rem;color:var(--muted)}
+.viewing.on{display:inline-flex}
+.viewing b{color:var(--ink)}
+.viewing button{font:inherit;font-weight:700;font-size:.88rem;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:5px 12px;cursor:pointer}
+@media (max-width:700px){.dd{position:static}.menu{left:12px;right:12px;min-width:0}.viewing{margin-left:0;width:100%}}
 
+.cat{margin:0 0 34px}
+.cat[hidden],section[hidden]{display:none}
+.cat-h{display:flex;align-items:center;gap:10px;font-size:1.25rem;margin:0 0 14px;padding-bottom:8px;border-bottom:2px solid var(--line)}
+.cat-h .dot{width:12px;height:12px;border-radius:50%;background:var(--c)}
+.cat-h .n{font-family:var(--font-body);font-size:.85rem;font-weight:700;color:var(--muted)}
 section{padding:56px 0 24px}
-.shead{margin-bottom:18px}
+.shead{margin-bottom:24px}
 h2{font-size:1.9rem}
 h2 .badge{font-family:var(--font-body);font-size:.85rem;font-weight:700;vertical-align:middle;margin-left:8px;padding:2px 10px;border-radius:999px;background:var(--surface);border:1px solid var(--line);color:var(--muted)}
 .sub{color:var(--muted);margin:6px 0 0;max-width:68ch}
@@ -70,11 +92,6 @@ h2 .badge{font-family:var(--font-body);font-size:.85rem;font-weight:700;vertical
 .cap{border-left:3px solid var(--pencil);padding:2px 0 2px 14px}
 .cap h3{font-size:1.02rem;margin-bottom:4px}
 .cap p{margin:0;color:var(--muted);font-size:.95rem}
-
-.filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
-.chip{font:inherit;font-size:.92rem;font-weight:600;padding:6px 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;min-height:36px}
-.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-.chip .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle}
 
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:18px}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;display:flex;flex-direction:column;overflow:hidden;border-top:4px solid var(--c)}
@@ -134,11 +151,9 @@ footer{border-top:1px solid var(--line);margin-top:40px;padding:28px 0 48px;colo
 </header>
 
 <nav class="jump" aria-label="Portfolio sections">
-  <div class="wrap">
-    <a href="#approach">Approach</a>
-    <a href="#apps">Interactive apps<span class="n" id="j-apps"></span></a>
-    <a href="#tools">Teacher tools<span class="n" id="j-tools"></span></a>
-    <a href="#sheets">Worksheets &amp; answer keys<span class="n" id="j-sheets"></span></a>
+  <div class="wrap" id="tabs">
+    <a class="tab-a" href="#approach">Approach</a>
+    <div class="viewing" id="viewing" role="status"></div>
   </div>
 </nav>
 
@@ -160,8 +175,7 @@ footer{border-top:1px solid var(--line);margin-top:40px;padding:28px 0 48px;colo
       <h2 id="apps-h">Interactive apps <span class="badge" id="b-apps"></span></h2>
       <p class="sub">Apps students use on their own or play together as a class. Each card opens a working version: choose <b>Try it as a guest</b> to explore without a class name, or <b>Watch Demo</b> for a narrated tour.</p>
     </div>
-    <div class="filters" role="group" aria-label="Filter apps" id="filters"></div>
-    <div class="grid" id="grid-apps"></div>
+    <div id="cats-apps"></div>
   </section>
 
   <section class="wrap" id="tools" aria-labelledby="tools-h">
@@ -169,7 +183,7 @@ footer{border-top:1px solid var(--line);margin-top:40px;padding:28px 0 48px;colo
       <h2 id="tools-h">Teacher tools <span class="badge" id="b-tools"></span></h2>
       <p class="sub">Planning, grading and content-building tools I use behind the scenes.</p>
     </div>
-    <div class="grid" id="grid-tools"></div>
+    <div id="cats-tools"></div>
   </section>
 
   <section class="wrap" id="sheets" aria-labelledby="sheets-h">
@@ -177,7 +191,7 @@ footer{border-top:1px solid var(--line);margin-top:40px;padding:28px 0 48px;colo
       <h2 id="sheets-h">Worksheets &amp; answer keys <span class="badge" id="b-sheets"></span></h2>
       <p class="sub">Practice sets, printable packets and answer keys that go with the units.</p>
     </div>
-    <div class="sheets" id="grid-sheets"></div>
+    <div id="cats-sheets"></div>
   </section>
 </main>
 
@@ -206,47 +220,85 @@ function card(p){
     </div>
   </article>`;
 }
-document.getElementById("grid-apps").innerHTML=APPS.map(card).join("");
-document.getElementById("grid-tools").innerHTML=TOOLS.map(card).join("");
-document.getElementById("grid-sheets").innerHTML=SHEETS.map(p=>`<article class="sheet" id="${p.id}">
+function sheet(p){return `<article class="sheet" id="${p.id}">
   <div class="ico" aria-hidden="true">${p.ico}</div>
   <span class="kind">${esc(p.kind)}</span>
   <h3>${esc(p.t)}</h3>
   <p>${esc(p.d)}</p>
   <ul class="feats">${p.f.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>
   <a class="go" href="${link(p.u)}" target="_blank" rel="noopener">${esc(p.go)} <span aria-hidden="true">→</span></a>
-</article>`).join("");
+</article>`;}
+const CATCOLOR={ela:"--ela",flu:"--flu",math:"--math",sci:"--sci",rev:"--rev",whole:"--pencil",plan:"--tool",build:"--tool",grade:"--tool",digital:"--sheet",key:"--sheet",print:"--sheet"};
 
-[["apps",APPS],["tools",TOOLS],["sheets",SHEETS]].forEach(([k,a])=>{
-  ["n-","b-","j-"].forEach(p=>document.getElementById(p+k).textContent=a.length);
+/* each section is split into its categories */
+GROUPS.forEach(G=>{
+  const list=G.list();
+  document.getElementById("cats-"+G.id).innerHTML=G.cats.map(([c,label])=>{
+    const items=list.filter(p=>p[G.key]===c); if(!items.length)return "";
+    return `<div class="cat" id="cat-${G.id}-${c}" data-g="${G.id}" data-c="${c}" style="--c:var(${CATCOLOR[c]})">
+      <h3 class="cat-h"><span class="dot" aria-hidden="true"></span>${esc(label)} <span class="n">${items.length}</span></h3>
+      <div class="${G.id==="sheets"?"sheets":"grid"}">${items.map(G.id==="sheets"?sheet:card).join("")}</div></div>`;
+  }).join("");
+  ["n-","b-"].forEach(p=>document.getElementById(p+G.id).textContent=list.length);
 });
 
-const filters=document.getElementById("filters");
-const opts=[["all","All apps"],...Object.entries(SUBJ).filter(([k])=>k!=="tool").map(([k,v])=>[k,v.label]),["whole","Whole-class games"]];
-filters.innerHTML=opts.map(([k,l])=>{
-  const n=k==="all"?APPS.length:k==="whole"?APPS.filter(p=>p.w).length:APPS.filter(p=>p.s===k).length;
-  const dot=SUBJ[k]?`<span class="dot" style="background:var(${SUBJ[k].c})"></span>`:"";
-  return `<button class="chip" data-k="${k}" aria-pressed="${k==="all"}">${dot}${l} (${n})</button>`;
-}).join("");
-filters.addEventListener("click",e=>{
-  const b=e.target.closest(".chip"); if(!b)return;
-  filters.querySelectorAll(".chip").forEach(c=>c.setAttribute("aria-pressed",c===b));
-  const k=b.dataset.k;
-  document.querySelectorAll("#grid-apps .card").forEach(c=>{c.hidden=!(k==="all"||(k==="whole"?c.dataset.w:c.dataset.s===k));});
+/* dropdown tabs: one per section, listing its categories */
+const tabs=document.getElementById("tabs"), viewing=document.getElementById("viewing");
+GROUPS.forEach(G=>{
+  const list=G.list();
+  const rows=[...G.cats,...(G.extra||[])].map(([c,label])=>{
+    const n=c==="whole"?list.filter(p=>p.w).length:list.filter(p=>p[G.key]===c).length;
+    return n?`<li><a href="#cat-${G.id}-${c}" style="--c:var(${CATCOLOR[c]})"><span class="l"><span class="dot" aria-hidden="true"></span>${esc(label)}</span><span class="n">${n}</span></a></li>`:"";
+  }).join("");
+  const d=document.createElement("div");d.className="dd";d.dataset.g=G.id;
+  d.innerHTML=`<button class="tab-b" aria-expanded="false" aria-controls="m-${G.id}">${esc(G.label)} <span class="n">${list.length}</span><span class="car" aria-hidden="true">▼</span></button>
+    <ul class="menu" id="m-${G.id}"><li><a class="all" href="#${G.id}"><span class="l">All ${esc(G.label.toLowerCase())}</span><span class="n">${list.length}</span></a></li><li class="sep" role="separator"></li>${rows}</ul>`;
+  tabs.insertBefore(d,viewing);
+});
+function closeAll(except){document.querySelectorAll(".dd.open").forEach(d=>{if(d!==except){d.classList.remove("open");d.querySelector(".tab-b").setAttribute("aria-expanded","false")}})}
+tabs.addEventListener("click",e=>{
+  const b=e.target.closest(".tab-b");
+  if(b){const d=b.parentElement,open=!d.classList.contains("open");closeAll(d);d.classList.toggle("open",open);b.setAttribute("aria-expanded",open);
+    if(open)d.querySelector(".menu a").focus();return;}
+  if(e.target.closest(".menu a"))closeAll();
+});
+document.addEventListener("click",e=>{if(!e.target.closest(".dd"))closeAll()});
+document.addEventListener("keydown",e=>{
+  const d=e.target.closest&&e.target.closest(".dd.open");
+  if(e.key==="Escape"&&d){closeAll();d.querySelector(".tab-b").focus();}
+  if(d&&(e.key==="ArrowDown"||e.key==="ArrowUp")){e.preventDefault();const as=[...d.querySelectorAll(".menu a")],i=as.indexOf(document.activeElement);
+    as[(i+(e.key==="ArrowDown"?1:-1)+as.length)%as.length].focus();}
 });
 
-/* highlight the section in view */
-const jl=[...document.querySelectorAll("nav.jump a")];
-const io=new IntersectionObserver(es=>es.forEach(en=>{if(en.isIntersecting)jl.forEach(a=>a.classList.toggle("on",a.getAttribute("href")==="#"+en.target.id));}),{rootMargin:"-40% 0px -55% 0px"});
-["approach","apps","tools","sheets"].forEach(id=>io.observe(document.getElementById(id)));
+/* views: everything, or one category (hidden sections and cards come back with "Show everything") */
+function setView(g,c){
+  document.querySelectorAll("main section").forEach(s=>s.hidden=!!g&&s.id!==g);
+  document.querySelectorAll(".cat").forEach(k=>{
+    k.hidden=!!c&&c!=="whole"&&k.dataset.c!==c;
+    k.querySelectorAll(".card").forEach(x=>x.hidden=c==="whole"&&!x.dataset.w);
+    if(c==="whole")k.hidden=!k.querySelector(".card:not([hidden])");
+  });
+  document.querySelectorAll(".dd").forEach(d=>d.classList.toggle("on",d.dataset.g===g));
+  document.querySelectorAll(".menu a").forEach(a=>a.setAttribute("aria-current",a.getAttribute("href")===location.hash));
+  if(g&&c){const G=GROUPS.find(x=>x.id===g),label=([...G.cats,...(G.extra||[])].find(x=>x[0]===c)||[])[1];
+    const n=[...document.querySelectorAll(`#${g} .card,#${g} .sheet`)].filter(x=>!x.hidden&&!x.closest(".cat").hidden).length;
+    viewing.innerHTML=`<span>Showing <b>${esc(G.label)} › ${esc(label)}</b> (${n})</span><button type="button">Show everything</button>`;viewing.classList.add("on");}
+  else{viewing.classList.remove("on");viewing.innerHTML="";}
+}
+viewing.addEventListener("click",e=>{if(e.target.closest("button")){history.pushState(null,"",location.pathname);setView();window.scrollTo({top:document.getElementById("apps").offsetTop-70});}});
 
-/* résumé links: /portfolio/#app-name opens here with that app highlighted */
-function showHash(){const id=decodeURIComponent(location.hash.slice(1));const el=id&&document.getElementById(id);
-  if(!el||!el.matches(".card,.sheet"))return;
-  if(el.hidden){filters.querySelector('[data-k="all"]').click();}
-  document.querySelectorAll(".hit").forEach(x=>x.classList.remove("hit"));el.classList.add("hit");
-  el.scrollIntoView({block:"center"});}
-window.addEventListener("hashchange",showHash);showHash();
+/* links: #cat-apps-math shows one category, #apps a section, #fraction-summit one app (for résumés) */
+function route(){
+  const id=decodeURIComponent(location.hash.slice(1));
+  document.querySelectorAll(".hit").forEach(x=>x.classList.remove("hit"));
+  const m=id.match(/^cat-(apps|tools|sheets)-(\w+)$/);
+  if(m){setView(m[1],m[2]);document.getElementById(m[1]).scrollIntoView();return;}
+  setView();
+  const el=id&&document.getElementById(id);
+  if(el&&el.matches(".card,.sheet")){el.classList.add("hit");el.scrollIntoView({block:"center"});}
+  else if(el)el.scrollIntoView();
+}
+window.addEventListener("hashchange",route);window.addEventListener("popstate",route);route();
 </script>
 </body>
 </html>
