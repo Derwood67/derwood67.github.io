@@ -3,42 +3,35 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Darren Echols Portfolio</title>
-<meta name="description" content="Interactive, standards-aligned learning tools designed and built by Darren Echols for grades 4–5.">
+<title>Darren Echols · Portfolio of Interactive Learning Apps</title>
+<meta name="description" content="Interactive, standards-aligned learning apps, teacher tools and worksheets designed and built by Darren Echols for grades 4–5.">
+<meta property="og:title" content="Darren Echols · Portfolio of Interactive Learning Apps">
+<meta property="og:description" content="Standards-aligned learning apps, teacher tools and worksheets, built for and tested in a real grade 4–5 classroom.">
+<meta property="og:image" content="https://derwood67.github.io/portfolio/shots/fraction-summit.webp">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-/* Layout: compact intro band, capability strip, then a filterable grid of project cards grouped by subject stripe. */
+/* Layout: intro band with counts, a sticky section nav, then three separate sections:
+   interactive apps (with preview images and subject filters), teacher tools, and worksheets & answer keys. */
 :root{
-  --bg:#f4f6f8;
-  --surface:#ffffff;
-  --ink:#14213a;
-  --muted:#55627a;
-  --line:#dde3ea;
-  --accent:#1f5fbf;
-  --accent-ink:#ffffff;
-  --pencil:#f2b705;
-  --ela:#7a3fb0; --flu:#c2410c; --math:#1f5fbf; --sci:#0f8a5f; --rev:#b4235a; --tool:#475569;
-  --font-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
-  --font-body:"Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --bg:#f4f6f8; --surface:#ffffff; --ink:#14213a; --muted:#55627a; --line:#dde3ea;
+  --accent:#1f5fbf; --accent-ink:#ffffff; --pencil:#f2b705;
+  --ela:#7a3fb0; --flu:#c2410c; --math:#1f5fbf; --sci:#0f8a5f; --rev:#b4235a; --tool:#475569; --sheet:#8a5a00;
+  --font-display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --font-body:"Source Sans 3","Segoe UI",system-ui,sans-serif;
   color-scheme:light;
 }
 @media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
+  :root{
     --bg:#0e1524; --surface:#162036; --ink:#e8edf6; --muted:#9fb0c9; --line:#26324b;
     --accent:#6ea2ff; --accent-ink:#0e1524; --pencil:#f5c842;
-    --ela:#b48ae0; --flu:#f08a52; --math:#6ea2ff; --sci:#45c79a; --rev:#ef6f9d; --tool:#94a3b8;
+    --ela:#b48ae0; --flu:#f08a52; --math:#6ea2ff; --sci:#45c79a; --rev:#ef6f9d; --tool:#94a3b8; --sheet:#e0b44c;
     color-scheme:dark;
   }
 }
-:root[data-theme="dark"]{
-  --bg:#0e1524; --surface:#162036; --ink:#e8edf6; --muted:#9fb0c9; --line:#26324b;
-  --accent:#6ea2ff; --accent-ink:#0e1524; --pencil:#f5c842;
-  --ela:#b48ae0; --flu:#f08a52; --math:#6ea2ff; --sci:#45c79a; --rev:#ef6f9d; --tool:#94a3b8;
-  color-scheme:dark;
-}
 *{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:70px}
 html,body{margin:0}
 body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:17px;line-height:1.55}
 a{color:var(--accent)}
@@ -46,49 +39,79 @@ a{color:var(--accent)}
 .wrap{max-width:1180px;margin:0 auto;padding:0 20px}
 h1,h2,h3{font-family:var(--font-display);text-wrap:balance;line-height:1.15;margin:0}
 
-header{padding:48px 0 36px;border-bottom:1px solid var(--line)}
-.hero{display:grid;grid-template-columns:1fr auto;gap:32px;align-items:end}
-.kicker{font-weight:700;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;font-size:.8rem;margin:0 0 10px}
-h1{font-size:clamp(2.2rem,5vw,3.6rem);font-weight:800;letter-spacing:-.02em}
-h1 .mark{background:linear-gradient(transparent 62%, var(--pencil) 62%, var(--pencil) 90%, transparent 90%);padding:0 .08em}
-.lede{max-width:62ch;color:var(--muted);font-size:1.12rem;margin:16px 0 0}
-.stats{display:flex;gap:28px}
-.stat b{display:block;font-family:var(--font-display);font-size:2.4rem;font-weight:800;font-variant-numeric:tabular-nums;color:var(--ink);line-height:1}
-.stat span{font-size:.85rem;color:var(--muted)}
-.links{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px}
+header{padding:28px 0 34px}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:34px}
+.mark{font-family:var(--font-display);font-weight:800;font-size:1.1rem;text-decoration:none;color:var(--ink)}
+.mark span{color:var(--pencil)}
+.kicker{font-weight:700;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;font-size:.8rem;margin:0 0 10px}
+h1{font-size:clamp(2.2rem,5vw,3.5rem);font-weight:800;letter-spacing:-.02em}
+h1 .hl{background:linear-gradient(transparent 62%,var(--pencil) 62%,var(--pencil) 90%,transparent 90%);padding:0 .06em}
+.lede{max-width:64ch;color:var(--muted);font-size:1.12rem;margin:16px 0 0}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:28px;max-width:760px}
+.stat{display:block;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;text-decoration:none;color:var(--ink);border-top:4px solid var(--c)}
+.stat b{display:block;font-family:var(--font-display);font-size:2.2rem;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
+.stat span{font-size:.92rem;color:var(--muted)}
+.stat:hover{border-color:var(--c)}
 .btn{display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border-radius:8px;font-weight:700;text-decoration:none;border:1px solid var(--line);color:var(--ink);background:var(--surface)}
-.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 
-section{padding:36px 0}
-.caps{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+nav.jump{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(6px);border-block:1px solid var(--line)}
+nav.jump .wrap{display:flex;gap:6px;overflow-x:auto;padding-block:10px}
+nav.jump a{white-space:nowrap;font-weight:700;font-size:.95rem;text-decoration:none;color:var(--ink);padding:6px 14px;border-radius:999px;border:1px solid transparent}
+nav.jump a:hover,nav.jump a.on{border-color:var(--line);background:var(--surface)}
+nav.jump a .n{color:var(--muted);font-weight:600;margin-left:6px}
+
+section{padding:56px 0 24px}
+.shead{margin-bottom:18px}
+h2{font-size:1.9rem}
+h2 .badge{font-family:var(--font-body);font-size:.85rem;font-weight:700;vertical-align:middle;margin-left:8px;padding:2px 10px;border-radius:999px;background:var(--surface);border:1px solid var(--line);color:var(--muted)}
+.sub{color:var(--muted);margin:6px 0 0;max-width:68ch}
+
+.caps{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-top:16px}
 .cap{border-left:3px solid var(--pencil);padding:2px 0 2px 14px}
 .cap h3{font-size:1.02rem;margin-bottom:4px}
 .cap p{margin:0;color:var(--muted);font-size:.95rem}
-h2{font-size:1.6rem;margin-bottom:6px}
-.sub{color:var(--muted);margin:0 0 18px}
 
-.filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:22px}
-.chip{font:inherit;font-size:.92rem;font-weight:600;padding:6px 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+.chip{font:inherit;font-size:.92rem;font-weight:600;padding:6px 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;min-height:36px}
 .chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .chip .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle}
 
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px 18px 16px;display:flex;flex-direction:column;gap:10px;border-top:4px solid var(--c)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:18px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;display:flex;flex-direction:column;overflow:hidden;border-top:4px solid var(--c)}
 .card[hidden]{display:none}
-.card .subj{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--c)}
-.card h3{font-size:1.2rem}
+.shot{display:block;aspect-ratio:16/10;background:var(--bg);border-bottom:1px solid var(--line);overflow:hidden}
+.shot img{width:100%;height:100%;object-fit:cover;object-position:top;display:block}
+.shot.none{display:flex;align-items:center;justify-content:center;color:var(--c);font-family:var(--font-display);font-weight:800;font-size:1.5rem;text-align:center;padding:20px;text-decoration:none;
+  background:linear-gradient(135deg,color-mix(in srgb,var(--c) 14%,var(--surface)),var(--surface))}
+.body{padding:16px 18px 18px;display:flex;flex-direction:column;gap:10px;flex:1}
+.meta{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
+.subj{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--c)}
+.lead{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:1px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.card h3{font-size:1.22rem}
 .card p{margin:0;color:var(--muted);font-size:.96rem}
-.can h4{margin:0 0 4px;font-family:var(--font-body);font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink)}
-.can ul{margin:0;padding-left:18px;font-size:.93rem;color:var(--ink)}
+.can h4{margin:0 0 4px;font-family:var(--font-body);font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.can ul{margin:0;padding-left:18px;font-size:.93rem}
 .can li{margin:2px 0}
 .feats{display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;list-style:none}
-.feats li{font-size:.78rem;font-weight:600;padding:2px 8px;border-radius:5px;background:var(--bg);border:1px solid var(--line);color:var(--ink)}
-.card .go{margin-top:auto;padding-top:4px;font-weight:700;text-decoration:none;display:inline-flex;gap:6px;align-items:center}
-.card .go:hover{text-decoration:underline}
+.feats li{font-size:.78rem;font-weight:600;padding:2px 8px;border-radius:5px;background:var(--bg);border:1px solid var(--line)}
+.go{margin-top:auto;padding-top:4px;font-weight:700;text-decoration:none;display:inline-flex;gap:6px;align-items:center}
+.go:hover{text-decoration:underline}
+.go.off{color:var(--muted);font-weight:600}
 
-footer{border-top:1px solid var(--line);padding:28px 0 48px;color:var(--muted);font-size:.92rem}
-@media (max-width:760px){.hero{grid-template-columns:1fr}.stats{gap:22px}}
-@media (prefers-reduced-motion:no-preference){.card{transition:transform .15s}.card:hover{transform:translateY(-2px)}}
+/* worksheets: compact rows with a document icon instead of a screenshot */
+.sheets{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px}
+.sheet{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;display:grid;grid-template-columns:auto 1fr;gap:6px 14px;border-left:5px solid var(--sheet);align-content:start}
+.sheet .ico{grid-row:1 / span 2;width:44px;height:54px;border:2px solid var(--sheet);border-radius:4px 14px 4px 4px;display:flex;align-items:flex-end;justify-content:center;font-size:.66rem;font-weight:800;color:var(--sheet);padding-bottom:5px;letter-spacing:.03em}
+.sheet .kind{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--sheet);align-self:end}
+.sheet h3{font-size:1.12rem}
+.sheet p,.sheet .feats,.sheet .go{grid-column:1 / -1}
+.sheet p{margin:4px 0 0;color:var(--muted);font-size:.95rem}
+
+.card:target,.sheet:target,.card.hit,.sheet.hit{outline:3px solid var(--pencil);outline-offset:3px;box-shadow:0 0 0 8px color-mix(in srgb,var(--pencil) 22%,transparent)}
+footer{border-top:1px solid var(--line);margin-top:40px;padding:28px 0 48px;color:var(--muted);font-size:.92rem}
+@media (max-width:640px){.stats{grid-template-columns:1fr}.stat{display:flex;align-items:baseline;gap:12px}.stat b{font-size:1.8rem}.grid,.sheets{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:no-preference){.card{transition:transform .15s,box-shadow .15s}.card:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(20,33,58,.08)}}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 </style>
 <link rel="icon" type="image/svg+xml" href="/shared/favicon.svg">
 <link rel="manifest" href="manifest.webmanifest">
@@ -97,141 +120,133 @@ footer{border-top:1px solid var(--line);padding:28px 0 48px;color:var(--muted);f
 </head>
 <body>
 <header>
-  <div class="wrap hero">
-    <div>
-      <p class="kicker">Portfolio · Interactive learning design</p>
-      <h1>Darren <span class="mark">Echols</span></h1>
-      <p class="lede">I'm a 4th and 5th grade teacher in North Carolina, and I design and build interactive learning tools for my own classroom. Each one starts from an NC standard and a problem I saw with real students: who needs more practice, who is ready to move on, and what the teacher needs to see.</p>
-      <div class="links">
-        <a class="btn primary" href="#projects">See the projects</a>
-        <a class="btn" href="/standards-explorer/">States Standards &amp; Pacing Guides</a>
-        <a class="btn" href="https://github.com/derwood67">GitHub: derwood67</a>
-      </div>
-    </div>
+  <div class="wrap">
+    <div class="top"><a class="mark" href="/">Darren Echols<span>.</span></a><a class="btn" href="https://github.com/derwood67">GitHub</a></div>
+    <p class="kicker">Portfolio · Interactive learning design</p>
+    <h1>Learning apps built for <span class="hl">real students</span></h1>
+    <p class="lede">I'm Darren Echols, a 4th and 5th grade teacher. I design and build interactive learning tools for my own classroom. Each one starts from a standard and a problem I saw with real students: who needs more practice, who is ready to move on, and what the teacher needs to see.</p>
     <div class="stats" aria-label="Portfolio at a glance">
-      <div class="stat"><b id="count">39</b><span>interactive tools</span></div>
-      <div class="stat"><b>4</b><span>core subjects</span></div>
-      <div class="stat"><b>4–5</b><span>grade band</span></div>
+      <a class="stat" href="#apps" style="--c:var(--accent)"><b id="n-apps">0</b><span>interactive student apps</span></a>
+      <a class="stat" href="#tools" style="--c:var(--tool)"><b id="n-tools">0</b><span>teacher tools</span></a>
+      <a class="stat" href="#sheets" style="--c:var(--sheet)"><b id="n-sheets">0</b><span>worksheets &amp; answer keys</span></a>
     </div>
   </div>
 </header>
 
+<nav class="jump" aria-label="Portfolio sections">
+  <div class="wrap">
+    <a href="#approach">Approach</a>
+    <a href="#apps">Interactive apps<span class="n" id="j-apps"></span></a>
+    <a href="#tools">Teacher tools<span class="n" id="j-tools"></span></a>
+    <a href="#sheets">Worksheets &amp; answer keys<span class="n" id="j-sheets"></span></a>
+  </div>
+</nav>
+
 <main>
-  <section class="wrap" aria-labelledby="caps-h">
+  <section class="wrap" id="approach" aria-labelledby="caps-h">
     <h2 id="caps-h">What the work shows</h2>
-    <p class="sub">Patterns that run across the projects below.</p>
+    <p class="sub">Patterns that run across the apps below.</p>
     <div class="caps">
-      <div class="cap"><h3>Standards alignment</h3><p>Content is tagged to NCDPI standards (e.g. NC.4.NF.1, NC.5.NF.1) so practice maps to what is assessed.</p></div>
+      <div class="cap"><h3>Standards alignment</h3><p>Every app is tagged to grade-level standards, with a switch for Common Core and other states' standards.</p></div>
       <div class="cap"><h3>Mastery-based progress</h3><p>Students unlock the next section by showing mastery, with a short lesson after a miss.</p></div>
       <div class="cap"><h3>Adaptive practice</h3><p>Questions get easier after a miss and harder after a correct answer.</p></div>
       <div class="cap"><h3>Data for teachers</h3><p>Dashboards, score-by-standard charts, words-correct-per-minute tracking and printable reports.</p></div>
-      <div class="cap"><h3>Access for every learner</h3><p>Speech recognition for decoding, a bilingual studio, and offline versions.</p></div>
+      <div class="cap"><h3>Access for every learner</h3><p>Speech recognition for decoding, read-aloud voices, a bilingual studio and offline use.</p></div>
     </div>
   </section>
 
-  <section class="wrap" id="projects" aria-labelledby="proj-h">
-    <h2 id="proj-h">Projects</h2>
-    <p class="sub">Every card opens a working version. Filter by subject.</p>
-    <div class="filters" role="group" aria-label="Filter projects by subject" id="filters"></div>
-    <div class="grid" id="grid"></div>
+  <section class="wrap" id="apps" aria-labelledby="apps-h">
+    <div class="shead">
+      <h2 id="apps-h">Interactive apps <span class="badge" id="b-apps"></span></h2>
+      <p class="sub">Apps students use on their own or play together as a class. Each card opens a working version: choose <b>Try it as a guest</b> to explore without a class name, or <b>Watch Demo</b> for a narrated tour.</p>
+    </div>
+    <div class="filters" role="group" aria-label="Filter apps" id="filters"></div>
+    <div class="grid" id="grid-apps"></div>
+  </section>
+
+  <section class="wrap" id="tools" aria-labelledby="tools-h">
+    <div class="shead">
+      <h2 id="tools-h">Teacher tools <span class="badge" id="b-tools"></span></h2>
+      <p class="sub">Planning, grading and content-building tools I use behind the scenes.</p>
+    </div>
+    <div class="grid" id="grid-tools"></div>
+  </section>
+
+  <section class="wrap" id="sheets" aria-labelledby="sheets-h">
+    <div class="shead">
+      <h2 id="sheets-h">Worksheets &amp; answer keys <span class="badge" id="b-sheets"></span></h2>
+      <p class="sub">Practice sets, printable packets and answer keys that go with the units.</p>
+    </div>
+    <div class="sheets" id="grid-sheets"></div>
   </section>
 </main>
 
 <footer>
-  <div class="wrap">Designed and built by Darren Echols. Content is original and aligned to the NC Standard Course of Study. Source on <a href="https://github.com/derwood67">GitHub</a>.</div>
+  <div class="wrap">Designed and built by Darren Echols. All content is original and aligned to grade-level standards. Source on <a href="https://github.com/derwood67">GitHub</a>.</div>
 </footer>
 
+<script src="projects.js"></script>
 <script>
-const GH = "https://derwood67.github.io/";
-const SUBJ = {
-  ela:  {label:"Reading & Writing", c:"--ela"},
-  flu:  {label:"Fluency & Phonics", c:"--flu"},
-  math: {label:"Math", c:"--math"},
-  sci:  {label:"Science & Social Studies", c:"--sci"},
-  rev:  {label:"Review & Test Prep", c:"--rev"},
-  tool: {label:"Teacher Tools", c:"--tool"}
-};
-const P = [
-  // Reading & Writing
-  {s:"ela", t:"Read & Unlock: The Egypt Game", k:["Answer questions on text structure, point of view, main idea, voice, setting and characters for each chapter", "Write a summary of each chapter", "Take a chapter quiz once the other sections are done"],  d:"A chapter-by-chapter novel study: text structure, point of view, main idea, voice, setting and characters, a written summary, and a quiz that unlocks only when the chapter is done.", f:["Mastery gating","Teacher dashboard","Written response"], u:GH+"novel-study/?book=egypt-game"},
-  {s:"ela", t:"Novel Study Builder", k:["Work through any class novel chapter by chapter", "Answer story-skill questions, write a summary, then take a quiz"], d:"The Egypt Game's chapter-by-chapter setup, turned into a template for any book. Teachers write questions in a spreadsheet, paste them in, and get a student link.", f:["Reusable template","Spreadsheet import","Teacher dashboard"], u:GH+"novel-study/"},
-  {s:"ela", t:"Love, Amalia — Story Explorer", k:["Map the story's structure", "Answer 25 comprehension questions that adjust to how they're doing", "Write a summary of the book"],  d:"Story structure and 25 comprehension questions that adapt to the reader, plus a written summary.", f:["Adaptive difficulty","Story structure"], u:GH+"love-amalia/"},
-  {s:"ela", t:"Lemonade War Reading Stand", k:["Answer at least 10 questions per section", "Show mastery before moving to the next section", "Track their progress through the book"],  d:"Novel study for The Lemonade War with at least 10 questions per section; students move on only after showing mastery.", f:["Mastery gating","Teacher dashboard"], u:GH+"lemonade-war/"},
-  {s:"ela", t:"Story Trail", k:["Read stories, poems and articles", "Answer questions on theme, main idea and point of view", "Get their own set of passages and questions"],  d:"Stories, poems and articles with questions on theme, main idea and point of view. Every student gets a different set.", f:["NC ELA","Randomized sets","Teacher results"], u:GH+"story-trail/"},
-  {s:"ela", t:"Paragraph Quest", k:["Get their own writing prompt", "Write three paragraphs and submit them", "Read red-pen feedback and revise"],  d:"Students get a unique prompt, write three paragraphs, and receive auto-graded red-pen feedback.", f:["Writing","Instant feedback"], u:GH+"paragraph-quest/"},
-  {s:"ela", t:"Spelling Studio", k:["Hear a word and spell it with letter boxes or letter tiles", "Climb a Spelling Bee and take tests", "Write sentences checked for real words, capitals and end marks"],  d:"Hear it, spell it, grades 3–12: letter tiles, a Spelling Bee, sentence writing with real-word checks, tests, and words that adjust to each student.", f:["Spelling","Adaptive"], u:GH+"spelling/"},
-  {s:"ela", t:"Word Parts Workshop", k:["Explore prefixes, suffixes and Greek and Latin roots", "Build new words and take a quiz", "Write sentences and a paragraph that are checked for tense and punctuation"],  d:"Prefixes, suffixes, and Greek and Latin roots: explore cards, a word builder, a quiz, and sentence and paragraph writing with tense and punctuation checks.", f:["Vocabulary","Scored writing"], u:GH+"word-parts/"},
-  {s:"ela", t:"Note-Taking Lab", k:["Practice picking out the important words in a passage", "Take notes in ELA, science, social studies or math", "Save where they left off in their book group book"],  d:"Teaches note-taking as finding the few important words. Students preview, read and take notes in ELA, science, social studies, math, or their book group.", f:["Study skills","Cross-curricular"], u:GH+"note-taking-lab/"},
-  {s:"ela", t:"Tar Heel Story Lab", k:["Read eight original passages", "Answer questions on theme, main idea, plot, character and structure"],  d:"Eight original passages with standards-tagged questions on theme, main idea, plot, character and structure.", f:["Original passages","NC ELA"], u:"https://claude.ai/artifact/QQfwVyXRtYJoke3F4JVcJV"},
-  {s:"ela", t:"Word Wise Bingo", k:["Play vocabulary and spelling bingo on their own card", "Listen for the clue and mark the matching word"],  d:"Vocabulary and spelling bingo with a teacher caller, student cards and a winner checker.", f:["Whole-class game"], u:"https://claude.ai/artifact/VXHLCWJMXtZ7hq2UTp2qZV"},
-  // Fluency & Phonics
-  {s:"flu", t:"Fluency Sprints", k:["Read a passage aloud for one minute", "See their words correct per minute", "Watch their fluency grow over time"],  d:"One-minute oral reading fluency checks: tap a word to mark an error and get words correct per minute, with a progress bank.", f:["WCPM","Progress tracking","Printable passages"], u:GH+"fluency-sprints/"},
-  {s:"flu", t:"Minute Reading Sprint", k:["Set a baseline reading score", "Do timed sprints and try to beat their baseline"],  d:"Timed reading sprints that compare each student against their own baseline.", f:["Baseline vs. sprint"], u:GH+"minute-reading-sprint/"},
-  {s:"flu", t:"Minute Word Sprint", k:["Race through 15-item word drills in one minute", "Practice prefixes, suffixes, plurals, past tense, synonyms and antonyms", "Compare each sprint to their baseline"],  d:"One-minute drills on prefixes and suffixes, plurals, past tense, synonyms and antonyms, with baseline tracking.", f:["15-item sets","Baseline tracking"], u:"https://claude.ai/artifact/6kiTRy5EfruJJ8G5RAy9er"},
-  {s:"flu", t:"Phonics Practice & Sprint", k:["Practice decoding new random items each round", "Finish with a one-minute sprint"],  d:"Decoding practice with new random items each round, then a timed sprint.", f:["Intervention","Randomized items"], u:GH+"phonics-sprint/"},
-  {s:"flu", t:"Phonics Voice Sprint", k:["Read letter sounds, CVC words and nonsense words aloud", "Have the app listen and score each word", "Get two tries per item"],  d:"The screen listens to the student read letter sounds, CVC words and nonsense words, with teacher override.", f:["Speech recognition","Intervention"], u:GH+"phonics-voice/"},
-  {s:"flu", t:"Puente Learning Studio", k:["Practice math facts, letter sounds and CVC words", "Get help in English and Spanish", "Use it offline"],  d:"Bilingual helper for math facts, letter sounds, CVC words and translation. Runs offline with no AI.", f:["Bilingual","Offline"], u:"https://claude.ai/artifact/LzipZZMNUfR8c2QuemCKfS"},
-  // Math
-  {s:"math", t:"Fraction Summit", k:["Climb through 15-step fraction sections", "Pass a 10-question quiz to unlock each section", "Race a classmate from their own Chromebook"],  d:"Climb in 15-step sections, each gated by a 10-question quiz with fresh questions on retry. Two students can race from their own Chromebooks.", f:["NC.4.NF.1","NC.5.NF.1","Head-to-head play"], u:GH+"fraction-summit/"},
-  {s:"math", t:"Frog Hop Fractions", k:["Build and label fraction number lines", "Hop the frog to place fractions", "Use other models to see fraction size"],  d:"Teaches how to build and use a number line and other fraction models through a hopping game.", f:["Visual models","Number lines"], u:GH+"frog-hop-fractions/"},
-  {s:"math", t:"Fraction Hacktion", k:["Learn fraction shortcuts as hacking missions", "Earn XP and move up ranks", "Study vocabulary in the Vocab Vault and take a quiz"],  d:"Fraction shortcuts framed as hacking missions, auto-generated for each NF standard, with a vocabulary vault and quiz.", f:["NC NF standards","Game ranks & XP"], u:GH+"fraction-hacktion/"},
-  {s:"math", t:"Honeycomb Hustle", k:["Solve a problem to claim a hexagon", "Plan a path across the hive with their team", "Play against another team or the computer"],  d:"Two teams claim hexagons by solving problems and race to build a path across the hive. Play against the computer or another team.", f:["Strategy game","Fractions & geometry"], u:GH+"Honeycomb%20Hustle.html"},
-  {s:"math", t:"Minute Math Sprint", k:["Set a baseline in math facts", "Practice with two tries per fact", "Do timed sprints to beat their baseline"],  d:"Baseline, practice with two tries per fact, then timed sprints. A teacher dashboard graphs progress and prints student work.", f:["Fact fluency","Teacher dashboard","PDF reports"], u:GH+"minute-math-sprint/"},
-  {s:"math", t:"Mount Mitchell Math Climb", k:["Answer problems to move their climber up the mountain", "Play solo or on a team"],  d:"Correct answers move climbers up Mount Mitchell, solo or in two teams, across all four operations and fractions.", f:["Team play","NC-themed"], u:"https://claude.ai/artifact/7MhHdwU5PZS9ysNoUkFeYQ"},
-  {s:"math", t:"Summit Math Climb", k:["Practice multi-digit multiplication and division", "Work with powers of ten, exponents and measurement conversions", "Climb higher with each correct answer"],  d:"Multi-digit multiplication, division, powers of ten, exponents and measurement conversions, aligned to Eureka Math² and NC standards.", f:["Eureka Math²","NC Math"], u:"https://claude.ai/artifact/2KCjELvCW3phxinkELqGPS"},
-  {s:"math", t:"Cross Math", k:["Solve cross math puzzles with a number bank", "Choose from three difficulty levels", "Use hints and try to beat their best time"],  d:"Cross math puzzles with random grids, a number bank, three difficulty levels, hints and best times.", f:["Puzzles","3 levels"], u:"https://claude.ai/artifact/QpY5Tj6NUYq4m3zD3kZixE"},
-  {s:"math", t:"Crack the Code", k:["Use clues from earlier guesses to find a safe's secret code", "Test a guess against every clue, or ask for a new clue", "Open the safe to reveal the Crown Jewels and earn stars"],  d:"Safe-cracking logic puzzles for early finishers: students reason from clues to open a safe holding the Crown Jewels, with a number pad, a guess tester, extra clues, stars and printable puzzle sets.", f:["Logic","3 levels","Early finishers"], u:GH+"crack-the-code/"},
-  {s:"math", t:"Captain Spark Math", k:["Solve 10 addition and subtraction problems to fly a hero up a tower", "Pick a level from single-digit facts to 3-digit regrouping", "Get a place-value hint after a first miss"],  d:"A superhero climbing game: each correct answer lights a floor until the hero reaches the roof and rescues Pip the kitten. Four levels, a strategy hint after a miss, streaks and stars.", f:["Add & subtract","Regrouping","4 levels"], u:"https://claude.ai/artifact/DcjJjwNWStER54D1oLd2sP"},
-  {s:"math", t:"Fraction Bingo", k:["Solve each fraction problem the teacher calls", "Find and mark the answer on their own bingo card", "Get five in a row to win"],  d:"Whole-class bingo with a teacher caller, student cards that rebuild from a card number, and a winner checker that confirms a win against the problems called.", f:["NC.4.NF.1–7","NC.5.NF.1–4, 7","Eureka Math² topics"], u:GH+"fraction-bingo/"},
-  // Science & Social Studies
-  {s:"sci", t:"NC Grade 5 Science Lab", k:["Sign in and read chapters by standard", "Practice with EOG-style passages", "Do activities, play games and watch videos"],  d:"Standards, chapters, EOG practice passages, activities, games and videos, with name sign-in and a class dashboard. Shared with two colleagues for their classes.", f:["NC Science","Used by 3 classes"], u:GH+"science-lab/"},
-  {s:"sci", t:"Water Cycle Game Room", k:["Play eleven water cycle and weather games", "Take the 40-question challenge"],  d:"Eleven water cycle and weather games, including a 40-question challenge, each tagged to an NC 2023 science standard.", f:["NC 2023 Science","11 games"], u:GH+"water-cycle-games/"},
-  {s:"sci", t:"Water Cycle Practice 40", k:["Answer 40 water cycle questions in five parts", "Label a water cycle diagram by tapping words into place", "Read an explanation for every answer they miss"],  d:"A 40-question water cycle practice set in five parts, ending with a diagram to label, a live score bar and an explanation for every answer.", f:["NC 2023 Science","40 questions"], u:"https://claude.ai/artifact/Ti4TTQuQJ9AjyLSY5PHi18"},
-  {s:"sci", t:"Capital Research Lab", k:["Research the U.S. capital and another country's capital", "Compare the two in a research notebook"],  d:"A research notebook where students compare the U.S. capital with the capital of another country.", f:["Social studies","Research skills"], u:GH+"research-lab/"},
-  {s:"sci", t:"Landform Word Match", k:["Match landform words to their meanings in two rounds"],  d:"Two-round vocabulary matching game for landform words.", f:["Vocabulary"], u:GH+"landform-word-match/"},
-  // Review & Test Prep
-  {s:"rev", t:"Murphy to Manteo EOG Road Trip", k:["Answer ten EOG-style math or reading questions across North Carolina", "Get a report showing the standards they've mastered and the ones to practice"],  d:"Ten questions, ten towns across North Carolina. At Manteo students get a report of standards mastered and ones to practice.", f:["EOG prep","Standards report"], u:GH+"eog-road-trip/"},
-  {s:"rev", t:"Check-In Challenge", k:["Answer EOG-style science and fraction questions", "See their score for each standard"],  d:"EOG-style check-in with 30 Grade 5 science and 30 fraction questions, plus a score-by-standard chart.", f:["Score by standard","Printable review packet"], u:GH+"check-in-challenge/"},
-  {s:"rev", t:"Brain Blast Live", k:["Play a game-show review with their team", "Buzz in to answer and steal missed questions"],  d:"A whole-class review game show with team buzzers, steals and a voice host, across ELA, science, math, social studies and grammar.", f:["Whole-class","NC SCOS","Voice"], u:GH+"brain-blast/"},
-  // Teacher tools
-  {s:"tool", t:"Text Analyzer for Teachers", tk:["Type a book or story title to get summary, theme, point of view and more", "Get results written for a chosen grade level"],  d:"Type a book or story title to get summary, main idea, text structure, theme, point of view, narrator, characters and setting, with evidence.", f:["Lesson planning","Grade-level output"], u:GH+"text-analyzer/"},
-  {s:"tool", t:"NC 4–5 Standards Planner", tk:["Search NC standards with I-can statements", "Check off what's been taught and tag quarters", "Share notes with their PLC"],  d:"Searchable NCDPI standards for ELA, math, science and social studies with I-can statements, quarter tags, taught checkboxes and PLC notes. Installs as an app.", f:["Installable app","PLC planning"], u:GH+"standards/"},
-  {s:"tool", t:"States Standards & Pacing Guides", tk:["Choose Common Core, a state or a district", "Pick ELA, math, science or social studies and a grade", "See which apps practice each standard", "Plan the year by quarter with a pacing guide"], d:"North Carolina grade 4–5 standards plus K–6 standards for Common Core with NGSS and C3, California and LAUSD, Virginia, Maryland and DC, matched to the NC standards and to the apps that practice them, with district, curriculum and personal pacing guides.", f:["Standards crosswalk","State and district switch","Pacing guides"], u:GH+"standards-explorer/"},
-  {s:"tool", t:"Scan to Doc", tk:["Turn scans, photos and PDFs into one clean PDF or Word file", "Convert scanned pages to typed text"],  d:"Turns scans, photos and PDFs into one cleaned-up PDF or Word file, with optional typed-text conversion.", f:["Workflow tool"], u:"https://claude.ai/artifact/5WZ7wUJXJk7LnEwFGfHcAn"},
-  {s:"tool", t:"Echols Standards Gradebook", tk:["Score students 1–4 on NCDPI standards in ELA, math, science and social studies", "Upload photos or PDFs of student work, mark them up and get suggested scores", "See class charts and print a PDF grade list for each student"],  d:"A standards-based gradebook for a combined 4th/5th grade class: 1–4 scores on objective-level NC standards, marked-up student work, class charts and per-student PDF reports. Built to install as an app on Mac and PC.", f:["NCDPI standards","1–4 scoring","PDF reports"]},
-  {s:"tool", t:"Grade 4–5 Plan Book", tk:["See each day's lessons with I Do, We Do and You Do steps", "Switch between day, week and pacing views for Q2–Q4", "Filter by 4th grade, 5th grade or both"],  d:"A combined-class plan book with daily lessons for math, ELA and science tied to NC standards, plus week and pacing views across quarters 2–4.", f:["NC standards","Gradual release","Pacing"], u:"https://claude.ai/artifact/STrszV3LWpiXT71hq9G7C8"},
-  {s:"tool", t:"Fractions Answer Key", tk:["Tap a check or X on each problem to grade a paper with a live score", "Hide answers and reveal them one at a time to review in class"],  d:"An interactive answer key for the Introduction to Fractions worksheet: 53 problems with worked explanations, a tap-to-grade running score, and a review mode.", f:["NC.4.NF.1–4","NC.5.NF.1, 3, 4, 7","Grading tool"], u:"https://claude.ai/artifact/Q5oFzo6Nih6xd6cA16FZ5b"}
-];
-
-const grid = document.getElementById("grid");
-const filters = document.getElementById("filters");
-document.getElementById("count").textContent = P.length;
-
-function esc(s){return s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
-grid.innerHTML = P.map(p=>{
-  const S = SUBJ[p.s];
-  return `<article class="card" data-s="${p.s}" style="--c:var(${S.c})">
-    <span class="subj">${S.label}</span>
-    <h3>${esc(p.t)}</h3>
-    <p>${esc(p.d)}</p>
-    ${p.k||p.tk?`<div class="can"><h4>${p.k?"Students can":"Teachers can"}</h4><ul>${(p.k||p.tk).map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`:""}
-    <ul class="feats">${p.f.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>
-    ${p.u?`<a class="go" href="${p.u.indexOf(GH)===0?p.u+(p.u.indexOf("?")<0?"?visitor":"&visitor"):p.u}" target="_blank" rel="noopener">Open the tool <span aria-hidden="true">→</span></a>`:`<span class="go" style="opacity:.75">Private: holds student records. Demo on request.</span>`}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function link(u){if(!u)return "";if(u.charAt(0)!=="/"||/\.pdf$/.test(u))return u;return u+(u.indexOf("?")<0?"?visitor":"&visitor");}
+function card(p){
+  const S=SUBJ[p.s], href=link(p.u), list=p.k||p.tk;
+  const img=p.i?`<img src="shots/${p.i}.webp" alt="" loading="lazy" width="720" height="450">`:"";
+  const shot=href?`<a class="shot${img?"":" none"}" href="${href}" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">${img||esc(p.t)}</a>`
+                 :`<div class="shot none" aria-hidden="true">${esc(p.t)}</div>`;
+  return `<article class="card" id="${p.id}" data-s="${p.s}"${p.w?' data-w="1"':""} style="--c:var(${S.c})">
+    ${shot}
+    <div class="body">
+      <div class="meta"><span class="subj">${S.label}</span>${p.w?'<span class="lead">Whole class</span>':""}</div>
+      <h3>${esc(p.t)}</h3>
+      <p>${esc(p.d)}</p>
+      <div class="can"><h4>${p.k?"Students can":"Teachers can"}</h4><ul>${list.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>
+      <ul class="feats">${p.f.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>
+      ${href?`<a class="go" href="${href}" target="_blank" rel="noopener">Open ${esc(p.t)} <span aria-hidden="true">→</span></a>`:`<span class="go off">Private: holds student records. Demo on request.</span>`}
+    </div>
   </article>`;
-}).join("");
+}
+document.getElementById("grid-apps").innerHTML=APPS.map(card).join("");
+document.getElementById("grid-tools").innerHTML=TOOLS.map(card).join("");
+document.getElementById("grid-sheets").innerHTML=SHEETS.map(p=>`<article class="sheet" id="${p.id}">
+  <div class="ico" aria-hidden="true">${p.ico}</div>
+  <span class="kind">${esc(p.kind)}</span>
+  <h3>${esc(p.t)}</h3>
+  <p>${esc(p.d)}</p>
+  <ul class="feats">${p.f.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>
+  <a class="go" href="${link(p.u)}" target="_blank" rel="noopener">${esc(p.go)} <span aria-hidden="true">→</span></a>
+</article>`).join("");
 
-const opts = [["all","All"],...Object.entries(SUBJ).map(([k,v])=>[k,v.label])];
-filters.innerHTML = opts.map(([k,l])=>{
-  const n = k==="all"?P.length:P.filter(p=>p.s===k).length;
-  const dot = k==="all"?"":`<span class="dot" style="background:var(${SUBJ[k].c})"></span>`;
-  return `<button class="chip" id="f-${k}" data-k="${k}" aria-pressed="${k==="all"}">${dot}${l} (${n})</button>`;
+[["apps",APPS],["tools",TOOLS],["sheets",SHEETS]].forEach(([k,a])=>{
+  ["n-","b-","j-"].forEach(p=>document.getElementById(p+k).textContent=a.length);
+});
+
+const filters=document.getElementById("filters");
+const opts=[["all","All apps"],...Object.entries(SUBJ).filter(([k])=>k!=="tool").map(([k,v])=>[k,v.label]),["whole","Whole-class games"]];
+filters.innerHTML=opts.map(([k,l])=>{
+  const n=k==="all"?APPS.length:k==="whole"?APPS.filter(p=>p.w).length:APPS.filter(p=>p.s===k).length;
+  const dot=SUBJ[k]?`<span class="dot" style="background:var(${SUBJ[k].c})"></span>`:"";
+  return `<button class="chip" data-k="${k}" aria-pressed="${k==="all"}">${dot}${l} (${n})</button>`;
 }).join("");
 filters.addEventListener("click",e=>{
-  const b = e.target.closest(".chip"); if(!b) return;
-  filters.querySelectorAll(".chip").forEach(c=>c.setAttribute("aria-pressed", c===b));
-  const k = b.dataset.k;
-  grid.querySelectorAll(".card").forEach(c=>{c.hidden = !(k==="all"||c.dataset.s===k);});
+  const b=e.target.closest(".chip"); if(!b)return;
+  filters.querySelectorAll(".chip").forEach(c=>c.setAttribute("aria-pressed",c===b));
+  const k=b.dataset.k;
+  document.querySelectorAll("#grid-apps .card").forEach(c=>{c.hidden=!(k==="all"||(k==="whole"?c.dataset.w:c.dataset.s===k));});
 });
+
+/* highlight the section in view */
+const jl=[...document.querySelectorAll("nav.jump a")];
+const io=new IntersectionObserver(es=>es.forEach(en=>{if(en.isIntersecting)jl.forEach(a=>a.classList.toggle("on",a.getAttribute("href")==="#"+en.target.id));}),{rootMargin:"-40% 0px -55% 0px"});
+["approach","apps","tools","sheets"].forEach(id=>io.observe(document.getElementById(id)));
+
+/* résumé links: /portfolio/#app-name opens here with that app highlighted */
+function showHash(){const id=decodeURIComponent(location.hash.slice(1));const el=id&&document.getElementById(id);
+  if(!el||!el.matches(".card,.sheet"))return;
+  if(el.hidden){filters.querySelector('[data-k="all"]').click();}
+  document.querySelectorAll(".hit").forEach(x=>x.classList.remove("hit"));el.classList.add("hit");
+  el.scrollIntoView({block:"center"});}
+window.addEventListener("hashchange",showHash);showHash();
 </script>
 </body>
 </html>

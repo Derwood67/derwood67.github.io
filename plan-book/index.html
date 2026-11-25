@@ -1,0 +1,1024 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<link rel="stylesheet" href="/shared/brand.css">
+<script src="/shared/standards.js"></script>
+<script src="/shared/frame.js" data-app="Grade 4–5 Plan Book" data-subject="tool" data-tags="Teacher tool|Grades 4–5"></script>
+<title>Grade 4–5 Plan Book</title>
+<meta name="description" content="A combined-class plan book with daily lessons for math, ELA and science tied to NC standards, plus week and pacing views across quarters 2–4.">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a teacher's plan book — date header + tab bar, then a time-ruled day timeline; week grid and pacing tables share the same ruled-page language */
+:root{
+  --bg:#eef3f2; --surface:#ffffff; --sunk:#f6f9f8; --ink:#14222a; --muted:#55666e; --line:#d4dedc; --accent:#1c5d86;
+  --math:#1b6aa0; --ela:#8b3a78; --sci:#2c7a4b; --int:#a2620c; --plc:#5f6b73; --mm:#0d7268; --warn:#a33a1f;
+  --f-display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --f-body:"Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e1518; --surface:#152026; --sunk:#111b20; --ink:#e4edef; --muted:#97a9b0; --line:#26353c; --accent:#7cb8e0;
+  --math:#6db3e6; --ela:#d78cc6; --sci:#6fcb93; --int:#e3b15a; --plc:#a3adb4; --mm:#5ad6c4; --warn:#f08a6c; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1518; --surface:#152026; --sunk:#111b20; --ink:#e4edef; --muted:#97a9b0; --line:#26353c; --accent:#7cb8e0;
+  --math:#6db3e6; --ela:#d78cc6; --sci:#6fcb93; --int:#e3b15a; --plc:#a3adb4; --mm:#5ad6c4; --warn:#f08a6c; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--f-body)}
+.wrap{max-width:1120px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:22px 56px}
+button,input,textarea,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+a{color:var(--accent)}
+
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px}
+.eyebrow{font:500 12px/1.2 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font:700 clamp(28px,4vw,40px)/1.05 var(--f-display);margin:4px 0 0;letter-spacing:-.01em;text-wrap:balance}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:18px;padding-block:12px;border-top:2px solid var(--ink);border-bottom:1px solid var(--line)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:none;padding:7px 13px;cursor:pointer;font-weight:700;font-size:14px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+.seg button+button{border-left:1px solid var(--line)}
+.spacer{flex:1}
+.datenav{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 12px;cursor:pointer;font-size:14px;font-weight:700}
+.btn:hover{border-color:var(--ink)}
+.btn.icon{padding:7px 11px}
+input[type=date]{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 8px;font-size:14px}
+.qjump{display:inline-flex;gap:4px}
+.qjump .btn{padding:7px 9px;font-family:var(--f-mono);font-weight:500}
+
+.banner{margin-top:14px;padding:10px 14px;background:color-mix(in srgb,var(--accent) 10%,var(--surface));border:1px solid color-mix(in srgb,var(--accent) 35%,var(--line));border-radius:8px;font-size:15px}
+
+/* Day view */
+.dayhead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:6px 20px;margin:22px 0 12px}
+.dayhead h2{font:700 clamp(22px,3vw,30px)/1.15 var(--f-display);margin:0;text-wrap:balance}
+.meta{font:500 13px/1.4 var(--f-mono);color:var(--muted);display:flex;gap:6px 14px;flex-wrap:wrap}
+.pill{display:inline-block;font:700 11px/1 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;padding:5px 8px;border-radius:999px;border:1px solid currentColor}
+.timeline{display:grid;gap:10px}
+.blk{--c:var(--accent);display:grid;grid-template-columns:118px minmax(0,1fr);background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.blk[data-s="math"]{--c:var(--math)} .blk[data-s="ela"]{--c:var(--ela)} .blk[data-s="sci"]{--c:var(--sci)}
+.blk[data-s="int"]{--c:var(--int)} .blk[data-s="plc"]{--c:var(--plc)} .blk[data-s="mm"]{--c:var(--mm)}
+.blk .time{padding:14px 12px;background:color-mix(in srgb,var(--c) 9%,var(--surface));border-right:1px solid var(--line);font:500 13px/1.35 var(--f-mono);font-variant-numeric:tabular-nums;color:var(--ink)}
+.blk .time b{display:block;font-weight:500}
+.blk .time span{color:var(--muted);font-size:12px}
+.blk .body{padding:14px 16px;min-width:0}
+.bh{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.tag{font:700 12px/1.2 var(--f-mono);letter-spacing:.07em;text-transform:uppercase;color:var(--c)}
+.blk h3{font:700 19px/1.25 var(--f-display);margin:4px 0 2px;text-wrap:balance}
+.sub{color:var(--muted);font-size:14px}
+.done{display:inline-flex;gap:6px;align-items:center;font-size:13px;color:var(--muted);cursor:pointer;white-space:nowrap}
+.done input{accent-color:var(--c);width:16px;height:16px}
+.blk.is-done .body > :not(.bh){opacity:.55}
+.thin{display:grid;grid-template-columns:118px minmax(0,1fr);font-size:14px;color:var(--muted)}
+.thin .time{padding:2px 12px;font:500 12px/1.4 var(--f-mono);font-variant-numeric:tabular-nums}
+.thin div:last-child{padding:2px 16px}
+
+.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
+.step{background:color-mix(in srgb,var(--c) 7%,var(--sunk));border:1px solid color-mix(in srgb,var(--c) 22%,var(--line));border-radius:8px;padding:10px 12px;min-width:0}
+.step .k{display:flex;justify-content:space-between;gap:6px;font:700 12px/1.2 var(--f-mono);letter-spacing:.05em;text-transform:uppercase;color:var(--c)}
+.step .k span{color:var(--muted);font-weight:500;letter-spacing:0}
+.step p{margin:6px 0 0;font-size:15px}
+.rows{display:grid;gap:0;margin-top:10px;border-top:1px solid var(--line)}
+.row{display:grid;grid-template-columns:118px minmax(0,1fr);gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}
+.row .rt{font:500 12px/1.5 var(--f-mono);font-variant-numeric:tabular-nums;color:var(--muted)}
+.row .rk{font-weight:700}
+.row p{margin:2px 0 0;font-size:15px}
+.groups{display:grid;gap:6px;margin-top:4px}
+.groups div{font-size:15px}
+.groups b{color:var(--c)}
+.split{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+.split.one{grid-template-columns:minmax(0,1fr)}
+.card{border:1px solid color-mix(in srgb,var(--c) 22%,var(--line));background:color-mix(in srgb,var(--c) 6%,var(--sunk));border-radius:8px;padding:12px 14px;min-width:0}
+.card .gr{font:700 12px/1.2 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--c)}
+.card h4{font:700 16px/1.3 var(--f-display);margin:6px 0 4px}
+.card p{margin:6px 0 0;font-size:15px}
+.phase{display:inline-block;font:700 11px/1 var(--f-mono);letter-spacing:.05em;text-transform:uppercase;padding:4px 7px;border-radius:5px;background:var(--c);color:var(--surface);margin-right:6px;vertical-align:1px}
+.std{font:500 12.5px/1.4 var(--f-mono);color:var(--muted)}
+.goal{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 16px;margin-top:10px;padding:10px 12px;border:1px dashed color-mix(in srgb,var(--c) 45%,var(--line));border-radius:8px;background:var(--surface)}
+.goal > div{min-width:0}
+.gk{font:700 11px/1.2 var(--f-mono);letter-spacing:.07em;text-transform:uppercase;color:var(--c)}
+.goal p{margin:4px 0 0;font-size:15px}
+.goal p.eq{font:500 16px/1.35 var(--f-display)}
+.card .goal{grid-template-columns:minmax(0,1fr)}
+@media (max-width:760px){.goal{grid-template-columns:minmax(0,1fr)}}
+ul.tg{margin:8px 0 0;padding-left:18px;font-size:15px}
+ul.tg li{margin:2px 0}
+.notes{margin-top:18px}
+.notes label{font:700 12px/1 var(--f-mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+textarea{width:100%;min-height:90px;margin-top:8px;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:10px 12px;font-size:15px;resize:vertical}
+
+.empty{margin-top:22px;padding:28px;background:var(--surface);border:1px dashed var(--line);border-radius:10px}
+.empty h2{font:700 24px/1.2 var(--f-display);margin:0 0 6px}
+.empty .datenav{margin-top:14px}
+
+/* Week view */
+.scroll{overflow-x:auto;margin-top:18px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%}
+.week{min-width:860px}
+.week th,.week td{border-bottom:1px solid var(--line);border-right:1px solid var(--line);padding:10px;vertical-align:top;text-align:left;font-size:14px}
+.week th{font:700 13px/1.3 var(--f-display);background:var(--sunk)}
+.week th button{all:unset;cursor:pointer;display:block}
+.week th button:hover{color:var(--accent)}
+.week th small{display:block;font:500 11px/1.3 var(--f-mono);color:var(--muted)}
+.week td.rl{width:110px;font:700 12px/1.3 var(--f-mono);letter-spacing:.04em;text-transform:uppercase;background:var(--sunk)}
+.week td.rl[data-s="math"]{color:var(--math)} .week td.rl[data-s="ela"]{color:var(--ela)} .week td.rl[data-s="sci"]{color:var(--sci)}
+.week td.off{color:var(--muted);font-style:italic;background:var(--sunk)}
+.week .u{display:block;font:500 11px/1.3 var(--f-mono);color:var(--muted);margin-bottom:2px}
+
+/* Pacing view */
+.psec{margin-top:24px}
+.psec h3{font:700 20px/1.2 var(--f-display);margin:0 0 4px;display:flex;align-items:center;gap:10px}
+.psec h3 i{width:12px;height:12px;border-radius:3px;display:inline-block}
+.psec .note{font-size:14px;color:var(--muted);margin:0 0 8px}
+.pt{min-width:620px}
+.pt th,.pt td{padding:9px 12px;border-bottom:1px solid var(--line);text-align:left;font-size:14px;vertical-align:top}
+.pt th{font:700 11px/1.2 var(--f-mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted);background:var(--sunk)}
+.pt td.n{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.pt tr:last-child td{border-bottom:0}
+.warn{color:var(--warn);font-weight:700}
+
+/* Settings */
+.set{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:20px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 18px;min-width:0}
+.panel h3{font:700 18px/1.2 var(--f-display);margin:0 0 4px}
+.panel p{font-size:14px;color:var(--muted);margin:4px 0 10px}
+.qgrid{display:grid;grid-template-columns:auto 1fr 1fr;gap:8px 10px;align-items:center;font-size:14px}
+.qgrid input{width:100%}
+.panel textarea{min-height:200px;font-family:var(--f-mono);font-size:13px}
+.panel.wide{grid-column:1/-1}
+.panel ul{margin:6px 0 0;padding-left:18px;font-size:14px}
+.confirm{display:inline-flex;gap:8px;align-items:center;font-size:14px;margin-left:8px}
+
+@media (max-width:760px){
+  .blk,.thin{grid-template-columns:minmax(0,1fr)}
+  .blk .time{border-right:0;border-bottom:1px solid var(--line);padding:8px 14px;display:flex;gap:10px;align-items:baseline}
+  .blk .time span{font-size:12px}
+  .thin .time{padding:2px 14px 0}
+  .thin div:last-child{padding:0 14px 2px}
+  .steps,.split,.set{grid-template-columns:minmax(0,1fr)}
+  .row{grid-template-columns:minmax(0,1fr);gap:2px}
+  .spacer{display:none}
+}
+@media (prefers-reduced-motion:no-preference){.blk{transition:border-color .15s}.blk:hover{border-color:color-mix(in srgb,var(--c) 45%,var(--line))}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow">NC Standard Course of Study · Grades 4 &amp; 5 · Q2–Q4</div>
+      <h1>Grade 4–5 Plan Book</h1>
+    </div>
+    <div class="seg" role="group" aria-label="Grade filter" id="gradeSeg">
+      <button data-g="both">4th + 5th</button><button data-g="4">4th</button><button data-g="5">5th</button>
+    </div>
+  </header>
+  <nav class="bar" aria-label="Planner">
+    <div class="seg" role="group" aria-label="View" id="viewSeg">
+      <button data-v="day">Day</button><button data-v="week">Week</button><button data-v="pacing">Pacing</button><button data-v="settings">Settings</button>
+    </div>
+    <div class="spacer"></div>
+    <div class="datenav" id="dateNav">
+      <button class="btn icon" id="prev" aria-label="Previous school day">‹</button>
+      <input type="date" id="datePick" aria-label="Pick a date">
+      <button class="btn icon" id="next" aria-label="Next school day">›</button>
+      <button class="btn" id="todayBtn">Today</button>
+      <span class="qjump"><button class="btn" data-q="2">Q2</button><button class="btn" data-q="3">Q3</button><button class="btn" data-q="4">Q4</button></span>
+    </div>
+  </nav>
+  <div id="banner"></div>
+  <main id="view"></main>
+</div>
+
+<script>
+/* ---------------- CONTENT ---------------- */
+// Math lesson: [standard, target, I Do, We Do, You Do]
+const MATH = {
+4:{
+2:[
+ {t:"Multiplicative Comparison",s:"NC.4.OA.1, NC.4.OA.2",L:[
+  ["NC.4.OA.1","Interpret multiplication as comparison","Model 'Kim has 4 stickers; Leo has 3 times as many' with a tape diagram. Write 12 = 3 × 4 and say it two ways.","Write comparison sentences together for 5 × 6 = 30 and 7 × 4 = 28; students sketch tape diagrams on whiteboards.","Match 6 equations to comparison statements; draw a tape diagram for two of them."],
+  ["NC.4.OA.2","Solve multiplicative comparison word problems","Think aloud a 'times as many' problem: name the larger amount, the smaller amount and the multiplier; use a tape diagram and an equation with a letter for the unknown.","Solve 3 problems together where the unknown changes position (product, multiplier, smaller amount).","Solve 4 comparison word problems with a diagram and an equation; exit ticket: 1 problem."],
+  ["NC.4.OA.2","Additive vs. multiplicative comparison","Contrast '3 more than' and '3 times as many' with two tape diagrams side by side.","Sort word problems into 'more than' and 'times as many' and solve two of each together.","Write one additive and one multiplicative comparison problem about the class; solve a partner's."]]},
+ {t:"Factors & Multiples",s:"NC.4.OA.4",L:[
+  ["NC.4.OA.4","Find factor pairs with arrays","Build every array for 24 with square tiles; list the factor pairs in a T-chart.","Find factor pairs for 36 and 17 together; discuss why 17 has only one pair.","Find all factor pairs for 5 numbers between 1 and 100."],
+  ["NC.4.OA.4","Prime and composite numbers","Use factor-pair results to define prime and composite; show why 1 is neither.","Classify the numbers 1–30 together on a hundred chart.","Sort 12 numbers as prime or composite and justify two with factor pairs."],
+  ["NC.4.OA.4","Multiples and the factor–multiple link","Skip-count multiples of 6; show that if 6 is a factor of 42, then 42 is a multiple of 6.","Decide together whether statements are true: '8 is a multiple of 4', '4 is a factor of 30'.","Complete a multiples chart and answer 6 factor/multiple true-false items."]]},
+ {t:"Multi-Digit Multiplication",s:"NC.4.NBT.5, NC.4.OA.3",L:[
+  ["NC.4.NBT.5","Multiply by multiples of 10 and 100","Use place value disks to show 4 × 3 tens = 12 tens = 120; extend to 4 × 300.","Solve a pattern set together (6 × 7, 6 × 70, 6 × 700) and name the pattern in place value terms.","Complete 12 fact-to-multiple problems and explain one pattern in writing."],
+  ["NC.4.NBT.5","Multiply up to 3-digit by 1-digit with area models","Break 243 × 6 into an area model (200 + 40 + 3) and add the partial products.","Solve 2 problems together while students draw the area model on whiteboards.","Solve 5 problems with area models; exit ticket: 1 problem."],
+  ["NC.4.NBT.5","Record partial products","Connect the area model to vertical partial products for 357 × 4.","Record partial products together for 2 problems, labeling each product's place value.","Solve 6 problems with partial products; check one with an area model."],
+  ["NC.4.NBT.5","Multiply two 2-digit numbers","Model 23 × 15 with a 4-part area model (20 + 3 by 10 + 5).","Solve 34 × 12 together; students compute each partial product.","Solve 4 two-digit by two-digit problems with area models or partial products."],
+  ["NC.4.NBT.5","Estimate products and check reasonableness","Round factors to estimate 48 × 21 before solving; compare the estimate to the exact product.","Estimate, then solve 3 problems together; decide whether each answer is reasonable.","Find and fix the errors in 4 worked problems using estimation."],
+  ["NC.4.OA.3","Multi-step word problems with multiplication","Model a two-step problem (4 packs of 24 cards, then 18 given away) with a bar model and an equation using a letter for the unknown.","Solve 2 multi-step problems together; check with estimation.","Solve 3 multi-step problems and write the equation for each."]]},
+ {t:"Division",s:"NC.4.NBT.6, NC.4.OA.3",L:[
+  ["NC.4.NBT.6","Divide with place value models","Share 84 into 4 equal groups with base-ten blocks, trading a ten when needed.","Model 96 ÷ 3 and 72 ÷ 6 together with blocks or drawings.","Solve 5 division problems with base-ten drawings."],
+  ["NC.4.NBT.6","Divide with area models and partial quotients","Solve 156 ÷ 4 with an area model; record partial quotients beside it.","Solve 2 problems together with friendly chunks (10s, 5s).","Solve 5 problems with partial quotients; check each by multiplying."],
+  ["NC.4.NBT.6","Find quotients with remainders","Solve 145 ÷ 6 and show what the remainder means in the model.","Work 3 remainder problems together; check with multiplication plus the remainder.","Solve 6 problems with remainders and check two."],
+  ["NC.4.OA.3","Interpret remainders in word problems","Think aloud three contexts for 50 ÷ 8: round up (vans needed), drop it (full boxes), or use it (leftovers).","Decide together how to handle the remainder in 3 word problems.","Solve 4 remainder word problems and explain each remainder decision."]]},
+ {t:"Area & Perimeter",s:"NC.4.MD.3, NC.4.MD.8",L:[
+  ["NC.4.MD.3","Area and perimeter of rectangles","Use grid paper to show area as square units and perimeter as distance around; derive A = l × w and P = 2l + 2w.","Find the area and perimeter of 3 rectangles together.","Find area and perimeter for 6 rectangles; draw two rectangles with the same area and different perimeters."],
+  ["NC.4.MD.3","Find an unknown side length","Model a garden with an area of 48 sq ft and a width of 6 ft; solve 6 × n = 48.","Solve 2 unknown-side problems together (one area, one perimeter).","Solve 4 unknown-side problems; exit ticket: 1 problem."],
+  ["NC.4.MD.8","Area is additive: rectilinear figures","Split an L-shaped room into two rectangles and add the areas.","Find the area of 2 rectilinear figures together, comparing different ways to split them.","Find the area of 4 rectilinear figures; show two ways for one of them."],
+  ["NC.4.MD.3","Area and perimeter word problems","Model a fencing problem: decide whether it needs area or perimeter and explain why.","Solve 2 real-world problems together (carpet vs. border).","Design a playground with a given perimeter and find its area."]]}
+],
+3:[
+ {t:"Equivalent Fractions",s:"NC.4.NF.1",L:[
+  ["NC.4.NF.1","Equivalent fractions with area models","Fold paper strips to show 1/2 = 2/4 = 4/8; explain that the parts get smaller as their number grows.","Shade area models together to find fractions equal to 2/3.","Use fraction strips to find 2 equivalent fractions for 5 fractions."],
+  ["NC.4.NF.1","Equivalent fractions on a number line","Partition a number line into fourths and eighths; show 3/4 and 6/8 land on the same point.","Locate 1/3 and 2/6 on number lines together.","Place 6 fraction pairs on number lines and state whether they are equivalent."],
+  ["NC.4.NF.1","Generate equivalent fractions with n/n","Show 2/5 × 3/3 = 6/15 and connect it to splitting each part into 3 pieces.","Generate equivalent fractions together and simplify one back.","Complete an equivalent-fraction table (denominators 2, 3, 4, 5, 6, 8, 10, 12, 100)."]]},
+ {t:"Compare Fractions",s:"NC.4.NF.2",L:[
+  ["NC.4.NF.2","Compare with benchmarks 0, 1/2 and 1","Compare 3/8 and 4/6 by placing each one relative to 1/2.","Sort fraction cards into less than 1/2, equal to 1/2 and greater than 1/2.","Compare 6 fraction pairs with benchmarks and explain in words."],
+  ["NC.4.NF.2","Compare with common numerators or denominators","Compare 3/5 vs. 3/8 (same numerator) and 5/6 vs. 2/3 (rename as sixths).","Choose a strategy together for 4 comparisons.","Compare 8 fraction pairs with <, >, =; justify two with models."],
+  ["NC.4.NF.2","Justify fraction comparisons","Model why comparisons only work when the wholes are the same size.","Critique two sample student answers together.","Write justifications for 3 comparisons; exit ticket: 1 comparison."]]},
+ {t:"Add & Subtract Fractions",s:"NC.4.NF.3",L:[
+  ["NC.4.NF.3","Decompose fractions into unit fractions","Show 5/8 = 1/8 + 1/8 + 1/8 + 1/8 + 1/8 and 5/8 = 2/8 + 3/8 on fraction strips.","Decompose 3 fractions two ways together.","Decompose 6 fractions at least two ways each."],
+  ["NC.4.NF.3","Add and subtract like denominators","Use a number line to add 3/6 + 2/6 and subtract 7/10 − 4/10.","Solve 4 problems together with models, then with equations.","Solve 8 like-denominator problems; draw a model for two."],
+  ["NC.4.NF.3","Mixed numbers and fractions greater than 1","Convert 11/4 to 2 3/4 with fraction strips, then back again.","Convert 4 numbers together in both directions.","Convert 8 numbers and place 3 of them on a number line."],
+  ["NC.4.NF.3","Add and subtract mixed numbers","Add 2 3/8 + 1 6/8 by adding wholes and parts, then regrouping.","Solve 3 problems together, including one that needs regrouping to subtract.","Solve 6 mixed-number problems."],
+  ["NC.4.NF.3","Fraction word problems","Model a recipe problem with a bar diagram and an equation.","Solve 2 word problems together (one add, one subtract).","Solve 4 fraction word problems; exit ticket: 1 problem."]]},
+ {t:"Multiply Fractions by Whole Numbers",s:"NC.4.NF.4",L:[
+  ["NC.4.NF.4","A fraction as a multiple of a unit fraction","Show 5/4 = 5 × 1/4 with fraction strips.","Write 4 fractions as multiples of unit fractions together.","Write 8 fractions as multiples of unit fractions."],
+  ["NC.4.NF.4","Multiply a whole number by a fraction","Model 3 × 2/5 as 3 groups of 2/5 = 6/5 on a number line.","Solve 3 problems together with models, then equations.","Solve 6 problems with models and equations."],
+  ["NC.4.NF.4","Fraction × whole number word problems","Model: each of 5 students eats 3/8 of a pizza. How much pizza in all?","Solve 2 word problems together; decide which two whole numbers each answer falls between.","Solve 4 word problems with a model and an equation."]]},
+ {t:"Decimals",s:"NC.4.NF.6, NC.4.NF.7, NC.4.NBT.7",L:[
+  ["NC.4.NF.6","Tenths and hundredths as fractions","Shade 3/10 and 30/100 on grids to show they are equivalent.","Add tenths and hundredths together: 3/10 + 4/100 = 34/100.","Rename 8 fractions between tenths and hundredths; shade two."],
+  ["NC.4.NBT.7","Read and write decimals","Write 0.47 in standard, word and expanded form; connect it to 47/100.","Practice 4 numbers together in all three forms.","Complete a decimal-forms chart for 8 numbers."],
+  ["NC.4.NF.7","Compare decimals to hundredths","Compare 0.6 and 0.45 with grids and a number line; explain why more digits does not mean bigger.","Compare 4 pairs together with <, >, =.","Compare 8 pairs and order a set of 5 decimals."]]},
+ {t:"Measurement",s:"NC.4.MD.1, NC.4.MD.2",L:[
+  ["NC.4.MD.1","Relative sizes of units and conversion tables","Build a feet–inches conversion table; explain why the number of units grows when converting to a smaller unit.","Complete conversion tables together (kg–g, hours–minutes).","Complete 4 conversion tables and answer 4 conversion questions."],
+  ["NC.4.MD.2","Measurement word problems","Solve an elapsed-time problem with an open number line.","Solve 3 problems together with money, distance and liquid volume.","Solve 4 measurement word problems with a diagram or number line."]]}
+],
+4:[
+ {t:"Lines & Angles",s:"NC.4.G.1, NC.4.MD.5–7",L:[
+  ["NC.4.G.1","Points, lines, segments and rays","Draw and label each figure; show the notation for a line, a segment and a ray.","Find examples in the classroom and sketch them together.","Draw and label 8 figures from descriptions."],
+  ["NC.4.G.1","Parallel and perpendicular lines","Test for right angles with the corner of an index card; show that parallel lines never meet.","Find parallel and perpendicular lines in capital letters together.","Draw figures with given parallel and perpendicular sides."],
+  ["NC.4.MD.5","Angles as turns: acute, right, obtuse","Show a 1-degree turn as 1/360 of a circle with a paper circle; classify angles against a right angle.","Classify 6 angles together using a benchmark corner.","Sort and draw acute, right and obtuse angles."],
+  ["NC.4.MD.6","Measure angles with a protractor","Model lining up the vertex and base ray, then reading the correct scale.","Measure 3 angles together and compare to estimates.","Measure 8 angles; exit ticket: measure 2."],
+  ["NC.4.MD.6","Draw angles of a given measure","Draw a 65° and a 140° angle step by step.","Partners draw angles and check each other's work.","Draw 6 angles of given measures."],
+  ["NC.4.MD.7","Additive angles and unknown angles","Show a 90° angle split into 35° and an unknown; write 90 − 35 = n.","Solve 3 unknown-angle problems together.","Solve 5 unknown-angle problems with equations."]]},
+ {t:"Classify Shapes",s:"NC.4.G.2, NC.4.G.3",L:[
+  ["NC.4.G.2","Classify triangles","Classify triangles by their angles and by their sides.","Sort a set of triangles together and justify each.","Draw and classify 6 triangles."],
+  ["NC.4.G.2","Classify quadrilaterals","Use parallel and perpendicular sides and angles to classify quadrilaterals.","Sort quadrilaterals together; discuss shapes that belong to more than one group.","Complete a quadrilateral sort and answer 4 always/sometimes/never items."],
+  ["NC.4.G.3","Lines of symmetry","Fold shapes to find lines of symmetry and draw them.","Find lines of symmetry in letters and shapes together.","Draw lines of symmetry for 8 figures; complete a symmetric drawing."]]},
+ {t:"Data",s:"NC.4.MD.4",L:[
+  ["NC.4.MD.4","Line plots with fractional measurements","Measure pencils to the nearest 1/8 inch and build a line plot from class data.","Answer questions about a line plot together, including differences.","Create a line plot from a data set and answer 4 questions."],
+  ["NC.4.MD.4","Interpret data and solve problems","Model reading a scaled bar graph and a frequency table.","Solve 3 'how many more' questions together with the data.","Answer 6 questions using two data displays."]]},
+ {t:"Patterns",s:"NC.4.OA.5",L:[
+  ["NC.4.OA.5","Generate number patterns from a rule","Use the rule 'add 4' starting at 1; notice the terms alternate odd and even.","Generate and describe 3 patterns together.","Generate 4 patterns and describe one feature the rule does not state."],
+  ["NC.4.OA.5","Shape patterns and pattern features","Extend a growing shape pattern and write its rule.","Analyze 2 patterns together for features.","Create a pattern, write its rule and trade with a partner."]]},
+ {t:"EOG Review",s:"All Grade 4 standards",test:false,L:[
+  ["Review","EOG review: place value, addition, subtraction","Solve 2 released-style items, thinking aloud about each wrong answer choice.","Solve 4 mixed items together with a strategy check.","Complete a 10-item mixed practice set."],
+  ["Review","EOG review: multiplication and division","Model 2 multi-step items; underline the question and plan before solving.","Solve 4 items together and compare strategies.","Complete a 10-item practice set."],
+  ["Review","EOG review: fractions","Model 2 fraction items with number lines and area models.","Solve 4 items together.","Complete a 10-item fraction practice set."],
+  ["Review","EOG review: decimals and measurement","Model 2 items on decimal comparison and conversions.","Solve 4 items together.","Complete a 10-item practice set."],
+  ["Review","EOG review: geometry and data","Model 2 items on angles and line plots.","Solve 4 items together.","Complete a 10-item practice set."],
+  ["Review","Mixed-standards practice test","Review test strategies: read twice, estimate, eliminate choices, check work.","Work 3 items together and discuss reasoning.","Timed mixed practice test; self-check the next day."]]}
+]},
+5:{
+2:[
+ {t:"Whole-Number Division",s:"NC.5.NBT.6",L:[
+  ["NC.5.NBT.6","Divide using place value patterns","Show 3,600 ÷ 40 using a basic fact and place value (36 ÷ 4).","Solve a pattern set together (240 ÷ 6, 2,400 ÷ 60).","Solve 10 pattern problems and explain one in writing."],
+  ["NC.5.NBT.6","Partial quotients with 2-digit divisors","Solve 1,248 ÷ 24 with an area model and partial quotients.","Solve 2 problems together using friendly multiples (10×, 20×, 5×).","Solve 4 problems with partial quotients; check by multiplying."],
+  ["NC.5.NBT.6","Estimate quotients with compatible numbers","Estimate 2,317 ÷ 38 using 2,400 ÷ 40.","Estimate 4 quotients together and compare to the exact answers.","Estimate, then solve 4 problems; flag unreasonable answers."],
+  ["NC.5.NBT.6","Division word problems and remainders","Model a word problem where the remainder changes the answer (buses needed).","Solve 3 word problems together and decide what to do with each remainder.","Solve 4 division word problems; exit ticket: 1 problem."]]},
+ {t:"Decimal Place Value",s:"NC.5.NBT.1, NC.5.NBT.3",L:[
+  ["NC.5.NBT.1","Place value patterns to thousandths","Show with place value disks that each place is 10 times the place to its right and 1/10 of the place to its left.","Multiply and divide 3 numbers by 10 together and describe the shift.","Complete a place value patterns chart for 6 numbers."],
+  ["NC.5.NBT.3","Read and write decimals to thousandths","Write 4.307 in standard, word and expanded form.","Translate 4 numbers between forms together.","Complete 8 items across all three forms."],
+  ["NC.5.NBT.3","Compare decimals to thousandths","Compare 0.45 and 0.405 on a place value chart; find where the digits first differ.","Compare and order 2 sets together.","Compare 8 pairs and order 2 sets of decimals."]]},
+ {t:"Add & Subtract Decimals",s:"NC.5.NBT.7",L:[
+  ["NC.5.NBT.7","Add decimals with models","Add 1.46 + 0.8 with base-ten blocks, then record by lining up place values.","Solve 3 sums together, including one with regrouping.","Solve 6 decimal addition problems."],
+  ["NC.5.NBT.7","Subtract decimals","Subtract 4.2 − 1.75 with a model; show the zero placeholder.","Solve 3 problems together.","Solve 6 decimal subtraction problems."],
+  ["NC.5.NBT.7","Estimate to check decimal sums and differences","Round to whole numbers to check 12.48 + 7.6.","Spot the errors in 3 worked examples together.","Solve and check 5 word problems with estimates."]]},
+ {t:"Multiply Decimals",s:"NC.5.NBT.7",L:[
+  ["NC.5.NBT.7","Multiply a decimal by a whole number","Model 4 × 0.6 and 3 × 1.25 with area models.","Solve 3 problems together.","Solve 6 problems, estimating first."],
+  ["NC.5.NBT.7","Multiply decimals by decimals","Shade 0.3 × 0.4 on a hundredths grid.","Solve 3 problems together with grids or area models.","Solve 6 problems; explain where the decimal point goes in one."],
+  ["NC.5.NBT.7","Multiply by powers of 10","Show 2.35 × 10, × 100 and × 1,000 on a place value chart.","Practice a pattern set together.","Complete 10 power-of-10 problems."]]},
+ {t:"Divide Decimals",s:"NC.5.NBT.7",L:[
+  ["NC.5.NBT.7","Divide a decimal by a whole number","Model 4.8 ÷ 4 by sharing base-ten blocks into groups.","Solve 3 problems together.","Solve 6 problems with models and check by multiplying."],
+  ["NC.5.NBT.7","Divide a whole number by a decimal","Use repeated subtraction: how many 0.5s are in 3?","Solve 3 problems together on number lines.","Solve 6 problems with repeated subtraction or area models."],
+  ["NC.5.NBT.7","Multi-step decimal word problems","Model a money problem that uses two operations.","Solve 2 problems together and check reasonableness.","Solve 4 multi-step decimal problems."]]}
+],
+3:[
+ {t:"Add & Subtract Fractions",s:"NC.5.NF.1",L:[
+  ["NC.5.NF.1","Find common denominators","Use area models to rename 1/3 and 1/4 as twelfths.","Find common denominators for 4 pairs together.","Rename 8 pairs with common denominators."],
+  ["NC.5.NF.1","Add and subtract unlike denominators","Solve 2/3 + 1/4 with an area model, then an equation.","Solve 3 problems together.","Solve 6 problems with unlike denominators."],
+  ["NC.5.NF.1","Add and subtract mixed numbers","Solve 3 1/2 − 1 2/3 by renaming and regrouping.","Solve 3 problems together.","Solve 6 mixed-number problems."],
+  ["NC.5.NF.1","Estimate with benchmark fractions","Estimate 7/8 + 5/12 using 1 and 1/2.","Check 4 answers for reasonableness together.","Estimate before solving 5 problems."],
+  ["NC.5.NF.1","Fraction addition and subtraction word problems","Model a two-step word problem with a bar model and an equation.","Solve 2 problems together.","Solve 4 word problems; exit ticket: 1 problem."]]},
+ {t:"Fractions as Division",s:"NC.5.NF.3",L:[
+  ["NC.5.NF.3","Fair sharing as fractions","Share 3 sandwiches among 4 people with drawings; each gets 3/4.","Solve 3 sharing problems together.","Solve 5 sharing problems with drawings."],
+  ["NC.5.NF.3","Interpret a/b as a ÷ b","Connect 7 ÷ 3 to 7/3 = 2 1/3; decide which two whole numbers the answer falls between.","Solve 3 word problems together.","Solve 5 problems, writing each as a fraction and as a division equation."]]},
+ {t:"Multiply Fractions",s:"NC.5.NF.4",L:[
+  ["NC.5.NF.4","Multiply a fraction by a whole number","Model 2/3 × 6 with groups and a number line.","Solve 3 problems together.","Solve 6 problems with models."],
+  ["NC.5.NF.4","Multiply fractions with area models","Shade 2/3 × 3/4 on an area model; connect it to multiplying numerators and denominators.","Solve 3 problems with area models together.","Solve 6 problems; draw the model for two."],
+  ["NC.5.NF.4","Multiplication as scaling","Predict whether 5 × 3/4 is more or less than 5 without computing.","Sort 6 expressions together: greater than, less than or equal to the whole-number factor.","Solve 6 scaling items with explanations."],
+  ["NC.5.NF.4","Fraction multiplication word problems","Model a recipe problem: 3/4 of a 2/3-cup portion.","Solve 2 problems together.","Solve 4 word problems with models and equations."]]},
+ {t:"Divide Unit Fractions",s:"NC.5.NF.7",L:[
+  ["NC.5.NF.7","Divide a unit fraction by a whole number","Model 1/2 ÷ 3 by splitting a fraction strip into 3 parts.","Solve 3 problems together.","Solve 6 problems with models."],
+  ["NC.5.NF.7","Divide a whole number by a unit fraction","Model 4 ÷ 1/3: how many thirds are in 4?","Solve 3 problems together on number lines.","Solve 6 problems with models."],
+  ["NC.5.NF.7","Fraction division word problems","Model a context for each type of division and write the equation.","Solve 2 problems together.","Solve 4 word problems; exit ticket: 1 problem."]]},
+ {t:"Line Plots",s:"NC.5.MD.2",L:[
+  ["NC.5.MD.2","Line plots with fractional data","Build a line plot of water measured in beakers (1/2, 1/4, 1/8 cup); find the total and the fair share.","Answer 3 questions about a line plot together.","Create a line plot and answer 4 operation questions about it."]]}
+],
+4:[
+ {t:"Volume",s:"NC.5.MD.4, NC.5.MD.5",L:[
+  ["NC.5.MD.4","Volume as unit cubes","Fill a box with unit cubes and count the layers.","Find the volume of 3 cube models together.","Find the volume of 6 figures by counting cubes."],
+  ["NC.5.MD.5","V = l × w × h and V = B × h","Connect layers of cubes to both formulas with a rectangular prism.","Solve 3 problems together with each formula.","Solve 6 volume problems."],
+  ["NC.5.MD.5","Volume of composite figures","Split an L-shaped solid into two prisms and add the volumes.","Solve 2 composite figures together.","Solve 4 composite-figure problems."],
+  ["NC.5.MD.5","Volume word problems","Model a packing problem (boxes in a crate).","Solve 2 problems together.","Solve 4 real-world volume problems."]]},
+ {t:"Coordinate Plane & Patterns",s:"NC.5.G.1, NC.5.OA.3",L:[
+  ["NC.5.G.1","Graph points in the first quadrant","Define the axes, origin and ordered pairs; plot a treasure-map route.","Plot and name points together.","Plot 10 points and answer distance questions."],
+  ["NC.5.OA.3","Generate two numerical patterns","Generate patterns for 'add 3' and 'add 6' from 0; compare corresponding terms.","Build a table for a second pair of rules together.","Generate 2 patterns, form ordered pairs and describe the relationship."],
+  ["NC.5.OA.3","Graph patterns as ordered pairs","Graph the ordered pairs from the pattern table and describe the line.","Graph a second set together.","Graph 2 pattern sets and interpret them."]]},
+ {t:"Classify 2-D Figures",s:"NC.5.G.3",L:[
+  ["NC.5.G.3","Quadrilateral hierarchy","Build a hierarchy diagram showing why a square is also a rectangle and a rhombus.","Place 6 shapes in the hierarchy together.","Complete a hierarchy and answer always/sometimes/never items."],
+  ["NC.5.G.3","Classify by properties","Classify figures by sides, angles and parallel sides.","Sort a figure set together.","Draw shapes that meet given properties."]]},
+ {t:"Measurement Conversions",s:"NC.5.MD.1",L:[
+  ["NC.5.MD.1","Convert within a measurement system","Use a conversion chart to convert 3.5 m to cm and 48 oz to lb.","Convert 4 measurements together.","Complete 10 conversions using the chart."],
+  ["NC.5.MD.1","Conversion word problems","Model a one-step conversion problem in a real-world context.","Solve 2 problems together.","Solve 4 conversion word problems."]]},
+ {t:"Expressions & EOG Review",s:"NC.5.OA.2 + all Grade 5 standards",test:false,L:[
+  ["NC.5.OA.2","Write and evaluate expressions","Write 'three times the sum of 8 and 5' as 3 × (8 + 5) and evaluate it.","Evaluate 4 expressions with parentheses together.","Write and evaluate 6 expressions."],
+  ["Review","EOG review: whole-number operations","Solve 2 released-style items, thinking aloud about each wrong answer choice.","Solve 4 mixed items together.","Complete a 10-item practice set."],
+  ["Review","EOG review: decimals","Model 2 decimal items with place value charts.","Solve 4 items together.","Complete a 10-item practice set."],
+  ["Review","EOG review: fractions","Model 2 fraction items with area models.","Solve 4 items together.","Complete a 10-item practice set."],
+  ["Review","EOG review: measurement and geometry","Model 2 items on volume and the coordinate plane.","Solve 4 items together.","Complete a 10-item practice set."],
+  ["Review","Mixed-standards practice test","Review test strategies: read twice, estimate, eliminate choices, check work.","Work 3 items together and discuss reasoning.","Timed mixed practice test; self-check the next day."]]}
+]}};
+
+// ELA 2-week units (10 days). f = unit goal as a verb phrase
+const ELA = {
+2:[
+ {t:"Theme, Summary & Character",s4:"RL.4.1, RL.4.2, RL.4.3, W.4.3, L.4.1",s5:"RL.5.1, RL.5.2, RL.5.3, W.5.3, L.5.1",f:"determine a theme, summarize, and describe (4th) or compare (5th) characters, settings and events",tx:"realistic fiction and folktales",w:"a personal or fictional narrative with clear sequence and dialogue",l:"verb tenses and complete sentences"},
+ {t:"Informational Text Structure",s4:"RI.4.2, RI.4.5, W.4.2, L.4.4",s5:"RI.5.2, RI.5.5, W.5.2, L.5.4",f:"identify main ideas and explain how the text structure organizes information",tx:"science and social studies articles",w:"an informative piece organized by one text structure",l:"context clues and Greek and Latin roots"},
+ {t:"Point of View & Accounts",s4:"RL.4.6, RI.4.6, W.4.3, L.4.5",s5:"RL.5.6, RI.5.6, W.5.3, L.5.5",f:"compare points of view and different accounts of the same event",tx:"first- and third-person stories and paired firsthand/secondhand accounts",w:"a scene retold from a different point of view",l:"similes and metaphors"},
+ {t:"Poetry, Drama & Word Meaning",s4:"RL.4.4, RL.4.5, L.4.5",s5:"RL.5.4, RL.5.5, L.5.5",f:"explain how poems and dramas are built and figure out the meaning of figurative words and phrases",tx:"poems and a short play",w:"an original poem or reader's-theater script",l:"idioms, adages and proverbs"}],
+3:[
+ {t:"Author's Reasons & Opinion Writing",s4:"RI.4.8, W.4.1, L.4.1",s5:"RI.5.8, W.5.1, L.5.1",f:"explain how an author uses reasons and evidence to support a point",tx:"opinion articles and editorials for kids",w:"an opinion essay with reasons, evidence and a conclusion",l:"linking words (for instance, in order to, consequently)"},
+ {t:"Integrating Information & Visuals",s4:"RI.4.7, RI.4.9, W.4.7, W.4.8",s5:"RI.5.7, RI.5.9, W.5.7, W.5.8",f:"interpret charts, diagrams and timelines and combine information from two texts on one topic",tx:"paired informational texts with graphics",w:"a short research report from two sources",l:"paraphrasing and citing sources"},
+ {t:"Comparing Stories Across Texts",s4:"RL.4.7, RL.4.9, W.4.2",s5:"RL.5.7, RL.5.9, W.5.2",f:"compare how stories treat similar themes and topics (4th: across cultures; 5th: same genre)",tx:"tales from different cultures or stories in one genre",w:"a compare-and-contrast literary response",l:"comparison transition words"},
+ {t:"Explaining Events & Ideas",s4:"RI.4.3, RI.4.4, L.4.4, L.4.6",s5:"RI.5.3, RI.5.4, L.5.4, L.5.6",f:"explain events, procedures and ideas (5th: relationships among them) using specific details and domain words",tx:"history and science texts",w:"an explanatory piece about a historical or scientific process",l:"domain-specific vocabulary and word parts"}],
+4:[
+ {t:"Research & Presentation",s4:"W.4.7, W.4.8, SL.4.4, SL.4.5",s5:"W.5.7, W.5.8, SL.5.4, SL.5.5",f:"gather information from several sources and present findings with facts and visuals",tx:"student-selected research sources",w:"a research report with a visual or digital presentation",l:"presentation language, pacing and eye contact"},
+ {t:"Literature Deep Dive",s4:"RL.4.1, RL.4.2, RL.4.3, RL.4.10",s5:"RL.5.1, RL.5.2, RL.5.3, RL.5.10",f:"use quoted details to support inferences about theme, characters and events in a longer text",tx:"a class novel or long short story",w:"a literary analysis paragraph with quoted evidence",l:"punctuating quotations"},
+ {t:"Informational Synthesis",s4:"RI.4.1, RI.4.2, RI.4.3, RI.4.8, W.4.2",s5:"RI.5.1, RI.5.2, RI.5.3, RI.5.8, W.5.2",f:"draw inferences and summarize key ideas across paired informational texts",tx:"paired informational articles",w:"an informative essay that synthesizes two texts",l:"combining sentences and varying sentence structure"},
+ {t:"EOG Readiness: Paired Passages",s4:"RL.4.1–RL.4.9, RI.4.1–RI.4.9, L.4.4, L.4.5",s5:"RL.5.1–RL.5.9, RI.5.1–RI.5.9, L.5.4, L.5.5",f:"answer literary and informational paired-passage questions with text evidence",tx:"released-style paired passages",w:"short constructed responses with text evidence",l:"vocabulary in context"}]};
+
+// Science objective: [code, title, Engage, Explore, Explain, Elaborate, Evaluate]
+const SCI = {
+4:{
+2:[
+ {t:"Earth's Changing Surface",s:"ESS.4.2",O:[
+  ["ESS.4.2.1","Classify minerals","A tray of mystery minerals that look alike: how can a scientist tell them apart?","Test samples for hardness (fingernail, penny, steel nail), streak, luster and cleavage; record results in a data table.","Key terms: mineral, hardness, Mohs scale, streak, luster, cleavage.","Use a mineral identification key to name three unknown samples.","CER: Which property test was most useful for identifying your minerals? Support your claim with your data."],
+  ["ESS.4.2.2","Classify rocks","Three rocks: one with layers, one with crystals, one with holes. How did each form?","Sort rock samples by texture, layers and crystals; model the rock cycle with crayon shavings using pressure and heat.","Key terms: igneous, sedimentary, metamorphic, rock cycle, sediment, magma.","Draw a rock cycle diagram that traces one rock becoming another.","CER: Classify an unknown rock and explain how it formed."],
+  ["ESS.4.2.3","Slow and fast changes to Earth's surface","Before-and-after photos of the Outer Banks shoreline and a mountain landslide.","Use a sand tray or stream table to test how slope and amount of water change erosion.","Key terms: weathering, erosion, deposition, earthquake, volcano, landslide.","Sort events as slow or fast changes and place NC examples on a map.","CER: Which process changed your model landform the most? Use your measurements."]]},
+ {t:"Fossils as Evidence",s:"LS.4.2",O:[
+  ["LS.4.2.1","Compare fossils to living organisms","A shark tooth fossil found in eastern NC, miles from today's ocean.","Make mold and cast fossils with clay; compare fossil images to living relatives.","Key terms: fossil, mold, cast, preserved remains, trace fossil, extinct.","Match four fossils to modern organisms; list shared and different features.","CER: Is this fossil related to a living organism? Use observed features as evidence."],
+  ["LS.4.2.2","Fossils and Earth's early environments","Fish fossils found in rock layers high on a mountain.","Analyze a rock-layer diagram with fossils and order the layers from oldest to youngest.","Key terms: rock layers, superposition, environment, ancient.","Use fossil data to describe an ancient environment in North Carolina.","CER: What was this place like long ago? Cite fossils as evidence."]]}],
+3:[
+ {t:"Forces: Magnets & Static Electricity",s:"PS.4.1",O:[
+  ["PS.4.1.1","Magnetic interactions","A paper clip moves without being touched.","Test which objects a magnet attracts; measure how distance changes the pull through paper or cardboard.","Key terms: magnet, attract, repel, poles, magnetic field, non-contact force.","Design a magnetic sorting tool for a recycling center (steel vs. aluminum cans).","CER: How does distance affect magnetic force? Use your measurements."],
+  ["PS.4.1.2","Electrically charged objects","A rubbed balloon makes hair stand up and bends a stream of water.","Charge balloons and combs; observe pushes and pulls on paper bits, cereal and other balloons.","Key terms: static electricity, charge, positive, negative, attract, repel.","Compare magnetic and electric forces in a Venn diagram.","CER: Explain why two charged balloons pushed apart."]]},
+ {t:"Energy & Circuits",s:"PS.4.2",O:[
+  ["PS.4.2.1","Forms of energy","A wind-up toy, a flashlight, a drum and a hot plate: how does each cause change?","Rotate through energy stations (light, sound, heat, electrical) and record evidence of motion or change.","Key terms: energy, light, sound, heat, electrical, transfer.","Trace an energy transfer chain in a household object.","CER: Name the energy in a scenario and explain how it causes change."],
+  ["PS.4.2.2","Simple circuits","A string of lights where one bulb will not light.","Build circuits with a battery, wire and bulb; find which setups light the bulb.","Key terms: circuit, open, closed, battery, switch, current.","Add a switch to the circuit and draw a labeled diagram.","CER: Why does a circuit need to be closed? Use your circuit tests."],
+  ["PS.4.2.3","Conductors and insulators","Why are electrical wires covered in plastic?","Test 10 materials in a circuit tester and classify each as a conductor or insulator.","Key terms: conductor, insulator, metal, current, safety.","Choose materials for a safe extension cord and justify each choice.","CER: Is this material a conductor or an insulator? Use your test results."]]},
+ {t:"Light",s:"PS.4.3",O:[
+  ["PS.4.3.1","Reflection","A periscope lets you see over a wall.","Shine flashlights at mirrors from different angles and trace the light's path on paper.","Key terms: reflect, angle, light source, path, mirror.","Build a simple periscope or mirror maze.","CER: Predict where reflected light will go and explain using your angle data."],
+  ["PS.4.3.2","Refraction and absorption","A pencil looks broken in a glass of water.","Shine light through water, glass and plastic; compare how black and white paper absorb light using thermometers.","Key terms: refract, absorb, transparent, translucent, opaque.","Classify materials as transparent, translucent or opaque and predict how light behaves.","CER: Explain why the pencil looks bent."]]}],
+4:[
+ {t:"Adaptations & Survival",s:"LS.4.1",O:[
+  ["LS.4.1.1","External structures and survival","Photos of a porcupine, a cactus and a Venus flytrap, which is native to NC.","Examine plant and animal specimens or images; model how thorns, shells and beaks help survival.","Key terms: structure, function, adaptation, survival.","Design an organism with structures suited to a given habitat.","CER: How does one structure help this organism survive?"],
+  ["LS.4.1.2","Senses and responses","An owl hunts in total darkness.","Run sense tests (sound direction, touch sensitivity) and model the path from senses to brain to response.","Key terms: senses, stimulus, response, brain, information.","Compare how three animals use different senses to find food or avoid danger.","CER: Explain how an animal receives and responds to information."],
+  ["LS.4.1.3","Differences that help survival","Moths of different colors resting on light and dark tree bark.","Camouflage simulation: 'predators' collect colored paper 'prey' from a patterned background; graph the survivors.","Key terms: variation, population, trait, advantage, habitat.","Analyze data on changes in beak size or fur color in a population.","CER: Which trait gives an advantage in this habitat? Use your graph."]]},
+ {t:"Humans & the Environment",s:"ESS.4.3",O:[
+  ["ESS.4.3.1","Beneficial and harmful changes","Photos of a forest right after a wildfire, one year later and five years later.","Sort environmental-change cards and record who is helped or harmed by each.","Key terms: environment, beneficial, harmful, habitat, change.","Investigate a local change (a new road, a beaver dam) and its effects on organisms.","CER: Is this change beneficial or harmful for this organism?"],
+  ["ESS.4.3.2","Humans adapting to change","A neighborhood that floods after every heavy rain.","Model runoff on bare soil and on soil with plants; measure the water collected.","Key terms: runoff, rain garden, native species, recycling, conservation.","Plan a rain garden or recycling change for the school.","CER: How can people change their behavior to protect an environment? Use your model data."],
+  ["ESS.4.3.3","Compare solutions to environmental problems","Sea turtle hatchlings on NC beaches are affected by lights and plastic.","Research two solutions to one environmental problem using articles and data.","Key terms: solution, criteria, constraints, impact.","Present a comparison of solutions on a criteria chart.","CER: Which solution is best for these plants or animals? Use your criteria as evidence."]]}]},
+5:{
+2:[
+ {t:"Matter & Its Interactions",s:"PS.5.1",O:[
+  ["PS.5.1.1","Weight before and after an interaction","Does a sealed bag of baking soda and vinegar weigh less after the fizzing stops?","Weigh materials before and after mixing, dissolving and a sealed reaction; record in a data table.","Key terms: matter, weight, mass, conservation, interaction.","Predict and test the weight of an object's parts compared to the whole object.","CER: Did the total weight change? Use your measurements."],
+  ["PS.5.1.2","Mixing substances","Milk and vinegar form curds; salt in water seems to disappear.","Mix pairs of substances and record properties before and after; look for gas, color change or temperature change.","Key terms: mixture, solution, physical change, chemical change, new substance.","Sort everyday examples as mixtures or new substances.","CER: Did mixing make a new substance? Cite your evidence."],
+  ["PS.5.1.3","Heating and cooling materials","Why do sidewalks have gaps, and why does chocolate melt in your hand?","Test how heating and cooling change butter, wax, ice and a balloon stretched over a bottle.","Key terms: melt, freeze, expand, contract, temperature.","Design a lunch container that keeps food cold and explain the materials.","CER: How does heating or cooling affect this material, and why does that matter for its use?"]]},
+ {t:"Force & Motion",s:"PS.5.2",O:[
+  ["PS.5.2.1","Gravity, friction and mass","Why does a loaded wagon take more effort to stop?","Roll toy cars down ramps over different surfaces and with added mass; measure distance traveled.","Key terms: force, gravity, friction, mass, motion.","Design a safer playground slide surface using friction data.","CER: How did the surface or mass affect motion? Use your data."],
+  ["PS.5.2.2","Describe motion with math","Who was faster: the runner who went farther, or the one who finished first?","Time cars over set distances, calculate speed (distance ÷ time) and graph position over time.","Key terms: position, direction, speed, distance, time, graph.","Interpret distance-time graphs of different trips.","CER: Which object moved fastest? Use your calculations and graph."]]}],
+3:[
+ {t:"Human Body Systems",s:"LS.5.1",O:[
+  ["LS.5.1.1","Levels of organization","How does one cell become part of a whole human?","Order cell → tissue → organ → system → organism with nesting cups; observe cell images.","Key terms: cell, tissue, organ, organ system, organism, multicellular.","Create a levels-of-organization flowchart for one body system.","CER: Explain how cells, tissues and organs work together."],
+  ["LS.5.1.2","Major body systems","Your heart rate and breathing speed up when you run.","Measure pulse and breathing rate at rest and after exercise; model the digestive tract with yarn and the lungs with a balloon model.","Key terms: digestive, respiratory, circulatory, muscular, skeletal, nervous.","Build a body-systems interaction chart for a real activity such as eating or running.","CER: How do two body systems work together during exercise? Use your pulse data."]]},
+ {t:"Ecosystems",s:"LS.5.2",O:[
+  ["LS.5.2.1","Compare ecosystems","An NC estuary and a mountain forest: which supports more kinds of life?","Analyze ecosystem data cards (estuary, salt marsh, ocean, pond, river, forest, grassland) for living and nonliving features.","Key terms: ecosystem, biotic, abiotic, population, estuary, salt marsh.","Build a terrarium or aquarium model and observe it for a week.","CER: Which ecosystem supports the greatest variety of populations, and why?"],
+  ["LS.5.2.2","Producers, consumers, decomposers","A fallen log covered in mushrooms and insects.","Observe decomposition in sealed bags (bread, fruit); build food chains from organism cards.","Key terms: producer, consumer, decomposer, food chain, food web, energy.","Construct a food web for an NC ecosystem.","CER: What would happen without decomposers? Use your observations."],
+  ["LS.5.2.3","Interconnected relationships","What happens to a salt marsh when blue crabs disappear?","Model a food web with yarn; remove one organism and record what changes.","Key terms: interdependence, predator, prey, competition, balance.","Analyze population data for a predator and its prey.","CER: Predict the effect of removing one organism. Use the model as evidence."]]}],
+4:[
+ {t:"Heredity & Behavior",s:"LS.5.3",O:[
+  ["LS.5.3.1","Instincts and learned behaviors","A hatchling sea turtle heads for the ocean; a dog learns to sit.","Sort behavior cards and watch video examples; record evidence for instinct or learned.","Key terms: instinct, learned behavior, survival, environment.","Interview family members about learned skills and compare them to animal instincts.","CER: Is this behavior an instinct or learned? Explain with evidence."],
+  ["LS.5.3.2","Inherited and acquired traits","Puppies from one litter look different, and a dog's scar is not passed to its puppies.","Survey class traits (attached earlobes, tongue rolling) and compare them to acquired traits (scars, skills).","Key terms: trait, inherited, acquired, offspring, parent.","Create a trait family tree for a fictional animal family.","CER: Is this trait inherited or acquired? Use evidence."]]},
+ {t:"Science EOG Review",s:"Grade 5 cumulative",test:false,O:[
+  ["ESS.5.1","Review: weather, climate and the water cycle","Revisit: a hurricane forecast for the NC coast.","Review stations: weather data tables, ocean influence and a water cycle model.","Key ideas: weather vs. climate, the Gulf Stream, evaporation, transpiration, condensation, precipitation.","Practice released-style items that use data tables.","Quiz: mixed Earth systems items."],
+  ["PS.5.1–PS.5.2","Review: matter, force and motion","Revisit: a sealed reaction and a ramp race.","Review stations: weight before and after, heating and cooling, speed calculations.","Key ideas: conservation of weight, new substances, friction, gravity, speed.","Practice released-style items with graphs.","Quiz: mixed physical science items."],
+  ["LS.5.1–LS.5.3","Review: body systems, ecosystems and traits","Revisit: pulse data and an estuary food web.","Review stations: body systems, food webs, traits and behaviors.","Key ideas: levels of organization, producers/consumers/decomposers, inherited vs. acquired.","Practice released-style items with models.","Quiz: mixed life science items."]]}]}};
+
+const ASSUMED_Q1 = {
+ m4:"Q1 (assumed complete): NC.4.NBT.1, NBT.2, NBT.4 and OA.3 — place value, comparing and rounding, multi-digit addition and subtraction.",
+ m5:"Q1 (assumed complete): NC.5.NBT.5 multi-digit multiplication and an introduction to NC.5.OA.2 expressions.",
+ ela:"Q1 (assumed complete): reading routines, text evidence (RL.1 / RI.1) and narrative writing basics.",
+ s4:"Q1 (assumed complete): ESS.4.1 day and night and phases of the moon.",
+ s5:"Q1 (assumed complete): ESS.5.1 weather, climate and the water cycle."};
+
+/* ---------------- ESSENTIAL QUESTIONS & I CAN ---------------- */
+const RV="Which strategies help me solve this kind of problem accurately?";
+const MEQ={
+4:{
+"Interpret multiplication as comparison":["How can multiplication compare two amounts?","I can explain a multiplication equation as a comparison, like 12 is 3 times as many as 4."],
+"Solve multiplicative comparison word problems":["How do I know when a problem is asking 'how many times as many'?","I can solve comparison word problems using a tape diagram and an equation."],
+"Additive vs. multiplicative comparison":["How is 'more than' different from 'times as many'?","I can tell additive and multiplicative comparisons apart and solve both."],
+"Find factor pairs with arrays":["How can arrays help me find all the factors of a number?","I can find all the factor pairs for a whole number from 1 to 100."],
+"Prime and composite numbers":["What makes a number prime or composite?","I can decide whether a number is prime or composite and explain why."],
+"Multiples and the factor–multiple link":["How are factors and multiples related?","I can list multiples of a number and explain how factors and multiples are connected."],
+"Multiply by multiples of 10 and 100":["How does place value help me multiply by tens and hundreds?","I can use basic facts and place value to multiply by multiples of 10 and 100."],
+"Multiply up to 3-digit by 1-digit with area models":["How can breaking a number apart make multiplication easier?","I can multiply a number with up to 3 digits by a 1-digit number using an area model."],
+"Record partial products":["How does an area model connect to partial products?","I can record partial products to multiply multi-digit numbers."],
+"Multiply two 2-digit numbers":["How can an area model help me multiply two 2-digit numbers?","I can multiply two 2-digit numbers using an area model or partial products."],
+"Estimate products and check reasonableness":["How do I know if my answer makes sense?","I can estimate a product and use it to check whether my answer is reasonable."],
+"Multi-step word problems with multiplication":["How do I plan and solve a problem with more than one step?","I can solve multi-step word problems and write an equation with a letter for the unknown."],
+"Divide with place value models":["How can I share a number equally using place value?","I can divide using base-ten blocks or drawings."],
+"Divide with area models and partial quotients":["How can multiplication help me divide?","I can divide using an area model and partial quotients."],
+"Find quotients with remainders":["What does a remainder mean?","I can find a quotient with a remainder and check it with multiplication."],
+"Interpret remainders in word problems":["How does the situation tell me what to do with a remainder?","I can decide what to do with a remainder in a word problem and explain why."],
+"Area and perimeter of rectangles":["How are area and perimeter different?","I can find the area and perimeter of a rectangle using formulas."],
+"Find an unknown side length":["How can I find a missing side when I know the area or perimeter?","I can find an unknown side length of a rectangle."],
+"Area is additive: rectilinear figures":["How can I find the area of a shape that isn't a rectangle?","I can find the area of a rectilinear figure by breaking it into rectangles."],
+"Area and perimeter word problems":["How do I decide whether a problem needs area or perimeter?","I can solve real-world problems with area and perimeter."],
+"Equivalent fractions with area models":["How can two different fractions name the same amount?","I can use area models to show equivalent fractions."],
+"Equivalent fractions on a number line":["How does a number line show equivalent fractions?","I can show equivalent fractions on a number line."],
+"Generate equivalent fractions with n/n":["Why does multiplying by n/n make an equivalent fraction?","I can make equivalent fractions by multiplying the numerator and denominator by the same number."],
+"Compare with benchmarks 0, 1/2 and 1":["How can benchmark fractions help me compare?","I can compare fractions using 0, 1/2 and 1 as benchmarks."],
+"Compare with common numerators or denominators":["Which strategy should I use to compare two fractions?","I can compare fractions by finding a common numerator or denominator."],
+"Justify fraction comparisons":["Why must the wholes be the same size to compare fractions?","I can justify a fraction comparison with a model and words."],
+"Decompose fractions into unit fractions":["How can a fraction be broken into smaller parts?","I can decompose a fraction into a sum of fractions in more than one way."],
+"Add and subtract like denominators":["What happens to the denominator when I add or subtract like fractions?","I can add and subtract fractions with like denominators."],
+"Mixed numbers and fractions greater than 1":["How can the same amount be written as a mixed number and as a fraction?","I can rename mixed numbers as fractions greater than 1 and back again."],
+"Add and subtract mixed numbers":["How do I add and subtract mixed numbers when I need to regroup?","I can add and subtract mixed numbers with like denominators."],
+"Fraction word problems":["How can a model help me solve a fraction word problem?","I can solve word problems by adding and subtracting fractions."],
+"A fraction as a multiple of a unit fraction":["How is a fraction built from unit fractions?","I can write a fraction as a multiple of a unit fraction, like 5/4 = 5 × 1/4."],
+"Multiply a whole number by a fraction":["What does it mean to multiply a fraction by a whole number?","I can multiply a fraction by a whole number using a model and an equation."],
+"Fraction × whole number word problems":["When do I multiply a fraction by a whole number in real life?","I can solve word problems that multiply a fraction by a whole number."],
+"Tenths and hundredths as fractions":["How are tenths and hundredths related?","I can rename tenths as hundredths and add them."],
+"Read and write decimals":["How are decimals and fractions connected?","I can read and write decimals in standard, word and expanded form."],
+"Compare decimals to hundredths":["How can I tell which decimal is greater?","I can compare decimals to hundredths and explain my reasoning."],
+"Relative sizes of units and conversion tables":["Why does the number get bigger when I convert to a smaller unit?","I can use a conversion table to change a larger unit to a smaller unit."],
+"Measurement word problems":["How can a number line help me solve measurement problems?","I can solve word problems about time, money, distance and volume."],
+"Points, lines, segments and rays":["How are lines, segments and rays alike and different?","I can draw and label points, lines, line segments and rays."],
+"Parallel and perpendicular lines":["How can I tell if lines are parallel or perpendicular?","I can identify and draw parallel and perpendicular lines."],
+"Angles as turns: acute, right, obtuse":["How is an angle measured as a turn?","I can classify angles as acute, right or obtuse."],
+"Measure angles with a protractor":["How do I use a protractor accurately?","I can measure angles in whole degrees with a protractor."],
+"Draw angles of a given measure":["How do I draw an angle of an exact size?","I can draw an angle of a given measure using a protractor."],
+"Additive angles and unknown angles":["How can I find a missing angle?","I can find an unknown angle by adding or subtracting angle measures."],
+"Classify triangles":["How can angles and sides help me classify triangles?","I can classify triangles by their angles and sides."],
+"Classify quadrilaterals":["How can one shape belong to more than one group?","I can classify quadrilaterals by their sides and angles."],
+"Lines of symmetry":["How do I know if a figure has a line of symmetry?","I can find and draw lines of symmetry."],
+"Line plots with fractional measurements":["How can a line plot help me organize measurement data?","I can make a line plot with fractional measurements and answer questions about it."],
+"Interpret data and solve problems":["What stories can data tell us?","I can read data displays and use them to solve problems."],
+"Generate number patterns from a rule":["How can a rule create a pattern?","I can create a number pattern from a rule and describe its features."],
+"Shape patterns and pattern features":["What can I notice in a pattern that the rule doesn't say?","I can extend a shape pattern and write its rule."],
+"EOG review: place value, addition, subtraction":[RV,"I can solve place value, addition and subtraction problems and check my answers."],
+"EOG review: multiplication and division":[RV,"I can solve multiplication and division problems, including multi-step problems."],
+"EOG review: fractions":[RV,"I can solve fraction problems using models and equations."],
+"EOG review: decimals and measurement":[RV,"I can compare decimals and solve measurement problems."],
+"EOG review: geometry and data":[RV,"I can solve problems with angles, shapes and data."],
+"Mixed-standards practice test":["How can test strategies help me show what I know?","I can use strategies to solve mixed problems and check my work."]},
+5:{
+"Divide using place value patterns":["How does place value help me divide by multiples of 10?","I can use basic facts and place value patterns to divide."],
+"Partial quotients with 2-digit divisors":["How can friendly multiples help me divide by a 2-digit number?","I can divide by a 2-digit number using partial quotients and an area model."],
+"Estimate quotients with compatible numbers":["How can compatible numbers help me estimate a quotient?","I can estimate quotients with compatible numbers and check my answers."],
+"Division word problems and remainders":["How does the situation tell me what to do with a remainder?","I can solve division word problems and interpret the remainder."],
+"Place value patterns to thousandths":["How does a digit's value change as it moves left or right?","I can explain place value patterns when multiplying and dividing by 10."],
+"Read and write decimals to thousandths":["How can the same decimal be written in different forms?","I can read and write decimals to thousandths in standard, word and expanded form."],
+"Compare decimals to thousandths":["How can place value help me compare decimals?","I can compare and order decimals to thousandths."],
+"Add decimals with models":["Why do I line up place values when adding decimals?","I can add decimals using models and place value."],
+"Subtract decimals":["How do I subtract decimals with different numbers of digits?","I can subtract decimals using models and place value."],
+"Estimate to check decimal sums and differences":["How can estimating help me catch mistakes?","I can estimate to check whether a decimal sum or difference is reasonable."],
+"Multiply a decimal by a whole number":["How is multiplying a decimal like multiplying a whole number?","I can multiply a decimal by a whole number using models."],
+"Multiply decimals by decimals":["Why can a product be smaller than its factors?","I can multiply two decimals using grids and area models."],
+"Multiply by powers of 10":["What happens to the digits when I multiply by 10, 100 or 1,000?","I can multiply decimals by powers of 10 and explain the pattern."],
+"Divide a decimal by a whole number":["How can I share a decimal amount equally?","I can divide a decimal by a whole number using models."],
+"Divide a whole number by a decimal":["How many groups of a decimal fit into a whole number?","I can divide a whole number by a decimal using repeated subtraction or models."],
+"Multi-step decimal word problems":["How do I decide which operations to use?","I can solve multi-step word problems with decimals."],
+"Find common denominators":["Why do I need a common denominator to add fractions?","I can rename fractions with a common denominator."],
+"Add and subtract unlike denominators":["How can I add fractions that have different-sized parts?","I can add and subtract fractions with unlike denominators."],
+"Add and subtract mixed numbers":["How do I add and subtract mixed numbers with unlike denominators?","I can add and subtract mixed numbers with unlike denominators."],
+"Estimate with benchmark fractions":["How can benchmark fractions help me check my answer?","I can estimate fraction sums and differences with benchmark fractions."],
+"Fraction addition and subtraction word problems":["How can a model help me solve a fraction word problem?","I can solve word problems by adding and subtracting fractions."],
+"Fair sharing as fractions":["How is sharing equally related to fractions?","I can solve sharing problems and write the answer as a fraction."],
+"Interpret a/b as a ÷ b":["How is a fraction the same as division?","I can explain that the fraction a/b means a ÷ b."],
+"Multiply a fraction by a whole number":["What does it mean to find a fraction of a whole number?","I can multiply a fraction by a whole number with models."],
+"Multiply fractions with area models":["How can an area model show the product of two fractions?","I can multiply two fractions using an area model."],
+"Multiplication as scaling":["How can I predict the size of a product without multiplying?","I can explain how multiplying by a fraction less than or greater than 1 changes a number."],
+"Fraction multiplication word problems":["When do I multiply fractions in real life?","I can solve word problems by multiplying fractions."],
+"Divide a unit fraction by a whole number":["What happens when I share a unit fraction into equal groups?","I can divide a unit fraction by a whole number using models."],
+"Divide a whole number by a unit fraction":["How many unit fractions fit into a whole number?","I can divide a whole number by a unit fraction using models."],
+"Fraction division word problems":["How do I know what to divide by in a word problem?","I can solve word problems that divide with unit fractions."],
+"Line plots with fractional data":["How can a line plot help me solve problems with fractional data?","I can make a line plot with fractions and use it to solve problems."],
+"Volume as unit cubes":["What is volume, and how can I measure it?","I can find volume by counting unit cubes."],
+"V = l × w × h and V = B × h":["How do the volume formulas connect to layers of cubes?","I can find the volume of a rectangular prism using a formula."],
+"Volume of composite figures":["How can I find the volume of a figure made of two prisms?","I can find the volume of a composite figure by adding the volumes of its parts."],
+"Volume word problems":["When do we use volume in real life?","I can solve real-world volume problems."],
+"Graph points in the first quadrant":["How does an ordered pair tell me where to plot a point?","I can graph and name points in the first quadrant."],
+"Generate two numerical patterns":["How are two patterns with related rules connected?","I can generate two patterns and describe how their terms are related."],
+"Graph patterns as ordered pairs":["What does a graph show about a pattern?","I can graph ordered pairs from two patterns and explain the graph."],
+"Quadrilateral hierarchy":["How can one shape belong to several categories?","I can place quadrilaterals in a hierarchy based on their properties."],
+"Classify by properties":["Which properties decide how a figure is classified?","I can classify two-dimensional figures by their properties."],
+"Convert within a measurement system":["How can a conversion chart help me change units?","I can convert measurements within one system using a chart."],
+"Conversion word problems":["When do I need to convert units in real life?","I can solve word problems that need a measurement conversion."],
+"Write and evaluate expressions":["How do parentheses change the meaning of an expression?","I can write and evaluate expressions with parentheses."],
+"EOG review: whole-number operations":[RV,"I can multiply and divide whole numbers accurately and check my answers."],
+"EOG review: decimals":[RV,"I can compare and compute with decimals to thousandths."],
+"EOG review: fractions":[RV,"I can add, subtract, multiply and divide fractions using models and equations."],
+"EOG review: measurement and geometry":[RV,"I can solve problems with volume, conversions and the coordinate plane."],
+"Mixed-standards practice test":["How can test strategies help me show what I know?","I can use strategies to solve mixed problems and check my work."]}};
+const SEQ={
+"ESS.4.2.1":["How can scientists identify minerals?","I can test minerals for hardness, color, luster, cleavage and streak to classify them."],
+"ESS.4.2.2":["How do different kinds of rocks form?","I can classify rocks as igneous, sedimentary or metamorphic based on how they form."],
+"ESS.4.2.3":["What changes Earth's surface quickly, and what changes it slowly?","I can use models to explain slow and fast changes to Earth's surface."],
+"LS.4.2.1":["How are fossils like and unlike living things today?","I can compare fossils to each other and to living organisms."],
+"LS.4.2.2":["What can fossils tell us about Earth long ago?","I can use fossil evidence to describe Earth's early environments."],
+"PS.4.1.1":["How can magnets move objects without touching them?","I can explain how magnets interact with objects and with other magnets."],
+"PS.4.1.2":["How do charged objects push and pull on each other?","I can explain how electrically charged objects push or pull to cause motion."],
+"PS.4.2.1":["How does energy cause motion or change?","I can identify light, sound, heat and electrical energy and the changes they cause."],
+"PS.4.2.2":["What does electricity need in order to flow?","I can build and explain a simple electrical circuit."],
+"PS.4.2.3":["Why do some materials let electricity flow while others don't?","I can test materials and classify them as conductors or insulators."],
+"PS.4.3.1":["How does light travel and reflect?","I can explain how light reflects off a mirror at different angles."],
+"PS.4.3.2":["What happens to light when it passes through or hits different materials?","I can explain how light is refracted and absorbed."],
+"LS.4.1.1":["How do body parts help plants and animals survive?","I can explain how external structures help plants and animals survive."],
+"LS.4.1.2":["How do animals use their senses to survive?","I can explain how animals receive, process and respond to information."],
+"LS.4.1.3":["Why do some individuals survive better than others?","I can use evidence to explain how differences in a population help some animals survive."],
+"ESS.4.3.1":["How can changes in an environment help or harm living things?","I can decide whether a change in an environment is beneficial or harmful."],
+"ESS.4.3.2":["How can people change what they do to protect the environment?","I can explain how humans can change their behavior to live in changing environments."],
+"ESS.4.3.3":["How do we choose the best solution to an environmental problem?","I can compare solutions to environmental problems that affect plants and animals."],
+"PS.5.1.1":["Does matter disappear when substances interact?","I can show that total weight stays the same before and after an interaction."],
+"PS.5.1.2":["How can I tell if mixing substances made something new?","I can use evidence to explain whether mixing substances makes a new substance."],
+"PS.5.1.3":["How do heating and cooling change materials?","I can explain how heating and cooling affect materials and why that matters for how we use them."],
+"PS.5.2.1":["How do gravity, friction and mass affect motion?","I can explain how gravity, friction and mass change the motion of an object."],
+"PS.5.2.2":["How can math describe the way something moves?","I can use distance and time to describe an object's speed, direction and position."],
+"LS.5.1.1":["How is the human body organized?","I can explain how cells, tissues, organs and systems are organized in the body."],
+"LS.5.1.2":["How do the body's systems work together to keep us alive?","I can compare the major body systems and explain their functions."],
+"LS.5.2.1":["Why can some ecosystems support more living things than others?","I can compare ecosystems and explain how well each supports different populations."],
+"LS.5.2.2":["What role does each organism play in an ecosystem?","I can classify organisms as producers, consumers or decomposers."],
+"LS.5.2.3":["What happens to an ecosystem when one part changes?","I can predict how a change to one organism affects others in an ecosystem."],
+"LS.5.3.1":["Which behaviors are we born with, and which do we learn?","I can compare instincts and learned behaviors."],
+"LS.5.3.2":["Which traits come from parents, and which are acquired?","I can compare inherited traits and acquired traits."],
+"ESS.5.1":["How do Earth's air and water shape weather and climate?","I can explain weather patterns, the ocean's influence and the water cycle."],
+"PS.5.1–PS.5.2":["How do matter and forces change the world around us?","I can explain changes in matter and how forces affect motion."],
+"LS.5.1–LS.5.3":["How do living things survive and depend on each other?","I can explain body systems, ecosystems and traits."]};
+const EEQ={
+"Theme, Summary & Character":["How do authors develop characters and a theme?","I can determine a theme, summarize a story, and describe (4th) or compare (5th) characters, settings and events."],
+"Informational Text Structure":["How does the way a text is organized help me understand it?","I can identify the main idea and explain how the author organized the information."],
+"Point of View & Accounts":["How does who tells the story change the story?","I can compare points of view and different accounts of the same event."],
+"Poetry, Drama & Word Meaning":["How do poets and playwrights use structure and language to create meaning?","I can explain how poems and plays are built and figure out what figurative language means."],
+"Author's Reasons & Opinion Writing":["How do authors convince their readers?","I can explain how an author uses reasons and evidence to support a point."],
+"Integrating Information & Visuals":["How can information from different sources build my understanding?","I can use charts and diagrams and combine information from two texts."],
+"Comparing Stories Across Texts":["How can stories from different places or authors share a message?","I can compare how two stories treat a similar theme or topic."],
+"Explaining Events & Ideas":["How do authors explain how and why things happen?","I can explain events, procedures and ideas using specific details from the text."],
+"Research & Presentation":["How do researchers find and share information?","I can gather information from sources and present what I learned."],
+"Literature Deep Dive":["How do readers use evidence to understand a story deeply?","I can quote details from the text to support my inferences."],
+"Informational Synthesis":["How can reading more than one text give me a fuller picture?","I can draw inferences and summarize key ideas across two texts."],
+"EOG Readiness: Paired Passages":["How can I show what I know as a reader?","I can answer questions about paired passages using text evidence."]};
+const WIC=[
+ u=>`I can brainstorm ideas for ${u.w}.`,
+ u=>`I can name craft moves a mentor author uses.`,
+ u=>`I can plan ${u.w} with a graphic organizer.`,
+ u=>`I can start a draft of ${u.w}.`,
+ u=>`I can add details and elaboration to my draft.`,
+ u=>`I can finish my draft and talk about it in a conference.`,
+ u=>`I can revise my writing for organization and word choice.`,
+ u=>`I can edit my writing for ${u.l}.`,
+ u=>`I can write a final copy and check it with a rubric.`,
+ u=>`I can publish and share my writing.`];
+
+/* ---------------- SETTINGS / STORAGE ---------------- */
+const DEFAULT_HOL = `2026-11-11 Veterans Day
+2026-11-25 to 2026-11-27 Thanksgiving break
+2026-12-21 to 2027-01-01 Winter break
+2027-01-18 MLK Jr. Day
+2027-02-15 Teacher workday
+2027-03-25 Teacher workday
+2027-03-29 to 2027-04-02 Spring break
+2027-05-31 Memorial Day`;
+const DEFAULTS = {quarters:{2:{start:"2026-11-04",end:"2027-01-21"},3:{start:"2027-01-25",end:"2027-03-26"},4:{start:"2027-04-05",end:"2027-06-09"}},
+ holidays:DEFAULT_HOL, roster:"Student A\nStudent B\nStudent C\nStudent D\nStudent E", grade:"both", view:"day", pq:2};
+const store = {
+ get(k,f){try{const v=localStorage.getItem("pb45:"+k);return v==null?f:JSON.parse(v)}catch(e){return f}},
+ set(k,v){try{localStorage.setItem("pb45:"+k,JSON.stringify(v))}catch(e){}}
+};
+let S = Object.assign(JSON.parse(JSON.stringify(DEFAULTS)), store.get("settings",{}));
+const saveS = ()=>store.set("settings",S);
+let done = store.get("done",{});
+let notes = store.get("notes",{});
+
+/* ---------------- DATES ---------------- */
+const pad=n=>String(n).padStart(2,"0");
+const iso=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const parse=s=>{const[y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)};
+const addDays=(s,n)=>{const d=parse(s);d.setDate(d.getDate()+n);return iso(d)};
+const dow=s=>parse(s).getDay();
+const fmtLong=s=>parse(s).toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"});
+const fmtShort=s=>parse(s).toLocaleDateString("en-US",{month:"short",day:"numeric"});
+const fmtWk=s=>parse(s).toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const validDate=s=>/^\d{4}-\d{2}-\d{2}$/.test(s||"");
+
+/* ---------------- ENGINE ---------------- */
+let HOL={}, P={};
+function parseHolidays(txt){
+ const m={};
+ String(txt||"").split("\n").forEach(line=>{
+  const r=line.trim().match(/^(\d{4}-\d{2}-\d{2})(?:\s*(?:to|–|—)\s*(\d{4}-\d{2}-\d{2}))?\s*(.*)$/i);
+  if(!r) return;
+  let a=r[1], b=r[2]||r[1], g=0;
+  while(a<=b && g<400){ m[a]=r[3]||"No school"; a=addDays(a,1); g++; }
+ });
+ return m;
+}
+function buildMath(units,n,g){
+ const r=buildMath0(units,n); r.seq.forEach(x=>x.g=g); return r;
+}
+function buildMath0(units,n){
+ const lessons=[]; units.forEach(u=>u.L.forEach(l=>lessons.push(l)));
+ const tests=units.filter(u=>u.test!==false).length;
+ const base=lessons.length+tests;
+ const reserve=Math.max(0,Math.min(2,n-base));
+ const extra=Math.max(0,n-base-reserve);
+ const L=lessons.length, out=[]; let li=0;
+ units.forEach(u=>{
+  u.L.forEach(l=>{
+   const k=Math.floor(extra*(li+1)/L)-Math.floor(extra*li/L);
+   out.push({type:"lesson",u,code:l[0],target:l[1],i:l[2],w:l[3],y:l[4]});
+   for(let p=1;p<=k;p++) out.push({type:"practice",pn:p,u,code:l[0],target:l[1]});
+   li++;
+  });
+  if(u.test!==false) out.push({type:"test",u});
+ });
+ if(reserve>=1) out.push({type:"review",units});
+ if(reserve>=2) out.push({type:"bench",units});
+ return {seq:out.slice(0,n),over:Math.max(0,out.length-n)};
+}
+function buildSci(units,n){
+ const objs=[]; units.forEach(u=>u.O.forEach(o=>objs.push(o)));
+ const tests=units.filter(u=>u.test!==false).length;
+ const base=objs.length*5+tests;
+ const reserve=Math.max(0,Math.min(1,n-base));
+ const extra=Math.max(0,n-base-reserve);
+ const L=objs.length, out=[]; let oi=0;
+ units.forEach(u=>{
+  u.O.forEach(o=>{
+   const k=Math.floor(extra*(oi+1)/L)-Math.floor(extra*oi/L);
+   const ex2=Math.ceil(k/2), el2=Math.floor(k/2);
+   const mk=(phase,text)=>({type:"phase",u,code:o[0],title:o[1],phase,text});
+   out.push(mk("Engage","Phenomenon: "+o[2]+" Students record what they notice and wonder; post a driving question."));
+   out.push(mk("Explore","Investigation: "+o[3]));
+   for(let i=0;i<ex2;i++) out.push(mk("Explore","Investigation, round "+(i+2)+": change one variable, collect a second data set and compare it with the first."));
+   out.push(mk("Explain","Build understanding from the investigation. "+o[4]+" Add to science notebooks and the word wall."));
+   out.push(mk("Elaborate",o[5]));
+   for(let i=0;i<el2;i++) out.push(mk("Elaborate",i%2===0?"Read a short informational text on "+o[1].toLowerCase()+" and connect it to the class investigation.":"Apply it: solve a new real-world scenario about "+o[1].toLowerCase()+" with a partner."));
+   out.push(mk("Evaluate",o[6]));
+   oi++;
+  });
+  if(u.test!==false) out.push({type:"test",u});
+ });
+ if(reserve>=1) out.push({type:"flex",units});
+ return {seq:out.slice(0,n),over:Math.max(0,out.length-n)};
+}
+function buildELA(units,n){
+ const out=[];
+ units.forEach(u=>{for(let d=1;d<=10;d++) out.push({type:"ela",u,day:d})});
+ while(out.length<n) out.push({type:"flex"});
+ return {seq:out.slice(0,n),over:Math.max(0,out.length-n)};
+}
+function compute(){
+ HOL=parseHolidays(S.holidays); P={};
+ [2,3,4].forEach(q=>{
+  const Q=S.quarters[q]||{}; const days=[];
+  if(validDate(Q.start)&&validDate(Q.end)&&Q.start<=Q.end){
+   let d=Q.start,g=0;
+   while(d<=Q.end&&g<500){const w=dow(d); if(w>0&&w<6&&!HOL[d]) days.push(d); d=addDays(d,1); g++;}
+  }
+  const days5=days.filter(d=>dow(d)!==5);
+  const idx=a=>{const m={};a.forEach((d,i)=>m[d]=i);return m};
+  P[q]={days,days5,i:idx(days),i5:idx(days5),
+   m4:buildMath(MATH[4][q],days.length,4), m5:buildMath(MATH[5][q],days5.length,5),
+   ela:buildELA(ELA[q],days.length), s4:buildSci(SCI[4][q],days.length), s5:buildSci(SCI[5][q],days.length)};
+ });
+}
+const quarterOf=d=>[2,3,4].find(q=>{const Q=S.quarters[q];return Q&&Q.start<=d&&d<=Q.end});
+const isSchool=d=>{const q=quarterOf(d);return !!q && P[q].i[d]!==undefined};
+function stepSchool(d,dir){let x=d;for(let g=0;g<400;g++){x=addDays(x,dir);if(isSchool(x))return x}return null}
+function firstSchoolOnOrAfter(d){return isSchool(d)?d:stepSchool(d,1)}
+function whyOff(d){
+ const w=dow(d); if(w===0||w===6) return "Weekend";
+ if(HOL[d]) return HOL[d];
+ return quarterOf(d)?"No school":"Outside Quarters 2–4";
+}
+
+/* ---------------- TEXT HELPERS ---------------- */
+function mathView(e){
+ const m=mathView0(e); if(!m) return null;
+ let eq,ic;
+ if(e.type==="lesson"||e.type==="practice"){const x=(MEQ[e.g]||{})[e.target];eq=x?x[0]:"How can I use what I know to solve this kind of problem?";ic=x?x[1]:"I can "+lc(e.target)+".";}
+ else if(e.type==="test"){eq="What have I learned in this unit, and what do I still need to practice?";ic="I can show what I know about "+lc(e.u.t)+".";}
+ else if(e.type==="review"){eq="How do the ideas from this quarter connect?";ic="I can solve mixed problems from this quarter's units.";}
+ else {eq="How can I show what I've learned this quarter?";ic="I can use test strategies to solve problems from this quarter.";}
+ m.eq=eq; m.ic=ic; return m;
+}
+function goal(eq,ics){return `<div class="goal"><div><span class="gk">Essential question</span><p class="eq">${esc(eq)}</p></div><div><span class="gk">I can</span>${ics.map(x=>`<p>${esc(x)}</p>`).join("")}</div></div>`}
+function elaGoal(e,q){
+ if(e.type==="ela"){const x=EEQ[e.u.t]||["What makes a strong reader and writer?","I can "+e.u.f+"."];return {eq:x[0],read:x[1],write:WIC[e.day-1](e.u)}}
+ return q===4?{eq:"How can I show what I know as a reader?",read:"I can use test strategies to read paired passages and cite evidence.",write:"I can write a short constructed response with text evidence."}
+  :{eq:"What do I still need to practice as a reader and writer?",read:"I can use feedback to strengthen my reading.",write:"I can finish and improve my writing."};
+}
+function mathView0(e){
+ if(!e) return null;
+ const names=e.units?e.units.map(u=>u.t).join(", "):"";
+ switch(e.type){
+  case "lesson": return {kicker:e.u.t+" · "+e.code,title:e.target,badge:"New lesson",steps:[e.i,e.w,e.y],focus:e.target};
+  case "practice": {
+   const P3=[
+    ["Re-model "+lc(e.target)+" with a new example; address the most common error from the last exit ticket.","Partners solve 3 problems on whiteboards; check and discuss together.","Independent practice set on "+lc(e.target)+" + exit ticket."],
+    ["Model a word problem that uses "+lc(e.target)+"; underline the question and plan before solving.","Solve 2 word problems together and compare two student strategies.","Solve 4 word problems on "+lc(e.target)+", including one error-analysis item."],
+    ["Model a problem that connects "+lc(e.target)+" to an earlier skill.","Math talk: partners explain how they solved 2 problems.","Spiral review: 4 items on "+lc(e.target)+" + 2 from earlier units."]];
+   return {kicker:e.u.t+" · "+e.code,title:e.target,badge:"Practice day "+(e.pn+1),steps:P3[Math.min(e.pn,3)-1],focus:e.target};
+  }
+  case "test": return {kicker:e.u.t+" · "+e.u.s,title:"Unit check: "+e.u.t,badge:"Assessment",steps:["Review the unit's big ideas with two sample items; restate directions and strategies.","Quick partner review of "+e.u.t.toLowerCase()+" vocabulary and one problem of each type.","Unit assessment ("+e.u.s+"). Score tonight to set tomorrow's small groups."],focus:"error review from the "+e.u.t.toLowerCase()+" unit check"};
+  case "review": return {kicker:"End of quarter",title:"Quarter review",badge:"Review",steps:["Model 2 mixed problems from this quarter and name the common errors.","Partner stations, one per unit: "+names+".","Mixed review set covering the quarter; self-check with an answer key."],focus:"gaps from quarter review"};
+  case "bench": return {kicker:"End of quarter",title:"Quarter benchmark",badge:"Assessment",steps:["Review test strategies: read twice, estimate, eliminate choices, check work.","Work 2 practice items together and discuss reasoning.","Quarter benchmark covering "+e.units.map(u=>u.s).join("; ")+"."],focus:"benchmark follow-up"};
+ }
+}
+const lc=s=>s.charAt(0).toLowerCase()+s.slice(1);
+const MINI=[
+ u=>`Launch the unit goal: ${u.f}. Read aloud the anchor text (${u.tx}) and build background vocabulary.`,
+ u=>`I Do: think aloud during a close read of the anchor text to model how to ${u.f}. Start the anchor chart.`,
+ u=>`Shared reading: students practice with a partner and mark text evidence for the unit goal.`,
+ u=>`Apply to a second text: students work on their own, then compare answers with a partner.`,
+ u=>`Quick check: a short passage with 2 text-dependent questions on the unit goal. Use results to regroup.`,
+ u=>`Go deeper: apply the unit goal to a more complex text and compare it with the anchor text.`,
+ u=>`Structured discussion (SL.1): partners use sentence stems to talk through the day's text.`,
+ u=>`Evidence hunt: students reread to gather the 3 strongest pieces of evidence for the unit goal.`,
+ u=>`Reteach or extend based on the day-5 quick check; students lead short think-alouds.`,
+ u=>`Unit assessment: cold-read passage with questions on the unit standards.`];
+const WRITE=[
+ u=>`Writer's notebook: brainstorm ideas for ${u.w}.`,
+ u=>`Study a mentor text for ${u.w}; name 2 craft moves.`,
+ u=>`Plan ${u.w} with a graphic organizer.`,
+ u=>`Begin drafting ${u.w}.`,
+ u=>`Keep drafting: add details and elaboration.`,
+ u=>`Finish the draft; conference with 3–4 writers.`,
+ u=>`Revise for organization and word choice.`,
+ u=>`Edit for ${u.l}; peer conference with a checklist.`,
+ u=>`Write the final copy and self-assess with the rubric.`,
+ u=>`Publish and share ${u.w}.`];
+function sciText(e){
+ if(!e) return null;
+ if(e.type==="phase"){const x=SEQ[e.code]||["What can I learn by investigating "+e.title.toLowerCase()+"?","I can explain "+e.title.toLowerCase()+" using evidence."];return {kicker:e.u.t+" · "+e.u.s,title:e.code+" "+e.title,phase:e.phase,text:e.text,focus:e.code+" "+e.title,eq:x[0],ic:x[1]};}
+ if(e.type==="test") return {kicker:e.u.t+" · "+e.u.s,title:"Unit check: "+e.u.t,phase:"Assess",text:"Short unit assessment with one CER item. Return notebooks with feedback.",focus:"Unit check: "+e.u.t,eq:"What evidence shows what I have learned about "+e.u.t.toLowerCase()+"?",ic:"I can use claims, evidence and reasoning to show what I know about "+e.u.t.toLowerCase()+"."};
+ return {kicker:"End of quarter",title:"Review & flex day",phase:"Flex",text:"Revisit the quarter's driving questions, finish notebooks and reteach from exit-ticket data. Good day for a social studies connection.",focus:"Quarter review",eq:"How do this quarter's science ideas connect?",ic:"I can connect this quarter's big ideas and explain them with evidence."};
+}
+
+/* ---------------- STATE ---------------- */
+let cur=null, bannerMsg="";
+function initDate(){
+ const t=iso(new Date());
+ if(isSchool(t)){cur=t;return}
+ const q2=S.quarters[2].start;
+ if(validDate(q2)&&t<q2){cur=firstSchoolOnOrAfter(q2); bannerMsg=`Quarter 2 begins ${fmtLong(cur)}. Showing the first day.`; return}
+ cur=stepSchool(t,1)||stepSchool(t,-1)||q2;
+}
+const show=g=>S.grade==="both"||S.grade===g;
+function isDone(k){return !!done[cur+"|"+k]}
+function doneBox(k){return `<label class="done"><input type="checkbox" data-done="${k}" ${isDone(k)?"checked":""}> Done</label>`}
+
+/* ---------------- RENDER: DAY ---------------- */
+function blk(s,k,t1,t2,label,inner){
+ return `<section class="blk ${isDone(k)?"is-done":""}" data-s="${s}" data-k="${k}"><div class="time"><b>${t1}–${t2}</b><span>${dur(t1,t2)}</span></div><div class="body">${label}${inner}</div></section>`;
+}
+function dur(a,b){const m=s=>{let[h,mi]=s.split(":").map(Number);if(h<7)h+=12;return h*60+mi};return (m(b)-m(a))+" min"}
+function thin(t,txt){return `<div class="thin"><div class="time">${t}</div><div>${txt}</div></div>`}
+function head(tag,title,sub,k){return `<div class="bh"><div><div class="tag">${tag}</div>${title?`<h3>${esc(title)}</h3>`:""}${sub?`<div class="sub">${sub}</div>`:""}</div>${doneBox(k)}</div>`}
+
+function renderDay(){
+ const d=cur, view=document.getElementById("view");
+ if(!d||!isSchool(d)){
+  const nx=d?stepSchool(d,1):null, pv=d?stepSchool(d,-1):null;
+  view.innerHTML=`<div class="empty"><div class="eyebrow">${d?esc(fmtLong(d)):""}</div><h2>${esc(d?whyOff(d):"Pick a date")}</h2><p class="sub">There is no plan for this date. Jump to the nearest school day.</p><div class="datenav">${pv?`<button class="btn" data-go="${pv}">‹ ${fmtWk(pv)}</button>`:""}${nx?`<button class="btn" data-go="${nx}">${fmtWk(nx)} ›</button>`:""}</div></div>`;
+  return;
+ }
+ const q=quarterOf(d), Q=P[q], i=Q.i[d], fri=dow(d)===5, i5=Q.i5[d];
+ const wk=Math.floor((parse(d)-startOfWeek(Q.days[0]))/(7*864e5))+1;
+ const m4=mathView(Q.m4.seq[i]), m5=fri?null:mathView(Q.m5.seq[i5]);
+ const el=Q.ela.seq[i], s4=sciText(Q.s4.seq[i]), s5=sciText(Q.s5.seq[i]);
+ let h=`<div class="dayhead"><h2>${esc(fmtLong(d))}</h2><div class="meta"><span>Quarter ${q}</span><span>Day ${i+1} of ${Q.days.length}</span><span>Week ${wk}</span>${fri?`<span class="pill" style="color:var(--plc)">PLC Friday</span>`:""}</div></div><div class="timeline">`;
+
+ // Morning meeting
+ const targets=[];
+ const eg=elaGoal(el,q);
+ if(show("4")&&m4) targets.push(`<li><b>4th math:</b> ${esc(m4.ic)}</li>`);
+ if(show("5")&&m5) targets.push(`<li><b>5th math:</b> ${esc(m5.ic)}</li>`);
+ targets.push(`<li><b>ELA:</b> ${esc(eg.read)}</li>`);
+ if(show("4")&&s4) targets.push(`<li><b>4th science:</b> ${esc(s4.ic)}</li>`);
+ if(show("5")&&s5) targets.push(`<li><b>5th science:</b> ${esc(s5.ic)}</li>`);
+ h+=blk("mm","mm","7:45","8:00",head("Morning Meeting","","Greeting · share · group activity · morning message. Read today's I can statements together:","mm"),`<ul class="tg">${targets.join("")}</ul>`);
+
+ // Math 4
+ if(show("4")) h+=mathBlk("m4","4th Grade Math",["8:00","8:50"],[["8:00","8:15"],["8:15","8:30"],["8:30","8:50"]],m4);
+ h+=thin("8:50–8:55","Transition");
+ if(fri){
+  h+=blk("plc","plc","8:55","10:25",head("PLC","Professional Learning Community","5th grade math and math small groups do not meet. 5th grade math pacing runs Monday–Thursday.","plc"),
+   `<ul class="tg"><li>Bring this week's exit-ticket data for ${show("4")?"4th":""}${S.grade==="both"?" and ":""}${show("5")?"5th":""} grade math.</li><li>Plan next week's small-group targets and 1:1 intervention list.</li></ul>`);
+  h+=thin("10:25–10:30","Transition to ELA");
+ } else {
+  if(show("5")) h+=mathBlk("m5","5th Grade Math",["8:55","9:45"],[["8:55","9:10"],["9:10","9:25"],["9:25","9:45"]],m5);
+  // Small groups & 1:1
+  const roster=S.roster.split("\n").map(s=>s.trim()).filter(Boolean);
+  const stu=roster.length?roster[i5%roster.length]:"(add students in Settings)";
+  const fA=m4?m4.focus:"", fB=m5?m5.focus:"";
+  let gA,gB;
+  if(S.grade==="5"){gA=`<b>Group A · 5th reteach:</b> ${esc(fB)}. Pull students who missed today's You Do exit ticket; use a worked example and manipulatives.`; gB=`<b>Group B · 5th extension:</b> challenge problems that extend ${esc(lc(fB))}.`}
+  else if(S.grade==="4"){gA=`<b>Group A · 4th reteach:</b> ${esc(fA)}. Pull students who missed today's You Do exit ticket; use manipulatives and a worked example.`; gB=`<b>Group B · 4th extension:</b> challenge problems that extend ${esc(lc(fA))}.`}
+  else {gA=`<b>Group A · 4th reteach:</b> ${esc(fA)}. Pull students who missed today's You Do exit ticket; use manipulatives and a worked example.`; gB=`<b>Group B · 5th reteach:</b> ${esc(fB)}. Pull students who missed today's You Do exit ticket.`}
+  h+=blk("int","int","9:45","10:30",head("Small Groups &amp; 1:1 Intervention","Math small groups + 1:1","Students not at the teacher table: fluency practice and exit-ticket corrections","int"),
+   `<div class="rows"><div class="row"><div class="rt">9:45–10:05</div><div>${gA}</div></div><div class="row"><div class="rt">10:05–10:20</div><div>${gB}</div></div><div class="row"><div class="rt">10:20–10:30</div><div><b style="color:var(--int)">1:1 intervention · ${esc(stu)}:</b> targeted skill from the student's intervention plan; record a quick progress-monitoring check.</div></div></div>`);
+ }
+
+ // ELA
+ h+=elaBlk(el,q);
+ h+=thin("12:15–1:15","Lunch · Recess · Specials");
+ // Science
+ const cards=[];
+ if(show("4")&&s4) cards.push(sciCard("4th Grade",s4));
+ if(show("5")&&s5) cards.push(sciCard("5th Grade",s5));
+ h+=blk("sci","sci","1:15","2:15",head("Science / Social Studies","",`<span class="std">1:15–1:20 review question · 1:20–2:05 lesson phase · 2:05–2:15 exit ticket or notebook reflection</span>`,"sci"),`<div class="split ${cards.length<2?"one":""}">${cards.join("")}</div>`);
+ h+=`</div><div class="notes"><label for="dayNotes">Notes for this day</label><textarea id="dayNotes" placeholder="Reminders, groups, changes…">${esc(notes[d]||"")}</textarea></div>`;
+ view.innerHTML=h;
+}
+function startOfWeek(d){const x=parse(d);x.setDate(x.getDate()-((x.getDay()+6)%7));return x}
+function mathBlk(k,label,t,st,m){
+ if(!m) return blk("math",k,t[0],t[1],head(label,"No lesson","Pacing ran out of lessons for this quarter.",k),"");
+ const names=["I Do","We Do","You Do"];
+ return blk("math",k,t[0],t[1],head(label+" · "+esc(m.badge),m.title,esc(m.kicker),k),
+  goal(m.eq,[m.ic])+`<div class="steps">${m.steps.map((s,j)=>`<div class="step"><div class="k">${names[j]}<span>${st[j][0]}–${st[j][1]}</span></div><p>${esc(s)}</p></div>`).join("")}</div>`);
+}
+function elaBlk(e,q){
+ let title,sub,mini,write,lang,g1,g2,g3;
+ if(e.type==="ela"){
+  const u=e.u, d=e.day-1;
+  title=u.t; sub=`Day ${e.day} of 10 · 2-week unit`;
+  mini=MINI[d](u); write=WRITE[d](u); lang=`Language: ${u.l}. Quick practice, then 2 students share their writing.`;
+  if(e.day===10){g1="Small-group testing with read-aloud accommodations as allowed.";g2="Independent reading conferences.";g3="Book club discussion of the unit's texts."}
+  else{g1=`Reteach the unit goal with a below-level text; 3-minute fluency warm-up (RF.4).`;g2=`Guided reading with an on-level text; prompts tied to the unit goal.`;g3=`Extend: apply the unit goal to a complex text and write a short response.`}
+  const stds=[show("4")?`<span class="std">4th: ${u.s4}</span>`:"",show("5")?`<span class="std">5th: ${u.s5}</span>`:""].filter(Boolean).join("<br>");
+  sub+=`<br>${stds}`;
+ } else {
+  title=q===4?"EOG readiness day":"Flex day"; sub="Outside the 2-week units";
+  mini=q===4?"Timed paired-passage practice; review strategies: preview questions, annotate, cite evidence.":"Reteach skills from the latest quick check, or finish and publish writing.";
+  write="Writing conferences and catch-up."; lang="Spiral review of this quarter's language skills.";
+  g1="Reteach from recent data."; g2="Guided reading."; g3="Book club or extension.";
+ }
+ const eg=elaGoal(e,q);
+ return blk("ela","ela","10:30","12:15",head("ELA",title,sub,"ela"),
+  goal(eg.eq,["Reading: "+eg.read,"Writing: "+eg.write])+`<div class="rows">
+   <div class="row"><div class="rt">10:30–10:50</div><div><span class="rk">Mini-lesson</span><p>${esc(mini)}</p></div></div>
+   <div class="row"><div class="rt">10:50–11:35</div><div><span class="rk">Small groups · 3 rotations</span><div class="groups">
+     <div><b>10:50 Group 1:</b> ${esc(g1)}</div><div><b>11:05 Group 2:</b> ${esc(g2)}</div><div><b>11:20 Group 3:</b> ${esc(g3)}</div>
+     <div class="sub">Others rotate through read-to-self, word work and a response journal.</div></div></div></div>
+   <div class="row"><div class="rt">11:35–12:05</div><div><span class="rk">Writing</span><p>${esc(write)}</p></div></div>
+   <div class="row"><div class="rt">12:05–12:15</div><div><span class="rk">Language &amp; share</span><p>${esc(lang)}</p></div></div></div>`);
+}
+function sciCard(gr,s){
+ return `<div class="card"><div class="gr">${gr}</div><h4>${esc(s.title)}</h4><div class="std">${esc(s.kicker)}</div>${goal(s.eq,[s.ic])}<p><span class="phase">${esc(s.phase)}</span>${esc(s.text)}</p></div>`;
+}
+
+/* ---------------- RENDER: WEEK ---------------- */
+function renderWeek(){
+ const mon=iso(startOfWeek(cur||iso(new Date())));
+ const ds=[0,1,2,3,4].map(n=>addDays(mon,n));
+ const rows=[];
+ const cell=(d,fn)=>{ if(!isSchool(d)) return `<td class="off">${esc(whyOff(d))}</td>`; const r=fn(d); return `<td>${r}</td>`; };
+ const Qi=d=>{const q=quarterOf(d);return [q,P[q]]};
+ if(show("4")) rows.push(["math","4th Math",d=>{const[q,Q]=Qi(d);const m=mathView(Q.m4.seq[Q.i[d]]);return m?`<span class="u">${esc(m.badge)}</span>${esc(m.title)}`:"—"}]);
+ if(show("5")) rows.push(["math","5th Math",d=>{if(dow(d)===5)return `<span class="u">PLC</span>No 5th math`;const[q,Q]=Qi(d);const m=mathView(Q.m5.seq[Q.i5[d]]);return m?`<span class="u">${esc(m.badge)}</span>${esc(m.title)}`:"—"}]);
+ rows.push(["int","Small groups",d=>dow(d)===5?`<span class="u">PLC 8:55–10:25</span>`:`<span class="u">9:45–10:30</span>Reteach groups + 1:1`]);
+ rows.push(["ela","ELA",d=>{const[q,Q]=Qi(d);const e=Q.ela.seq[Q.i[d]];return e.type==="ela"?`<span class="u">Day ${e.day} of 10</span>${esc(e.u.t)}`:(q===4?"EOG readiness":"Flex day")}]);
+ if(show("4")) rows.push(["sci","4th Science",d=>{const[q,Q]=Qi(d);const s=sciText(Q.s4.seq[Q.i[d]]);return `<span class="u">${esc(s.phase)}</span>${esc(s.title)}`}]);
+ if(show("5")) rows.push(["sci","5th Science",d=>{const[q,Q]=Qi(d);const s=sciText(Q.s5.seq[Q.i[d]]);return `<span class="u">${esc(s.phase)}</span>${esc(s.title)}`}]);
+ let h=`<div class="dayhead"><h2>Week of ${esc(parse(mon).toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"}))}</h2><div class="meta"><button class="btn" id="wkPrev">‹ Previous week</button><button class="btn" id="wkNext">Next week ›</button></div></div>`;
+ h+=`<div class="scroll"><table class="week"><thead><tr><th></th>${ds.map(d=>`<th>${isSchool(d)?`<button data-go="${d}" data-view="day">${fmtWk(d)}<small>Open day plan</small></button>`:`${fmtWk(d)}<small>${esc(whyOff(d))}</small>`}</th>`).join("")}</tr></thead><tbody>`;
+ rows.forEach(([s,lab,fn])=>{h+=`<tr><td class="rl" data-s="${s}">${lab}</td>${ds.map(d=>cell(d,fn)).join("")}</tr>`});
+ h+=`</tbody></table></div>`;
+ document.getElementById("view").innerHTML=h;
+ document.getElementById("wkPrev").onclick=()=>{cur=addDays(mon,-7);if(!isSchool(cur))cur=firstSchoolOnOrAfter(cur)||cur;render()};
+ document.getElementById("wkNext").onclick=()=>{cur=addDays(mon,7);if(!isSchool(cur))cur=firstSchoolOnOrAfter(cur)||cur;render()};
+}
+
+/* ---------------- RENDER: PACING ---------------- */
+function summarize(seq,dates,keyFn){
+ const out=[];
+ seq.forEach((e,j)=>{const k=keyFn(e);let last=out[out.length-1];if(!last||last.k!==k.k){last={k:k.k,label:k.label,std:k.std,first:dates[j],last:dates[j],n:0};out.push(last)}last.last=dates[j];last.n++});
+ return out;
+}
+function renderPacing(){
+ const q=S.pq||2, Q=P[q];
+ const mathKey=e=>e.type==="review"||e.type==="bench"?{k:"end",label:"Quarter review & benchmark",std:"Mixed"}:{k:e.u.t,label:e.u.t,std:e.u.s};
+ const sciKey=e=>e.type==="flex"?{k:"flex",label:"Review & flex",std:"—"}:{k:e.u.t,label:e.u.t,std:e.u.s};
+ const elaKey=e=>e.type==="flex"?{k:"flex",label:q===4?"EOG readiness / flex":"Flex days",std:"Reteach & catch-up"}:{k:e.u.t,label:e.u.t+" (2 weeks)",std:(show("4")?"4th: "+e.u.s4:"")+(S.grade==="both"?" · ":"")+(show("5")?"5th: "+e.u.s5:"")};
+ const sec=(color,title,note,b,dates,keyFn,q1)=>{
+  const rows=summarize(b.seq,dates,keyFn);
+  return `<section class="psec"><h3><i style="background:var(${color})"></i>${title}</h3><p class="note">${note}${q===2?" "+q1:""}${b.over?` <span class="warn">${b.over} planned day(s) don't fit this quarter's calendar and were dropped.</span>`:""}</p>
+  <div class="scroll" style="margin-top:0"><table class="pt"><thead><tr><th>Unit</th><th>Standards</th><th>Dates</th><th>Days</th></tr></thead><tbody>${rows.map(r=>`<tr><td><b>${esc(r.label)}</b></td><td class="std">${esc(r.std)}</td><td class="n">${fmtShort(r.first)} – ${fmtShort(r.last)}</td><td class="n">${r.n}</td></tr>`).join("")||`<tr><td colspan="4">Set the quarter dates in Settings.</td></tr>`}</tbody></table></div></section>`;
+ };
+ let h=`<div class="dayhead"><h2>Quarter ${q} pacing</h2><div class="seg" role="group" aria-label="Quarter" id="pqSeg">${[2,3,4].map(x=>`<button data-pq="${x}" aria-pressed="${x===q}">Q${x}</button>`).join("")}</div></div>
+ <p class="meta">${fmtLong(S.quarters[q].start)} – ${fmtLong(S.quarters[q].end)} · ${Q.days.length} instructional days · ${Q.days5.length} Mon–Thu days</p>`;
+ if(show("4")) h+=sec("--math","4th Grade Math","Daily I Do / We Do / You Do, 8:00–8:50. Extra calendar days become practice days spread across lessons.",Q.m4,Q.days,mathKey,ASSUMED_Q1.m4);
+ if(show("5")) h+=sec("--math","5th Grade Math","Daily I Do / We Do / You Do, 8:55–9:45, Monday–Thursday (Friday is PLC).",Q.m5,Q.days5,mathKey,ASSUMED_Q1.m5);
+ h+=sec("--ela","ELA","Each unit spans two weeks (10 instructional days), 10:30–12:15.",Q.ela,Q.days,elaKey,ASSUMED_Q1.ela);
+ if(show("4")) h+=sec("--sci","4th Grade Science","Each objective runs a 5E cycle (Engage, Explore, Explain, Elaborate, Evaluate), 1:15–2:15.",Q.s4,Q.days,sciKey,ASSUMED_Q1.s4);
+ if(show("5")) h+=sec("--sci","5th Grade Science","Each objective runs a 5E cycle; Q4 ends with Science EOG review.",Q.s5,Q.days,sciKey,ASSUMED_Q1.s5);
+ document.getElementById("view").innerHTML=h;
+}
+
+/* ---------------- RENDER: SETTINGS ---------------- */
+function renderSettings(){
+ const qrow=q=>`<span>Q${q}</span><input type="date" id="q${q}s" value="${S.quarters[q].start}" aria-label="Quarter ${q} start"><input type="date" id="q${q}e" value="${S.quarters[q].end}" aria-label="Quarter ${q} end">`;
+ document.getElementById("view").innerHTML=`<div class="set">
+  <div class="panel"><h3>Quarter dates</h3><p>Defaults follow a 2026–27 NC district calendar. Change them to match yours; the pacing recalculates.</p>
+   <div class="qgrid"><span></span><span class="std">Start</span><span class="std">End</span>${qrow(2)}${qrow(3)}${qrow(4)}</div></div>
+  <div class="panel"><h3>1:1 intervention list</h3><p>One student per line. The 1:1 slot (10:20–10:30, Mon–Thu) rotates through this list. These are example names; replace them with your students.</p>
+   <textarea id="roster" style="min-height:150px">${esc(S.roster)}</textarea></div>
+  <div class="panel wide"><h3>No-school days</h3><p>One per line: <code>YYYY-MM-DD label</code> or <code>YYYY-MM-DD to YYYY-MM-DD label</code>. Teacher workdays, holidays, breaks and testing days you want skipped.</p>
+   <textarea id="hol">${esc(S.holidays)}</textarea>
+   <div style="margin-top:10px"><button class="btn" id="resetBtn">Reset all settings</button><span id="confirmSlot"></span></div></div>
+  <div class="panel wide"><h3>How this plan was built</h3>
+   <p>NCDPI publishes the Standard Course of Study and unpacking documents, not a single day-by-day statewide calendar; each district writes its own pacing. This planner sequences the current NC standards (Math 2017/2023 revisions, ELA 2017, Science 2023) into units, then spreads them across your quarter calendar. Check it against your district's pacing guide and adjust unit order where needed.</p>
+   <ul>
+    <li><a href="https://www.dpi.nc.gov/districts-schools/classroom-resources/office-teaching-and-learning/standard-course-study" target="_blank" rel="noopener">NC Standard Course of Study (NCDPI)</a></li>
+    <li><a href="https://www.dpi.nc.gov/documents/cte/curriculum/science/crosswalk-4th-grade-science-standards/open" target="_blank" rel="noopener">Grade 4 Science standards crosswalk (2023)</a></li>
+    <li><a href="https://www.dpi.nc.gov/documents/cte/curriculum/science/crosswalk-5th-grade-science-standards/open" target="_blank" rel="noopener">Grade 5 Science standards crosswalk (2023)</a></li>
+    <li><a href="https://www.dpi.nc.gov/nc-5th-grade-math-unpacking-rev-june-2025/open" target="_blank" rel="noopener">Grade 5 Math unpacking (rev. June 2025)</a></li>
+    <li><a href="https://www.dpi.nc.gov/media/427/open" target="_blank" rel="noopener">Grade 5 ELA standards with clarifications</a></li>
+   </ul></div></div>`;
+ [2,3,4].forEach(q=>{["s","e"].forEach(x=>{document.getElementById(`q${q}${x}`).addEventListener("change",ev=>{if(validDate(ev.target.value)){S.quarters[q][x==="s"?"start":"end"]=ev.target.value;saveS();compute();}})})});
+ document.getElementById("roster").addEventListener("input",ev=>{S.roster=ev.target.value;saveS()});
+ document.getElementById("hol").addEventListener("input",ev=>{S.holidays=ev.target.value;saveS();compute()});
+ document.getElementById("resetBtn").onclick=()=>{
+  document.getElementById("confirmSlot").innerHTML=`<span class="confirm">Reset dates, holidays and roster? <button class="btn" id="yesReset">Reset</button><button class="btn" id="noReset">Cancel</button></span>`;
+  document.getElementById("yesReset").onclick=()=>{const g=S.grade;S=JSON.parse(JSON.stringify(DEFAULTS));S.grade=g;S.view="settings";saveS();compute();render()};
+  document.getElementById("noReset").onclick=()=>{document.getElementById("confirmSlot").innerHTML=""};
+ };
+}
+
+/* ---------------- WIRING ---------------- */
+function render(){
+ document.querySelectorAll("#viewSeg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.v===S.view));
+ document.querySelectorAll("#gradeSeg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.g===S.grade));
+ document.getElementById("dateNav").hidden=(S.view==="pacing"||S.view==="settings");
+ document.getElementById("datePick").value=cur||"";
+ document.getElementById("banner").innerHTML=bannerMsg&&S.view==="day"?`<div class="banner">${esc(bannerMsg)}</div>`:"";
+ ({day:renderDay,week:renderWeek,pacing:renderPacing,settings:renderSettings}[S.view]||renderDay)();
+}
+document.getElementById("viewSeg").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;S.view=b.dataset.v;saveS();render()});
+document.getElementById("gradeSeg").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;S.grade=b.dataset.g;saveS();render()});
+document.getElementById("prev").onclick=()=>{const x=cur&&isSchool(cur)?stepSchool(cur,-1):stepSchool(cur||iso(new Date()),-1);if(x){cur=x;bannerMsg="";render()}};
+document.getElementById("next").onclick=()=>{const x=stepSchool(cur||iso(new Date()),1);if(x){cur=x;bannerMsg="";render()}};
+document.getElementById("todayBtn").onclick=()=>{cur=iso(new Date());bannerMsg="";if(!isSchool(cur)){const t=cur;initDate();if(!bannerMsg)bannerMsg=`${fmtLong(t)} isn't a planned school day. Showing the next one.`}render()};
+document.getElementById("datePick").addEventListener("change",e=>{if(validDate(e.target.value)){cur=e.target.value;bannerMsg="";render()}});
+document.querySelectorAll(".qjump .btn").forEach(b=>b.onclick=()=>{const q=+b.dataset.q;const d=firstSchoolOnOrAfter(S.quarters[q].start);if(d){cur=d;bannerMsg="";render()}});
+document.getElementById("view").addEventListener("click",e=>{
+ const g=e.target.closest("[data-go]"); if(g){cur=g.dataset.go;bannerMsg="";if(g.dataset.view){S.view=g.dataset.view;saveS()}render();return}
+ const p=e.target.closest("[data-pq]"); if(p){S.pq=+p.dataset.pq;saveS();render()}
+});
+document.getElementById("view").addEventListener("change",e=>{
+ const k=e.target.dataset&&e.target.dataset.done; if(!k) return;
+ const key=cur+"|"+k; if(e.target.checked) done[key]=1; else delete done[key]; store.set("done",done);
+ const sec=e.target.closest(".blk"); if(sec) sec.classList.toggle("is-done",e.target.checked);
+});
+document.getElementById("view").addEventListener("input",e=>{
+ if(e.target.id==="dayNotes"){notes[cur]=e.target.value;store.set("notes",notes)}
+});
+
+compute(); initDate(); render();
+</script>
+
+<script>
+window.TK_CONFIG={
+  app:"plan-book", name:"Grade 4–5 Plan Book",
+  features:{dashboard:false,worksheets:false,classCode:false},
+  demo:{intro:"A day-by-day plan for 4th and 5th grade math, ELA and science across Quarters 2–4, built from the NC Standard Course of Study.",steps:[
+    {sel:"#gradeSeg",title:"Choose your grade",text:"Show 4th grade, 5th grade, or both side by side."},
+    {sel:"#viewSeg",title:"Four views",text:"Day shows the full timeline, Week shows the grid, Pacing shows unit dates, and Settings holds your calendar and roster."},
+    {sel:"#dateNav",title:"Move through the year",text:"Step school day by school day, pick a date, or jump to the start of Q2, Q3 or Q4."},
+    {sel:"#view",title:"Today's plan",text:"Each block has the essential question, I can statement and I Do / We Do / You Do steps. Check Done as you go and add notes at the bottom."}]}
+};
+
+</script>
+<script src="/shared/teacher-kit.js"></script>
+</body></html>

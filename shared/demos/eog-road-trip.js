@@ -1,5 +1,5 @@
 ECDemo.define([
-  {at:"h1",say:"Murphy to Manteo is an EOG practice road trip across North Carolina. Ten questions, ten stops."},
+  {at:"h1",say:"Road Trip Review is a test-prep road trip across North Carolina. Ten questions, ten stops."},
   {at:"#name",do:"type",value:"Sam",say:"Type your first name."},
   {at:{text:"5th grade"},do:"click",say:"Pick your grade."},
   {at:{text:"Math"},do:"click",say:"Then pick math or reading."},

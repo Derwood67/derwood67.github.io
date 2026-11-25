@@ -1,0 +1,570 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!-- Class sign-in gate: first-name sign-in, blocked names, locked and assigned apps, teacher unlock. Live settings: /classgate.json (edited from Control Center → Lock & Assign). Source: /shared/classgate-block.html -->
+<style>
+#cg-ov{position:fixed;inset:0;z-index:2147483000;background:#141c24;display:flex;align-items:center;justify-content:center;padding:16px;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+#cg-ov *{box-sizing:border-box}
+#cg-ov .cg-card{background:#fff;color:#1b2420;border-radius:14px;max-width:420px;width:100%;padding:24px;display:flex;flex-direction:column;gap:12px;box-shadow:0 12px 32px rgba(0,0,0,.35);font-size:18px;line-height:1.45}
+#cg-ov h2{margin:0;font-size:1.45rem;line-height:1.2}
+#cg-ov p{margin:0}
+#cg-ov a{color:#0b6b4a;font-weight:700}
+#cg-ov label{font-weight:700}
+#cg-ov input{font:inherit;width:100%;padding:12px;border:2px solid #c9d1cc;border-radius:8px;background:#f6f8f6;color:#1b2420}
+#cg-ov input:focus{outline:3px solid #f2c230;outline-offset:1px}
+#cg-ov button{font:inherit;font-weight:700;border:0;border-radius:8px;padding:12px 16px;background:#0b6b4a;color:#fff;cursor:pointer}
+#cg-ov button.cg-alt{background:#e7ece9;color:#1b2420}
+#cg-ov .cg-icon{font-size:2.2rem;line-height:1}
+#cg-ov .cg-msg{min-height:1.4em;color:#a83226;font-size:.95rem}
+#cg-ov .cg-small{font-size:.9rem;color:#55625b}
+#cg-ov details{border-top:1px solid #e1e6e2;padding-top:10px}
+#cg-ov summary{cursor:pointer;font-size:.9rem;color:#55625b}
+#cg-ov form{display:flex;flex-direction:column;gap:10px;margin:0}
+#cg-badge{position:fixed;right:10px;bottom:10px;z-index:2147482000;background:#1b2430;color:#fff;font:600 14px/1.2 system-ui,-apple-system,"Segoe UI",Arial,sans-serif;border-radius:999px;padding:7px 8px 7px 14px;display:flex;gap:10px;align-items:center;box-shadow:0 3px 10px rgba(0,0,0,.25)}
+#cg-badge button{font:inherit;background:#f2c230;color:#1b1b1b;border:0;border-radius:999px;padding:4px 10px;cursor:pointer}
+</style>
+<script>
+(function(){
+  var BLOCKED=["james"];          /* fallback list; /classgate.json on the site replaces it when it loads */
+  var CFG={lockAll:false,apps:{}}; /* locked and assigned apps; filled in from /classgate.json */
+  var CODE_HASH="cf2d0fe7ea0a7780592080ef0bf415a6043a3d59aa5d72ace64d39c6e0837285";  /* scrambled teacher code; the code itself is not stored in this page */
+  var TRY_KEY="echols-classgate-tries";
+  function sha(t){return crypto.subtle.digest("SHA-256",new TextEncoder().encode(t)).then(function(b){return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0")}).join("")})}
+  /* Checks a teacher code. Three wrong tries locks code entry on this device for 10 minutes. Resolves "ok", "wrong" or "wait". */
+  function checkCode(code){var t={};try{t=JSON.parse(lsGet(TRY_KEY))||{}}catch(x){}
+    if(t.until&&Date.now()<t.until)return Promise.resolve("wait");
+    return sha("echols-room2:"+String(code||"").trim()).then(function(h){
+      if(h===CODE_HASH){lsSet(TRY_KEY,null);return "ok"}
+      t.n=(t.n||0)+1;if(t.n>=3){t={n:0,until:Date.now()+600000};lsSet(TRY_KEY,JSON.stringify(t));return "wait"}
+      lsSet(TRY_KEY,JSON.stringify(t));return "wrong"},function(){return "wrong"})}
+  var CODE_MSG={wrong:"That code is not right.",wait:"Too many tries. Wait 10 minutes and try again."};
+  var LOCK_KEY="echols-classgate-lock", NAME_KEY="echols-classgate-name", TEACH_KEY="echols-classgate-teacher";
+  var me=document.currentScript, needLogin=!!(me&&me.getAttribute("data-login")!==null);
+  function attr(a){return (me&&me.getAttribute(a))||""}
+  /* data-watch: name inputs of an app's own sign-in. data-pick: buttons whose text is a name. data-session: saved sign-ins (s:key or l:key:prop). data-app: app id (default: first folder of the address). */
+  var WATCH=attr("data-watch"), PICK=attr("data-pick"), SESS=attr("data-session").split(",").filter(Boolean);
+  var APP=attr("data-app")||(function(){var p=decodeURIComponent(location.pathname).split("/").filter(Boolean)[0]||"";
+    return p.replace(/\.html?$/i,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")})();
+  var BOOK=(function(){try{return new URLSearchParams(location.search).get("book")||""}catch(e){return ""}})();
+  var current="", locked=false, shown="", denied="";
+  function first(n){return String(n||"").trim().split(/[\s\-_]+/)[0].toLowerCase().replace(/[^a-z]/g,"")}
+  function isBlocked(n){return BLOCKED.indexOf(first(n))>-1}
+  /* Mr. Echols (teacher preview) and portfolio guests (?visitor) are not held by app locks or assignments; guest work never reaches class records. */
+  function teacher(){return ssGet(TEACH_KEY)==="1"||ssGet("ec-guest")==="1"||ssGet("ec-visitor")==="1"||/[?&]visitor\b/.test(location.search)}
+  /* This app's setting: {mode:"open"|"locked"|"assigned", students:[first names]} */
+  function setting(){var a=CFG.apps||{};return (BOOK&&a[APP+":"+BOOK])||a[APP]||{mode:"open"}}
+  function appLocked(){if(teacher())return false;return !!CFG.lockAll||setting().mode==="locked"}
+  function notAssigned(n){if(teacher()||!n)return false;var s=setting();if(s.mode!=="assigned")return false;
+    return (s.students||[]).map(first).indexOf(first(n))<0}
+  function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
+  function lsSet(k,v){try{v===null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}}
+  function ssGet(k){try{return sessionStorage.getItem(k)}catch(e){return null}}
+  function ssSet(k,v){try{v===null?sessionStorage.removeItem(k):sessionStorage.setItem(k,v)}catch(e){}}
+  function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+  function tidy(n){return String(n).replace(/\s+/g," ").trim().split(" ").map(function(w){return w.charAt(0).toUpperCase()+w.slice(1)}).join(" ")}
+  function overlay(html){var o=document.getElementById("cg-ov");if(!o){o=document.createElement("div");o.id="cg-ov";o.setAttribute("role","dialog");o.setAttribute("aria-modal","true");document.body.appendChild(o)}o.innerHTML='<div class="cg-card">'+html+'</div>';var i=o.querySelector("input:not([type=password])");if(i)setTimeout(function(){i.focus()},30);return o}
+  function close(){var o=document.getElementById("cg-ov");if(o)o.remove();shown=""}
+  function badge(){var b=document.getElementById("cg-badge");if(b)b.remove();var n=ssGet(NAME_KEY);if(!needLogin||!n)return;b=document.createElement("div");b.id="cg-badge";b.innerHTML='<span>'+esc(n)+'</span><button type="button">Sign out</button>';b.querySelector("button").onclick=function(){ssSet(NAME_KEY,null);location.reload()};document.body.appendChild(b)}
+  function showBlocked(){shown="blocked";
+    var o=overlay('<h2>This activity is not available</h2><p>This app is not open to you right now. Please check with Mr. Echols.</p>'+
+      '<details><summary>Teacher unlock</summary><form id="cg-unlock" style="margin-top:10px"><label for="cg-code">Teacher code</label><input id="cg-code" type="password" inputmode="numeric" autocomplete="off"><button type="submit">Unlock this device</button><p class="cg-msg" id="cg-umsg"></p></form></details>');
+    o.querySelector("#cg-unlock").onsubmit=function(e){e.preventDefault();var c=o.querySelector("#cg-code");
+      checkCode(c.value).then(function(r){if(r==="ok"){lsSet(LOCK_KEY,null);ssSet(NAME_KEY,null);location.reload();return}
+        c.value="";o.querySelector("#cg-umsg").textContent=CODE_MSG[r]})};
+  }
+  /* Locked app or not assigned: no device lock, and the page opens again by itself when Mr. Echols opens it. */
+  function teacherPreview(o){var f=o.querySelector("#cg-tp");if(!f)return;f.onsubmit=function(e){e.preventDefault();var c=o.querySelector("#cg-tcode");
+    checkCode(c.value).then(function(r){if(r==="ok"){ssSet(TEACH_KEY,"1");location.reload();return}c.value="";o.querySelector("#cg-tmsg").textContent=CODE_MSG[r]})}}
+  var TP='<details><summary>Teacher preview</summary><form id="cg-tp" style="margin-top:10px"><label for="cg-tcode">Teacher code</label><input id="cg-tcode" type="password" inputmode="numeric" autocomplete="off"><button type="submit">Open for this tab</button><p class="cg-msg" id="cg-tmsg"></p></form></details>';
+  var MY='<p class="cg-small"><a href="/my-apps/">See my apps</a></p>';
+  function showAppLocked(){if(shown==="applocked")return;shown="applocked";var b=document.getElementById("cg-badge");if(b)b.remove();
+    teacherPreview(overlay('<div class="cg-icon" aria-hidden="true">🔒</div><h2>This app is locked</h2><p>Mr. Echols has locked this app for now. It will open again when he unlocks it.</p>'+MY+TP))}
+  function showNotAssigned(n){if(shown==="notassigned")return;shown="notassigned";denied=String(n||"");var b=document.getElementById("cg-badge");if(b)b.remove();
+    var o=overlay('<div class="cg-icon" aria-hidden="true">📋</div><h2>Not assigned to you</h2><p>'+(n?esc(tidy(first(n)))+', this':'This')+' app is not on your list right now. Check with Mr. Echols.</p>'+MY+
+      '<button type="button" class="cg-alt" id="cg-other">I typed the wrong name</button>'+TP);
+    o.querySelector("#cg-other").onclick=function(){ssSet(NAME_KEY,null);location.reload()};teacherPreview(o)}
+  function lock(){if(locked)return;locked=true;lsSet(LOCK_KEY,"1");ssSet(NAME_KEY,null);var b=document.getElementById("cg-badge");if(b)b.remove();showBlocked()}
+  /* One name check for every sign-in path: false when the name may not use this app. */
+  function allow(n){if(isBlocked(n)){lock();return false}if(appLocked()){showAppLocked();return false}if(notAssigned(n)){showNotAssigned(n);return false}return true}
+  function showLogin(){shown="login";
+    var o=overlay('<h2>Sign in</h2><p class="cg-small">Mr. Echols’ Room 2</p><form id="cg-form"><label for="cg-name">Type your first name</label><input id="cg-name" type="text" maxlength="30" autocomplete="off" autocapitalize="words" placeholder="First name"><button type="submit">Start</button><p class="cg-msg" id="cg-msg"></p></form>');
+    o.querySelector("#cg-form").onsubmit=function(e){e.preventDefault();
+      var raw=o.querySelector("#cg-name").value.replace(/\s+/g," ").trim();
+      if(!/^[A-Za-zÀ-ɏ][A-Za-zÀ-ɏ .'\-]{0,29}$/.test(raw)){o.querySelector("#cg-msg").textContent="Please type your first name using letters.";return}
+      if(!allow(raw))return;
+      var n=tidy(raw);current=n;ssSet(NAME_KEY,n);close();badge();
+      try{document.dispatchEvent(new CustomEvent("classgate:signin",{detail:{name:n}}))}catch(err){}
+    };
+  }
+  window.ClassGate={
+    /* Apps with their own sign-in call this; returns false for a blocked name (and locks the device), a locked app, or a student this app isn't assigned to. */
+    check:function(n){if(lsGet(LOCK_KEY)&&BLOCKED.length){showBlocked();return false}if(!allow(n))return false;current=String(n||"");return true},
+    name:function(){return ssGet(NAME_KEY)||""},
+    app:function(){return APP},
+    /* Teacher code check for in-app teacher tools: resolves "ok", "wrong" or "wait". */
+    checkCode:checkCode, codeMsg:function(r){return CODE_MSG[r]||""}
+  };
+  function saved(){var out=[];SESS.forEach(function(s){var p=s.split(":"),v=null;try{v=(p[0]==="l"?localStorage:sessionStorage).getItem(p[1])}catch(e){}
+    if(v&&p[2]){try{v=(JSON.parse(v)||{})[p[2]]}catch(e){v=null}}if(v)out.push(String(v))});return out}
+  function watched(){var out=[];if(!WATCH)return out;try{Array.prototype.forEach.call(document.querySelectorAll(WATCH),function(i){if(i!==document.activeElement&&i.value)out.push(i.value)})}catch(e){}return out}
+  /* Signs a blocked student out of anything already open, and closes the app when it is locked or not assigned. */
+  function sweep(){if(locked)return;
+    if(lsGet(LOCK_KEY)&&BLOCKED.length){locked=true;showBlocked();return}
+    if(appLocked()){showAppLocked();return}
+    var all=[ssGet(NAME_KEY),current,denied].concat(saved(),watched());
+    for(var i=0;i<all.length;i++)if(all[i]&&isBlocked(all[i])){lock();return}
+    for(i=0;i<all.length;i++)if(all[i]&&notAssigned(all[i])){showNotAssigned(all[i]);return}
+    /* reopened by the teacher while the lock screen was up */
+    if(shown==="applocked"||shown==="notassigned")location.reload()}
+  function refresh(){if(!window.fetch)return;
+    fetch("/classgate.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(j){if(!j)return;
+      if(Array.isArray(j.blocked))BLOCKED=j.blocked.map(first).filter(Boolean);
+      CFG={lockAll:!!j.lockAll,apps:(j.apps&&typeof j.apps==="object")?j.apps:{}};sweep()}).catch(function(){})}
+  function guard(e){if(locked||shown==="applocked"||shown==="notassigned")return;var bad=null;
+    if(WATCH){try{Array.prototype.forEach.call(document.querySelectorAll(WATCH),function(i){if(!i.value||bad)return;if(isBlocked(i.value))bad="b";else if(notAssigned(i.value))bad=i.value;else current=i.value})}catch(x){}}
+    if(!bad&&PICK&&e.type==="click"&&e.target.closest){var b=e.target.closest(PICK);if(b){var nm=b.getAttribute("data-n")||b.textContent;if(isBlocked(nm))bad="b";else if(notAssigned(nm))bad=nm}}
+    if(!bad&&(WATCH||PICK)&&appLocked())bad="l";
+    if(bad){e.preventDefault();e.stopImmediatePropagation();if(bad==="b")lock();else if(bad==="l")showAppLocked();else showNotAssigned(bad)}}
+  function start(){
+    if(lsGet(LOCK_KEY)&&BLOCKED.length){locked=true;showBlocked();return}
+    var n=ssGet(NAME_KEY);
+    if(n&&isBlocked(n)){lock();return}
+    if(needLogin&&!n)showLogin();else badge();
+    if(WATCH||PICK){["submit","click","change"].forEach(function(t){document.addEventListener(t,guard,true)});
+      document.addEventListener("keydown",function(e){if(e.key==="Enter")guard(e)},true)}
+    sweep();refresh();setInterval(sweep,2000);setInterval(refresh,30000);
+    document.addEventListener("visibilitychange",function(){if(!document.hidden)refresh()});
+  }
+  if(document.body)start();else document.addEventListener("DOMContentLoaded",start);
+})();
+</script>
+<!-- /Class sign-in gate -->
+
+<link rel="stylesheet" href="/shared/brand.css">
+<script src="/shared/standards.js"></script>
+<script src="/shared/frame.js" data-app="Cross Math" data-subject="math" data-tags="Puzzles|3 levels"></script>
+<title>Cross Math</title>
+<meta name="description" content="Cross math puzzles with random grids, a number bank, three difficulty levels, hints and best times.">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Azeret+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: one column, graph-paper workbook page — header, 7×7 puzzle grid, number bank, controls */
+:root {
+  --paper: #EDF2EE;
+  --line: #D3DFD7;
+  --cell: #FFFFFF;
+  --cell-edge: #B9CBBF;
+  --ink: #18263F;
+  --muted: #5B6B7E;
+  --pen: #2346C4;
+  --pen-soft: #DCE3FA;
+  --good: #23824F;
+  --good-soft: #D8EFE1;
+  --bad: #C73B2A;
+  --bad-soft: #F8DDD8;
+  --op: #8A6A1F;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --num: "Azeret Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0E1828; --line: #182740; --cell: #15233A; --cell-edge: #2A3D5E;
+    --ink: #E4ECF7; --muted: #94A5BD; --pen: #8FA9FF; --pen-soft: #1F3366;
+    --good: #5ED39A; --good-soft: #143A2B; --bad: #FF8A78; --bad-soft: #43201C; --op: #E5C46F;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0E1828; --line: #182740; --cell: #15233A; --cell-edge: #2A3D5E;
+  --ink: #E4ECF7; --muted: #94A5BD; --pen: #8FA9FF; --pen-soft: #1F3366;
+  --good: #5ED39A; --good-soft: #143A2B; --bad: #FF8A78; --bad-soft: #43201C; --op: #E5C46F;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 22px 22px;
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 15px;
+  min-height: 100vh;
+}
+.page {
+  max-width: 480px;
+  margin: 0 auto;
+  padding-block: 20px 40px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 18px;
+}
+header { display: flex; align-items: end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+h1 {
+  font-family: var(--display); font-weight: 800; font-size: 2.1rem; line-height: 1;
+  margin: 0; letter-spacing: -0.02em; text-wrap: balance;
+}
+h1 span { color: var(--pen); }
+.sub { margin: 6px 0 0; color: var(--muted); font-size: 0.9rem; }
+.stats { display: flex; gap: 14px; font-family: var(--num); font-variant-numeric: tabular-nums; }
+.stat { display: flex; flex-direction: column; align-items: end; }
+.stat b { font-size: 1.15rem; }
+.stat small { font-family: var(--body); font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+
+.levels { display: flex; gap: 6px; background: var(--cell); border: 1px solid var(--cell-edge); border-radius: 10px; padding: 4px; }
+.levels button {
+  flex: 1; border: 0; background: transparent; color: var(--muted); font: 700 0.88rem var(--body);
+  padding: 8px 6px; border-radius: 7px; cursor: pointer;
+}
+.levels button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.levels button small { display: block; font-weight: 400; font-size: 0.7rem; opacity: 0.8; }
+
+.board {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;
+  width: 100%; max-width: 440px; margin: 0 auto;
+}
+.c {
+  aspect-ratio: 1; max-width: 100%;
+  display: grid; place-items: center;
+  font-family: var(--num); font-weight: 700; font-variant-numeric: tabular-nums;
+  font-size: clamp(1rem, 5.2vw, 1.55rem);
+  border-radius: 8px; position: relative; user-select: none;
+}
+.c.empty { visibility: hidden; }
+.c.op, .c.eq { color: var(--op); font-size: clamp(1.05rem, 5.6vw, 1.6rem); }
+.c.eq { color: var(--muted); }
+.c.given { background: var(--cell); border: 1.5px solid var(--cell-edge); }
+.c.res { background: transparent; border: 1.5px dashed var(--cell-edge); color: var(--ink); }
+.c.res.ok { border: 1.5px solid var(--good); background: var(--good-soft); color: var(--good); }
+.c.res.bad { border: 1.5px solid var(--bad); background: var(--bad-soft); color: var(--bad); }
+.c.slot {
+  background: var(--cell); border: 2px dashed var(--pen); color: var(--pen);
+  cursor: pointer; font: inherit; font-family: var(--num); font-weight: 700; font-size: clamp(1rem, 5.2vw, 1.55rem);
+  padding: 0; transition: transform .12s ease, background .12s ease;
+}
+.c.slot.filled { border-style: solid; background: var(--pen-soft); }
+.c.slot.hinted { border-color: var(--good); color: var(--good); background: var(--good-soft); cursor: default; }
+.c.slot.sel { box-shadow: 0 0 0 3px var(--pen); transform: scale(1.04); }
+.c.slot:focus-visible, .tile:focus-visible, button:focus-visible { outline: 3px solid var(--pen); outline-offset: 2px; }
+
+.bank-wrap { display: flex; flex-direction: column; gap: 8px; }
+.label { font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+.bank { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; min-height: 52px; }
+.tile {
+  width: 48px; height: 48px; border-radius: 9px; cursor: pointer;
+  border: 1.5px solid var(--ink); background: var(--cell); color: var(--ink);
+  font-family: var(--num); font-weight: 700; font-size: 1.3rem; font-variant-numeric: tabular-nums;
+  box-shadow: 0 3px 0 var(--ink); transition: transform .1s ease, box-shadow .1s ease;
+}
+.tile:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink); }
+.tile.sel { background: var(--pen); border-color: var(--pen); color: var(--cell); box-shadow: 0 3px 0 var(--ink); transform: translateY(-3px); }
+.tile.used { visibility: hidden; }
+.bank-empty { color: var(--muted); font-size: 0.85rem; align-self: center; }
+
+.controls { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn {
+  flex: 1 1 120px; padding: 11px 12px; border-radius: 9px; cursor: pointer;
+  font: 700 0.92rem var(--body); border: 1.5px solid var(--cell-edge); background: var(--cell); color: var(--ink);
+}
+.btn.primary { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+.win {
+  border: 2px solid var(--good); background: var(--good-soft); color: var(--ink);
+  border-radius: 12px; padding: 14px 16px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+}
+.win strong { font-family: var(--display); font-size: 1.3rem; color: var(--good); }
+.win p { margin: 2px 0 0; font-size: 0.9rem; }
+.win .btn { flex: 0 0 auto; }
+.win > div { flex: 1 1 180px; min-width: 0; }
+
+.howto { color: var(--muted); font-size: 0.86rem; line-height: 1.5; max-width: 62ch; }
+.howto b { color: var(--ink); }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="page">
+  <header>
+    <div>
+      <h1>Cross <span>Math</span></h1>
+      <p class="sub">Every row and column must add up.</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="timer">0:00</b><small>Time</small></div>
+      <div class="stat"><b id="best">–</b><small>Best</small></div>
+    </div>
+  </header>
+
+  <div class="levels" role="group" aria-label="Difficulty">
+    <button id="lv-easy" data-lv="easy">Easy<small>+ −, 4 blanks</small></button>
+    <button id="lv-medium" data-lv="medium">Medium<small>+ − × ÷, 6</small></button>
+    <button id="lv-hard" data-lv="hard">Hard<small>+ − × ÷, 9</small></button>
+  </div>
+
+  <div id="win" class="win" hidden>
+    <div>
+      <strong>Solved!</strong>
+      <p id="win-msg"></p>
+    </div>
+    <button class="btn primary" id="win-next">Next puzzle</button>
+  </div>
+
+  <div class="board" id="board" aria-label="Puzzle grid"></div>
+
+  <div class="bank-wrap">
+    <span class="label">Number bank</span>
+    <div class="bank" id="bank"></div>
+  </div>
+
+  <div class="controls">
+    <button class="btn" id="hint">Hint</button>
+    <button class="btn" id="clear">Clear board</button>
+    <button class="btn primary" id="new">New puzzle</button>
+  </div>
+
+  <p class="howto"><b>How to play:</b> tap a number in the bank, then tap an empty square to place it. Tap a filled square to send its number back. Work left to right and top to bottom, ignoring the usual order of operations. Result squares turn green when an equation works and red when it doesn't. Any arrangement that makes all six equations true counts as solved.</p>
+</div>
+
+<script>
+(function () {
+  const OPS = { '+': (a, b) => a + b, '−': (a, b) => a - b, '×': (a, b) => a * b, '÷': (a, b) => (b !== 0 && a % b === 0) ? a / b : NaN };
+  const LEVELS = {
+    easy:   { ops: ['+', '−'], blanks: 4, max: 9, cap: 30 },
+    medium: { ops: ['+', '−', '×', '÷'], blanks: 6, max: 9, cap: 99 },
+    hard:   { ops: ['+', '−', '×', '÷'], blanks: 9, max: 9, cap: 99 }
+  };
+  const rnd = n => Math.floor(Math.random() * n);
+  const pick = a => a[rnd(a.length)];
+
+  function ev(a, o1, b, o2, c) {
+    const m = OPS[o1](a, b);
+    if (!Number.isInteger(m) || m < 0) return NaN;
+    const r = OPS[o2](m, c);
+    return (Number.isInteger(r) && r >= 0) ? r : NaN;
+  }
+
+  function generate(lv) {
+    const L = LEVELS[lv];
+    for (let t = 0; t < 20000; t++) {
+      const n = Array.from({ length: 9 }, () => 1 + rnd(L.max));
+      const rowOps = [0, 1, 2].map(() => [pick(L.ops), pick(L.ops)]);
+      const colOps = [0, 1, 2].map(() => [pick(L.ops), pick(L.ops)]);
+      const rowRes = [], colRes = [];
+      let ok = true;
+      for (let i = 0; i < 3 && ok; i++) {
+        const r = ev(n[i * 3], rowOps[i][0], n[i * 3 + 1], rowOps[i][1], n[i * 3 + 2]);
+        const c = ev(n[i], colOps[i][0], n[i + 3], colOps[i][1], n[i + 6]);
+        if (isNaN(r) || isNaN(c) || r > L.cap || c > L.cap) ok = false;
+        rowRes.push(r); colRes.push(c);
+      }
+      if (!ok) continue;
+      if (lv !== 'easy') {
+        const all = rowOps.flat().concat(colOps.flat());
+        if (!all.includes('×') || !all.includes('÷')) continue;
+      }
+      return { n, rowOps, colOps, rowRes, colRes };
+    }
+    return generate('easy');
+  }
+
+  let S = null, timerId = null;
+  const $ = id => document.getElementById(id);
+  const fmt = s => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+
+  function bestKey(lv) { return 'crossmath-best-' + lv; }
+  function getBest(lv) { try { const v = localStorage.getItem(bestKey(lv)); return v ? +v : null; } catch (e) { return null; } }
+  function setBest(lv, s) { try { localStorage.setItem(bestKey(lv), String(s)); } catch (e) {} }
+  function getLevel() { try { return localStorage.getItem('crossmath-level') || 'easy'; } catch (e) { return 'easy'; } }
+  function saveLevel(lv) { try { localStorage.setItem('crossmath-level', lv); } catch (e) {} }
+
+  function newGame(lv) {
+    const p = generate(lv);
+    const idx = [0, 1, 2, 3, 4, 5, 6, 7, 8].sort(() => Math.random() - 0.5).slice(0, LEVELS[lv].blanks);
+    const cells = p.n.map((v, i) => ({ answer: v, given: !idx.includes(i), value: idx.includes(i) ? null : v, tile: null, hinted: false }));
+    const bank = idx.map(i => p.n[i]).sort((a, b) => a - b).map((v, k) => ({ id: k, value: v, used: false }));
+    S = { lv, p, cells, bank, selTile: null, selCell: null, elapsed: 0, done: false, hints: 0 };
+    startTimer();
+    render();
+  }
+
+  function startTimer() {
+    clearInterval(timerId);
+    timerId = setInterval(() => {
+      if (!S || S.done || document.hidden) return;
+      S.elapsed++;
+      $('timer').textContent = fmt(S.elapsed);
+    }, 1000);
+  }
+
+  function val(i) { return S.cells[i].value; }
+  function rowState(i) {
+    const a = val(i * 3), b = val(i * 3 + 1), c = val(i * 3 + 2);
+    if (a == null || b == null || c == null) return '';
+    return ev(a, S.p.rowOps[i][0], b, S.p.rowOps[i][1], c) === S.p.rowRes[i] ? 'ok' : 'bad';
+  }
+  function colState(j) {
+    const a = val(j), b = val(j + 3), c = val(j + 6);
+    if (a == null || b == null || c == null) return '';
+    return ev(a, S.p.colOps[j][0], b, S.p.colOps[j][1], c) === S.p.colRes[j] ? 'ok' : 'bad';
+  }
+
+  function place(cellIdx, tileId) {
+    const cell = S.cells[cellIdx];
+    if (cell.tile != null) S.bank[cell.tile].used = false;
+    const t = S.bank[tileId];
+    t.used = true; cell.tile = tileId; cell.value = t.value;
+    S.selTile = null; S.selCell = null;
+  }
+  function unplace(cellIdx) {
+    const cell = S.cells[cellIdx];
+    if (cell.tile != null) S.bank[cell.tile].used = false;
+    cell.tile = null; cell.value = null;
+  }
+
+  function onCell(i) {
+    if (S.done) return;
+    const cell = S.cells[i];
+    if (cell.given || cell.hinted) return;
+    if (S.selTile != null) { place(i, S.selTile); }
+    else if (cell.value != null) { unplace(i); S.selCell = null; }
+    else { S.selCell = S.selCell === i ? null : i; }
+    after();
+  }
+  function onTile(id) {
+    if (S.done) return;
+    if (S.selCell != null) { place(S.selCell, id); }
+    else { S.selTile = S.selTile === id ? null : id; }
+    after();
+  }
+
+  function hint() {
+    if (S.done) return;
+    const targets = S.cells.map((c, i) => i).filter(i => !S.cells[i].given && !S.cells[i].hinted && S.cells[i].value !== S.cells[i].answer);
+    if (!targets.length) return;
+    const i = pick(targets);
+    const need = S.cells[i].answer;
+    unplace(i);
+    let tile = S.bank.find(t => !t.used && t.value === need);
+    if (!tile) {
+      const holder = S.cells.findIndex(c => !c.given && !c.hinted && c.value === need);
+      unplace(holder);
+      tile = S.bank.find(t => !t.used && t.value === need);
+    }
+    place(i, tile.id);
+    S.cells[i].hinted = true;
+    S.hints++;
+    after();
+  }
+
+  function after() {
+    const full = S.cells.every(c => c.value != null);
+    if (full && [0, 1, 2].every(k => rowState(k) === 'ok' && colState(k) === 'ok')) {
+      S.done = true;
+      try { window.TK && TK.record({ activity: 'Cross Math · ' + S.lv[0].toUpperCase() + S.lv.slice(1), score: Math.max(0, LEVELS[S.lv].blanks - S.hints), total: LEVELS[S.lv].blanks, detail: 'Solved in ' + fmt(S.elapsed) + (S.hints ? ', ' + S.hints + ' hint(s)' : '') }); } catch (e) {}
+      const best = getBest(S.lv);
+      let msg = 'Finished in ' + fmt(S.elapsed);
+      if (S.hints) msg += ' with ' + S.hints + (S.hints === 1 ? ' hint.' : ' hints.');
+      else if (best == null || S.elapsed < best) { setBest(S.lv, S.elapsed); msg += best == null ? '. First solve on this level.' : '. New best time!'; }
+      else msg += '. Best is ' + fmt(best) + '.';
+      $('win-msg').textContent = msg;
+    }
+    render();
+  }
+
+  function render() {
+    const b = $('board');
+    b.innerHTML = '';
+    const add = (cls, txt, attrs) => {
+      const el = document.createElement(attrs && attrs.button ? 'button' : 'div');
+      el.className = 'c ' + cls;
+      if (txt != null) el.textContent = txt;
+      if (attrs && attrs.button) { el.type = 'button'; el.id = 'cell-' + attrs.i; el.addEventListener('click', () => onCell(attrs.i)); el.setAttribute('aria-label', attrs.label); }
+      b.appendChild(el);
+    };
+    for (let r = 0; r < 7; r++) for (let c = 0; c < 7; c++) {
+      if (r % 2 === 0 && r < 6) {
+        const i = r / 2;
+        if (c % 2 === 0 && c < 6) {
+          const k = i * 3 + c / 2, cell = S.cells[k];
+          if (cell.given) add('given', cell.value);
+          else {
+            let cls = 'slot' + (cell.value != null ? ' filled' : '') + (cell.hinted ? ' hinted' : '') + (S.selCell === k ? ' sel' : '');
+            add(cls, cell.value ?? '', { button: true, i: k, label: 'Row ' + (i + 1) + ' column ' + (c / 2 + 1) + (cell.value != null ? ', ' + cell.value : ', empty') });
+          }
+        } else if (c === 1 || c === 3) add('op', S.p.rowOps[i][(c - 1) / 2]);
+        else if (c === 5) add('eq', '=');
+        else add('res ' + rowState(i), S.p.rowRes[i]);
+      } else if (r === 1 || r === 3) {
+        if (c % 2 === 0 && c < 6) add('op', S.p.colOps[c / 2][(r - 1) / 2]);
+        else add('empty');
+      } else if (r === 5) {
+        if (c % 2 === 0 && c < 6) add('eq', '=');
+        else add('empty');
+      } else {
+        if (c % 2 === 0 && c < 6) add('res ' + colState(c / 2), S.p.colRes[c / 2]);
+        else add('empty');
+      }
+    }
+
+    const bank = $('bank');
+    bank.innerHTML = '';
+    S.bank.forEach(t => {
+      const el = document.createElement('button');
+      el.type = 'button'; el.className = 'tile' + (t.used ? ' used' : '') + (S.selTile === t.id ? ' sel' : '');
+      el.id = 'tile-' + t.id; el.textContent = t.value;
+      el.setAttribute('aria-label', 'Number ' + t.value);
+      el.addEventListener('click', () => onTile(t.id));
+      bank.appendChild(el);
+    });
+
+    document.querySelectorAll('.levels button').forEach(btn => btn.setAttribute('aria-pressed', String(btn.dataset.lv === S.lv)));
+    $('timer').textContent = fmt(S.elapsed);
+    const best = getBest(S.lv);
+    $('best').textContent = best == null ? '–' : fmt(best);
+    $('win').hidden = !S.done;
+    $('hint').disabled = S.done;
+  }
+
+  document.querySelectorAll('.levels button').forEach(btn => btn.addEventListener('click', () => { saveLevel(btn.dataset.lv); newGame(btn.dataset.lv); }));
+  $('new').addEventListener('click', () => newGame(S.lv));
+  $('win-next').addEventListener('click', () => newGame(S.lv));
+  $('hint').addEventListener('click', hint);
+  $('clear').addEventListener('click', () => {
+    if (S.done) return;
+    S.cells.forEach((c, i) => { if (!c.given && !c.hinted) unplace(i); });
+    S.selTile = null; S.selCell = null; render();
+  });
+
+  function start(data) {
+    if (data && data.S) { S = data.S; startTimer(); render(); }
+    else newGame(LEVELS[getLevel()] ? getLevel() : 'easy');
+  }
+  window.claude?.hot?.snapshot?.(() => ({ S }));
+  window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
+})();
+</script>
+
+<script>
+window.TK_CONFIG={
+  app:"cross-math", name:"Cross Math",
+  activities:["Cross Math · Easy","Cross Math · Medium","Cross Math · Hard"],
+  features:{dashboard:true,worksheets:true,classCode:true},
+  demo:{intro:"Cross Math is a number-grid puzzle. Every row and every column has to make a true equation.",steps:[
+    {sel:".levels",title:"Choose a level",text:"Easy uses + and − with 4 blanks. Medium and Hard add × and ÷ with 6 or 9 blanks."},
+    {sel:"#board",title:"The puzzle grid",text:"Work left to right and top to bottom. Result squares turn green when an equation works and red when it doesn't."},
+    {sel:"#bank",title:"Number bank",text:"Tap a number, then tap an empty square to place it. Tap a filled square to send its number back."},
+    {sel:".controls",title:"Hints and new puzzles",text:"Hint fills one square. The dashboard score is blanks solved without hints, and the time is saved too."}]},
+  worksheet:{title:"Cross Math Equation Practice",directions:"Work left to right. Find the missing number.",count:12,sets:(function(){
+    var OPS={'+':function(a,b){return a+b},'−':function(a,b){return a-b},'×':function(a,b){return a*b},'÷':function(a,b){return b&&a%b===0?a/b:NaN}};
+    function mk(ops,blank){return function(r,n){var out=[],g=0;while(out.length<n&&g++<5000){var a=TK.int(r,1,9),b=TK.int(r,1,9),c=TK.int(r,1,9),o1=TK.pick(ops,r),o2=TK.pick(ops,r);var m=OPS[o1](a,b);if(!Number.isInteger(m)||m<0)continue;var res=OPS[o2](m,c);if(!Number.isInteger(res)||res<0||res>99)continue;
+      if(blank){var k=TK.int(r,0,2),v=[a,b,c],ans=v[k];v[k]='___';out.push({q:v[0]+' '+o1+' '+v[1]+' '+o2+' '+v[2]+' = '+res,a:String(ans),lines:0})}else out.push({q:a+' '+o1+' '+b+' '+o2+' '+c+' = ______',a:String(res),lines:0})}return out}}
+    return [{name:"Easy: + and −, find the result",standards:["NC.3.OA.8"],gen:mk(['+','−'],false)},
+      {name:"Easy: + and −, find the missing number",standards:["NC.3.OA.8","NC.3.OA.4"],gen:mk(['+','−'],true)},
+      {name:"Medium: all four operations, find the result",standards:["NC.3.OA.8","NC.4.OA.3"],gen:mk(['+','−','×','÷'],false)},
+      {name:"Hard: all four operations, find the missing number",standards:["NC.3.OA.4","NC.4.OA.3"],gen:mk(['+','−','×','÷'],true)}];})()}
+};
+
+</script>
+<script src="/shared/teacher-kit.js"></script>
+</body></html>

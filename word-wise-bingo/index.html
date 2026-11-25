@@ -1,0 +1,494 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!-- Class sign-in gate: first-name sign-in, blocked names, locked and assigned apps, teacher unlock. Live settings: /classgate.json (edited from Control Center → Lock & Assign). Source: /shared/classgate-block.html -->
+<style>
+#cg-ov{position:fixed;inset:0;z-index:2147483000;background:#141c24;display:flex;align-items:center;justify-content:center;padding:16px;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+#cg-ov *{box-sizing:border-box}
+#cg-ov .cg-card{background:#fff;color:#1b2420;border-radius:14px;max-width:420px;width:100%;padding:24px;display:flex;flex-direction:column;gap:12px;box-shadow:0 12px 32px rgba(0,0,0,.35);font-size:18px;line-height:1.45}
+#cg-ov h2{margin:0;font-size:1.45rem;line-height:1.2}
+#cg-ov p{margin:0}
+#cg-ov a{color:#0b6b4a;font-weight:700}
+#cg-ov label{font-weight:700}
+#cg-ov input{font:inherit;width:100%;padding:12px;border:2px solid #c9d1cc;border-radius:8px;background:#f6f8f6;color:#1b2420}
+#cg-ov input:focus{outline:3px solid #f2c230;outline-offset:1px}
+#cg-ov button{font:inherit;font-weight:700;border:0;border-radius:8px;padding:12px 16px;background:#0b6b4a;color:#fff;cursor:pointer}
+#cg-ov button.cg-alt{background:#e7ece9;color:#1b2420}
+#cg-ov .cg-icon{font-size:2.2rem;line-height:1}
+#cg-ov .cg-msg{min-height:1.4em;color:#a83226;font-size:.95rem}
+#cg-ov .cg-small{font-size:.9rem;color:#55625b}
+#cg-ov details{border-top:1px solid #e1e6e2;padding-top:10px}
+#cg-ov summary{cursor:pointer;font-size:.9rem;color:#55625b}
+#cg-ov form{display:flex;flex-direction:column;gap:10px;margin:0}
+#cg-badge{position:fixed;right:10px;bottom:10px;z-index:2147482000;background:#1b2430;color:#fff;font:600 14px/1.2 system-ui,-apple-system,"Segoe UI",Arial,sans-serif;border-radius:999px;padding:7px 8px 7px 14px;display:flex;gap:10px;align-items:center;box-shadow:0 3px 10px rgba(0,0,0,.25)}
+#cg-badge button{font:inherit;background:#f2c230;color:#1b1b1b;border:0;border-radius:999px;padding:4px 10px;cursor:pointer}
+</style>
+<script>
+(function(){
+  var BLOCKED=["james"];          /* fallback list; /classgate.json on the site replaces it when it loads */
+  var CFG={lockAll:false,apps:{}}; /* locked and assigned apps; filled in from /classgate.json */
+  var CODE_HASH="cf2d0fe7ea0a7780592080ef0bf415a6043a3d59aa5d72ace64d39c6e0837285";  /* scrambled teacher code; the code itself is not stored in this page */
+  var TRY_KEY="echols-classgate-tries";
+  function sha(t){return crypto.subtle.digest("SHA-256",new TextEncoder().encode(t)).then(function(b){return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0")}).join("")})}
+  /* Checks a teacher code. Three wrong tries locks code entry on this device for 10 minutes. Resolves "ok", "wrong" or "wait". */
+  function checkCode(code){var t={};try{t=JSON.parse(lsGet(TRY_KEY))||{}}catch(x){}
+    if(t.until&&Date.now()<t.until)return Promise.resolve("wait");
+    return sha("echols-room2:"+String(code||"").trim()).then(function(h){
+      if(h===CODE_HASH){lsSet(TRY_KEY,null);return "ok"}
+      t.n=(t.n||0)+1;if(t.n>=3){t={n:0,until:Date.now()+600000};lsSet(TRY_KEY,JSON.stringify(t));return "wait"}
+      lsSet(TRY_KEY,JSON.stringify(t));return "wrong"},function(){return "wrong"})}
+  var CODE_MSG={wrong:"That code is not right.",wait:"Too many tries. Wait 10 minutes and try again."};
+  var LOCK_KEY="echols-classgate-lock", NAME_KEY="echols-classgate-name", TEACH_KEY="echols-classgate-teacher";
+  var me=document.currentScript, needLogin=!!(me&&me.getAttribute("data-login")!==null);
+  function attr(a){return (me&&me.getAttribute(a))||""}
+  /* data-watch: name inputs of an app's own sign-in. data-pick: buttons whose text is a name. data-session: saved sign-ins (s:key or l:key:prop). data-app: app id (default: first folder of the address). */
+  var WATCH=attr("data-watch"), PICK=attr("data-pick"), SESS=attr("data-session").split(",").filter(Boolean);
+  var APP=attr("data-app")||(function(){var p=decodeURIComponent(location.pathname).split("/").filter(Boolean)[0]||"";
+    return p.replace(/\.html?$/i,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")})();
+  var BOOK=(function(){try{return new URLSearchParams(location.search).get("book")||""}catch(e){return ""}})();
+  var current="", locked=false, shown="", denied="";
+  function first(n){return String(n||"").trim().split(/[\s\-_]+/)[0].toLowerCase().replace(/[^a-z]/g,"")}
+  function isBlocked(n){return BLOCKED.indexOf(first(n))>-1}
+  /* Mr. Echols (teacher preview) and portfolio guests (?visitor) are not held by app locks or assignments; guest work never reaches class records. */
+  function teacher(){return ssGet(TEACH_KEY)==="1"||ssGet("ec-guest")==="1"||ssGet("ec-visitor")==="1"||/[?&]visitor\b/.test(location.search)}
+  /* This app's setting: {mode:"open"|"locked"|"assigned", students:[first names]} */
+  function setting(){var a=CFG.apps||{};return (BOOK&&a[APP+":"+BOOK])||a[APP]||{mode:"open"}}
+  function appLocked(){if(teacher())return false;return !!CFG.lockAll||setting().mode==="locked"}
+  function notAssigned(n){if(teacher()||!n)return false;var s=setting();if(s.mode!=="assigned")return false;
+    return (s.students||[]).map(first).indexOf(first(n))<0}
+  function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
+  function lsSet(k,v){try{v===null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}}
+  function ssGet(k){try{return sessionStorage.getItem(k)}catch(e){return null}}
+  function ssSet(k,v){try{v===null?sessionStorage.removeItem(k):sessionStorage.setItem(k,v)}catch(e){}}
+  function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+  function tidy(n){return String(n).replace(/\s+/g," ").trim().split(" ").map(function(w){return w.charAt(0).toUpperCase()+w.slice(1)}).join(" ")}
+  function overlay(html){var o=document.getElementById("cg-ov");if(!o){o=document.createElement("div");o.id="cg-ov";o.setAttribute("role","dialog");o.setAttribute("aria-modal","true");document.body.appendChild(o)}o.innerHTML='<div class="cg-card">'+html+'</div>';var i=o.querySelector("input:not([type=password])");if(i)setTimeout(function(){i.focus()},30);return o}
+  function close(){var o=document.getElementById("cg-ov");if(o)o.remove();shown=""}
+  function badge(){var b=document.getElementById("cg-badge");if(b)b.remove();var n=ssGet(NAME_KEY);if(!needLogin||!n)return;b=document.createElement("div");b.id="cg-badge";b.innerHTML='<span>'+esc(n)+'</span><button type="button">Sign out</button>';b.querySelector("button").onclick=function(){ssSet(NAME_KEY,null);location.reload()};document.body.appendChild(b)}
+  function showBlocked(){shown="blocked";
+    var o=overlay('<h2>This activity is not available</h2><p>This app is not open to you right now. Please check with Mr. Echols.</p>'+
+      '<details><summary>Teacher unlock</summary><form id="cg-unlock" style="margin-top:10px"><label for="cg-code">Teacher code</label><input id="cg-code" type="password" inputmode="numeric" autocomplete="off"><button type="submit">Unlock this device</button><p class="cg-msg" id="cg-umsg"></p></form></details>');
+    o.querySelector("#cg-unlock").onsubmit=function(e){e.preventDefault();var c=o.querySelector("#cg-code");
+      checkCode(c.value).then(function(r){if(r==="ok"){lsSet(LOCK_KEY,null);ssSet(NAME_KEY,null);location.reload();return}
+        c.value="";o.querySelector("#cg-umsg").textContent=CODE_MSG[r]})};
+  }
+  /* Locked app or not assigned: no device lock, and the page opens again by itself when Mr. Echols opens it. */
+  function teacherPreview(o){var f=o.querySelector("#cg-tp");if(!f)return;f.onsubmit=function(e){e.preventDefault();var c=o.querySelector("#cg-tcode");
+    checkCode(c.value).then(function(r){if(r==="ok"){ssSet(TEACH_KEY,"1");location.reload();return}c.value="";o.querySelector("#cg-tmsg").textContent=CODE_MSG[r]})}}
+  var TP='<details><summary>Teacher preview</summary><form id="cg-tp" style="margin-top:10px"><label for="cg-tcode">Teacher code</label><input id="cg-tcode" type="password" inputmode="numeric" autocomplete="off"><button type="submit">Open for this tab</button><p class="cg-msg" id="cg-tmsg"></p></form></details>';
+  var MY='<p class="cg-small"><a href="/my-apps/">See my apps</a></p>';
+  function showAppLocked(){if(shown==="applocked")return;shown="applocked";var b=document.getElementById("cg-badge");if(b)b.remove();
+    teacherPreview(overlay('<div class="cg-icon" aria-hidden="true">🔒</div><h2>This app is locked</h2><p>Mr. Echols has locked this app for now. It will open again when he unlocks it.</p>'+MY+TP))}
+  function showNotAssigned(n){if(shown==="notassigned")return;shown="notassigned";denied=String(n||"");var b=document.getElementById("cg-badge");if(b)b.remove();
+    var o=overlay('<div class="cg-icon" aria-hidden="true">📋</div><h2>Not assigned to you</h2><p>'+(n?esc(tidy(first(n)))+', this':'This')+' app is not on your list right now. Check with Mr. Echols.</p>'+MY+
+      '<button type="button" class="cg-alt" id="cg-other">I typed the wrong name</button>'+TP);
+    o.querySelector("#cg-other").onclick=function(){ssSet(NAME_KEY,null);location.reload()};teacherPreview(o)}
+  function lock(){if(locked)return;locked=true;lsSet(LOCK_KEY,"1");ssSet(NAME_KEY,null);var b=document.getElementById("cg-badge");if(b)b.remove();showBlocked()}
+  /* One name check for every sign-in path: false when the name may not use this app. */
+  function allow(n){if(isBlocked(n)){lock();return false}if(appLocked()){showAppLocked();return false}if(notAssigned(n)){showNotAssigned(n);return false}return true}
+  function showLogin(){shown="login";
+    var o=overlay('<h2>Sign in</h2><p class="cg-small">Mr. Echols’ Room 2</p><form id="cg-form"><label for="cg-name">Type your first name</label><input id="cg-name" type="text" maxlength="30" autocomplete="off" autocapitalize="words" placeholder="First name"><button type="submit">Start</button><p class="cg-msg" id="cg-msg"></p></form>');
+    o.querySelector("#cg-form").onsubmit=function(e){e.preventDefault();
+      var raw=o.querySelector("#cg-name").value.replace(/\s+/g," ").trim();
+      if(!/^[A-Za-zÀ-ɏ][A-Za-zÀ-ɏ .'\-]{0,29}$/.test(raw)){o.querySelector("#cg-msg").textContent="Please type your first name using letters.";return}
+      if(!allow(raw))return;
+      var n=tidy(raw);current=n;ssSet(NAME_KEY,n);close();badge();
+      try{document.dispatchEvent(new CustomEvent("classgate:signin",{detail:{name:n}}))}catch(err){}
+    };
+  }
+  window.ClassGate={
+    /* Apps with their own sign-in call this; returns false for a blocked name (and locks the device), a locked app, or a student this app isn't assigned to. */
+    check:function(n){if(lsGet(LOCK_KEY)&&BLOCKED.length){showBlocked();return false}if(!allow(n))return false;current=String(n||"");return true},
+    name:function(){return ssGet(NAME_KEY)||""},
+    app:function(){return APP},
+    /* Teacher code check for in-app teacher tools: resolves "ok", "wrong" or "wait". */
+    checkCode:checkCode, codeMsg:function(r){return CODE_MSG[r]||""}
+  };
+  function saved(){var out=[];SESS.forEach(function(s){var p=s.split(":"),v=null;try{v=(p[0]==="l"?localStorage:sessionStorage).getItem(p[1])}catch(e){}
+    if(v&&p[2]){try{v=(JSON.parse(v)||{})[p[2]]}catch(e){v=null}}if(v)out.push(String(v))});return out}
+  function watched(){var out=[];if(!WATCH)return out;try{Array.prototype.forEach.call(document.querySelectorAll(WATCH),function(i){if(i!==document.activeElement&&i.value)out.push(i.value)})}catch(e){}return out}
+  /* Signs a blocked student out of anything already open, and closes the app when it is locked or not assigned. */
+  function sweep(){if(locked)return;
+    if(lsGet(LOCK_KEY)&&BLOCKED.length){locked=true;showBlocked();return}
+    if(appLocked()){showAppLocked();return}
+    var all=[ssGet(NAME_KEY),current,denied].concat(saved(),watched());
+    for(var i=0;i<all.length;i++)if(all[i]&&isBlocked(all[i])){lock();return}
+    for(i=0;i<all.length;i++)if(all[i]&&notAssigned(all[i])){showNotAssigned(all[i]);return}
+    /* reopened by the teacher while the lock screen was up */
+    if(shown==="applocked"||shown==="notassigned")location.reload()}
+  function refresh(){if(!window.fetch)return;
+    fetch("/classgate.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(j){if(!j)return;
+      if(Array.isArray(j.blocked))BLOCKED=j.blocked.map(first).filter(Boolean);
+      CFG={lockAll:!!j.lockAll,apps:(j.apps&&typeof j.apps==="object")?j.apps:{}};sweep()}).catch(function(){})}
+  function guard(e){if(locked||shown==="applocked"||shown==="notassigned")return;var bad=null;
+    if(WATCH){try{Array.prototype.forEach.call(document.querySelectorAll(WATCH),function(i){if(!i.value||bad)return;if(isBlocked(i.value))bad="b";else if(notAssigned(i.value))bad=i.value;else current=i.value})}catch(x){}}
+    if(!bad&&PICK&&e.type==="click"&&e.target.closest){var b=e.target.closest(PICK);if(b){var nm=b.getAttribute("data-n")||b.textContent;if(isBlocked(nm))bad="b";else if(notAssigned(nm))bad=nm}}
+    if(!bad&&(WATCH||PICK)&&appLocked())bad="l";
+    if(bad){e.preventDefault();e.stopImmediatePropagation();if(bad==="b")lock();else if(bad==="l")showAppLocked();else showNotAssigned(bad)}}
+  function start(){
+    if(lsGet(LOCK_KEY)&&BLOCKED.length){locked=true;showBlocked();return}
+    var n=ssGet(NAME_KEY);
+    if(n&&isBlocked(n)){lock();return}
+    if(needLogin&&!n)showLogin();else badge();
+    if(WATCH||PICK){["submit","click","change"].forEach(function(t){document.addEventListener(t,guard,true)});
+      document.addEventListener("keydown",function(e){if(e.key==="Enter")guard(e)},true)}
+    sweep();refresh();setInterval(sweep,2000);setInterval(refresh,30000);
+    document.addEventListener("visibilitychange",function(){if(!document.hidden)refresh()});
+  }
+  if(document.body)start();else document.addEventListener("DOMContentLoaded",start);
+})();
+</script>
+<!-- /Class sign-in gate -->
+
+<link rel="stylesheet" href="/shared/brand.css">
+<script src="/shared/standards.js"></script>
+<script src="/shared/frame.js" data-app="Word Wise Bingo" data-subject="ela" data-tags="Whole class|Vocabulary"></script>
+<title>Word Wise Bingo</title>
+<meta name="description" content="Vocabulary and spelling bingo with a teacher caller, student cards and a winner checker.">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* Layout: a bingo-hall caller stage beside a lit-up called board; player card in its own tab. */
+:root{
+  --paper:#EAF0F6; --surface:#FFFFFF; --ink:#18263A; --muted:#566A80; --line:#C6D3E1; --soft:#DCE6F0;
+  --b:#D9443A; --i:#E9A21E; --n:#23935F; --g:#2C6CC4; --o:#8248C2;
+  --on:#FFFFFF;
+  --display:"Lilita One","Arial Rounded MT Bold","Trebuchet MS",sans-serif;
+  --body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#111A25; --surface:#1A2533; --ink:#E7EEF6; --muted:#97A9BD; --line:#2D3C4F; --soft:#223042;
+  --b:#EF5E52; --i:#F2B33D; --n:#38B07A; --g:#4D8AE0; --o:#9C6BDB; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#111A25; --surface:#1A2533; --ink:#E7EEF6; --muted:#97A9BD; --line:#2D3C4F; --soft:#223042;
+  --b:#EF5E52; --i:#F2B33D; --n:#38B07A; --g:#4D8AE0; --o:#9C6BDB; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px;display:flex;flex-direction:column;gap:20px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px}
+.brand{display:flex;flex-direction:column;gap:2px}
+.logo{font-family:var(--display);font-size:clamp(34px,6vw,52px);line-height:1;letter-spacing:.5px;display:flex;gap:4px;flex-wrap:wrap}
+.logo span{display:inline-block}
+.logo .ww{color:var(--ink);margin-right:10px}
+.logo .lb{color:var(--on);width:1.05em;height:1.05em;border-radius:50%;display:inline-grid;place-items:center;font-size:.72em}
+.tag{color:var(--muted);font-size:14px;margin:0}
+.controls{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.seg{display:inline-flex;background:var(--soft);border-radius:999px;padding:4px;gap:2px}
+.seg button{border:0;background:transparent;color:var(--ink);font:700 14px var(--body);padding:8px 14px;border-radius:999px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.seg button:focus-visible,.btn:focus-visible,.cell:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--g);outline-offset:2px}
+.lbl{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
+
+.btn{border:2px solid var(--ink);background:var(--surface);color:var(--ink);font:700 15px var(--body);padding:10px 18px;border-radius:12px;cursor:pointer;transition:transform .08s}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:var(--ink);color:var(--paper)}
+.btn.quiet{border-color:var(--line)}
+.btn.warn{border-color:var(--b);color:var(--b)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+
+/* Caller */
+.caller{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:860px){.caller{grid-template-columns:1fr}}
+.stage{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:24px;display:flex;flex-direction:column;gap:18px;min-width:0}
+.stage-top{display:flex;gap:20px;align-items:center}
+.ball{flex:none;width:118px;height:118px;border-radius:50%;background:var(--soft);display:grid;place-items:center;position:relative;box-shadow:inset 0 -8px 0 rgba(0,0,0,.12)}
+.ball::after{content:"";position:absolute;inset:18px;border-radius:50%;background:var(--surface)}
+.ball b{position:relative;z-index:1;font-family:var(--display);font-size:54px;font-weight:400;line-height:1}
+.ball.pop{animation:pop .45s cubic-bezier(.3,1.6,.5,1)}
+@keyframes pop{from{transform:scale(.4) rotate(-40deg)}to{transform:scale(1) rotate(0)}}
+.meta{display:flex;flex-direction:column;gap:6px;min-width:0}
+.count{font-family:var(--display);font-size:22px}
+.kind{display:inline-block;align-self:flex-start;font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--soft);color:var(--ink)}
+.clue{font-size:clamp(22px,2.6vw,30px);line-height:1.35;font-weight:700;margin:0;text-wrap:balance;min-height:3em}
+.clue .blank{display:inline-block;min-width:4em;border-bottom:4px solid currentColor;margin:0 .1em}
+.clue .miss{font-family:var(--display);font-weight:400;letter-spacing:.18em;font-size:1.3em}
+.answer{border:2px dashed var(--line);border-radius:14px;padding:14px 18px;display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;min-height:72px}
+.answer .word{font-family:var(--display);font-size:clamp(30px,4vw,42px);line-height:1.1}
+.answer .pos{color:var(--muted);font-style:italic}
+.answer .tip{flex-basis:100%;color:var(--muted);font-size:15px}
+.answer.hide{align-items:center;color:var(--muted)}
+.row{display:flex;flex-wrap:wrap;gap:10px}
+.cluetype{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+select{font:700 14px var(--body);padding:8px 12px;border-radius:10px;border:2px solid var(--line);background:var(--surface);color:var(--ink)}
+
+.board{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.board h2,.check h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.board-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.colhead{font-family:var(--display);font-size:24px;color:var(--on);text-align:center;border-radius:10px;padding:2px 0}
+.chip{font-size:12.5px;line-height:1.2;padding:6px 4px;border-radius:8px;text-align:center;background:var(--soft);color:var(--muted);overflow-wrap:anywhere;hyphens:auto}
+.chip.on{color:var(--on);font-weight:700}
+.chip.last{outline:3px solid var(--ink);outline-offset:1px}
+.check{border-top:1px solid var(--line);padding-top:14px;display:flex;flex-direction:column;gap:10px}
+.check form{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+input[type=number]{font:700 16px var(--body);width:110px;padding:9px 12px;border-radius:10px;border:2px solid var(--line);background:var(--surface);color:var(--ink)}
+.verdict{font-weight:700}
+
+/* Card */
+.player{display:flex;flex-direction:column;align-items:center;gap:16px}
+.player-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center}
+.bcard{width:min(640px,100%);background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.bcard-top{display:flex;justify-content:space-between;align-items:baseline;padding:0 4px;font-size:13px;color:var(--muted);font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.grid5{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.grid5 .colhead{font-size:clamp(22px,5vw,34px)}
+.cell{aspect-ratio:1;max-width:100%;border:2px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);font:700 clamp(10px,2.4vw,16px)/1.15 var(--body);display:grid;place-items:center;padding:3px;cursor:pointer;position:relative;overflow-wrap:anywhere;hyphens:auto;text-align:center}
+.cell .dab{position:absolute;inset:12%;border-radius:50%;opacity:0;transform:scale(.3);transition:transform .18s cubic-bezier(.3,1.6,.5,1),opacity .12s}
+.cell.marked .dab{opacity:.38;transform:scale(1)}
+.cell span{position:relative}
+.cell.free{background:var(--ink);color:var(--paper);font-family:var(--display);font-weight:400;font-size:clamp(14px,3.4vw,22px);cursor:default}
+.cell.win{border-color:var(--ink);border-width:3px}
+.mini .cell{cursor:default;font-size:11px}
+.banner{font-family:var(--display);font-size:clamp(28px,6vw,44px);text-align:center;padding:10px 22px;border-radius:16px;background:var(--n);color:var(--on)}
+.note{color:var(--muted);font-size:14px;text-align:center;max-width:60ch;margin:0}
+footer{color:var(--muted);font-size:13px;border-top:1px solid var(--line);padding-top:14px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="logo" aria-label="Word Wise Bingo"><span class="ww">Word Wise</span><span class="lb" style="background:var(--b)">B</span><span class="lb" style="background:var(--i)">I</span><span class="lb" style="background:var(--n)">N</span><span class="lb" style="background:var(--g)">G</span><span class="lb" style="background:var(--o)">O</span></div>
+      <p class="tag">Vocabulary &amp; spelling bingo for NC 4th and 5th grade ELA</p>
+    </div>
+    <div class="controls">
+      <div><div class="lbl">Grade</div>
+        <div class="seg" id="gradeSeg" role="group" aria-label="Grade">
+          <button id="g4" data-g="g4" aria-pressed="true">4th</button>
+          <button id="g5" data-g="g5" aria-pressed="false">5th</button>
+          <button id="gb" data-g="both" aria-pressed="false">Both</button>
+        </div></div>
+      <div><div class="lbl">Screen</div>
+        <div class="seg" id="modeSeg" role="group" aria-label="Screen">
+          <button id="mCaller" data-m="caller" aria-pressed="true">Teacher caller</button>
+          <button id="mCard" data-m="card" aria-pressed="false">Student card</button>
+        </div></div>
+    </div>
+  </header>
+
+  <main id="callerView" class="caller">
+    <section class="stage" aria-live="polite">
+      <div class="stage-top">
+        <div class="ball" id="ball"><b id="ballLetter">?</b></div>
+        <div class="meta">
+          <div class="count" id="count">Ready to play</div>
+          <span class="kind" id="kind">Press "Call next word"</span>
+        </div>
+      </div>
+      <p class="clue" id="clue">Students: listen to the clue, figure out the word, and mark it on your card if you have it.</p>
+      <div class="answer hide" id="answer">The answer stays hidden until you reveal it.</div>
+      <div class="row">
+        <button class="btn primary" id="next">Call next word</button>
+        <button class="btn" id="reveal" disabled>Reveal word</button>
+        <button class="btn quiet" id="speak" disabled>Read clue aloud</button>
+      </div>
+      <div class="cluetype">
+        <label class="lbl" for="clueSel">Clue style</label>
+        <select id="clueSel">
+          <option value="mix">Mix it up</option>
+          <option value="def">Definition</option>
+          <option value="sen">Fill in the blank</option>
+          <option value="miss">Missing letters (spelling)</option>
+          <option value="tip">Word parts &amp; spelling hint</option>
+        </select>
+        <button class="btn warn" id="reset">New game</button>
+      </div>
+    </section>
+
+    <section class="board">
+      <h2>Called board</h2>
+      <div class="board-grid" id="boardGrid"></div>
+      <div class="check">
+        <h2>Check a winner</h2>
+        <form id="checkForm">
+          <label class="lbl" for="checkNum">Card #</label>
+          <input type="number" id="checkNum" min="1" max="999" value="1">
+          <button class="btn" type="submit">Check card</button>
+          <span class="verdict" id="verdict"></span>
+        </form>
+        <div id="checkCard"></div>
+      </div>
+    </section>
+  </main>
+
+  <main id="cardView" class="player" hidden>
+    <div class="player-bar">
+      <label class="lbl" for="cardNum">Card #</label>
+      <input type="number" id="cardNum" min="1" max="999" value="1">
+      <button class="btn" id="loadCard">Load card</button>
+      <button class="btn primary" id="randCard">Get a new card</button>
+      <button class="btn quiet" id="clearMarks">Clear marks</button>
+    </div>
+    <div class="banner" id="banner" hidden>BINGO! Raise your hand.</div>
+    <div class="bcard">
+      <div class="bcard-top"><span id="cardLabel">Grade 4</span><span id="cardId">Card #1</span></div>
+      <div class="grid5" id="cardGrid"></div>
+    </div>
+    <p class="note">Tap a word to mark it when its clue is called. Five in a row across, down, or corner to corner wins. Tell your teacher your card number so they can check it.</p>
+  </main>
+
+  <footer>Supports NC ELA Language standards for grades 4–5: using context, Greek and Latin roots and affixes, synonyms and antonyms, figurative language, and spelling grade-level words. Printed cards with the same numbers work with this caller.</footer>
+</div>
+
+<script>
+const RAW = {"g4": [["adapt", "verb", "to change in order to fit a new situation", "Over many years, animals ___ to their habitats.", "ad- means \"to\" or \"toward\""], ["analyze", "verb", "to study something closely by looking at each part", "Scientists ___ data to find patterns.", "Ends in -yze, not -ize"], ["approximate", "adjective", "close to the exact amount, but not exact", "The ___ length of the hallway is 50 feet.", "Double p: ap-prox-i-mate"], ["boundary", "noun", "a line that marks the edge of an area", "The river forms the ___ between the two counties.", "Don't drop the a: bound-a-ry"], ["character", "noun", "a person or animal in a story", "The main ___ learns to be brave.", "ch makes a k sound"], ["compare", "verb", "to show how two things are alike", "___ the two poems to find what they share.", "com- means \"with\" or \"together\""], ["conclude", "verb", "to decide something after thinking about the facts", "From the clues, we can ___ that it rained.", "clud means \"close\" or \"shut\""], ["contrast", "verb", "to show how two things are different", "___ life in the city with life on a farm.", "contra- means \"against\""], ["describe", "verb", "to tell what something is like using details", "Use your five senses to ___ the beach.", "scrib means \"write\""], ["determine", "verb", "to figure out or decide", "Reread the text to ___ the main idea.", "Ends with a silent e"], ["evidence", "noun", "facts or details that show something is true", "Use ___ from the text to support your answer.", "vid means \"see\""], ["explain", "verb", "to make something clear by telling about it", "Can you ___ how you solved the problem?", "ex- means \"out\"; long a is spelled ai"], ["habitat", "noun", "the natural home of a plant or animal", "A pond is a ___ for frogs.", "Three short syllables: hab-i-tat"], ["infer", "verb", "to figure something out using clues and what you already know", "The author doesn't say it, so we must ___.", "Add -ence to make inference"], ["journey", "noun", "a long trip from one place to another", "The pioneers' ___ west took months.", "Ends in -ey"], ["measure", "verb", "to find the size or amount of something", "Use a ruler to ___ the leaf.", "ea makes a short e sound here"], ["narrator", "noun", "the person who tells a story", "The ___ tells the story using \"I\" and \"me.\"", "narr means \"tell\"; ends in -or"], ["observe", "verb", "to watch something carefully", "___ the caterpillar each day and record changes.", "Noun form: observation"], ["opinion", "noun", "what a person thinks or believes", "In my ___, recess should be longer.", "Three syllables: o-pin-ion"], ["paragraph", "noun", "a group of sentences about one main idea", "Indent the first line of each ___.", "graph means \"write\"; ph sounds like f"], ["perimeter", "noun", "the distance around the edge of a shape", "Add all four sides to find the ___.", "peri- means \"around\"; meter means \"measure\""], ["predict", "verb", "to tell what you think will happen next", "Look at the cover and ___ what the story is about.", "pre- means \"before\"; dict means \"say\""], ["preview", "verb", "to look at something before reading it", "___ the headings before you read the chapter.", "pre- means \"before\""], ["summarize", "verb", "to retell only the most important ideas", "___ the article in three sentences.", "Double m: sum-ma-rize"], ["symbol", "noun", "something that stands for something else", "The eagle is a ___ of freedom.", "Starts with sy, not si"], ["theme", "noun", "the lesson or message of a story", "The ___ of the fable is that honesty matters.", "Long e spelled e_e"], ["unbelievable", "adjective", "so surprising it is hard to believe", "The ending of the movie was ___!", "un- + believe + -able (drop the e)"], ["misspell", "verb", "to spell a word wrong", "Check your work so you don't ___ any words.", "mis- + spell keeps both s's"], ["enormous", "adjective", "very, very large", "An ___ whale swam past the boat.", "Ends in -ous"], ["fraction", "noun", "a number that names part of a whole", "One-half is a ___.", "fract means \"break\"; -tion says \"shun\""], ["migrate", "verb", "to move from one region to another with the seasons", "Monarch butterflies ___ south each fall.", "Noun form: migration"], ["colony", "noun", "a settlement in a new land ruled by a faraway country", "Carolina began as an English ___.", "Plural: colonies (change y to i)"], ["erosion", "noun", "the wearing away of land by water, wind, or ice", "Waves cause ___ along the Outer Banks.", "-sion says \"zhun\""], ["government", "noun", "the group that makes laws and runs a state or country", "North Carolina's state ___ meets in Raleigh.", "Don't forget the n: gover-n-ment"], ["decision", "noun", "a choice you make after thinking", "Choosing just one book was a hard ___.", "From decide: change -de to -sion"], ["careful", "adjective", "paying close attention to avoid mistakes", "Be ___ when you carry the fish tank.", "The suffix -ful has only one l"], ["impossible", "adjective", "not able to happen or be done", "It is ___ to be in two places at once.", "im- means \"not\""], ["transport", "verb", "to carry from one place to another", "Trucks ___ goods across the state.", "trans- means \"across\"; port means \"carry\""], ["telephone", "noun", "a device for talking to someone far away", "She used the ___ to call her grandmother.", "tele means \"far\"; phon means \"sound\""], ["autograph", "noun", "a person's name signed in their own handwriting", "The author signed an ___ in my book.", "auto means \"self\"; graph means \"write\""]], "g5": [["accurate", "adjective", "correct and exact, with no mistakes", "Check your measurements to make sure they are ___.", "Double c: ac-cu-rate"], ["ancestor", "noun", "a family member who lived long ago", "My ___ moved to North Carolina in 1850.", "Ends in -or"], ["antonym", "noun", "a word that means the opposite of another word", "\"Hot\" is an ___ of \"cold.\"", "ant- means \"against\"; nym means \"name\""], ["biography", "noun", "the true story of a person's life, written by someone else", "I read a ___ of the Wright brothers.", "bio means \"life\"; graph means \"write\""], ["century", "noun", "a period of 100 years", "The Wright brothers flew in the 20th ___.", "cent means \"hundred\""], ["cite", "verb", "to name the source you are using as evidence", "___ the page where you found the answer.", "Homophones: cite, site, sight"], ["collaborate", "verb", "to work together with others", "Our group will ___ on the poster.", "col- means \"together\"; labor means \"work\""], ["conflict", "noun", "the problem or struggle in a story", "The ___ begins when the dog runs away.", "con- means \"together\" or \"with\""], ["consequence", "noun", "the result of an action", "Missing the bus was a ___ of oversleeping.", "Ends in -ence"], ["convince", "verb", "to make someone believe or agree", "Use strong reasons to ___ your reader.", "The c in -vince is soft"], ["declaration", "noun", "an official statement", "The ___ of Independence was signed in 1776.", "From declare: drop the e, add -ation"], ["democracy", "noun", "a government where citizens hold the power and vote", "In a ___, people elect their leaders.", "demo means \"people\"; cracy means \"rule\""], ["dialogue", "noun", "the words characters say to each other", "Quotation marks show ___ in a story.", "dia- means \"across\"; ends in -gue"], ["ecosystem", "noun", "all the living and nonliving things in an area working together", "A salt marsh is an ___.", "eco means \"home\" or \"environment\""], ["emphasize", "verb", "to give special importance to something", "Bold print can ___ a key word.", "ph sounds like f"], ["equation", "noun", "a number sentence with an equal sign", "Write an ___ to solve the word problem.", "equa means \"equal\""], ["evaluate", "verb", "to judge how good or useful something is", "___ which source gives the best evidence.", "e- + value (drop the e) + -ate"], ["excerpt", "noun", "a short part taken from a longer text", "Read this ___ from the novel.", "ex- means \"out\"; don't forget the p"], ["figurative", "adjective", "using words in a way that is not meant literally", "\"Raining cats and dogs\" is ___ language.", "Four syllables: fig-ur-a-tive"], ["foreshadow", "verb", "to give hints about what will happen later in a story", "Dark clouds ___ the coming storm.", "fore- means \"before\""], ["geography", "noun", "the study of Earth's land, water, and people", "In ___ we learned about the Blue Ridge Mountains.", "geo means \"earth\"; graph means \"write\""], ["hyperbole", "noun", "extreme exaggeration used for effect", "\"I've told you a million times\" is a ___.", "hyper- means \"over\"; the final e says \"ee\""], ["illustrate", "verb", "to explain or show with pictures or examples", "___ your answer with a diagram.", "Double l: il-lus-trate"], ["independent", "adjective", "free from the control of others", "The colonies wanted to be ___ from Britain.", "in- means \"not\"; ends in -ent, not -ant"], ["interpret", "verb", "to explain the meaning of something", "How do you ___ the poem's last line?", "inter- means \"between\""], ["investigate", "verb", "to look into something carefully to find facts", "Scientists ___ how plants grow.", "Noun form: investigation"], ["metaphor", "noun", "a comparison that says one thing is another thing", "\"The classroom was a zoo\" is a ___.", "ph sounds like f"], ["perspective", "noun", "a point of view", "The story is told from the dog's ___.", "spect means \"look\""], ["photosynthesis", "noun", "the process plants use to make food from sunlight", "Leaves use ___ to make sugar.", "photo means \"light\"; syn means \"together\""], ["primary", "adjective", "first or most important; a ___ source was made at the time of an event", "A soldier's diary from 1862 is a ___ source.", "prim means \"first\""], ["resolution", "noun", "the part of a story where the problem is solved", "In the ___, the two friends make up.", "Ends in -tion"], ["revolution", "noun", "a huge change, such as overthrowing a government", "The American ___ began in 1775.", "volv means \"roll\" or \"turn\""], ["simile", "noun", "a comparison that uses like or as", "\"Fast as a cheetah\" is a ___.", "Three syllables: sim-i-lee"], ["structure", "noun", "the way something is built or organized", "The ___ of a poem includes its stanzas.", "struct means \"build\""], ["synonym", "noun", "a word that means the same as another word", "\"Big\" is a ___ for \"large.\"", "syn- means \"same\"; nym means \"name\""], ["thermometer", "noun", "a tool that measures temperature", "The ___ read 72 degrees.", "therm means \"heat\"; meter means \"measure\""], ["transform", "verb", "to change completely in form or appearance", "A caterpillar will ___ into a butterfly.", "trans- means \"across\" or \"change\""], ["visible", "adjective", "able to be seen", "The mountains were ___ from the highway.", "vis means \"see\"; ends in -ible"], ["volume", "noun", "the amount of space something takes up", "Find the ___ of the box in cubic inches.", "Ends with a silent e"], ["incredible", "adjective", "hard to believe; amazing", "The view from Mount Mitchell is ___.", "in- means \"not\"; cred means \"believe\""]]};
+const COLS = ["B","I","N","G","O"], CV = ["--b","--i","--n","--g","--o"];
+const GCODE = {g4:4, g5:5, both:9};
+const GNAME = {g4:"Grade 4", g5:"Grade 5", both:"Grades 4 & 5"};
+
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function shuffle(arr,rng){const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function toItem(r,c){return {w:r[0],pos:r[1],def:r[2],sen:r[3],tip:r[4],col:c}}
+function pools(grade){
+  const p=[[],[],[],[],[]];
+  const lists = grade==="both" ? [RAW.g4,RAW.g5] : [RAW[grade]];
+  lists.forEach(L=>L.forEach((r,i)=>{const c=Math.floor(i/8);p[c].push(toItem(r,c))}));
+  return p;
+}
+function makeCard(seed,grade){
+  const rng=mulberry32(seed*7919+GCODE[grade]);
+  const p=pools(grade);
+  return p.map((pool,c)=>{const s=shuffle(pool,rng);return c===2?[s[0],s[1],null,s[2],s[3]]:s.slice(0,5)});
+}
+const LINES=(()=>{const L=[];for(let i=0;i<5;i++){L.push([0,1,2,3,4].map(r=>[i,r]));L.push([0,1,2,3,4].map(c=>[c,i]))}
+  L.push([0,1,2,3,4].map(k=>[k,k]));L.push([0,1,2,3,4].map(k=>[k,4-k]));return L})();
+function winLine(isOn){for(const line of LINES){if(line.every(([c,r])=>(c===2&&r===2)||isOn(c,r)))return line}return null}
+
+const S={grade:"g4",mode:"caller",clue:"mix",deck:[],idx:-1,cur:null,kind:null,revealed:false,called:new Set(),card:1,marks:new Set(),armed:false};
+const $=id=>document.getElementById(id);
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+
+function newGame(){
+  const all=pools(S.grade).flat();
+  S.deck=shuffle(all,mulberry32((Date.now()%1e9)|0));
+  S.idx=-1;S.cur=null;S.called=new Set();S.revealed=false;
+  renderCaller();renderBoard();$("verdict").textContent="";$("checkCard").innerHTML="";
+}
+function missing(w){return w.split("").map((ch,i)=>i>0&&"aeiou".includes(ch)?"_":ch).join(" ")}
+function esc(s){return s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]))}
+const KINDS={def:"Definition",sen:"Fill in the blank",miss:"Missing letters",tip:"Word parts hint"};
+function clueHTML(it,k){
+  if(k==="def") return `It is ${it.pos==="adjective"?"a describing word that means":it.pos==="verb"?"an action word that means":"a noun that means"} <em>${esc(it.def)}</em>.`;
+  if(k==="sen") return esc(it.sen).replace("___",'<span class="blank" aria-label="blank"></span>');
+  if(k==="miss") return `<span class="miss">${missing(it.w)}</span><br><small style="font-size:.7em;color:var(--muted)">Hint: ${esc(it.def)}</small>`;
+  return `${esc(it.tip)}. It is a ${it.pos} that means <em>${esc(it.def)}</em>.`;
+}
+function clueSpeech(it,k){
+  if(k==="def") return `A ${it.pos} that means ${it.def}.`;
+  if(k==="sen") return it.sen.replace("___","blank");
+  if(k==="miss") return `Look at the letters on the screen. Hint: ${it.def}.`;
+  return `A ${it.pos} that means ${it.def}.`;
+}
+function renderCaller(){
+  const it=S.cur, ball=$("ball");
+  $("next").disabled=S.idx>=S.deck.length-1;
+  $("reset").textContent=S.armed?"Tap again to start over":"New game";
+  if(!it){
+    ball.style.background="var(--soft)";$("ballLetter").textContent="?";$("ballLetter").style.color="var(--muted)";
+    $("count").textContent=`Ready to play · ${S.deck.length} words`;$("kind").textContent='Press "Call next word"';
+    $("clue").innerHTML="Students: listen to the clue, figure out the word, and mark it on your card if you have it.";
+    $("answer").className="answer hide";$("answer").textContent="The answer stays hidden until you reveal it.";
+    $("reveal").disabled=true;$("speak").disabled=true;return;
+  }
+  ball.style.background=`var(${CV[it.col]})`;$("ballLetter").textContent=COLS[it.col];$("ballLetter").style.color=`var(${CV[it.col]})`;
+  $("count").textContent=`Word ${S.idx+1} of ${S.deck.length}`;
+  $("kind").textContent=`${COLS[it.col]} column · ${KINDS[S.kind]}`;
+  $("clue").innerHTML=clueHTML(it,S.kind);
+  $("reveal").disabled=false;$("speak").disabled=false;
+  $("reveal").textContent=S.revealed?"Hide word":"Reveal word";
+  const a=$("answer");
+  if(S.revealed){a.className="answer";a.innerHTML=`<span class="word" style="color:var(${CV[it.col]})">${COLS[it.col]} · ${esc(it.w)}</span><span class="pos">${it.pos}</span><span class="tip">${esc(it.tip)}</span>`}
+  else{a.className="answer hide";a.textContent="Give students time to think, then reveal and have them spell it out loud."}
+}
+function renderBoard(){
+  const g=$("boardGrid");const p=pools(S.grade);let h="";
+  COLS.forEach((L,c)=>h+=`<div class="colhead" style="background:var(${CV[c]})">${L}</div>`);
+  const rows=Math.max(...p.map(x=>x.length));
+  for(let r=0;r<rows;r++)for(let c=0;c<5;c++){const it=p[c][r];if(!it){h+="<div></div>";continue}
+    const on=S.called.has(it.w),last=S.cur&&S.cur.w===it.w;
+    h+=`<div class="chip${on?" on":""}${last?" last":""}" ${on?`style="background:var(${CV[c]})"`:""}>${esc(it.w)}</div>`}
+  g.innerHTML=h;
+}
+function callNext(){
+  if(S.idx>=S.deck.length-1)return;
+  if(S.cur)S.called.add(S.cur.w);
+  S.idx++;S.cur=S.deck[S.idx];S.called.add(S.cur.w);S.revealed=false;
+  S.kind=S.clue==="mix"?["def","sen","miss","tip"][Math.floor(Math.random()*4)]:S.clue;
+  const b=$("ball");b.classList.remove("pop");void b.offsetWidth;b.classList.add("pop");
+  renderCaller();renderBoard();
+}
+function gridHTML(card,isOn,win,interactive){
+  let h=COLS.map((L,c)=>`<div class="colhead" style="background:var(${CV[c]})">${L}</div>`).join("");
+  const winSet=new Set((win||[]).map(([c,r])=>c+","+r));
+  for(let r=0;r<5;r++)for(let c=0;c<5;c++){
+    const it=card[c][r];
+    if(!it){h+=`<div class="cell free${winSet.has("2,2")?" win":""}">FREE</div>`;continue}
+    const on=isOn(c,r);
+    h+=`<${interactive?"button":"div"} class="cell${on?" marked":""}${winSet.has(c+","+r)?" win":""}" ${interactive?`data-k="${c},${r}" aria-pressed="${on}"`:""}><i class="dab" style="background:var(${CV[c]})"></i><span>${esc(it.w)}</span></${interactive?"button":"div"}>`;
+  }
+  return h;
+}
+function renderCard(){
+  const card=makeCard(S.card,S.grade);
+  const isOn=(c,r)=>S.marks.has(c+","+r);
+  const win=winLine(isOn);
+  $("cardGrid").innerHTML=gridHTML(card,isOn,win,true);
+  $("banner").hidden=!win;
+  try{ var tkk=S.grade+"-"+S.card; if(win&&window.__tkWin!==tkk){ window.__tkWin=tkk; window.TK&&TK.record({activity:"Word Wise Bingo · "+GNAME[S.grade],score:S.marks.size,total:25,detail:"BINGO on card #"+S.card,standard:"NC.4-5.L.4"}); } }catch(e){}
+  $("cardLabel").textContent=GNAME[S.grade];$("cardId").textContent="Card #"+S.card;$("cardNum").value=S.card;
+}
+function checkCard(n){
+  if(!(n>=1&&n<=999)){$("verdict").textContent="Enter a card number from 1 to 999.";$("checkCard").innerHTML="";return}
+  const card=makeCard(n,S.grade);const isOn=(c,r)=>S.called.has(card[c][r].w);
+  const win=winLine(isOn);
+  $("verdict").textContent=win?`Card #${n} has BINGO!`:`Card #${n}: no bingo yet.`;
+  $("verdict").style.color=win?"var(--n)":"var(--muted)";
+  $("checkCard").innerHTML=`<div class="grid5 mini">${gridHTML(card,isOn,win,false)}</div>`;
+}
+function setGrade(g){S.grade=g;["g4","g5","gb"].forEach(id=>$(id).setAttribute("aria-pressed",$(id).dataset.g===g));S.marks=new Set();S.armed=false;newGame();renderCard();store.set("wwb-grade",g)}
+function setMode(m){S.mode=m;$("mCaller").setAttribute("aria-pressed",m==="caller");$("mCard").setAttribute("aria-pressed",m==="card");$("callerView").hidden=m!=="caller";$("cardView").hidden=m!=="card";store.set("wwb-mode",m)}
+
+$("gradeSeg").addEventListener("click",e=>{const b=e.target.closest("button");if(b)setGrade(b.dataset.g)});
+$("modeSeg").addEventListener("click",e=>{const b=e.target.closest("button");if(b)setMode(b.dataset.m)});
+$("next").onclick=()=>{S.armed=false;callNext()};
+$("reveal").onclick=()=>{S.revealed=!S.revealed;renderCaller()};
+$("speak").onclick=()=>{try{const u=new SpeechSynthesisUtterance(clueSpeech(S.cur,S.kind));u.rate=.9;speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}};
+$("clueSel").onchange=e=>{S.clue=e.target.value;if(S.cur){S.kind=S.clue==="mix"?S.kind:S.clue;renderCaller()}};
+$("reset").onclick=()=>{if(!S.armed){S.armed=true;renderCaller();return}S.armed=false;newGame()};
+$("checkForm").addEventListener("submit",e=>{e.preventDefault();checkCard(parseInt($("checkNum").value,10))});
+$("cardGrid").addEventListener("click",e=>{const b=e.target.closest("button.cell");if(!b)return;const k=b.dataset.k;S.marks.has(k)?S.marks.delete(k):S.marks.add(k);renderCard()});
+$("loadCard").onclick=()=>{const n=parseInt($("cardNum").value,10);if(n>=1&&n<=999){S.card=n;S.marks=new Set();renderCard()}};
+$("randCard").onclick=()=>{S.card=1+Math.floor(Math.random()*999);S.marks=new Set();renderCard()};
+$("clearMarks").onclick=()=>{S.marks=new Set();renderCard()};
+
+const sg=store.get("wwb-grade");if(sg&&GCODE[sg])S.grade=sg;
+const sm=store.get("wwb-mode");
+setGrade(S.grade);setMode(sm==="card"?"card":"caller");
+</script>
+
+<script>
+(function(){
+function rows(){return RAW.g4.map(function(r){return r.concat(["Grade 4"])}).concat(RAW.g5.map(function(r){return r.concat(["Grade 5"])}))}
+function blankSen(r){return r[3]&&r[3].indexOf("___")>=0?r[3].replace("___","________"):null}
+window.__wwb={
+ defs:function(r,n){var all=rows();return TK.shuffle(all,r).slice(0,n).map(function(it){var others=TK.shuffle(all.filter(function(x){return x[0]!==it[0]}),r).slice(0,3).map(function(x){return x[0]});var o=TK.shuffle([it[0]].concat(others),r);return{q:"Which word means \u201c"+it[2]+"\u201d?",choices:o,a:o.indexOf(it[0]),why:it[0]+" ("+it[1]+"): "+it[2]}})},
+ sen:function(r,n){var all=rows().filter(blankSen);return TK.shuffle(all,r).slice(0,n).map(function(it){var others=TK.shuffle(all.filter(function(x){return x[0]!==it[0]&&x[1]===it[1]}),r).slice(0,3).map(function(x){return x[0]});var o=TK.shuffle([it[0]].concat(others),r);return{q:blankSen(it),choices:o,a:o.indexOf(it[0]),why:it[0]+": "+it[2]}})},
+ mean:function(r,n){return TK.shuffle(rows(),r).slice(0,n).map(function(it){return{q:"Write what <b>"+it[0]+"</b> means, then use it in your own sentence.",a:it[2],why:"Example: "+it[3].replace("___",it[0]),lines:2}})},
+};
+})();
+window.TK_CONFIG={
+  app:"word-wise-bingo", name:"Word Wise Bingo",
+  activities:["Word Wise Bingo · Grade 4","Word Wise Bingo · Grade 5","Word Wise Bingo · Grades 4 & 5"],
+  features:{dashboard:true,worksheets:true,classCode:true},
+  demo:{intro:"Vocabulary bingo for grades 4 and 5. The teacher calls clues and students mark the word on their card.",steps:[
+    {sel:"#gradeSeg",title:"Pick the word list",text:"Grade 4, Grade 5, or both lists mixed together."},
+    {sel:"#modeSeg",title:"Two screens",text:"Teacher caller runs the game on the board. Student card is what kids open on their own device."},
+    {sel:"#clueSel",title:"Clue style",text:"Call words by definition, a sentence with a blank, or a mix."},
+    {sel:"#next",title:"Call the next word",text:"Read the clue aloud. Reveal the word after students have had time to think."},
+    {sel:"#boardGrid",title:"Called-word board",text:"Tracks every word called so you can check a student's BINGO by card number. When a student gets BINGO on their card, it goes to the teacher dashboard."}]},
+  worksheet:{title:"Word Wise Vocabulary",standards:["NC.4.L.4","NC.5.L.4","NC.4.L.6","NC.5.L.6"],count:10,sets:[
+    {name:"Match the meaning",gen:function(r,n){return __wwb.defs(r,n)}},
+    {name:"Complete the sentence",directions:"Circle the word that best completes each sentence.",gen:function(r,n){return __wwb.sen(r,n)}},
+    {name:"Define and use it",directions:"Explain each word in your own words, then write a sentence that shows its meaning.",gen:function(r,n){return __wwb.mean(r,n)}}]}
+};
+
+</script>
+<script src="/shared/teacher-kit.js"></script>
+</body></html>

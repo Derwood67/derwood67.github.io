@@ -1,0 +1,779 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!-- Class sign-in gate: first-name sign-in, blocked names, locked and assigned apps, teacher unlock. Live settings: /classgate.json (edited from Control Center → Lock & Assign). Source: /shared/classgate-block.html -->
+<style>
+#cg-ov{position:fixed;inset:0;z-index:2147483000;background:#141c24;display:flex;align-items:center;justify-content:center;padding:16px;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+#cg-ov *{box-sizing:border-box}
+#cg-ov .cg-card{background:#fff;color:#1b2420;border-radius:14px;max-width:420px;width:100%;padding:24px;display:flex;flex-direction:column;gap:12px;box-shadow:0 12px 32px rgba(0,0,0,.35);font-size:18px;line-height:1.45}
+#cg-ov h2{margin:0;font-size:1.45rem;line-height:1.2}
+#cg-ov p{margin:0}
+#cg-ov a{color:#0b6b4a;font-weight:700}
+#cg-ov label{font-weight:700}
+#cg-ov input{font:inherit;width:100%;padding:12px;border:2px solid #c9d1cc;border-radius:8px;background:#f6f8f6;color:#1b2420}
+#cg-ov input:focus{outline:3px solid #f2c230;outline-offset:1px}
+#cg-ov button{font:inherit;font-weight:700;border:0;border-radius:8px;padding:12px 16px;background:#0b6b4a;color:#fff;cursor:pointer}
+#cg-ov button.cg-alt{background:#e7ece9;color:#1b2420}
+#cg-ov .cg-icon{font-size:2.2rem;line-height:1}
+#cg-ov .cg-msg{min-height:1.4em;color:#a83226;font-size:.95rem}
+#cg-ov .cg-small{font-size:.9rem;color:#55625b}
+#cg-ov details{border-top:1px solid #e1e6e2;padding-top:10px}
+#cg-ov summary{cursor:pointer;font-size:.9rem;color:#55625b}
+#cg-ov form{display:flex;flex-direction:column;gap:10px;margin:0}
+#cg-badge{position:fixed;right:10px;bottom:10px;z-index:2147482000;background:#1b2430;color:#fff;font:600 14px/1.2 system-ui,-apple-system,"Segoe UI",Arial,sans-serif;border-radius:999px;padding:7px 8px 7px 14px;display:flex;gap:10px;align-items:center;box-shadow:0 3px 10px rgba(0,0,0,.25)}
+#cg-badge button{font:inherit;background:#f2c230;color:#1b1b1b;border:0;border-radius:999px;padding:4px 10px;cursor:pointer}
+</style>
+<script>
+(function(){
+  var BLOCKED=["james"];          /* fallback list; /classgate.json on the site replaces it when it loads */
+  var CFG={lockAll:false,apps:{}}; /* locked and assigned apps; filled in from /classgate.json */
+  var CODE_HASH="cf2d0fe7ea0a7780592080ef0bf415a6043a3d59aa5d72ace64d39c6e0837285";  /* scrambled teacher code; the code itself is not stored in this page */
+  var TRY_KEY="echols-classgate-tries";
+  function sha(t){return crypto.subtle.digest("SHA-256",new TextEncoder().encode(t)).then(function(b){return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0")}).join("")})}
+  /* Checks a teacher code. Three wrong tries locks code entry on this device for 10 minutes. Resolves "ok", "wrong" or "wait". */
+  function checkCode(code){var t={};try{t=JSON.parse(lsGet(TRY_KEY))||{}}catch(x){}
+    if(t.until&&Date.now()<t.until)return Promise.resolve("wait");
+    return sha("echols-room2:"+String(code||"").trim()).then(function(h){
+      if(h===CODE_HASH){lsSet(TRY_KEY,null);return "ok"}
+      t.n=(t.n||0)+1;if(t.n>=3){t={n:0,until:Date.now()+600000};lsSet(TRY_KEY,JSON.stringify(t));return "wait"}
+      lsSet(TRY_KEY,JSON.stringify(t));return "wrong"},function(){return "wrong"})}
+  var CODE_MSG={wrong:"That code is not right.",wait:"Too many tries. Wait 10 minutes and try again."};
+  var LOCK_KEY="echols-classgate-lock", NAME_KEY="echols-classgate-name", TEACH_KEY="echols-classgate-teacher";
+  var me=document.currentScript, needLogin=!!(me&&me.getAttribute("data-login")!==null);
+  function attr(a){return (me&&me.getAttribute(a))||""}
+  /* data-watch: name inputs of an app's own sign-in. data-pick: buttons whose text is a name. data-session: saved sign-ins (s:key or l:key:prop). data-app: app id (default: first folder of the address). */
+  var WATCH=attr("data-watch"), PICK=attr("data-pick"), SESS=attr("data-session").split(",").filter(Boolean);
+  var APP=attr("data-app")||(function(){var p=decodeURIComponent(location.pathname).split("/").filter(Boolean)[0]||"";
+    return p.replace(/\.html?$/i,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")})();
+  var BOOK=(function(){try{return new URLSearchParams(location.search).get("book")||""}catch(e){return ""}})();
+  var current="", locked=false, shown="", denied="";
+  function first(n){return String(n||"").trim().split(/[\s\-_]+/)[0].toLowerCase().replace(/[^a-z]/g,"")}
+  function isBlocked(n){return BLOCKED.indexOf(first(n))>-1}
+  /* Mr. Echols (teacher preview) and portfolio guests (?visitor) are not held by app locks or assignments; guest work never reaches class records. */
+  function teacher(){return ssGet(TEACH_KEY)==="1"||ssGet("ec-guest")==="1"||ssGet("ec-visitor")==="1"||/[?&]visitor\b/.test(location.search)}
+  /* This app's setting: {mode:"open"|"locked"|"assigned", students:[first names]} */
+  function setting(){var a=CFG.apps||{};return (BOOK&&a[APP+":"+BOOK])||a[APP]||{mode:"open"}}
+  function appLocked(){if(teacher())return false;return !!CFG.lockAll||setting().mode==="locked"}
+  function notAssigned(n){if(teacher()||!n)return false;var s=setting();if(s.mode!=="assigned")return false;
+    return (s.students||[]).map(first).indexOf(first(n))<0}
+  function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
+  function lsSet(k,v){try{v===null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}}
+  function ssGet(k){try{return sessionStorage.getItem(k)}catch(e){return null}}
+  function ssSet(k,v){try{v===null?sessionStorage.removeItem(k):sessionStorage.setItem(k,v)}catch(e){}}
+  function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+  function tidy(n){return String(n).replace(/\s+/g," ").trim().split(" ").map(function(w){return w.charAt(0).toUpperCase()+w.slice(1)}).join(" ")}
+  function overlay(html){var o=document.getElementById("cg-ov");if(!o){o=document.createElement("div");o.id="cg-ov";o.setAttribute("role","dialog");o.setAttribute("aria-modal","true");document.body.appendChild(o)}o.innerHTML='<div class="cg-card">'+html+'</div>';var i=o.querySelector("input:not([type=password])");if(i)setTimeout(function(){i.focus()},30);return o}
+  function close(){var o=document.getElementById("cg-ov");if(o)o.remove();shown=""}
+  function badge(){var b=document.getElementById("cg-badge");if(b)b.remove();var n=ssGet(NAME_KEY);if(!needLogin||!n)return;b=document.createElement("div");b.id="cg-badge";b.innerHTML='<span>'+esc(n)+'</span><button type="button">Sign out</button>';b.querySelector("button").onclick=function(){ssSet(NAME_KEY,null);location.reload()};document.body.appendChild(b)}
+  function showBlocked(){shown="blocked";
+    var o=overlay('<h2>This activity is not available</h2><p>This app is not open to you right now. Please check with Mr. Echols.</p>'+
+      '<details><summary>Teacher unlock</summary><form id="cg-unlock" style="margin-top:10px"><label for="cg-code">Teacher code</label><input id="cg-code" type="password" inputmode="numeric" autocomplete="off"><button type="submit">Unlock this device</button><p class="cg-msg" id="cg-umsg"></p></form></details>');
+    o.querySelector("#cg-unlock").onsubmit=function(e){e.preventDefault();var c=o.querySelector("#cg-code");
+      checkCode(c.value).then(function(r){if(r==="ok"){lsSet(LOCK_KEY,null);ssSet(NAME_KEY,null);location.reload();return}
+        c.value="";o.querySelector("#cg-umsg").textContent=CODE_MSG[r]})};
+  }
+  /* Locked app or not assigned: no device lock, and the page opens again by itself when Mr. Echols opens it. */
+  function teacherPreview(o){var f=o.querySelector("#cg-tp");if(!f)return;f.onsubmit=function(e){e.preventDefault();var c=o.querySelector("#cg-tcode");
+    checkCode(c.value).then(function(r){if(r==="ok"){ssSet(TEACH_KEY,"1");location.reload();return}c.value="";o.querySelector("#cg-tmsg").textContent=CODE_MSG[r]})}}
+  var TP='<details><summary>Teacher preview</summary><form id="cg-tp" style="margin-top:10px"><label for="cg-tcode">Teacher code</label><input id="cg-tcode" type="password" inputmode="numeric" autocomplete="off"><button type="submit">Open for this tab</button><p class="cg-msg" id="cg-tmsg"></p></form></details>';
+  var MY='<p class="cg-small"><a href="/my-apps/">See my apps</a></p>';
+  function showAppLocked(){if(shown==="applocked")return;shown="applocked";var b=document.getElementById("cg-badge");if(b)b.remove();
+    teacherPreview(overlay('<div class="cg-icon" aria-hidden="true">🔒</div><h2>This app is locked</h2><p>Mr. Echols has locked this app for now. It will open again when he unlocks it.</p>'+MY+TP))}
+  function showNotAssigned(n){if(shown==="notassigned")return;shown="notassigned";denied=String(n||"");var b=document.getElementById("cg-badge");if(b)b.remove();
+    var o=overlay('<div class="cg-icon" aria-hidden="true">📋</div><h2>Not assigned to you</h2><p>'+(n?esc(tidy(first(n)))+', this':'This')+' app is not on your list right now. Check with Mr. Echols.</p>'+MY+
+      '<button type="button" class="cg-alt" id="cg-other">I typed the wrong name</button>'+TP);
+    o.querySelector("#cg-other").onclick=function(){ssSet(NAME_KEY,null);location.reload()};teacherPreview(o)}
+  function lock(){if(locked)return;locked=true;lsSet(LOCK_KEY,"1");ssSet(NAME_KEY,null);var b=document.getElementById("cg-badge");if(b)b.remove();showBlocked()}
+  /* One name check for every sign-in path: false when the name may not use this app. */
+  function allow(n){if(isBlocked(n)){lock();return false}if(appLocked()){showAppLocked();return false}if(notAssigned(n)){showNotAssigned(n);return false}return true}
+  function showLogin(){shown="login";
+    var o=overlay('<h2>Sign in</h2><p class="cg-small">Mr. Echols’ Room 2</p><form id="cg-form"><label for="cg-name">Type your first name</label><input id="cg-name" type="text" maxlength="30" autocomplete="off" autocapitalize="words" placeholder="First name"><button type="submit">Start</button><p class="cg-msg" id="cg-msg"></p></form>');
+    o.querySelector("#cg-form").onsubmit=function(e){e.preventDefault();
+      var raw=o.querySelector("#cg-name").value.replace(/\s+/g," ").trim();
+      if(!/^[A-Za-zÀ-ɏ][A-Za-zÀ-ɏ .'\-]{0,29}$/.test(raw)){o.querySelector("#cg-msg").textContent="Please type your first name using letters.";return}
+      if(!allow(raw))return;
+      var n=tidy(raw);current=n;ssSet(NAME_KEY,n);close();badge();
+      try{document.dispatchEvent(new CustomEvent("classgate:signin",{detail:{name:n}}))}catch(err){}
+    };
+  }
+  window.ClassGate={
+    /* Apps with their own sign-in call this; returns false for a blocked name (and locks the device), a locked app, or a student this app isn't assigned to. */
+    check:function(n){if(lsGet(LOCK_KEY)&&BLOCKED.length){showBlocked();return false}if(!allow(n))return false;current=String(n||"");return true},
+    name:function(){return ssGet(NAME_KEY)||""},
+    app:function(){return APP},
+    /* Teacher code check for in-app teacher tools: resolves "ok", "wrong" or "wait". */
+    checkCode:checkCode, codeMsg:function(r){return CODE_MSG[r]||""}
+  };
+  function saved(){var out=[];SESS.forEach(function(s){var p=s.split(":"),v=null;try{v=(p[0]==="l"?localStorage:sessionStorage).getItem(p[1])}catch(e){}
+    if(v&&p[2]){try{v=(JSON.parse(v)||{})[p[2]]}catch(e){v=null}}if(v)out.push(String(v))});return out}
+  function watched(){var out=[];if(!WATCH)return out;try{Array.prototype.forEach.call(document.querySelectorAll(WATCH),function(i){if(i!==document.activeElement&&i.value)out.push(i.value)})}catch(e){}return out}
+  /* Signs a blocked student out of anything already open, and closes the app when it is locked or not assigned. */
+  function sweep(){if(locked)return;
+    if(lsGet(LOCK_KEY)&&BLOCKED.length){locked=true;showBlocked();return}
+    if(appLocked()){showAppLocked();return}
+    var all=[ssGet(NAME_KEY),current,denied].concat(saved(),watched());
+    for(var i=0;i<all.length;i++)if(all[i]&&isBlocked(all[i])){lock();return}
+    for(i=0;i<all.length;i++)if(all[i]&&notAssigned(all[i])){showNotAssigned(all[i]);return}
+    /* reopened by the teacher while the lock screen was up */
+    if(shown==="applocked"||shown==="notassigned")location.reload()}
+  function refresh(){if(!window.fetch)return;
+    fetch("/classgate.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(j){if(!j)return;
+      if(Array.isArray(j.blocked))BLOCKED=j.blocked.map(first).filter(Boolean);
+      CFG={lockAll:!!j.lockAll,apps:(j.apps&&typeof j.apps==="object")?j.apps:{}};sweep()}).catch(function(){})}
+  function guard(e){if(locked||shown==="applocked"||shown==="notassigned")return;var bad=null;
+    if(WATCH){try{Array.prototype.forEach.call(document.querySelectorAll(WATCH),function(i){if(!i.value||bad)return;if(isBlocked(i.value))bad="b";else if(notAssigned(i.value))bad=i.value;else current=i.value})}catch(x){}}
+    if(!bad&&PICK&&e.type==="click"&&e.target.closest){var b=e.target.closest(PICK);if(b){var nm=b.getAttribute("data-n")||b.textContent;if(isBlocked(nm))bad="b";else if(notAssigned(nm))bad=nm}}
+    if(!bad&&(WATCH||PICK)&&appLocked())bad="l";
+    if(bad){e.preventDefault();e.stopImmediatePropagation();if(bad==="b")lock();else if(bad==="l")showAppLocked();else showNotAssigned(bad)}}
+  function start(){
+    if(lsGet(LOCK_KEY)&&BLOCKED.length){locked=true;showBlocked();return}
+    var n=ssGet(NAME_KEY);
+    if(n&&isBlocked(n)){lock();return}
+    if(needLogin&&!n)showLogin();else badge();
+    if(WATCH||PICK){["submit","click","change"].forEach(function(t){document.addEventListener(t,guard,true)});
+      document.addEventListener("keydown",function(e){if(e.key==="Enter")guard(e)},true)}
+    sweep();refresh();setInterval(sweep,2000);setInterval(refresh,30000);
+    document.addEventListener("visibilitychange",function(){if(!document.hidden)refresh()});
+  }
+  if(document.body)start();else document.addEventListener("DOMContentLoaded",start);
+})();
+</script>
+<!-- /Class sign-in gate -->
+
+<link rel="stylesheet" href="/shared/brand.css">
+<script src="/shared/standards.js"></script>
+<script src="/shared/frame.js" data-app="Puente Learning Studio" data-subject="flu" data-tags="Bilingual|Offline"></script>
+<title>Puente Learning Studio</title>
+<meta name="description" content="Bilingual helper for math facts, letter sounds, CVC words and translation. Runs offline with no AI.">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Lexend:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one sticky header with tabs; each tab is a single working "lesson card" with the visual on top and bilingual steps beneath. */
+:root{
+  --bg:#eaf2fb; --surface:#ffffff; --surface2:#f4f8fd; --ink:#13284b; --muted:#566a88; --line:#cfdcec;
+  --accent:#1d5fd8; --accent-ink:#ffffff; --marker:#ffd43b; --dotA:#1d5fd8; --dotB:#e8890c;
+  --good:#23853a; --good-bg:#e3f5e7; --bad:#c22f2f; --bad-bg:#fbe7e7;
+  --font-kid:"Andika","Lexend",system-ui,sans-serif; --font-ui:"Lexend",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0c1525; --surface:#14213a; --surface2:#1a2a47; --ink:#e7eefb; --muted:#9fb1ce; --line:#28395a;
+  --accent:#6ea8ff; --accent-ink:#0c1525; --marker:#ffd43b; --dotA:#6ea8ff; --dotB:#ffa94d;
+  --good:#5bd474; --good-bg:#16351f; --bad:#ff7b7b; --bad-bg:#3a1a1d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0c1525; --surface:#14213a; --surface2:#1a2a47; --ink:#e7eefb; --muted:#9fb1ce; --line:#28395a;
+  --accent:#6ea8ff; --accent-ink:#0c1525; --marker:#ffd43b; --dotA:#6ea8ff; --dotB:#ffa94d;
+  --good:#5bd474; --good-bg:#16351f; --bad:#ff7b7b; --bad-bg:#3a1a1d; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-ui);font-size:15px;line-height:1.5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+.wrap{max-width:980px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;padding-block:12px 4px}
+.brand{font-family:var(--font-kid);font-weight:700;font-size:1.35rem;letter-spacing:-.01em;display:flex;align-items:baseline;gap:8px}
+.brand small{font-family:var(--font-ui);font-weight:400;font-size:.8rem;color:var(--muted)}
+.settings{margin-left:auto;display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:.85rem;color:var(--muted)}
+.settings label{display:flex;align-items:center;gap:6px}
+select,input,textarea{font:inherit;color:var(--ink);background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
+nav{display:flex;gap:4px;overflow-x:auto;padding-block:6px 0}
+nav button{font:inherit;font-weight:600;border:0;background:none;color:var(--muted);padding:10px 14px;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap}
+nav button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+main{padding-block:20px 48px;display:grid;gap:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;min-width:0}
+h2{font-family:var(--font-kid);font-size:1.5rem;margin:0 0 4px;text-wrap:balance}
+.std{font-size:.82rem;color:var(--muted);margin:0}
+.std b{color:var(--ink);font-weight:600}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{font:inherit;font-weight:600;border:1px solid var(--line);background:var(--surface2);color:var(--ink);border-radius:10px;padding:8px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.good{background:var(--good-bg);color:var(--good);border-color:var(--good)}
+.btn.bad{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+.btn[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.mic.listening{background:var(--bad);color:#fff;border-color:var(--bad);animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.6}}
+:focus-visible{outline:3px solid var(--marker);outline-offset:2px}
+.say{font:inherit;font-size:.78rem;font-weight:600;border:1px solid var(--line);background:var(--surface);color:var(--accent);border-radius:999px;padding:2px 9px;cursor:pointer;white-space:nowrap}
+.label{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+/* math */
+.problem{font-family:var(--font-kid);font-size:clamp(2.2rem,8vw,3.6rem);font-weight:700;display:flex;flex-wrap:wrap;align-items:center;gap:10px;font-variant-numeric:tabular-nums}
+.problem input{width:2.4em;font-size:inherit;font-family:inherit;text-align:center;padding:0 4px;border-width:2px}
+.problem .num{min-width:1ch;text-align:center}
+.visual{background:var(--surface2);border:1px dashed var(--line);border-radius:12px;padding:14px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;min-height:90px;overflow-x:auto}
+.grp{display:grid;grid-template-columns:repeat(5,22px);gap:6px}
+.dot{width:22px;height:22px;border-radius:50%;background:var(--dotA);position:relative}
+.dot.b{background:var(--dotB)}
+.dot.gone{background:transparent;border:2px dashed var(--muted)}
+.dot.gone::after{content:"";position:absolute;inset:-3px 9px;background:var(--bad);transform:rotate(45deg);border-radius:2px}
+.op{font-family:var(--font-kid);font-size:1.8rem;font-weight:700;color:var(--muted)}
+.mrow{display:flex;align-items:center;gap:6px;flex-wrap:nowrap}
+.mrow .tag{font-size:.75rem;color:var(--muted);min-width:4.5em}
+.box{border:2px solid var(--dotB);border-radius:10px;padding:8px;display:grid;grid-template-columns:repeat(3,22px);gap:6px;min-width:44px;min-height:44px;align-content:start}
+.mvis{display:grid;gap:8px}
+.steps{list-style:none;margin:0;padding:0;display:grid;gap:10px;counter-reset:s}
+.steps li{display:grid;grid-template-columns:28px 1fr;gap:10px;counter-increment:s}
+.steps li::before{content:counter(s);width:28px;height:28px;border-radius:50%;background:var(--marker);color:#13284b;font-weight:700;display:grid;place-items:center;font-size:.85rem}
+.bi{display:grid;gap:2px;min-width:0}
+.bi .l1{font-family:var(--font-kid);font-size:1.15rem;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.bi .l2{color:var(--muted);font-size:.92rem;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.fb{border-radius:10px;padding:10px 14px;font-weight:600}
+.fb.ok{background:var(--good-bg);color:var(--good)}
+.fb.no{background:var(--bad-bg);color:var(--bad)}
+/* phonics */
+.letters{display:grid;grid-template-columns:repeat(auto-fill,minmax(46px,1fr));gap:6px}
+.letters button{font-family:var(--font-kid);font-size:1.5rem;font-weight:700;aspect-ratio:1;max-width:100%;border:1px solid var(--line);background:var(--surface2);color:var(--ink);border-radius:10px;cursor:pointer}
+.letters button.v{color:var(--bad)}
+.letters button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.lessonGrid{display:grid;grid-template-columns:minmax(0,180px) 1fr;gap:18px;align-items:start}
+@media (max-width:600px){.lessonGrid{grid-template-columns:1fr}}
+.bigLetter{font-family:var(--font-kid);font-size:5.5rem;line-height:1;font-weight:700;background:var(--surface2);border-radius:14px;padding:16px;text-align:center}
+.bigLetter .pic{font-size:2.4rem;display:block;margin-top:8px}
+.tiles{display:flex;gap:8px;flex-wrap:wrap}
+.tile{font-family:var(--font-kid);font-size:3rem;font-weight:700;width:1.6em;height:1.6em;display:grid;place-items:center;border:2px solid var(--line);border-radius:12px;background:var(--surface2);color:var(--ink);cursor:pointer;transition:transform .25s,background .2s}
+.tile.v{color:var(--bad)}
+.tile.on{background:var(--marker);color:#13284b;transform:translateY(-6px)}
+.tiles.blend .tile{transform:translateX(0)}
+.fam{display:flex;flex-wrap:wrap;gap:6px}
+.wordchips{display:flex;flex-wrap:wrap;gap:6px}
+.wordchips button{font-family:var(--font-kid);font-size:1.1rem}
+.note{font-size:.85rem;color:var(--muted);background:var(--surface2);border-radius:10px;padding:10px 12px;border:1px solid var(--line)}
+.note strong{color:var(--ink)}
+/* translate */
+textarea{width:100%;min-height:96px;resize:vertical;font-family:var(--font-kid);font-size:1.1rem}
+.out{background:var(--surface2);border-radius:12px;padding:14px;font-family:var(--font-kid);font-size:1.25rem;min-height:56px}
+.saved{display:grid;gap:8px}
+.saved .item{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;border-top:1px solid var(--line);padding-top:8px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:700px){.two{grid-template-columns:1fr}}
+a{color:var(--accent)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<header>
+  <div class="wrap">
+    <div class="top">
+      <div class="brand">Puente <small>Math &amp; phonics for English learners · Grades 2–5</small></div>
+      <div class="settings">
+        <label for="grade">Grade
+          <select id="grade"><option value="2">2nd</option><option value="3" selected>3rd</option><option value="4">4th</option><option value="5">5th</option></select>
+        </label>
+        <label for="order">Show first
+          <select id="order"><option value="es">Español</option><option value="en">English</option></select>
+        </label>
+        <label for="rate">Voice
+          <select id="rate"><option value="0.7">Slow</option><option value="0.9" selected>Normal</option></select>
+        </label>
+      </div>
+    </div>
+    <nav role="tablist">
+      <button role="tab" aria-selected="true" data-tab="math" id="tab-math">Math facts</button>
+      <button role="tab" aria-selected="false" data-tab="letters" id="tab-letters">Letter sounds</button>
+      <button role="tab" aria-selected="false" data-tab="cvc" id="tab-cvc">CVC words</button>
+      <button role="tab" aria-selected="false" data-tab="translate" id="tab-translate">Translate</button>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+<main>
+  <!-- MATH -->
+  <section id="p-math" class="panel" style="display:grid;gap:16px">
+    <div class="card" style="display:grid;gap:14px">
+      <div>
+        <h2>One-digit facts, explained step by step</h2>
+        <p class="std" id="mathStd"></p>
+      </div>
+      <div class="row" role="group" aria-label="Operation">
+        <button class="btn" data-op="add" aria-pressed="true">+ Add · Sumar</button>
+        <button class="btn" data-op="sub" aria-pressed="false">− Subtract · Restar</button>
+        <button class="btn" data-op="mul" aria-pressed="false">× Multiply · Multiplicar</button>
+        <button class="btn" data-op="div" aria-pressed="false">÷ Divide · Dividir</button>
+      </div>
+      <div class="row">
+        <label for="ma" class="label">Numbers</label>
+        <input id="ma" type="number" min="0" max="9" style="width:4.5em">
+        <span id="mopSym" class="op" style="font-size:1.2rem">+</span>
+        <input id="mb" type="number" min="0" max="9" style="width:4.5em">
+        <button class="btn" id="mSet">Use these</button>
+        <button class="btn primary" id="mNew">New problem · Nuevo</button>
+      </div>
+    </div>
+
+    <div class="card" style="display:grid;gap:14px">
+      <div class="problem" aria-live="polite">
+        <span class="num" id="pA">3</span><span id="pOp">+</span><span class="num" id="pB">4</span><span>=</span>
+        <input id="ans" type="number" inputmode="numeric" aria-label="Student answer">
+        <button class="btn primary" id="check" style="font-size:1rem">Check · Revisar</button>
+      </div>
+      <div id="mfb" aria-live="polite"></div>
+      <div class="row" style="justify-content:space-between">
+        <span class="label">How to solve it · Cómo resolverlo</span>
+        <div class="row">
+          <button class="say" id="readAllEs">🔊 Leer todo</button>
+          <button class="say" id="readAllEn">🔊 Read all</button>
+        </div>
+      </div>
+      <ol class="steps" id="msteps"></ol>
+    </div>
+  </section>
+
+  <!-- LETTERS -->
+  <section id="p-letters" class="panel" hidden style="display:grid;gap:16px">
+    <div class="card" style="display:grid;gap:12px">
+      <div>
+        <h2>Letter sounds</h2>
+        <p class="std">Pick a letter. Students hear the sound, then say it. Vowels are red. Supports <b>NC.K.RF.3 / NC.1.RF.3</b> foundational phonics with HMH Into Reading.</p>
+      </div>
+      <div class="letters" id="letterGrid"></div>
+    </div>
+    <div class="card lessonGrid">
+      <div class="bigLetter"><span id="LL">Aa</span><span class="pic" id="Lpic">🍎</span></div>
+      <div style="display:grid;gap:12px;min-width:0">
+        <div class="bi" id="Lword"></div>
+        <div class="row">
+          <button class="btn primary" id="Lhear">🔊 Hear the sound</button>
+          <button class="btn mic" id="Lmic">🎤 Student says it</button>
+        </div>
+        <div class="row" id="LteacherRow">
+          <span class="label">Teacher check</span>
+          <button class="btn good" id="Lyes">✓ Correct</button>
+          <button class="btn bad" id="Lno">✗ Not yet</button>
+        </div>
+        <div id="Lfb" aria-live="polite"></div>
+        <div class="note" id="Ltip"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CVC -->
+  <section id="p-cvc" class="panel" hidden style="display:grid;gap:16px">
+    <div class="card" style="display:grid;gap:12px">
+      <div>
+        <h2>CVC words: sound, blend, read</h2>
+        <p class="std">Consonant–vowel–consonant words by word family. Tap each letter to hear it, then blend. Supports <b>NC.1.RF.3</b> decoding and <b>NC.1.RF.2</b> blending.</p>
+      </div>
+      <div class="fam" id="famRow" role="group" aria-label="Word family"></div>
+      <div class="wordchips" id="wordRow" role="group" aria-label="Words"></div>
+    </div>
+    <div class="card" style="display:grid;gap:14px">
+      <div class="row" style="justify-content:space-between;align-items:flex-start">
+        <div class="tiles" id="tiles"></div>
+        <div style="font-size:3.2rem" id="cPic"></div>
+      </div>
+      <div class="row">
+        <button class="btn" id="cSound">🔊 Each sound</button>
+        <button class="btn primary" id="cBlend">🔊 Blend it</button>
+        <button class="btn mic" id="cMic">🎤 Student reads it</button>
+        <button class="btn" id="cNext">Next word →</button>
+      </div>
+      <div class="row">
+        <span class="label">Teacher check</span>
+        <button class="btn good" id="cYes">✓ Correct</button>
+        <button class="btn bad" id="cNo">✗ Not yet</button>
+      </div>
+      <div id="cfb" aria-live="polite"></div>
+      <div class="bi" id="cMeaning"></div>
+    </div>
+  </section>
+
+  <!-- TRANSLATE -->
+  <section id="p-translate" class="panel" hidden style="display:grid;gap:16px">
+    <div class="card" style="display:grid;gap:12px">
+      <div>
+        <h2>Translate your own words</h2>
+        <p class="std">Type directions, a word problem, or a note home. Translate it, then play it aloud for the student.</p>
+      </div>
+      <div class="row" role="group" aria-label="Direction">
+        <button class="btn" data-dir="en-es" aria-pressed="true">English → Español</button>
+        <button class="btn" data-dir="es-en" aria-pressed="false">Español → English</button>
+      </div>
+      <label for="tin" class="label">Your text</label>
+      <textarea id="tin" placeholder="Example: Count the dots. Then write the number.">Draw 3 groups of 4 circles. How many circles in all?</textarea>
+      <div class="row">
+        <button class="btn primary" id="tGo">Translate</button>
+        <button class="say" id="tSayIn">🔊 Read my text</button>
+        <a id="tGoogle" href="#" target="_blank" rel="noopener">Open in Google Translate ↗</a>
+      </div>
+      <div class="label">Translation</div>
+      <div class="out" id="tout" aria-live="polite"><span style="color:var(--muted)">The translation appears here.</span></div>
+      <div class="row">
+        <button class="say" id="tSayOut">🔊 Read translation</button>
+        <button class="btn" id="tSave">Save to my phrases</button>
+      </div>
+      <div class="note" id="tNote" hidden></div>
+    </div>
+    <div class="two">
+      <div class="card" style="display:grid;gap:8px">
+        <div class="label">My saved phrases</div>
+        <div class="saved" id="savedList"></div>
+      </div>
+      <div class="card" style="display:grid;gap:8px">
+        <div class="label">Classroom phrases</div>
+        <div class="saved" id="presetList"></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="note" id="micNote" hidden></div>
+</main>
+</div>
+
+<script>
+(function(){
+"use strict";
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ---------- speech out ---------- */
+let voices=[];
+function loadVoices(){try{voices=speechSynthesis.getVoices()}catch(e){voices=[]}}
+if("speechSynthesis" in window){loadVoices();speechSynthesis.onvoiceschanged=loadVoices}
+function pickVoice(lang){
+  const pref=lang==="es"?["es-MX","es-US","es-419","es-ES","es"]:["en-US","en-GB","en"];
+  for(const p of pref){const v=voices.find(v=>v.lang&&v.lang.replace("_","-").toLowerCase().startsWith(p.toLowerCase()));if(v)return v}
+  return null;
+}
+function speak(text,lang,keep){
+  if(!("speechSynthesis" in window)||!text)return;
+  if(!keep)speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang=lang==="es"?"es-MX":"en-US";
+  const v=pickVoice(lang);if(v)u.voice=v;
+  u.rate=parseFloat($("#rate").value)||0.9;
+  speechSynthesis.speak(u);
+}
+function speakSeq(parts){ // [[text,lang],...]
+  if(!("speechSynthesis" in window))return;
+  speechSynthesis.cancel();
+  parts.forEach(([t,l])=>speak(t,l,true));
+}
+
+/* ---------- speech in ---------- */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+let micBlocked=!SR;
+function showMicNote(){
+  const n=$("#micNote");n.hidden=false;
+  n.innerHTML="<strong>Voice check is off here.</strong> The microphone can't be used in this view, so use the <strong>Teacher check</strong> buttons. To let students use their own voice, open the downloaded copy of this app in Chrome or Edge on a computer with a microphone.";
+}
+function listen(){
+  return new Promise((res,rej)=>{
+    if(!SR)return rej("unsupported");
+    let done=false;const r=new SR();
+    r.lang="en-US";r.maxAlternatives=5;r.interimResults=false;r.continuous=false;
+    r.onresult=e=>{done=true;res([...e.results[0]].map(a=>a.transcript.toLowerCase().trim()))};
+    r.onerror=e=>{if(!done){done=true;rej(e.error||"error")}};
+    r.onend=()=>{if(!done){done=true;res([])}};
+    try{r.start()}catch(err){done=true;rej("start")}
+  });
+}
+async function micTry(btn,onHeard){
+  if(micBlocked){showMicNote();return}
+  btn.classList.add("listening");const old=btn.textContent;btn.textContent="🎤 Listening… Escuchando…";
+  try{const alts=await listen();onHeard(alts)}
+  catch(err){
+    if(["not-allowed","service-not-allowed","unsupported","start","audio-capture"].includes(err)){micBlocked=true;showMicNote()}
+    else onHeard([]);
+  }finally{btn.classList.remove("listening");btn.textContent=old}
+}
+
+/* ---------- bilingual line ---------- */
+function bi(es,en,extraEs,extraEn){
+  const first=$("#order").value;
+  const a=first==="es"?[es,"es","🔊 ES"]:[en,"en","🔊 EN"], b=first==="es"?[en,"en","🔊 EN"]:[es,"es","🔊 ES"];
+  return `<div class="bi"><div class="l1"><span>${esc(a[0])}</span><button class="say" data-say="${esc(a[0])}" data-lang="${a[1]}">${a[2]}</button></div>`+
+         `<div class="l2"><span>${esc(b[0])}</span><button class="say" data-say="${esc(b[0])}" data-lang="${b[1]}">${b[2]}</button></div></div>`;
+}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-say]");if(b)speak(b.dataset.say,b.dataset.lang)});
+
+/* ---------- tabs ---------- */
+$$("nav button").forEach(b=>b.addEventListener("click",()=>{
+  $$("nav button").forEach(x=>x.setAttribute("aria-selected",x===b));
+  $$(".panel").forEach(p=>p.hidden=p.id!=="p-"+b.dataset.tab);
+  store.set("tab",b.dataset.tab);
+}));
+const savedTab=store.get("tab","math");const tb=$(`nav button[data-tab="${savedTab}"]`);if(tb)tb.click();
+
+/* ---------- MATH ---------- */
+const STD={
+  2:"<b>NC.2.OA.2</b> Add and subtract within 20 fluently. Use beside Eureka Math² fluency work.",
+  3:"<b>NC.3.OA.7</b> Multiply and divide within 100. <b>NC.3.OA.1–2</b> groups and sharing. Use beside Eureka Math².",
+  4:"Fact fluency for <b>NC.4.NBT.5–6</b> (multi-digit × and ÷ by one digit). Reteach the one-digit facts first.",
+  5:"Fact fluency for <b>NC.5.NBT.5–6</b> (multi-digit × and ÷). Reteach the one-digit facts first."
+};
+const SYM={add:"+",sub:"−",mul:"×",div:"÷"};
+let op="add",A=3,B=4;
+function rnd(lo,hi){return lo+Math.floor(Math.random()*(hi-lo+1))}
+function answer(){return op==="add"?A+B:op==="sub"?A-B:op==="mul"?A*B:A/B}
+function newProblem(){
+  if(op==="add"){A=rnd(1,9);B=rnd(1,9)}
+  else if(op==="sub"){A=rnd(2,9);B=rnd(1,A)}
+  else if(op==="mul"){A=rnd(2,9);B=rnd(2,9)}
+  else{B=rnd(2,9);const q=rnd(1,9);A=B*q}
+  renderMath();
+}
+function setOp(o){op=o;$$("[data-op]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.op===o));$("#mopSym").textContent=SYM[o];
+  $("#ma").max=o==="div"?81:9;newProblem()}
+$$("[data-op]").forEach(b=>b.addEventListener("click",()=>setOp(b.dataset.op)));
+$("#mNew").addEventListener("click",newProblem);
+$("#mSet").addEventListener("click",()=>{
+  let a=parseInt($("#ma").value,10),b=parseInt($("#mb").value,10);
+  const f=$("#mfb");
+  if(isNaN(a)||isNaN(b)){f.innerHTML='<div class="fb no">Type two numbers first.</div>';return}
+  if(op==="sub"&&b>a){f.innerHTML='<div class="fb no">For subtraction, put the bigger number first.</div>';return}
+  if(op==="div"&&(b===0||a%b!==0)){f.innerHTML='<div class="fb no">Pick numbers that divide evenly, like 12 ÷ 3.</div>';return}
+  if(op==="div"&&a/b>9){f.innerHTML='<div class="fb no">Keep the answer one digit, like 18 ÷ 2.</div>';return}
+  if(op!=="div"&&(a>9||b>9)){f.innerHTML='<div class="fb no">Use one-digit numbers, 0 to 9.</div>';return}
+  A=a;B=b;renderMath();
+});
+function dots(n,cls,gone){let h='<div class="grp">';for(let i=0;i<n;i++)h+=`<span class="dot ${cls||""} ${gone&&i>=n-gone?"gone":""}"></span>`;return h+"</div>"}
+function seq(from,to){const a=[];for(let i=from;i<=to;i++)a.push(i);return a.join(", ")}
+function steps(){
+  const r=answer(),big=Math.max(A,B),small=Math.min(A,B);
+  const down=[];for(let i=A-1;i>=r;i--)down.push(i);
+  if(op==="add")return[
+    [`Sumar es juntar dos números.`,`Adding means putting two numbers together.`],
+    [`Empieza con el número grande: ${big}.`,`Start with the big number: ${big}.`],
+    [`Cuenta ${small} más hacia adelante: ${small?seq(big+1,r):big}.`,`Count on ${small} more: ${small?seq(big+1,r):big}.`],
+    [`${A} más ${B} es igual a ${r}.`,`${A} plus ${B} equals ${r}.`]];
+  if(op==="sub")return[
+    [`Restar es quitar.`,`Subtracting means taking away.`],
+    [`Empieza en ${A}.`,`Start at ${A}.`],
+    [`Cuenta ${B} hacia atrás: ${B?down.join(", "):A}.`,`Count back ${B}: ${B?down.join(", "):A}.`],
+    [`${A} menos ${B} es igual a ${r}.`,`${A} minus ${B} equals ${r}.`]];
+  if(op==="mul"){const sk=[];for(let i=1;i<=A;i++)sk.push(B*i);return[
+    [`${A} × ${B} significa ${A} grupos de ${B}.`,`${A} × ${B} means ${A} groups of ${B}.`],
+    [`Cuenta de ${B} en ${B}, ${A} veces: ${sk.join(", ")}.`,`Skip count by ${B}, ${A} times: ${sk.join(", ")}.`],
+    [`${A} por ${B} es igual a ${r}.`,`${A} times ${B} equals ${r}.`]]}
+  const sk=[];for(let i=1;i<=r;i++)sk.push(B*i);
+  return[
+    [`Dividir es repartir en partes iguales.`,`Dividing means sharing into equal parts.`],
+    [`Pregunta: ¿${B} por cuánto es ${A}?`,`Ask: ${B} times what makes ${A}?`],
+    [`Cuenta de ${B} en ${B} hasta llegar a ${A}: ${sk.join(", ")}. Contaste ${r} veces.`,`Skip count by ${B} until you reach ${A}: ${sk.join(", ")}. You counted ${r} times.`],
+    [`${A} entre ${B} es igual a ${r}. Comprueba: ${B} × ${r} = ${A}.`,`${A} divided by ${B} equals ${r}. Check: ${B} × ${r} = ${A}.`]];
+}
+function renderMath(){
+  $("#mathStd").innerHTML=STD[$("#grade").value];
+  $("#pA").textContent=A;$("#pB").textContent=B;$("#pOp").textContent=SYM[op];
+  $("#ans").value="";$("#mfb").innerHTML="";$("#ma").value=A;$("#mb").value=B;
+  $("#msteps").innerHTML=steps().map(([es,en])=>"<li>"+bi(es,en)+"</li>").join("");
+}
+$("#check").addEventListener("click",()=>{
+  const g=parseInt($("#ans").value,10),r=answer(),f=$("#mfb");
+  if(isNaN(g)){f.innerHTML='<div class="fb no">Escribe tu respuesta. · Type your answer.</div>';return}
+  try{window.TK&&TK.record({activity:'Math facts · '+{add:'Add',sub:'Subtract',mul:'Multiply',div:'Divide'}[op],score:g===r?1:0,total:1,detail:A+' '+SYM[op]+' '+B+' = '+g});}catch(e){}
+  if(g===r){f.innerHTML=`<div class="fb ok">¡Muy bien! ${A} ${SYM[op]} ${B} = ${r}. · Great job!</div>`;speakSeq([["¡Muy bien!","es"],["Great job!","en"]])}
+  else{f.innerHTML=`<div class="fb no">Todavía no. Vamos a contar juntos. · Not yet. Let's count together.</div>`;
+    speakSeq(steps().flatMap(([es,en])=>$("#order").value==="es"?[[es,"es"]]:[[en,"en"]]))}
+});
+$("#readAllEs").addEventListener("click",()=>speakSeq(steps().map(s=>[s[0],"es"])));
+$("#readAllEn").addEventListener("click",()=>speakSeq(steps().map(s=>[s[1],"en"])));
+
+/* ---------- LETTERS ---------- */
+// [letter, spoken sound, key word, Spanish word, picture, tip ES, tip EN, accepted starts]
+const L=[
+["a","aa","apple","manzana","🍎","Abre la boca grande, como sonriendo. Suena entre la 'a' y la 'e'.","Open your mouth wide, like a smile. It sounds between Spanish 'a' and 'e'.",["a","e"]],
+["b","buh","ball","pelota","⚽","Junta los labios y suelta el sonido con voz.","Press your lips together, then pop the sound with your voice on.",["b"]],
+["c","kuh","cat","gato","🐱","Como la 'c' de 'casa'.","Like the c in Spanish 'casa'.",["c","k","q"]],
+["d","duh","dog","perro","🐶","La lengua toca detrás de los dientes de arriba.","Your tongue taps behind your top teeth.",["d","th"]],
+["e","eh","egg","huevo","🥚","Como la 'e' en español, pero más corta.","Like Spanish 'e', but shorter.",["e","a"]],
+["f","fff","fish","pez","🐟","Dientes de arriba sobre el labio de abajo. Sopla aire.","Top teeth on your bottom lip. Blow air.",["f","ph"]],
+["g","guh","goat","cabra","🐐","Como la 'g' de 'gato'.","Like the g in Spanish 'gato'.",["g"]],
+["h","huh","hat","sombrero","🎩","¡En inglés la h sí suena! Es un suspiro suave.","In English, h makes a sound! It is a soft breath.",["h"]],
+["i","ih","insect","insecto","🐛","Entre la 'i' y la 'e'. Corta y relajada.","Between Spanish 'i' and 'e'. Short and relaxed.",["i","e"]],
+["j","juh","juice","jugo","🧃","No suena como la 'j' del español. Suena como 'ch', pero con voz.","Not like Spanish 'j'. It sounds like 'ch' with your voice on.",["j","g"]],
+["k","kuh","kite","cometa","🪁","Como la 'c' de 'casa'.","Like the c in Spanish 'casa'.",["k","c","q"]],
+["l","lll","leaf","hoja","🍃","Como la 'l' en español.","Like Spanish 'l'.",["l"]],
+["m","mmm","moon","luna","🌙","Labios juntos: mmm.","Lips together: mmm.",["m"]],
+["n","nnn","nut","nuez","🥜","Como la 'n' en español.","Like Spanish 'n'.",["n"]],
+["o","ah","octopus","pulpo","🐙","Abre la boca como la 'a' en español.","Open your mouth like Spanish 'a'.",["o","a"]],
+["p","puh","pig","cerdo","🐷","Labios juntos, suelta aire. Sin voz.","Lips together, let air pop out. No voice.",["p"]],
+["q","kwuh","queen","reina","👑","La q casi siempre va con u. Suena 'kw'.","Q almost always comes with u. It sounds like 'kw'.",["q","k","c"]],
+["r","rrr","rabbit","conejo","🐰","No vibres la lengua. La lengua no toca nada.","Do not roll it. Your tongue does not touch anything.",["r","w"]],
+["s","sss","sun","sol","☀️","Como una serpiente: sss.","Like a snake: sss.",["s","c"]],
+["t","tuh","tiger","tigre","🐯","La lengua detrás de los dientes. Suelta aire.","Tongue behind your teeth. Let air out.",["t"]],
+["u","uh","umbrella","paraguas","☂️","Boca relajada: 'uh', como cuando piensas.","Relaxed mouth: 'uh', like when you are thinking.",["u","a","o"]],
+["v","vvv","van","camioneta","🚐","Dientes de arriba sobre el labio de abajo, con voz. ¡No es b!","Top teeth on your bottom lip, voice on. It is not b!",["v"]],
+["w","wuh","watermelon","sandía","🍉","Labios redondos, como una 'u' rápida.","Round lips, like a quick Spanish 'u'.",["w"]],
+["x","ks","fox","zorro","🦊","Suena 'ks', casi siempre al final de la palabra, como en 'fox'.","It sounds like 'ks', usually at the end of a word, like 'fox'.",["x","e","k","f"]],
+["y","yuh","yo-yo","yoyo","🪀","Como la 'y' de 'yo'.","Like the y in Spanish 'yo'.",["y"]],
+["z","zzz","zebra","cebra","🦓","Como una abeja: zzz. Con voz.","Like a bee: zzz. Voice on.",["z","s"]]
+];
+const VOW="aeiou";let cur=L[0];
+$("#letterGrid").innerHTML=L.map((x,i)=>`<button data-i="${i}" class="${VOW.includes(x[0])?"v":""}" aria-pressed="${i===0}" aria-label="Letter ${x[0]}">${x[0]}</button>`).join("");
+$$("#letterGrid button").forEach(b=>b.addEventListener("click",()=>{
+  $$("#letterGrid button").forEach(x=>x.setAttribute("aria-pressed",x===b));cur=L[+b.dataset.i];renderLetter();sayLetter();
+}));
+function renderLetter(){
+  const[l,,w,es,pic,te,tn]=cur;
+  $("#LL").textContent=l.toUpperCase()+l;$("#Lpic").textContent=pic;
+  $("#Lword").innerHTML=bi(`/${l}/ como en “${w}” (${es})`,`/${l}/ as in “${w}”`);
+  $("#Ltip").innerHTML=bi(te,tn);$("#Lfb").innerHTML="";
+}
+function sayLetter(){const[,s,w]=cur;speakSeq([[`${s}. ${s}. ${w}.`,"en"]])}
+$("#Lhear").addEventListener("click",sayLetter);
+function letterResult(ok,heard){
+  const[l,s,w,es]=cur,f=$("#Lfb");
+  try{window.TK&&TK.record({activity:'Letter sounds',score:ok?1:0,total:1,detail:'/'+l+'/'});}catch(e){}
+  if(ok){f.innerHTML=`<div class="fb ok">¡Muy bien! /${l}/ · Great job!</div>`;speakSeq([["¡Muy bien!","es"],["Great job!","en"]])}
+  else{f.innerHTML=`<div class="fb no">${heard?`Escuché · I heard: “${esc(heard)}”. `:""}Escucha y repite. · Listen and say it again.</div>`;
+    speakSeq([["Escucha y repite.","es"],[`${s}. ${s}. ${w}. Now you say ${s}.`,"en"]])}
+}
+$("#Lyes").addEventListener("click",()=>letterResult(true));
+$("#Lno").addEventListener("click",()=>letterResult(false));
+$("#Lmic").addEventListener("click",()=>micTry($("#Lmic"),alts=>{
+  const[l,,w,,,,,acc]=cur;
+  const ok=alts.some(a=>{const t=a.replace(/[^a-z ]/g,"").trim();return t===l||t===w||acc.some(p=>t.startsWith(p))});
+  letterResult(ok,alts[0]||"");
+}));
+renderLetter();
+
+/* ---------- CVC ---------- */
+const FAM={
+ "-at":[["cat","gato","🐱"],["bat","murciélago","🦇"],["hat","sombrero","🎩"],["mat","tapete","🟫"],["rat","rata","🐀"],["sat","se sentó","🪑"]],
+ "-an":[["can","lata","🥫"],["man","hombre","👨"],["pan","sartén","🍳"],["van","camioneta","🚐"],["fan","ventilador","🌀"]],
+ "-ig":[["pig","cerdo","🐷"],["big","grande","🐘"],["dig","excavar","⛏️"],["wig","peluca","💇"]],
+ "-op":[["mop","trapeador","🧹"],["hop","saltar","🐇"],["top","arriba / trompo","🔝"],["pop","explotar","🎈"]],
+ "-ug":[["bug","insecto","🐛"],["hug","abrazo","🤗"],["mug","taza","☕"],["rug","alfombra","🟥"]],
+ "-et":[["net","red","🥅"],["pet","mascota","🐶"],["wet","mojado","💧"],["jet","avión","✈️"],["vet","veterinario","🩺"]],
+ "-en":[["hen","gallina","🐔"],["ten","diez","🔟"],["pen","pluma","🖊️"],["men","hombres","👬"]],
+ "-ot":[["hot","caliente","🔥"],["pot","olla","🍲"],["dot","punto","⚫"],["cot","catre","🛏️"]],
+ "-un":[["sun","sol","☀️"],["run","correr","🏃"],["bun","pancito","🍞"],["fun","divertido","🎉"]],
+ "-ip":[["lip","labio","👄"],["zip","cierre","🤐"],["dip","mojar","🥣"],["sip","sorbo","🥤"]]
+};
+window.__WS={L:L,FAM:FAM};
+const SOUND=Object.fromEntries(L.map(x=>[x[0],x[1]]));
+let fam=store.get("fam","-at"),wi=0,word=FAM[fam]?FAM[fam][0]:FAM["-at"][0];if(!FAM[fam])fam="-at";
+function renderFam(){
+  $("#famRow").innerHTML=Object.keys(FAM).map(k=>`<button class="btn" data-fam="${k}" aria-pressed="${k===fam}">${k}</button>`).join("");
+  $("#wordRow").innerHTML=FAM[fam].map((w,i)=>`<button class="btn" data-wi="${i}" aria-pressed="${i===wi}">${w[0]}</button>`).join("");
+}
+document.addEventListener("click",e=>{
+  const f=e.target.closest("[data-fam]");if(f){fam=f.dataset.fam;wi=0;store.set("fam",fam);renderCvc();return}
+  const w=e.target.closest("[data-wi]");if(w){wi=+w.dataset.wi;renderCvc();return}
+});
+function renderCvc(){
+  word=FAM[fam][wi];renderFam();
+  $("#tiles").innerHTML=[...word[0]].map((c,i)=>`<button class="tile ${VOW.includes(c)?"v":""}" data-ti="${i}" aria-label="Sound ${c}">${c}</button>`).join("");
+  $$("#tiles .tile").forEach(t=>t.addEventListener("click",()=>{flash(+t.dataset.ti);speak(SOUND[word[0][t.dataset.ti]],"en")}));
+  $("#cPic").textContent=word[2];$("#cfb").innerHTML="";
+  $("#cMeaning").innerHTML=bi(`${word[0]} = ${word[1]}`,`${word[0]} means “${word[1]}” in Spanish`);
+}
+function flash(i){$$("#tiles .tile").forEach((t,j)=>t.classList.toggle("on",j===i))}
+function soundOut(then){
+  const s=[...word[0]].map(c=>SOUND[c]);let i=0;
+  const step=()=>{if(i<s.length){flash(i);speak(s[i],"en");i++;setTimeout(step,900)}else{flash(-1);then&&then()}};
+  step();
+}
+$("#cSound").addEventListener("click",()=>soundOut());
+$("#cBlend").addEventListener("click",()=>soundOut(()=>{$$("#tiles .tile").forEach(t=>t.classList.add("on"));speak(word[0],"en");setTimeout(()=>flash(-1),1200)}));
+$("#cNext").addEventListener("click",()=>{wi=(wi+1)%FAM[fam].length;renderCvc()});
+function cvcResult(ok,heard){
+  const f=$("#cfb"),w=word[0];
+  try{window.TK&&TK.record({activity:'CVC words',score:ok?1:0,total:1,detail:w});}catch(e){}
+  if(ok){f.innerHTML=`<div class="fb ok">¡Muy bien! You read “${w}”. ${word[2]}</div>`;speakSeq([["¡Muy bien!","es"],[`Great reading! ${w}.`,"en"]])}
+  else{f.innerHTML=`<div class="fb no">${heard?`Escuché · I heard: “${esc(heard)}”. `:""}Vamos a mezclar los sonidos. · Let's blend the sounds.</div>`;
+    speak("Escucha los sonidos.","es");setTimeout(()=>soundOut(()=>{speak(`${w}. Now you say ${w}.`,"en")}),1300)}
+}
+$("#cYes").addEventListener("click",()=>cvcResult(true));
+$("#cNo").addEventListener("click",()=>cvcResult(false));
+$("#cMic").addEventListener("click",()=>micTry($("#cMic"),alts=>{
+  const w=word[0];const ok=alts.some(a=>a.replace(/[^a-z ]/g,"").split(" ").includes(w));
+  cvcResult(ok,alts[0]||"");
+}));
+renderCvc();
+
+/* ---------- TRANSLATE ---------- */
+let dir="en-es",lastIn="",lastOut="";
+$$("[data-dir]").forEach(b=>b.addEventListener("click",()=>{dir=b.dataset.dir;$$("[data-dir]").forEach(x=>x.setAttribute("aria-pressed",x===b));updateGoogle()}));
+function updateGoogle(){
+  const [sl,tl]=dir.split("-");
+  $("#tGoogle").href=`https://translate.google.com/?sl=${sl}&tl=${tl}&op=translate&text=${encodeURIComponent($("#tin").value.slice(0,1500))}`;
+}
+$("#tin").addEventListener("input",updateGoogle);updateGoogle();
+let sample=null;
+if(window.claude&&window.claude.use){window.claude.use("sample").then(s=>{sample=s}).catch(()=>{})}
+function tnote(html){const n=$("#tNote");n.hidden=!html;n.innerHTML=html||""}
+$("#tGo").addEventListener("click",async()=>{
+  const text=$("#tin").value.trim();if(!text)return;
+  const out=$("#tout");
+  if(!sample){tnote("Built-in translation isn't available in this copy. Use <strong>Open in Google Translate</strong>, then paste the result into your saved phrases, or try a classroom phrase.");return}
+  const [from,to]=dir==="en-es"?["English","Spanish (Latin American, as spoken in US schools)"]:["Spanish","English"];
+  out.textContent="Translating…";tnote("");$("#tGo").disabled=true;
+  try{
+    const {text:t}=await sample(`Translate the following ${from} text into ${to} for a student in grades 2 to 5 who is learning English. Keep it simple, warm and accurate. Keep math numbers and symbols exactly as written. Reply with only the translation, no notes.\n\nText:\n${text}`,{modelTier:"quick",onText:({text})=>{out.textContent=text}});
+    lastIn=text;lastOut=t.trim();out.textContent=lastOut;
+  }catch(e){
+    out.textContent=e&&e.text?e.text:"";
+    const m={not_granted:"Translation needs your permission to use Claude. Use Google Translate instead.",rate_limited:"Too many translations at once. Wait a minute and try again.",sampling_disabled:"Translation isn't available for this account. Use Google Translate instead."};
+    tnote(m[e&&e.code]||"The translation didn't finish. Try again, or use Google Translate.");
+  }finally{$("#tGo").disabled=false}
+});
+$("#tSayIn").addEventListener("click",()=>speak($("#tin").value,dir==="en-es"?"en":"es"));
+$("#tSayOut").addEventListener("click",()=>speak($("#tout").textContent,dir==="en-es"?"es":"en"));
+function phraseRow(en,es,i){
+  return `<div class="item">${bi(es,en)}${i!=null?`<button class="say" data-del="${i}" aria-label="Delete phrase">Delete</button>`:"<span></span>"}</div>`;
+}
+function renderSaved(){
+  const s=store.get("phrases",[]);
+  $("#savedList").innerHTML=s.length?s.map((p,i)=>phraseRow(p.en,p.es,i)).join(""):'<p class="std">Translate something and choose <b>Save to my phrases</b>. Phrases stay on this device.</p>';
+}
+$("#tSave").addEventListener("click",()=>{
+  const out=$("#tout").textContent.trim(),inp=$("#tin").value.trim();
+  if(!out||out==="The translation appears here."||out==="Translating…"){tnote("Translate first, then save.");return}
+  const p=dir==="en-es"?{en:inp,es:out}:{en:out,es:inp};
+  const s=store.get("phrases",[]);s.unshift(p);store.set("phrases",s.slice(0,60));renderSaved();tnote("Saved to my phrases.");
+});
+document.addEventListener("click",e=>{const d=e.target.closest("[data-del]");if(!d)return;const s=store.get("phrases",[]);s.splice(+d.dataset.del,1);store.set("phrases",s);renderSaved()});
+const PRESET=[
+ ["Show me your work.","Muéstrame tu trabajo."],
+ ["Count with your fingers.","Cuenta con tus dedos."],
+ ["How many in all?","¿Cuántos hay en total?"],
+ ["How many are left?","¿Cuántos quedan?"],
+ ["Make equal groups.","Haz grupos iguales."],
+ ["Point to each word as you read.","Señala cada palabra mientras lees."],
+ ["Say each sound. Then blend them.","Di cada sonido. Luego júntalos."],
+ ["Try again. You can do it!","Inténtalo otra vez. ¡Tú puedes!"],
+ ["Do you need help?","¿Necesitas ayuda?"],
+ ["Raise your hand if you have a question.","Levanta la mano si tienes una pregunta."]
+];
+function renderPreset(){$("#presetList").innerHTML=PRESET.map(([en,es])=>phraseRow(en,es)).join("")}
+renderSaved();renderPreset();
+
+/* ---------- settings ---------- */
+["grade","order","rate"].forEach(id=>{const v=store.get("set-"+id,null);if(v)$("#"+id).value=v;
+  $("#"+id).addEventListener("change",()=>{store.set("set-"+id,$("#"+id).value);renderMath();renderLetter();renderCvc();renderPreset();renderSaved()})});
+if(!("speechSynthesis" in window)){const n=$("#micNote");n.hidden=false;n.textContent="This browser can't read text aloud. Try Chrome or Edge."}
+setOp("add");
+})();
+</script>
+
+<script>
+(function(){
+var SYM={add:'+',sub:'−',mul:'×',div:'÷'},ES={add:'más',sub:'menos',mul:'por',div:'entre'};
+function fact(o,r){var A,B,i=function(a,b){return a+Math.floor(r()*(b-a+1))};if(o==='add'){A=i(1,9);B=i(1,9)}else if(o==='sub'){A=i(2,9);B=i(1,A)}else if(o==='mul'){A=i(2,9);B=i(2,9)}else{B=i(2,9);A=B*i(1,9)}var ans=o==='add'?A+B:o==='sub'?A-B:o==='mul'?A*B:A/B;return{q:A+' '+SYM[o]+' '+B+' = ______',a:String(ans),why:A+' '+ES[o]+' '+B+' = '+ans,lines:0}}
+window.__puMath=function(ops){return function(r,n){var out=[],seen={},g=0;while(out.length<n&&g++<300){var x=fact(ops[Math.floor(r()*ops.length)],r);if(seen[x.q])continue;seen[x.q]=1;out.push(x)}return out}};
+window.__puCvc=function(r,n){var all=[];Object.keys(__WS.FAM).forEach(function(k){__WS.FAM[k].forEach(function(w){all.push(w)})});return TK.shuffle(all,r).slice(0,n).map(function(w){return{html:'<span style="font-size:1.8em">'+w[2]+'</span> &nbsp;('+w[1]+') &nbsp; Write the word. · Escribe la palabra.',a:w[0],lines:1}})};
+window.__puFirst=function(r,n){return TK.shuffle(__WS.L,r).slice(0,n).map(function(x){return{html:'<span style="font-size:1.8em">'+x[4]+'</span> &nbsp;'+x[3]+' = '+x[2].replace(/^./,'__')+' &nbsp; What letter does it start with? · ¿Con qué letra empieza?',a:x[0]+' ('+x[2]+')',lines:0}})};
+window.__puFam=function(r,n){var ks=Object.keys(__WS.FAM);return TK.shuffle(ks,r).slice(0,n).map(function(k){var ws=__WS.FAM[k].map(function(w){return w[0]});return{q:'Word family '+k+': write 3 words that end in '+k.slice(1)+'. · Escribe 3 palabras que terminan en '+k.slice(1)+'.',a:ws.join(', '),lines:1}})};
+})();
+window.TK_CONFIG={
+  app:"puente-learning-studio", name:"Puente Learning Studio",
+  activities:["Math facts · Add","Math facts · Subtract","Math facts · Multiply","Math facts · Divide","Letter sounds","CVC words"],
+  features:{dashboard:true,worksheets:true,classCode:true},
+  demo:{intro:"Bilingual math and phonics support for English learners in grades 2 to 5, with Spanish and English read aloud.",steps:[
+    {sel:"#grade",title:"Settings",text:"Choose the grade, which language shows first, and how fast the voice reads."},
+    {sel:"nav",title:"Four tools",text:"Math facts, letter sounds, CVC words, and a translator for your own directions."},
+    {sel:"#check",title:"Check the answer",text:"Students solve a one-digit fact. Each check goes to the teacher dashboard."},
+    {sel:"#msteps",title:"Step by step in both languages",text:"Every problem is explained in Spanish and English. Tap 🔊 to hear any line."},
+    {sel:"#tab-letters",title:"Phonics practice",text:"Letter sounds and CVC words have a Teacher check (Correct / Not yet) that also records to the dashboard.",before:function(){var b=document.querySelector('#tab-math');b&&b.click()}}]},
+  worksheet:{title:"Puente Practice",directions:"Solve each one. · Resuelve cada uno.",standards:["NC.2.OA.2","NC.3.OA.7","NC.1.RF.2","NC.1.RF.3"],count:16,sets:[
+    {name:"Addition and subtraction facts · Sumar y restar",standards:["NC.2.OA.2"],gen:__puMath(['add','sub'])},
+    {name:"Multiplication and division facts · Multiplicar y dividir",standards:["NC.3.OA.7"],gen:__puMath(['mul','div'])},
+    {name:"Mixed facts · Operaciones mixtas",gen:__puMath(['add','sub','mul','div'])},
+    {name:"Beginning sounds · Sonidos iniciales",standards:["NC.K.RF.3","NC.1.RF.3"],count:10,directions:"Look at the picture. Write the first letter. · Mira el dibujo. Escribe la primera letra.",gen:__puFirst},
+    {name:"Write the CVC word · Escribe la palabra",standards:["NC.1.RF.2","NC.1.RF.3"],count:10,directions:"Say the picture name. Write each sound you hear. · Di el nombre. Escribe cada sonido.",gen:__puCvc},
+    {name:"Word families · Familias de palabras",standards:["NC.1.RF.3"],count:6,gen:__puFam}]}
+};
+
+</script>
+<script src="/shared/teacher-kit.js"></script>
+</body></html>

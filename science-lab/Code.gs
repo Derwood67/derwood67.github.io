@@ -1,5 +1,5 @@
 /**
- * NC Grade 5 Science Lab — class records
+ * Grade 5 Science Lab — class records
  * Paste this into Extensions > Apps Script in a NEW Google Sheet, then
  * Deploy > New deployment > Web app (Execute as: Me, Who has access: Anyone).
  * Student scores are stored only in this Google Sheet.

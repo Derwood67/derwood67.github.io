@@ -1,0 +1,476 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!-- Class sign-in gate: first-name sign-in, blocked names, locked and assigned apps, teacher unlock. Live settings: /classgate.json (edited from Control Center → Lock & Assign). Source: /shared/classgate-block.html -->
+<style>
+#cg-ov{position:fixed;inset:0;z-index:2147483000;background:#141c24;display:flex;align-items:center;justify-content:center;padding:16px;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+#cg-ov *{box-sizing:border-box}
+#cg-ov .cg-card{background:#fff;color:#1b2420;border-radius:14px;max-width:420px;width:100%;padding:24px;display:flex;flex-direction:column;gap:12px;box-shadow:0 12px 32px rgba(0,0,0,.35);font-size:18px;line-height:1.45}
+#cg-ov h2{margin:0;font-size:1.45rem;line-height:1.2}
+#cg-ov p{margin:0}
+#cg-ov a{color:#0b6b4a;font-weight:700}
+#cg-ov label{font-weight:700}
+#cg-ov input{font:inherit;width:100%;padding:12px;border:2px solid #c9d1cc;border-radius:8px;background:#f6f8f6;color:#1b2420}
+#cg-ov input:focus{outline:3px solid #f2c230;outline-offset:1px}
+#cg-ov button{font:inherit;font-weight:700;border:0;border-radius:8px;padding:12px 16px;background:#0b6b4a;color:#fff;cursor:pointer}
+#cg-ov button.cg-alt{background:#e7ece9;color:#1b2420}
+#cg-ov .cg-icon{font-size:2.2rem;line-height:1}
+#cg-ov .cg-msg{min-height:1.4em;color:#a83226;font-size:.95rem}
+#cg-ov .cg-small{font-size:.9rem;color:#55625b}
+#cg-ov details{border-top:1px solid #e1e6e2;padding-top:10px}
+#cg-ov summary{cursor:pointer;font-size:.9rem;color:#55625b}
+#cg-ov form{display:flex;flex-direction:column;gap:10px;margin:0}
+#cg-badge{position:fixed;right:10px;bottom:10px;z-index:2147482000;background:#1b2430;color:#fff;font:600 14px/1.2 system-ui,-apple-system,"Segoe UI",Arial,sans-serif;border-radius:999px;padding:7px 8px 7px 14px;display:flex;gap:10px;align-items:center;box-shadow:0 3px 10px rgba(0,0,0,.25)}
+#cg-badge button{font:inherit;background:#f2c230;color:#1b1b1b;border:0;border-radius:999px;padding:4px 10px;cursor:pointer}
+</style>
+<script>
+(function(){
+  var BLOCKED=["james"];          /* fallback list; /classgate.json on the site replaces it when it loads */
+  var CFG={lockAll:false,apps:{}}; /* locked and assigned apps; filled in from /classgate.json */
+  var CODE_HASH="cf2d0fe7ea0a7780592080ef0bf415a6043a3d59aa5d72ace64d39c6e0837285";  /* scrambled teacher code; the code itself is not stored in this page */
+  var TRY_KEY="echols-classgate-tries";
+  function sha(t){return crypto.subtle.digest("SHA-256",new TextEncoder().encode(t)).then(function(b){return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0")}).join("")})}
+  /* Checks a teacher code. Three wrong tries locks code entry on this device for 10 minutes. Resolves "ok", "wrong" or "wait". */
+  function checkCode(code){var t={};try{t=JSON.parse(lsGet(TRY_KEY))||{}}catch(x){}
+    if(t.until&&Date.now()<t.until)return Promise.resolve("wait");
+    return sha("echols-room2:"+String(code||"").trim()).then(function(h){
+      if(h===CODE_HASH){lsSet(TRY_KEY,null);return "ok"}
+      t.n=(t.n||0)+1;if(t.n>=3){t={n:0,until:Date.now()+600000};lsSet(TRY_KEY,JSON.stringify(t));return "wait"}
+      lsSet(TRY_KEY,JSON.stringify(t));return "wrong"},function(){return "wrong"})}
+  var CODE_MSG={wrong:"That code is not right.",wait:"Too many tries. Wait 10 minutes and try again."};
+  var LOCK_KEY="echols-classgate-lock", NAME_KEY="echols-classgate-name", TEACH_KEY="echols-classgate-teacher";
+  var me=document.currentScript, needLogin=!!(me&&me.getAttribute("data-login")!==null);
+  function attr(a){return (me&&me.getAttribute(a))||""}
+  /* data-watch: name inputs of an app's own sign-in. data-pick: buttons whose text is a name. data-session: saved sign-ins (s:key or l:key:prop). data-app: app id (default: first folder of the address). */
+  var WATCH=attr("data-watch"), PICK=attr("data-pick"), SESS=attr("data-session").split(",").filter(Boolean);
+  var APP=attr("data-app")||(function(){var p=decodeURIComponent(location.pathname).split("/").filter(Boolean)[0]||"";
+    return p.replace(/\.html?$/i,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")})();
+  var BOOK=(function(){try{return new URLSearchParams(location.search).get("book")||""}catch(e){return ""}})();
+  var current="", locked=false, shown="", denied="";
+  function first(n){return String(n||"").trim().split(/[\s\-_]+/)[0].toLowerCase().replace(/[^a-z]/g,"")}
+  function isBlocked(n){return BLOCKED.indexOf(first(n))>-1}
+  /* Mr. Echols (teacher preview) and portfolio guests (?visitor) are not held by app locks or assignments; guest work never reaches class records. */
+  function teacher(){return ssGet(TEACH_KEY)==="1"||ssGet("ec-guest")==="1"||ssGet("ec-visitor")==="1"||/[?&]visitor\b/.test(location.search)}
+  /* This app's setting: {mode:"open"|"locked"|"assigned", students:[first names]} */
+  function setting(){var a=CFG.apps||{};return (BOOK&&a[APP+":"+BOOK])||a[APP]||{mode:"open"}}
+  function appLocked(){if(teacher())return false;return !!CFG.lockAll||setting().mode==="locked"}
+  function notAssigned(n){if(teacher()||!n)return false;var s=setting();if(s.mode!=="assigned")return false;
+    return (s.students||[]).map(first).indexOf(first(n))<0}
+  function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
+  function lsSet(k,v){try{v===null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}}
+  function ssGet(k){try{return sessionStorage.getItem(k)}catch(e){return null}}
+  function ssSet(k,v){try{v===null?sessionStorage.removeItem(k):sessionStorage.setItem(k,v)}catch(e){}}
+  function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+  function tidy(n){return String(n).replace(/\s+/g," ").trim().split(" ").map(function(w){return w.charAt(0).toUpperCase()+w.slice(1)}).join(" ")}
+  function overlay(html){var o=document.getElementById("cg-ov");if(!o){o=document.createElement("div");o.id="cg-ov";o.setAttribute("role","dialog");o.setAttribute("aria-modal","true");document.body.appendChild(o)}o.innerHTML='<div class="cg-card">'+html+'</div>';var i=o.querySelector("input:not([type=password])");if(i)setTimeout(function(){i.focus()},30);return o}
+  function close(){var o=document.getElementById("cg-ov");if(o)o.remove();shown=""}
+  function badge(){var b=document.getElementById("cg-badge");if(b)b.remove();var n=ssGet(NAME_KEY);if(!needLogin||!n)return;b=document.createElement("div");b.id="cg-badge";b.innerHTML='<span>'+esc(n)+'</span><button type="button">Sign out</button>';b.querySelector("button").onclick=function(){ssSet(NAME_KEY,null);location.reload()};document.body.appendChild(b)}
+  function showBlocked(){shown="blocked";
+    var o=overlay('<h2>This activity is not available</h2><p>This app is not open to you right now. Please check with Mr. Echols.</p>'+
+      '<details><summary>Teacher unlock</summary><form id="cg-unlock" style="margin-top:10px"><label for="cg-code">Teacher code</label><input id="cg-code" type="password" inputmode="numeric" autocomplete="off"><button type="submit">Unlock this device</button><p class="cg-msg" id="cg-umsg"></p></form></details>');
+    o.querySelector("#cg-unlock").onsubmit=function(e){e.preventDefault();var c=o.querySelector("#cg-code");
+      checkCode(c.value).then(function(r){if(r==="ok"){lsSet(LOCK_KEY,null);ssSet(NAME_KEY,null);location.reload();return}
+        c.value="";o.querySelector("#cg-umsg").textContent=CODE_MSG[r]})};
+  }
+  /* Locked app or not assigned: no device lock, and the page opens again by itself when Mr. Echols opens it. */
+  function teacherPreview(o){var f=o.querySelector("#cg-tp");if(!f)return;f.onsubmit=function(e){e.preventDefault();var c=o.querySelector("#cg-tcode");
+    checkCode(c.value).then(function(r){if(r==="ok"){ssSet(TEACH_KEY,"1");location.reload();return}c.value="";o.querySelector("#cg-tmsg").textContent=CODE_MSG[r]})}}
+  var TP='<details><summary>Teacher preview</summary><form id="cg-tp" style="margin-top:10px"><label for="cg-tcode">Teacher code</label><input id="cg-tcode" type="password" inputmode="numeric" autocomplete="off"><button type="submit">Open for this tab</button><p class="cg-msg" id="cg-tmsg"></p></form></details>';
+  var MY='<p class="cg-small"><a href="/my-apps/">See my apps</a></p>';
+  function showAppLocked(){if(shown==="applocked")return;shown="applocked";var b=document.getElementById("cg-badge");if(b)b.remove();
+    teacherPreview(overlay('<div class="cg-icon" aria-hidden="true">🔒</div><h2>This app is locked</h2><p>Mr. Echols has locked this app for now. It will open again when he unlocks it.</p>'+MY+TP))}
+  function showNotAssigned(n){if(shown==="notassigned")return;shown="notassigned";denied=String(n||"");var b=document.getElementById("cg-badge");if(b)b.remove();
+    var o=overlay('<div class="cg-icon" aria-hidden="true">📋</div><h2>Not assigned to you</h2><p>'+(n?esc(tidy(first(n)))+', this':'This')+' app is not on your list right now. Check with Mr. Echols.</p>'+MY+
+      '<button type="button" class="cg-alt" id="cg-other">I typed the wrong name</button>'+TP);
+    o.querySelector("#cg-other").onclick=function(){ssSet(NAME_KEY,null);location.reload()};teacherPreview(o)}
+  function lock(){if(locked)return;locked=true;lsSet(LOCK_KEY,"1");ssSet(NAME_KEY,null);var b=document.getElementById("cg-badge");if(b)b.remove();showBlocked()}
+  /* One name check for every sign-in path: false when the name may not use this app. */
+  function allow(n){if(isBlocked(n)){lock();return false}if(appLocked()){showAppLocked();return false}if(notAssigned(n)){showNotAssigned(n);return false}return true}
+  function showLogin(){shown="login";
+    var o=overlay('<h2>Sign in</h2><p class="cg-small">Mr. Echols’ Room 2</p><form id="cg-form"><label for="cg-name">Type your first name</label><input id="cg-name" type="text" maxlength="30" autocomplete="off" autocapitalize="words" placeholder="First name"><button type="submit">Start</button><p class="cg-msg" id="cg-msg"></p></form>');
+    o.querySelector("#cg-form").onsubmit=function(e){e.preventDefault();
+      var raw=o.querySelector("#cg-name").value.replace(/\s+/g," ").trim();
+      if(!/^[A-Za-zÀ-ɏ][A-Za-zÀ-ɏ .'\-]{0,29}$/.test(raw)){o.querySelector("#cg-msg").textContent="Please type your first name using letters.";return}
+      if(!allow(raw))return;
+      var n=tidy(raw);current=n;ssSet(NAME_KEY,n);close();badge();
+      try{document.dispatchEvent(new CustomEvent("classgate:signin",{detail:{name:n}}))}catch(err){}
+    };
+  }
+  window.ClassGate={
+    /* Apps with their own sign-in call this; returns false for a blocked name (and locks the device), a locked app, or a student this app isn't assigned to. */
+    check:function(n){if(lsGet(LOCK_KEY)&&BLOCKED.length){showBlocked();return false}if(!allow(n))return false;current=String(n||"");return true},
+    name:function(){return ssGet(NAME_KEY)||""},
+    app:function(){return APP},
+    /* Teacher code check for in-app teacher tools: resolves "ok", "wrong" or "wait". */
+    checkCode:checkCode, codeMsg:function(r){return CODE_MSG[r]||""}
+  };
+  function saved(){var out=[];SESS.forEach(function(s){var p=s.split(":"),v=null;try{v=(p[0]==="l"?localStorage:sessionStorage).getItem(p[1])}catch(e){}
+    if(v&&p[2]){try{v=(JSON.parse(v)||{})[p[2]]}catch(e){v=null}}if(v)out.push(String(v))});return out}
+  function watched(){var out=[];if(!WATCH)return out;try{Array.prototype.forEach.call(document.querySelectorAll(WATCH),function(i){if(i!==document.activeElement&&i.value)out.push(i.value)})}catch(e){}return out}
+  /* Signs a blocked student out of anything already open, and closes the app when it is locked or not assigned. */
+  function sweep(){if(locked)return;
+    if(lsGet(LOCK_KEY)&&BLOCKED.length){locked=true;showBlocked();return}
+    if(appLocked()){showAppLocked();return}
+    var all=[ssGet(NAME_KEY),current,denied].concat(saved(),watched());
+    for(var i=0;i<all.length;i++)if(all[i]&&isBlocked(all[i])){lock();return}
+    for(i=0;i<all.length;i++)if(all[i]&&notAssigned(all[i])){showNotAssigned(all[i]);return}
+    /* reopened by the teacher while the lock screen was up */
+    if(shown==="applocked"||shown==="notassigned")location.reload()}
+  function refresh(){if(!window.fetch)return;
+    fetch("/classgate.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(j){if(!j)return;
+      if(Array.isArray(j.blocked))BLOCKED=j.blocked.map(first).filter(Boolean);
+      CFG={lockAll:!!j.lockAll,apps:(j.apps&&typeof j.apps==="object")?j.apps:{}};sweep()}).catch(function(){})}
+  function guard(e){if(locked||shown==="applocked"||shown==="notassigned")return;var bad=null;
+    if(WATCH){try{Array.prototype.forEach.call(document.querySelectorAll(WATCH),function(i){if(!i.value||bad)return;if(isBlocked(i.value))bad="b";else if(notAssigned(i.value))bad=i.value;else current=i.value})}catch(x){}}
+    if(!bad&&PICK&&e.type==="click"&&e.target.closest){var b=e.target.closest(PICK);if(b){var nm=b.getAttribute("data-n")||b.textContent;if(isBlocked(nm))bad="b";else if(notAssigned(nm))bad=nm}}
+    if(!bad&&(WATCH||PICK)&&appLocked())bad="l";
+    if(bad){e.preventDefault();e.stopImmediatePropagation();if(bad==="b")lock();else if(bad==="l")showAppLocked();else showNotAssigned(bad)}}
+  function start(){
+    if(lsGet(LOCK_KEY)&&BLOCKED.length){locked=true;showBlocked();return}
+    var n=ssGet(NAME_KEY);
+    if(n&&isBlocked(n)){lock();return}
+    if(needLogin&&!n)showLogin();else badge();
+    if(WATCH||PICK){["submit","click","change"].forEach(function(t){document.addEventListener(t,guard,true)});
+      document.addEventListener("keydown",function(e){if(e.key==="Enter")guard(e)},true)}
+    sweep();refresh();setInterval(sweep,2000);setInterval(refresh,30000);
+    document.addEventListener("visibilitychange",function(){if(!document.hidden)refresh()});
+  }
+  if(document.body)start();else document.addEventListener("DOMContentLoaded",start);
+})();
+</script>
+<!-- /Class sign-in gate -->
+
+<link rel="stylesheet" href="/shared/brand.css">
+<script src="/shared/standards.js"></script>
+<script src="/shared/frame.js" data-app="Water Cycle Practice 40" data-subject="sci" data-tags="Grade 5|40 questions"></script>
+<title>Water Cycle Practice 40</title>
+<meta name="description" content="A 40-question water cycle practice set in five parts, ending with a diagram to label, a live score bar and an explanation for every answer.">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@400;600;800&display=swap">
+<style>
+/* Layout: one reading column of question cards, a sticky score strip, a tap-to-label water cycle scene at the end */
+:root{
+  --bg:#eef6fa; --surface:#ffffff; --ink:#15303d; --muted:#4f6b78; --line:#cfe1ea;
+  --lake:#1f7a9c; --lake-soft:#d8eef6; --sun:#e89a1c; --sun-soft:#fdf0d6;
+  --good:#1d8a4e; --good-soft:#dcf3e5; --bad:#c2412d; --bad-soft:#fbe3de;
+  --sky:#cfe8f4; --ground:#8fb069; --cloud:#ffffff; --tree:#3f7d3a; --trunk:#7a5533; --water:#3f9cc4;
+  --display:"Baloo 2", "Trebuchet MS", system-ui, sans-serif;
+  --body:"Nunito", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0d1d25; --surface:#142a35; --ink:#e3f1f7; --muted:#9db8c4; --line:#244452;
+  --lake:#5cc0e2; --lake-soft:#173d4c; --sun:#f3b347; --sun-soft:#3a2c12;
+  --good:#5fd394; --good-soft:#163b28; --bad:#f08a76; --bad-soft:#41201b;
+  --sky:#1b3a4a; --ground:#4d6a35; --cloud:#d9e6ec; --tree:#4f9a48; --trunk:#9a7350; --water:#2f86ad;
+  color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0d1d25; --surface:#142a35; --ink:#e3f1f7; --muted:#9db8c4; --line:#244452;
+  --lake:#5cc0e2; --lake-soft:#173d4c; --sun:#f3b347; --sun-soft:#3a2c12;
+  --good:#5fd394; --good-soft:#163b28; --bad:#f08a76; --bad-soft:#41201b;
+  --sky:#1b3a4a; --ground:#4d6a35; --cloud:#d9e6ec; --tree:#4f9a48; --trunk:#9a7350; --water:#2f86ad;
+  color-scheme:dark }
+body{ background:var(--bg); color:var(--ink); font-family:var(--body); font-size:17px; line-height:1.5 }
+body::before{ content:""; position:fixed; inset:0 0 auto; height:env(safe-area-inset-top,0px); z-index:10; background:var(--surface) }
+.wrap{ max-width:760px; margin:0 auto; padding-left:max(16px,env(safe-area-inset-left,0px)); padding-right:max(16px,env(safe-area-inset-right,0px)); padding-block:20px 60px; display:flex; flex-direction:column; gap:22px }
+header.intro{ display:flex; flex-direction:column; gap:6px }
+.eyebrow{ font-size:13px; letter-spacing:.08em; text-transform:uppercase; font-weight:800; color:var(--lake) }
+h1{ font-family:var(--display); font-weight:800; font-size:clamp(30px,6vw,42px); line-height:1.05; margin:0; text-wrap:balance }
+h1 .sunword{ color:var(--sun) }
+.intro p{ margin:0; color:var(--muted); max-width:62ch }
+.std{ font-size:14px }
+
+.bar{ position:sticky; top:env(safe-area-inset-top,0px); z-index:5; background:var(--surface); border-bottom:1px solid var(--line);
+  padding-left:max(16px,env(safe-area-inset-left,0px)); padding-right:max(16px,env(safe-area-inset-right,0px)); padding-block:10px }
+.bar-in{ max-width:760px; margin:0 auto; display:flex; align-items:center; gap:14px; flex-wrap:wrap }
+.meter{ flex:1 1 200px; min-width:0; display:flex; flex-direction:column; gap:4px }
+.meter-top{ display:flex; justify-content:space-between; font-size:14px; font-weight:700; font-variant-numeric:tabular-nums }
+.track{ height:10px; border-radius:6px; background:var(--lake-soft); overflow:hidden; display:flex }
+.track .g{ background:var(--good) } .track .b{ background:var(--bad) }
+.track span{ transition:width .3s }
+.btn{ font:inherit; font-weight:800; font-size:15px; border-radius:10px; padding:8px 14px; border:2px solid var(--lake); background:transparent; color:var(--lake); cursor:pointer }
+.btn:hover{ background:var(--lake-soft) }
+.btn.solid{ background:var(--lake); color:var(--surface) }
+button:focus-visible{ outline:3px solid var(--sun); outline-offset:2px }
+
+.part{ display:flex; flex-direction:column; gap:12px }
+.part h2{ font-family:var(--display); font-weight:800; font-size:26px; margin:10px 0 0; line-height:1.1 }
+.part > p{ margin:0; color:var(--muted) }
+.bank{ display:flex; flex-wrap:wrap; gap:8px; font-weight:700 }
+.bank span{ background:var(--sun-soft); color:var(--ink); border-radius:999px; padding:3px 12px; font-size:15px }
+.model{ background:var(--lake-soft); border-radius:12px; padding:14px 16px; max-width:62ch }
+
+.q{ background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:16px; display:flex; flex-direction:column; gap:12px }
+.q.right{ border-color:var(--good) } .q.wrong{ border-color:var(--bad) }
+.qtext{ display:flex; gap:10px; font-weight:600 }
+.num{ font-family:var(--display); font-weight:800; color:var(--lake); min-width:2ch; font-variant-numeric:tabular-nums }
+.opts{ display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr)); gap:8px }
+.opts.words{ grid-template-columns:repeat(auto-fit,minmax(130px,1fr)) }
+.opt{ font:inherit; font-size:16px; text-align:left; padding:10px 12px; border-radius:10px; border:2px solid var(--line); background:var(--bg); color:var(--ink); cursor:pointer; display:flex; gap:8px; align-items:flex-start }
+.opt b{ color:var(--muted) }
+.opt:hover:not(:disabled){ border-color:var(--lake) }
+.opt:disabled{ cursor:default }
+.opt.is-right{ border-color:var(--good); background:var(--good-soft) }
+.opt.is-wrong{ border-color:var(--bad); background:var(--bad-soft) }
+.opt.dim{ opacity:.55 }
+.fb{ font-size:15px; border-radius:10px; padding:8px 12px }
+.fb.ok{ background:var(--good-soft) } .fb.no{ background:var(--bad-soft) }
+.fb strong{ margin-right:4px }
+
+/* diagram */
+.scroll{ overflow-x:auto }
+.scene{ position:relative; min-width:540px; aspect-ratio:600/340; border-radius:14px; overflow:hidden; border:1px solid var(--line) }
+.scene svg{ position:absolute; inset:0; width:100%; height:100% }
+.zone{ position:absolute; transform:translate(-50%,-50%); font:inherit; font-size:14px; font-weight:800; min-width:118px; padding:6px 8px; border-radius:10px; border:2px dashed var(--lake); background:var(--surface); color:var(--lake); cursor:pointer; font-variant-numeric:tabular-nums }
+.zone.armed{ border-style:solid; box-shadow:0 0 0 4px var(--sun-soft) }
+.zone.is-right{ border:2px solid var(--good); color:var(--good); background:var(--good-soft) }
+.zone.is-wrong{ border:2px solid var(--bad); color:var(--bad); background:var(--bad-soft) }
+.zone:disabled{ cursor:default }
+.sunlabel{ position:absolute; left:12%; top:25%; transform:translate(-50%,0); font-weight:800; font-size:14px; color:var(--ink) }
+.chips{ display:flex; flex-wrap:wrap; gap:8px }
+.chip{ font:inherit; font-weight:800; font-size:15px; padding:8px 14px; border-radius:999px; border:2px solid var(--sun); background:var(--sun-soft); color:var(--ink); cursor:pointer }
+.chip[aria-pressed="true"]{ background:var(--sun); color:var(--surface) }
+.chip:disabled{ opacity:.35; cursor:default }
+.hint{ font-size:15px; color:var(--muted); margin:0 }
+
+.done{ background:var(--surface); border:2px solid var(--lake); border-radius:16px; padding:20px; display:flex; flex-direction:column; gap:8px }
+.done h2{ font-family:var(--display); margin:0; font-size:28px }
+.done p{ margin:0 }
+@media (prefers-reduced-motion: reduce){ .track span{ transition:none } }
+</style>
+
+<div class="bar" role="status" aria-live="polite">
+  <div class="bar-in">
+    <div class="meter">
+      <div class="meter-top"><span id="scoreText">0 correct</span><span id="answeredText">0 / 40 answered</span></div>
+      <div class="track" aria-hidden="true"><span class="g" id="gBar" style="width:0"></span><span class="b" id="bBar" style="width:0"></span></div>
+    </div>
+    <button class="btn" id="resetBtn" type="button">Start over</button>
+  </div>
+</div>
+
+<main class="wrap">
+  <header class="intro">
+    <span class="eyebrow">Grade 5 Science · ESS.5.1.4</span>
+    <h1>The Water Cycle: <span class="sunword">40 Questions</span></h1>
+    <p>Questions and answers come in a new order every time. Tap an answer to check it right away. Your first answer counts, so read carefully. Use the word bank and what you know about how the sun's energy drives the water cycle.</p>
+    <p class="std">Standard: Use models to explain how the sun's energy drives evaporation, transpiration, condensation and precipitation.</p>
+  </header>
+  <div id="parts"></div>
+  <section class="done" id="done" hidden>
+    <h2 id="doneTitle"></h2>
+    <p id="doneText"></p>
+    <div><button class="btn solid" type="button" id="retryBtn">Try all 40 again</button></div>
+  </section>
+</main>
+
+<script>
+const BANK = ["evaporation","transpiration","condensation","precipitation","water vapor","sun"];
+const TF = ["True","False"];
+const PARTS = [
+ { id:"A", title:"Part A: Multiple Choice", note:"Choose the best answer.", items:[
+  ["What is the main source of energy that drives the water cycle?", ["the moon","the sun","the wind","the ocean"],1,"The sun supplies the heat energy for the whole cycle."],
+  ["A puddle on the playground is gone by the afternoon on a sunny day. Which process caused this?",["condensation","precipitation","evaporation","transpiration"],2,"The sun heats the puddle, and the liquid water becomes water vapor."],
+  ["Which process is the release of water vapor from the leaves of plants?",["transpiration","condensation","precipitation","runoff"],0,"Transpiration is water vapor leaving a plant through its leaves."],
+  ["On a hot day, water droplets form on the outside of a cold glass of lemonade. Which part of the water cycle does this model?",["evaporation","condensation","precipitation","transpiration"],1,"Water vapor in the air cools on the cold glass and becomes liquid."],
+  ["Water vapor rises high into the sky, cools, and forms clouds. What happens to the water vapor's energy as it cools?",["It gains thermal energy and turns into a gas.","It loses thermal energy and turns into tiny liquid droplets.","It gains thermal energy and turns into ice.","Its energy stays exactly the same."],1,"Cooling means losing thermal energy, so the vapor condenses into droplets."],
+  ["Water droplets in a cloud join together until they become too heavy to stay in the air. What happens next?",["evaporation","transpiration","condensation","precipitation"],3,"Heavy droplets fall to Earth as precipitation."],
+  ["Two identical pans of water are set outside, one in full sun and one in the shade. After 3 hours, which result is most likely?",["The pan in the shade will have less water.","The pan in the sun will have less water.","Both pans will have the same amount of water.","The pan in the sun will have more water."],1,"More energy from the sun means faster evaporation."],
+  ["Which statement best explains why the water cycle would slow down or stop without the sun?",["Clouds would block all the rain.","Plants would release more water.","There would not be enough heat energy to evaporate water.","The oceans would become fresh water."],2,"Without the sun's heat, very little water would evaporate."],
+  ["Water vapor is water in which state of matter?",["solid","liquid","gas","It has no state."],2,"Water vapor is water as a gas. You cannot see it."],
+  ["On which day would wet laundry on a clothesline dry the fastest?",["a hot, sunny day","a cool, cloudy day","a cold, rainy day","a chilly night"],0,"More heat from the sun means the water in the clothes evaporates faster."],
+  ["What are clouds mostly made of?",["smoke","tiny drops of liquid water or ice","dust only","invisible water vapor"],1,"Clouds form when water vapor condenses into tiny drops or ice crystals you can see."],
+  ["After a hot shower, the bathroom mirror gets foggy. Which process does this model?",["evaporation","condensation","precipitation","transpiration"],1,"Warm water vapor touches the cooler mirror and condenses into droplets."],
+  ["During evaporation, what happens to liquid water?",["It loses energy and freezes.","It gains thermal energy and becomes a gas.","It falls from a cloud.","It soaks into the ground."],1,"Energy from the sun lets water particles escape into the air as a gas."],
+  ["Why does water vapor condense into clouds high in the sky?",["The air up high is warmer.","The air up high is colder.","The sun is closer up there.","Plants push the water up."],1,"Air is colder higher up, so the rising vapor cools and condenses."],
+  ["A student puts a clear plastic bag over a leafy plant in the sun. An hour later, drops cover the inside of the bag. Which process put the water into the air in the bag?",["precipitation","evaporation from a puddle","transpiration","runoff"],2,"The plant's leaves released water vapor, which then condensed on the bag."],
+  ["Which order shows how water moves from a lake back to the ground?",["precipitation → evaporation → condensation","condensation → precipitation → evaporation","evaporation → condensation → precipitation","evaporation → precipitation → condensation"],2,"Water evaporates, condenses into clouds, then falls as precipitation."]
+ ]},
+ { id:"B", title:"Part B: Word Bank", note:"Tap the word that completes each sentence. You may use a word more than once.", bank:true, items:[
+  ["When the sun heats water in a lake and it changes from a liquid into a gas, the process is called ________.",BANK,0,"Liquid to gas because of heat is evaporation."],
+  ["Water in its gas form, which we cannot see, is called ________.",BANK,4,"Water vapor is the invisible gas form of water."],
+  ["Rain, snow, sleet, and hail are all forms of ________.",BANK,3,"Any water falling from clouds is precipitation."],
+  ["A tree's roots pull up water from the soil, and the sun's heat helps the leaves give off water vapor. This process is called ________.",BANK,1,"Water vapor leaving leaves is transpiration."],
+  ["The ________ provides the energy that drives the water cycle.",BANK,5,"The sun's energy powers evaporation and transpiration."],
+  ["When water vapor cools and changes into liquid droplets, the process is called ________.",BANK,2,"Gas to liquid by cooling is condensation."],
+  ["Dew forms on grass on a cool morning because of ________.",BANK,2,"Water vapor in the air cools on the grass and condenses."],
+  ["When the sun warms the ocean, some seawater turns into ________ that rises into the air.",BANK,4,"Evaporated water rises as water vapor."]
+ ]},
+ { id:"C", title:"Part C: True or False", note:"Decide whether each statement is true or false.", tf:true, items:[
+  ["The water cycle has a beginning and an end.",TF,1,"False. The water cycle is a loop that keeps repeating."],
+  ["Water evaporates faster when it is warmer.",TF,0,"True. More thermal energy speeds up evaporation."],
+  ["Only oceans can evaporate. Puddles and lakes cannot.",TF,1,"False. Water evaporates from oceans, lakes, puddles, soil and more."],
+  ["Plants release water vapor through their leaves.",TF,0,"True. That process is transpiration."],
+  ["Condensation happens when water vapor gets warmer.",TF,1,"False. Condensation happens when water vapor cools."],
+  ["Hail is a form of precipitation.",TF,0,"True. Rain, snow, sleet and hail are all precipitation."],
+  ["The sun's energy heats water and air, which helps move water through the cycle.",TF,0,"True. The sun's heat drives evaporation and makes warm, moist air rise."],
+  ["Earth's water gets used up each time it rains.",TF,1,"False. The same water is recycled over and over."]
+ ]},
+ { id:"D", title:"Part D: Use the Model", model:"Ms. Rivera's class poured warm water into a clear bowl, stretched plastic wrap tightly over the top, and placed a bag of ice on the plastic wrap. They set the bowl in a sunny window. After 30 minutes, tiny drops formed on the underside of the plastic wrap, grew bigger, and dripped back into the water.", items:[
+  ["In the model, what does the sunlight shining on the warm water represent, and what process does it start?",["The sun's energy; it starts evaporation.","Rain; it starts precipitation.","A cloud; it starts condensation.","A plant; it starts transpiration."],0,"The sunlight is the sun's energy. It heats the water so it evaporates."],
+  ["Which process is modeled by the drops forming under the cold plastic wrap?",["evaporation","condensation","precipitation","transpiration"],1,"Water vapor cools on the cold wrap and condenses into drops."],
+  ["Which process is modeled by the drops falling back into the bowl?",["evaporation","condensation","precipitation","transpiration"],2,"Drops that grow heavy and fall model precipitation."],
+  ["If the class took the bag of ice off the plastic wrap, what would most likely happen?",["More drops would form because the wrap is warmer.","Fewer drops would form because the wrap would not be cold enough for much condensation.","The water in the bowl would freeze.","Nothing would change at all."],1,"The ice keeps the wrap cold. Without it, less water vapor cools enough to condense."]
+ ]}
+];
+const ZONES = [
+  {key:"evaporation", x:25, y:56},
+  {key:"transpiration", x:52, y:46},
+  {key:"condensation", x:62, y:9},
+  {key:"precipitation", x:86, y:58}
+];
+const TOTAL = 40;
+
+let state = {}; // id -> {picked, right}
+let armed = null;
+
+const shuffle = a=>{a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a;};
+function el(tag, cls, text){ const e=document.createElement(tag); if(cls) e.className=cls; if(text!=null) e.textContent=text; return e; }
+
+function build(){
+  const root = document.getElementById("parts"); root.innerHTML="";
+  let n = 0;
+  PARTS.forEach(p=>{
+    const sec = el("section","part");
+    sec.appendChild(el("h2",null,p.title));
+    if(p.note) sec.appendChild(el("p",null,p.note));
+    if(p.bank){ const b=el("div","bank"); b.setAttribute("aria-label","Word bank"); BANK.forEach(w=>b.appendChild(el("span",null,w))); sec.appendChild(b); }
+    if(p.model){ const m=el("p","model"); const s=el("strong",null,"Model: "); m.appendChild(s); m.appendChild(document.createTextNode(p.model)); sec.appendChild(m); }
+    shuffle(p.items).forEach(it=>{
+      n++; const id = "q"+n; const [text,opts0,ans0,why] = it;
+      const ord = p.tf ? opts0.map((_,i)=>i) : shuffle(opts0.map((_,i)=>i));
+      const opts = ord.map(i=>opts0[i]), ans = ord.indexOf(ans0);
+      const card = el("article","q"); card.id=id;
+      const qt = el("div","qtext"); qt.appendChild(el("span","num",n+".")); qt.appendChild(el("span",null,text)); card.appendChild(qt);
+      const grid = el("div","opts"+((p.bank||p.tf)?" words":""));
+      const btns = opts.map((o,i)=>{
+        const b = el("button","opt"); b.type="button"; b.id=id+"o"+i;
+        if(!p.bank && !p.tf){ b.appendChild(el("b",null,"ABCD"[i]+".")); }
+        b.appendChild(el("span",null,o));
+        b.addEventListener("click",()=>answer(id,i,ans,why,btns,card));
+        grid.appendChild(b); return b;
+      });
+      card.appendChild(grid);
+      const fb = el("div","fb"); fb.hidden=true; card.appendChild(fb);
+      sec.appendChild(card);
+    });
+    root.appendChild(sec);
+  });
+  root.appendChild(buildDiagram(n));
+}
+
+function answer(id,i,ans,why,btns,card){
+  if(state[id]) return;
+  const right = i===ans; state[id]={right};
+  btns.forEach((b,j)=>{ b.disabled=true; if(j===ans) b.classList.add("is-right"); else if(j===i) b.classList.add("is-wrong"); else b.classList.add("dim"); });
+  card.classList.add(right?"right":"wrong");
+  const fb = card.querySelector(".fb"); fb.hidden=false; fb.className="fb "+(right?"ok":"no"); fb.innerHTML="";
+  fb.appendChild(el("strong",null,right?"Correct!":"Not quite."));
+  fb.appendChild(document.createTextNode(why));
+  update();
+}
+
+function buildDiagram(start){
+  const sec = el("section","part");
+  sec.appendChild(el("h2",null,"Part E: Label the Water Cycle"));
+  sec.appendChild(el("p",null,"Tap a word, then tap the numbered box where it belongs. The sun is labeled for you."));
+  const chips = el("div","chips"); chips.id="chips";
+  const words = ["precipitation","evaporation","condensation","transpiration"];
+  words.forEach(w=>{ const c=el("button","chip",w); c.type="button"; c.id="chip-"+w; c.setAttribute("aria-pressed","false");
+    c.addEventListener("click",()=>{ if(c.disabled) return; armed = armed===w?null:w; document.querySelectorAll(".chip").forEach(x=>x.setAttribute("aria-pressed", x.textContent===armed?"true":"false")); document.querySelectorAll(".zone:not(:disabled)").forEach(z=>z.classList.toggle("armed",!!armed)); });
+    chips.appendChild(c); });
+  sec.appendChild(chips);
+  const sc = el("div","scroll"); const scene = el("div","scene");
+  scene.innerHTML = `<svg viewBox="0 0 600 340" role="img" aria-label="Water cycle scene with the sun, a lake, a tree, a cloud and rain">
+    <defs><marker id="ah" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" style="fill:var(--lake)"/></marker></defs>
+    <rect width="600" height="340" style="fill:var(--sky)"/>
+    <g style="fill:var(--sun)"><circle cx="72" cy="52" r="30"/></g>
+    <g style="stroke:var(--sun)" stroke-width="4" stroke-linecap="round">
+      <line x1="72" y1="6" x2="72" y2="14"/><line x1="72" y1="90" x2="72" y2="98"/><line x1="26" y1="52" x2="34" y2="52"/><line x1="110" y1="52" x2="118" y2="52"/>
+      <line x1="40" y1="20" x2="45" y2="25"/><line x1="99" y1="79" x2="104" y2="84"/><line x1="104" y1="20" x2="99" y2="25"/><line x1="45" y1="79" x2="40" y2="84"/></g>
+    <path d="M0 270 Q150 250 300 262 T600 250 V340 H0z" style="fill:var(--ground)"/>
+    <ellipse cx="150" cy="300" rx="120" ry="26" style="fill:var(--water)"/>
+    <rect x="322" y="200" width="14" height="60" style="fill:var(--trunk)"/>
+    <circle cx="329" cy="185" r="34" style="fill:var(--tree)"/><circle cx="305" cy="200" r="22" style="fill:var(--tree)"/><circle cx="353" cy="200" r="22" style="fill:var(--tree)"/>
+    <g style="fill:var(--cloud)"><circle cx="440" cy="60" r="30"/><circle cx="480" cy="48" r="36"/><circle cx="520" cy="62" r="28"/><rect x="420" y="60" width="120" height="30" rx="15"/></g>
+    <g style="stroke:var(--water)" stroke-width="4" stroke-linecap="round">
+      <line x1="450" y1="110" x2="444" y2="128"/><line x1="480" y1="118" x2="474" y2="136"/><line x1="510" y1="108" x2="504" y2="126"/>
+      <line x1="460" y1="150" x2="454" y2="168"/><line x1="494" y1="160" x2="488" y2="178"/><line x1="522" y1="146" x2="516" y2="164"/></g>
+    <g fill="none" style="stroke:var(--lake)" stroke-width="3" stroke-dasharray="7 6" marker-end="url(#ah)">
+      <path d="M150 272 C 130 220, 180 190, 160 140"/>
+      <path d="M345 150 C 360 120, 380 100, 410 80"/>
+      <path d="M555 70 C 590 110, 585 170, 545 220"/>
+      <path d="M470 260 C 380 285, 300 300, 275 300"/>
+    </g>
+  </svg><span class="sunlabel">sun</span>`;
+  ZONES.forEach((z,k)=>{
+    const num = start+k+1; const id="q"+num;
+    const b = el("button","zone",num+". ?"); b.type="button"; b.id=id; b.style.left=z.x+"%"; b.style.top=z.y+"%";
+    b.setAttribute("aria-label","Box "+num);
+    b.addEventListener("click",()=>{
+      if(state[id]||!armed) return;
+      const right = armed===z.key; state[id]={right};
+      b.disabled=true; b.classList.remove("armed");
+      b.textContent = num+". "+(right?z.key:armed+" ✗ → "+z.key);
+      b.classList.add(right?"is-right":"is-wrong");
+      const c=document.getElementById("chip-"+armed);
+      if(right){ c.disabled=true; }
+      armed=null; document.querySelectorAll(".chip").forEach(x=>x.setAttribute("aria-pressed","false")); document.querySelectorAll(".zone").forEach(x=>x.classList.remove("armed"));
+      // if box solved wrongly, its correct word is used up too
+      if(!right){ document.getElementById("chip-"+z.key).disabled=true; }
+      update();
+    });
+    scene.appendChild(b);
+  });
+  sc.appendChild(scene); sec.appendChild(sc);
+  sec.appendChild(el("p","hint","Each box shows the right word after you place a label. Arrows show which way the water moves."));
+  return sec;
+}
+
+function update(){
+  const vals = Object.values(state); const answered = vals.length; const correct = vals.filter(v=>v.right).length;
+  document.getElementById("scoreText").textContent = correct+" correct";
+  document.getElementById("answeredText").textContent = answered+" / "+TOTAL+" answered";
+  document.getElementById("gBar").style.width = (correct/TOTAL*100)+"%";
+  document.getElementById("bBar").style.width = ((answered-correct)/TOTAL*100)+"%";
+  const done = document.getElementById("done");
+  if(answered===TOTAL){
+    const pct = Math.round(correct/TOTAL*100);
+    try{ if(!window.__tkDone){ window.__tkDone=1; window.TK&&TK.record({activity:"Water Cycle 40",score:correct,total:TOTAL,standard:"ESS.5.1.4"}); } }catch(e){}
+    document.getElementById("doneTitle").textContent = "You scored "+correct+" out of "+TOTAL+" ("+pct+"%)";
+    document.getElementById("doneText").textContent = pct>=90 ? "Excellent work. You can explain how the sun's energy drives every part of the water cycle." : pct>=70 ? "Good job. Scroll up to the red cards and reread the explanations for the ones you missed." : "Keep practicing. Review the red cards, then tap Try all 40 again.";
+    done.hidden=false;
+  } else done.hidden=true;
+}
+
+function reset(){ window.__tkDone=0; state={}; armed=null; build(); update(); window.scrollTo({top:0,behavior:"smooth"}); }
+document.getElementById("resetBtn").addEventListener("click",reset);
+document.getElementById("retryBtn").addEventListener("click",reset);
+build(); update();
+</script>
+<script src="i18n.js"></script>
+
+<script>
+/* helper: worksheet sets from a PARTS-style bank [text, options, answerIndex, why] */
+window.__bankSet=function(items,opt){opt=opt||{};return function(r,n){return TK.shuffle(items,r).slice(0,n).map(function(it){var o=it[1].map(function(c,i){return{c:c,ok:i===it[2]}});if(!opt.keep)o=TK.shuffle(o,r);return{q:it[0],choices:o.map(function(x){return x.c}),a:o.findIndex(function(x){return x.ok}),why:it[3]}})}};
+window.TK_CONFIG={
+  app:"water-cycle-40", name:"Water Cycle Practice 40",
+  activities:["Water Cycle 40"],
+  features:{dashboard:true,worksheets:true,classCode:true},
+  demo:{intro:"Forty water cycle questions in five parts, with instant feedback and an explanation for every answer.",steps:[
+    {sel:".bar",title:"Score strip",text:"Shows correct answers and progress through all 40. The first answer counts."},
+    {sel:".part h2",title:"Five parts",text:"Multiple choice, word bank, true or false, a model investigation, and labeling a diagram. Questions shuffle every time."},
+    {sel:".q",title:"Tap to answer",text:"Students see right away if they're correct, with a short explanation."},
+    {sel:".scene",title:"Label the diagram",text:"Tap a word, then tap the box where it belongs. When all 40 are done, the score goes to the teacher dashboard."}]},
+  worksheet:{title:"The Water Cycle",standards:["ESS.5.1.4"],count:12,sets:[
+    {name:"Mixed review (all parts)",gen:function(r,n){var all=[];PARTS.forEach(function(p){all=all.concat(p.items)});return __bankSet(all)(r,n)}},
+    {name:"Part A: Multiple choice",gen:function(r,n){return __bankSet(PARTS[0].items)(r,n)}},
+    {name:"Part B: Word bank",directions:"Word bank: evaporation, transpiration, condensation, precipitation, water vapor, sun. Write the word that completes each sentence.",gen:function(r,n){return TK.shuffle(PARTS[1].items,r).slice(0,n).map(function(it){return{q:it[0],a:it[1][it[2]],why:it[3],lines:0}})}},
+    {name:"Part C: True or false",directions:"Write T for true or F for false. Then fix each false statement.",gen:function(r,n){return TK.shuffle(PARTS[2].items,r).slice(0,n).map(function(it){return{q:"_____ "+it[0],a:it[1][it[2]],why:it[3],lines:1}})}},
+    {name:"Part D: Use the model",directions:"Ms. Rivera's class poured warm water into a clear bowl, stretched plastic wrap over the top, and put a bag of ice on the wrap in a sunny window. Drops formed under the wrap and dripped back into the water.",gen:function(r,n){return __bankSet(PARTS[3].items)(r,n)}},
+    {name:"Explain it (short answer)",directions:"Answer in complete sentences.",gen:function(r,n){return TK.shuffle([["Explain how the sun's energy causes evaporation.","The sun heats liquid water, giving it thermal energy so it changes into water vapor (a gas)."],["What is the difference between evaporation and transpiration?","Evaporation is water changing to vapor from surfaces like lakes; transpiration is water vapor released from plant leaves."],["Why do clouds form high in the sky?","Air is colder higher up, so rising water vapor cools and condenses into tiny droplets."],["Describe the path of one drop of water from a lake back to the lake.","It evaporates, rises as water vapor, condenses into a cloud, and falls as precipitation back into the lake or runs off into it."],["Why would the water cycle slow down without the sun?","There would not be enough heat energy to evaporate water or drive transpiration."],["Explain why a cold glass gets wet on the outside on a hot day.","Water vapor in the warm air cools when it touches the cold glass and condenses into liquid drops."]],r).slice(0,n).map(function(x){return{q:x[0],a:x[1],lines:3}})}}
+  ]}
+};
+
+</script>
+<script src="/shared/teacher-kit.js"></script>
+</body></html>

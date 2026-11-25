@@ -1,10 +1,11 @@
 <!doctype html>
 <html lang="en">
 <head>
+<link rel="icon" type="image/svg+xml" href="/shared/favicon.svg">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Echols Science Lab</title>
-<meta name="description" content="NC Grade 5 Science Lab for Echols's class: standards, chapters, EOG practice passages, activities, games, and videos.">
+<meta name="description" content="Grade 5 Science Lab for Echols's class: standards, chapters, EOG practice passages, activities, games, and videos.">
 <style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0}img{max-width:100%}[hidden]{display:none!important}</style>
 <script>window.LAB_CONFIG={teacher:"Echols",sheet:""};</script>
 </head>
@@ -492,7 +493,7 @@ textarea.inp{min-height:110px;resize:vertical}
 
 <div class="gate" id="gate" role="dialog" aria-modal="true" aria-labelledby="gt">
   <form class="gcard" id="gform" autocomplete="off" novalidate>
-    <div class="eyebrow" style="color:var(--life)">NC Grade 5 Science Lab</div>
+    <div class="eyebrow" style="color:var(--life)">Grade 5 Science Lab</div>
     <h2 id="gt">Who's doing science today?</h2>
     <p class="gcls" id="gcls">Type your name to open the lab.</p>
     <label for="gname">Your first and last name</label>
@@ -507,7 +508,7 @@ textarea.inp{min-height:110px;resize:vertical}
 <div class="wrap">
   <header class="top">
     <div>
-      <h1>NC Grade 5 Science Lab</h1>
+      <h1>Grade 5 Science Lab</h1>
       <p class="sub">Every 2023 NCDPI Grade 5 science standard with student chapters, EOG-style practice passages, hands-on activities, review games, and videos. Pick a standard on the left.</p>
     </div>
     <div class="toplinks">
@@ -2083,7 +2084,7 @@ function renderDash(){
   const d=dashEl(); if(d.hidden) return;
   const y=window.scrollY;
   const back=`<p style="margin-top:14px"><a class="sbtn" href="#" id="dback">Back to the lab</a></p>`;
-  const head=`<header class="dtop"><div><div class="eyebrow" style="color:var(--earth)">Teacher dashboard · NC Grade 5 Science Lab</div><h1>${esc(META.className||"My class")}</h1>${META.teacherName?`<p class="sub">${esc(META.teacherName)}</p>`:""}</div></header>`;
+  const head=`<header class="dtop"><div><div class="eyebrow" style="color:var(--earth)">Teacher dashboard · Grade 5 Science Lab</div><h1>${esc(META.className||"My class")}</h1>${META.teacherName?`<p class="sub">${esc(META.teacherName)}</p>`:""}</div></header>`;
   const bindBack=()=>d.querySelectorAll("#dback").forEach(a=>a.onclick=e=>{e.preventDefault(); location.hash=(cur&&cur.id)||"";});
   if(!API){ d.innerHTML=head+connectHTML(back); bindConnect(d); bindBack(); return; }
   if(!teacherOK){
@@ -2097,7 +2098,7 @@ function renderDash(){
       catch(x){ TPIN=""; d.querySelector("#pinerr").textContent=errText(x); b.disabled=false; b.textContent="Open dashboard"; } };
     bindBack(); setTimeout(()=>{try{d.querySelector("#pin").focus()}catch(e){}},30); return;
   }
-  d.innerHTML=`<header class="dtop"><div><div class="eyebrow" style="color:var(--earth)">Teacher dashboard · NC Grade 5 Science Lab</div><h1>${esc(META.className||"My class")}</h1>${META.teacherName?`<p class="sub">${esc(META.teacherName)}</p>`:""}</div>
+  d.innerHTML=`<header class="dtop"><div><div class="eyebrow" style="color:var(--earth)">Teacher dashboard · Grade 5 Science Lab</div><h1>${esc(META.className||"My class")}</h1>${META.teacherName?`<p class="sub">${esc(META.teacherName)}</p>`:""}</div>
     <div class="dact"><button class="sbtn" id="drefresh">Refresh</button><button class="sbtn" id="dcsv">Download scores (CSV)</button>${SHEETURL?`<a class="sbtn" href="${esc(SHEETURL)}" target="_blank" rel="noopener">Open Google Sheet</a>`:""}<a class="sbtn" href="#" id="dback">Back to the lab</a></div></header>
     ${!ROSTER.length?`<div class="banner">Add your class list under <b>Students</b>. Students sign in by typing their name exactly as you enter it here.</div>`:""}
     <div class="dtabs tabs" role="tablist">${[["overview","Class overview"],["students","Students"],["settings","Settings & class link"]].map(([k,l])=>`<button class="tab" role="tab" data-k="${k}" aria-selected="${dtab===k&&!dsel}">${l}</button>`).join("")}</div>

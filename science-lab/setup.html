@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Science Lab Setup</title>
-<meta name="description" content="Teacher setup guide: connect the NC Grade 5 Science Lab to your own Google Sheet.">
+<meta name="description" content="Teacher setup guide: connect the Grade 5 Science Lab to your own Google Sheet.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=JetBrains+Mono:wght@500&display=swap">
 <style>
@@ -40,7 +40,7 @@ a{color:var(--earth)}
 </head>
 <body>
 <div class="wrap">
-<div class="eyebrow">NC Grade 5 Science Lab · Teacher setup</div>
+<div class="eyebrow">Grade 5 Science Lab · Teacher setup</div>
 <h1>Connect your class to a Google Sheet</h1>
 <p class="lead">Your students' scores save to a Google Sheet that only you own. This takes about five minutes, once. You need to be signed in to your school Google account.</p>
 <ol class="steps">
@@ -48,7 +48,7 @@ a{color:var(--earth)}
 <li><h2>Add the class-records script</h2>In the sheet, open <b class="ui">Extensions</b> → <b class="ui">Apps Script</b>. Delete the few lines already there, then paste in the script below and click the <b class="ui">Save</b> icon.
 <div class="code"><div class="codehead"><span class="muted">Code.gs · 229 lines</span><button type="button" id="copy">Copy script</button></div>
 <pre id="src">/**
- * NC Grade 5 Science Lab — class records
+ * Grade 5 Science Lab — class records
  * Paste this into Extensions &gt; Apps Script in a NEW Google Sheet, then
  * Deploy &gt; New deployment &gt; Web app (Execute as: Me, Who has access: Anyone).
  * Student scores are stored only in this Google Sheet.

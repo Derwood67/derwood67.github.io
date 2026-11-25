@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Murphy to Manteo EOG Road Trip</title>
+<title>Road Trip Review</title>
+<meta name="description" content="Ten questions, ten towns across North Carolina. At Manteo students get a report of standards mastered and ones to practice.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Overpass:wght@600;800;900&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
 <style>
@@ -107,7 +108,7 @@ td.code{font-family:var(--display);font-weight:800;white-space:nowrap}
 </style>
 <link rel="stylesheet" href="/shared/brand.css">
 <script src="/shared/standards.js"></script>
-<script src="/shared/frame.js" data-guest="#name" data-app="Murphy to Manteo EOG Road Trip" data-subject="rev" data-tags="Grades 4–5|Reading · Math"></script>
+<script src="/shared/frame.js" data-guest="#name" data-app="Road Trip Review" data-subject="rev" data-tags="Grades 4–5|Reading · Math"></script>
 </head>
 <body>
 <!-- Class sign-in gate: first-name sign-in, blocked names, locked and assigned apps, teacher unlock. Live settings: /classgate.json (edited from Control Center → Lock & Assign). Source: /shared/classgate-block.html -->
@@ -252,7 +253,7 @@ td.code{font-family:var(--display);font-weight:800;white-space:nowrap}
 <main>
   <header class="sign"><div class="sign-in">
     <div>
-      <h1>Murphy <span class="arrow">&rarr;</span> Manteo</h1>
+      <h1>Road Trip Review</h1>
       <p>EOG practice road trip across North Carolina</p>
     </div>
     <span class="exit">Grades 4&ndash;5 &middot; Math &amp; Reading</span>
@@ -520,7 +521,7 @@ function status(c,t){if(!t)return["n","Not tried"];if(c===t)return["g","✓ Got 
 
 function reportText(){
   const by=tally(),n=S.res.filter(Boolean).length;
-  return [`Murphy to Manteo trip report`,`${S.name} · Grade ${S.grade} ${SUBJ[S.subj]} · ${n}/10`,
+  return [`Road Trip Review report`,`${S.name} · Grade ${S.grade} ${SUBJ[S.subj]} · ${n}/10`,
     ...ORDER[S.subj+S.grade].map(s=>{const[c,t]=by[s]||[0,0];return `${s} ${STD[s]}: ${c}/${t} ${status(c,t)[1]}`})].join("\n");
 }
 function renderReport(){

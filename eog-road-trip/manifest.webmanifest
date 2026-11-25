@@ -1,6 +1,6 @@
 {
- "name": "Murphy to Manteo EOG Road Trip",
- "short_name": "EOG Road Trip",
+ "name": "Road Trip Review",
+ "short_name": "Road Trip Review",
  "start_url": "./",
  "scope": "./",
  "display": "standalone",

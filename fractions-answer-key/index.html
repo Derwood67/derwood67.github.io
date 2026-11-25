@@ -1,0 +1,206 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<link rel="stylesheet" href="/shared/brand.css">
+<script src="/shared/standards.js"></script>
+<script src="/shared/frame.js" data-app="Fractions Answer Key" data-subject="tool" data-tags="Answer key|Grades 4–5"></script>
+<title>Fractions Answer Key</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;700&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: graph-paper page; sticky score bar; each section is a ruled list of problem → answer rows with ✓/✗ grading marks */
+:root{
+  --bg:#f6f8f7; --grid:#e3ebe8; --surface:#ffffff; --fg:#1d2a27; --muted:#5b6b67; --line:#d5dfdb;
+  --accent:#1f6f5c; --accent-soft:#dcefe8; --pen:#b4314a; --pen-soft:#f8e3e7; --ok:#2c7a3f; --ok-soft:#dff1e3;
+  --display:"Zilla Slab",Georgia,serif; --body:"Atkinson Hyperlegible",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#121816; --grid:#1a2320; --surface:#18211e; --fg:#e4ece9; --muted:#97a8a3; --line:#2a3632;
+  --accent:#5cc4a6; --accent-soft:#1d3a32; --pen:#f0809a; --pen-soft:#3a1f27; --ok:#7bd292; --ok-soft:#1d3524; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121816; --grid:#1a2320; --surface:#18211e; --fg:#e4ece9; --muted:#97a8a3; --line:#2a3632;
+  --accent:#5cc4a6; --accent-soft:#1d3a32; --pen:#f0809a; --pen-soft:#3a1f27; --ok:#7bd292; --ok-soft:#1d3524; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:24px 24px;color:var(--fg);font:16px/1.5 var(--body)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+.wrap{max-width:860px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 64px}
+header h1{font:700 clamp(28px,5vw,40px)/1.1 var(--display);margin:0;text-wrap:balance}
+header p{margin:6px 0 0;color:var(--muted);max-width:62ch}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;margin:20px 0 8px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;box-shadow:0 4px 14px rgb(0 0 0 / .06)}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:transparent;color:var(--fg);font:700 14px var(--body);padding:8px 12px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--surface)}
+.tog{border:1px solid var(--line);background:transparent;color:var(--fg);font:700 14px var(--body);padding:8px 12px;border-radius:8px;cursor:pointer}
+.tog[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.score{margin-left:auto;font:700 15px var(--mono);font-variant-numeric:tabular-nums;display:flex;gap:12px;align-items:center}
+.score .pct{color:var(--accent)}
+.score .x{color:var(--pen)}
+.reset{border:0;background:none;color:var(--muted);font:14px var(--body);text-decoration:underline;cursor:pointer;padding:4px}
+.reset.arm{color:var(--pen);font-weight:700}
+section{margin-top:28px}
+h2{font:700 24px var(--display);margin:0 0 4px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+h2 small{font:400 14px var(--body);color:var(--muted)}
+h3{font:700 13px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin:22px 0 8px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+h3 .std{font:500 12px var(--mono);letter-spacing:0;text-transform:none;color:var(--muted)}
+ol{list-style:none;margin:0;padding:0;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+li{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:12px;padding:12px 14px;border-top:1px solid var(--line);align-items:start}
+li:first-child{border-top:0}
+li.ok{background:var(--ok-soft)} li.no{background:var(--pen-soft)}
+.num{font:700 14px var(--mono);color:var(--muted);padding-top:2px}
+.q{color:var(--muted);font-size:14px}
+.a{margin-top:4px;font:700 17px var(--mono);color:var(--pen)}
+.w{font-size:14px;color:var(--fg);margin-top:2px}
+.a .reveal{font:700 14px var(--body);color:var(--accent);background:none;border:1px dashed var(--accent);border-radius:6px;padding:4px 10px;cursor:pointer}
+.marks{display:flex;gap:6px}
+.marks button{width:40px;height:40px;border-radius:8px;border:1px solid var(--line);background:var(--surface);font:700 18px var(--body);cursor:pointer;color:var(--muted)}
+.marks .y[aria-pressed="true"]{background:var(--ok);border-color:var(--ok);color:var(--surface)}
+.marks .n[aria-pressed="true"]{background:var(--pen);border-color:var(--pen);color:var(--surface)}
+.nomarks .marks{display:none}
+.nomarks li{grid-template-columns:44px minmax(0,1fr)}
+footer{margin-top:32px;color:var(--muted);font-size:13px}
+@media (max-width:480px){li{grid-template-columns:34px minmax(0,1fr)}.marks{grid-column:2}.score{margin-left:0;width:100%}}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Introduction to Fractions — Answer Key</h1>
+    <p>Grades 4 &amp; 5 · NC.4.NF.1–4 and NC.5.NF.1, 3, 4, 7. Mark each problem right or wrong while you grade a paper; the score updates as you go.</p>
+  </header>
+
+  <div class="bar" role="toolbar" aria-label="Answer key controls">
+    <div class="seg" id="partSeg">
+      <button id="p-all" data-part="all" aria-pressed="true">Both</button>
+      <button id="p-A" data-part="A" aria-pressed="false">Part A · Gr 4</button>
+      <button id="p-B" data-part="B" aria-pressed="false">Part B · Gr 5</button>
+    </div>
+    <button class="tog" id="hideTog" aria-pressed="false">Hide answers</button>
+    <button class="tog" id="gradeTog" aria-pressed="true">Grading marks</button>
+    <div class="score" id="score" aria-live="polite"></div>
+  </div>
+
+  <div id="key"></div>
+  <footer>Answers match the key in the teacher copy of “Introduction to Fractions — Grades 4 &amp; 5.” Accept any correct equivalent form where noted.</footer>
+</div>
+
+<script>
+const KEY=[
+ {part:"A",title:"Part A — Grade 4",sub:"29 problems",sections:[
+  {name:"1. Name the Fraction",std:"NC.4.NF.1",items:[
+   ["Bar with 6 equal parts, 4 shaded","4/6 = 2/3","4 of 6 equal parts are shaded"],
+   ["In 5/8: numerator, denominator, what the 8 means","5; 8","The 8 tells how many equal parts make one whole"],
+   ["Unit fraction for one part of 10","1/10","One part of 10 equal parts"],
+   ["Is 9/4 proper or improper? Mixed number?","Improper; 2 1/4","9/4 = 4/4 + 4/4 + 1/4"]]},
+  {name:"2. Equivalent Fractions",std:"NC.4.NF.1",items:[
+   ["1/3 = ___/6","2","1 × 2 = 2, 3 × 2 = 6"],
+   ["3/4 = ___/12","9","3 × 3 = 9, 4 × 3 = 12"],
+   ["2/5 = 4/___","10","2 × 2 = 4, 5 × 2 = 10"],
+   ["6/10 = ___/5","3","6 ÷ 2 = 3, 10 ÷ 2 = 5"],
+   ["Two fractions equivalent to 1/2","Any two: 2/4, 3/6, 4/8, 5/10…","Numerator is half the denominator"],
+   ["Why is 2/3 = 8/12?","Numerator and denominator both × 4","Same amount, cut into 4 times as many parts"]]},
+  {name:"3. Compare Fractions",std:"NC.4.NF.2",items:[
+   ["3/8 ___ 5/8","<","Same denominator: 3 parts < 5 parts"],
+   ["2/3 ___ 2/5",">","Same numerator: thirds are bigger than fifths"],
+   ["5/6 ___ 1/2",">","Benchmark: 5/6 is more than 1/2 (3/6)"],
+   ["3/4 ___ 6/8","=","Equivalent: 3/4 = 6/8"],
+   ["4/10 ___ 1/2","<","Benchmark: 4/10 is less than 5/10"],
+   ["7/12 ___ 2/3","<","Equivalent: 2/3 = 8/12, and 7/12 < 8/12"]]},
+  {name:"4. Decompose Fractions",std:"NC.4.NF.3",items:[
+   ["3/5 as a sum of unit fractions","1/5 + 1/5 + 1/5",""],
+   ["5/8 as a sum, two ways","e.g. 2/8 + 3/8; 1/8 + 4/8","Any two correct; numerators must add to 5"],
+   ["1 2/6 as a sum with denominator 6","6/6 + 1/6 + 1/6 (or 6/6 + 2/6)","1 whole = 6/6"]]},
+  {name:"5. Add & Subtract, Like Denominators",std:"NC.4.NF.3",items:[
+   ["2/7 + 3/7","5/7",""],
+   ["9/10 − 4/10","5/10 = 1/2",""],
+   ["3/8 + 7/8 (mixed number)","1 1/4","10/8 = 1 2/8 = 1 1/4"],
+   ["2 3/4 + 1 2/4","4 1/4","3 5/4 = 3 + 1 1/4"],
+   ["5 1/3 − 2 2/3","2 2/3","Regroup: 5 1/3 = 4 4/3; 4 4/3 − 2 2/3"],
+   ["Maya ran 3/6 mi and 4/6 mi","1 1/6 miles","3/6 + 4/6 = 7/6"]]},
+  {name:"6. Multiply a Fraction by a Whole Number",std:"NC.4.NF.4",items:[
+   ["4 × 1/5","4/5",""],
+   ["3 × 2/8","6/8 = 3/4",""],
+   ["5 × 2/3 (mixed number)","3 1/3","10/3"],
+   ["Six friends each eat 3/4 cup","4 1/2 cups","6 × 3/4 = 18/4 = 4 2/4"]]}]},
+ {part:"B",title:"Part B — Grade 5",sub:"24 problems",sections:[
+  {name:"1. Add & Subtract, Unlike Denominators",std:"NC.5.NF.1",items:[
+   ["1/2 + 1/4","3/4","2/4 + 1/4"],
+   ["2/3 + 1/6","5/6","4/6 + 1/6"],
+   ["7/8 − 1/4","5/8","7/8 − 2/8"],
+   ["3/10 + 2/5","7/10","3/10 + 4/10"],
+   ["5/12 − 1/3","1/12","5/12 − 4/12"],
+   ["1 1/2 + 2 3/8","3 7/8","1 4/8 + 2 3/8"],
+   ["Jalen: 3 1/4 yd, used 1 1/2 yd","1 3/4 yards","2 5/4 − 1 2/4"],
+   ["Is 1/2 + 3/8 more or less than 1?","Less than 1","3/8 < 1/2, so the sum < 1/2 + 1/2"]]},
+  {name:"2. Fractions as Division",std:"NC.5.NF.3",items:[
+   ["3 ÷ 4","3/4",""],
+   ["7 ÷ 2 (mixed number)","3 1/2","7/2"],
+   ["5 friends share 3 pizzas","3/5 of a pizza","3 ÷ 5"],
+   ["4 students share 10 brownies","2 1/2 brownies; between 2 and 3","10 ÷ 4 = 10/4"]]},
+  {name:"3. Multiply Fractions",std:"NC.5.NF.4",items:[
+   ["1/2 × 1/3","1/6","(1 × 1)/(2 × 3)"],
+   ["2/3 × 3/4","6/12 = 1/2",""],
+   ["3/4 × 8","6","24/4"],
+   ["1/2 × 2 1/4","1 1/8","1/2 × 9/4 = 9/8"],
+   ["Corn on 2/3 of a 3/4-acre garden","1/2 acre","2/3 × 3/4 = 6/12"],
+   ["Is 5 × 3/4 more or less than 5?","Less than 5","Multiplying by a fraction less than 1 gives a smaller product"]]},
+  {name:"4. Divide with Unit Fractions",std:"NC.5.NF.7",items:[
+   ["1/3 ÷ 2","1/6","Split each third into 2 equal parts"],
+   ["1/4 ÷ 3","1/12",""],
+   ["4 ÷ 1/2","8","Each whole has 2 halves; 4 × 2"],
+   ["3 ÷ 1/5","15","Each whole has 5 fifths; 3 × 5"],
+   ["4 people share 1/2 lb cheese","1/8 pound","1/2 ÷ 4"],
+   ["6 cups soup, 1/3-cup servings","18 servings","6 ÷ 1/3 = 6 × 3"]]}]}
+];
+
+const st={part:"all",hide:false,grade:true,marks:{},shown:{}};
+try{Object.assign(st,JSON.parse(localStorage.getItem("fk")||"{}"),{shown:{}})}catch(e){}
+const save=()=>{try{localStorage.setItem("fk",JSON.stringify({part:st.part,hide:st.hide,grade:st.grade,marks:st.marks}))}catch(e){}};
+const esc=s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+
+function render(){
+  const root=document.getElementById("key");let h="";
+  KEY.forEach(p=>{
+    if(st.part!=="all"&&st.part!==p.part)return;
+    h+=`<section><h2>${p.title} <small>${p.sub}</small></h2>`;
+    p.sections.forEach((s,si)=>{
+      h+=`<h3>${s.name}<span class="std">${s.std}</span></h3><ol>`;
+      s.items.forEach((it,ii)=>{
+        const id=`${p.part}-${si+1}.${ii+1}`,m=st.marks[id];
+        const showAns=!st.hide||st.shown[id];
+        h+=`<li class="${m==="y"?"ok":m==="n"?"no":""}"><span class="num">${si+1}.${ii+1}</span><div style="min-width:0"><div class="q">${esc(it[0])}</div>
+        <div class="a">${showAns?esc(it[1]):`<button class="reveal" data-show="${id}">Show answer</button>`}</div>
+        ${showAns&&it[2]?`<div class="w">${esc(it[2])}</div>`:""}</div>
+        <div class="marks"><button class="y" data-id="${id}" data-v="y" aria-pressed="${m==="y"}" aria-label="Mark ${id} correct">✓</button><button class="n" data-id="${id}" data-v="n" aria-pressed="${m==="n"}" aria-label="Mark ${id} incorrect">✗</button></div></li>`;
+      });
+      h+=`</ol>`;
+    });
+    h+=`</section>`;
+  });
+  root.innerHTML=h;
+  root.classList.toggle("nomarks",!st.grade);
+  document.querySelectorAll("#partSeg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.part===st.part));
+  document.getElementById("hideTog").setAttribute("aria-pressed",st.hide);
+  document.getElementById("gradeTog").setAttribute("aria-pressed",st.grade);
+  score();
+}
+let armed=false;
+function score(){
+  const el=document.getElementById("score");
+  if(!st.grade){el.innerHTML="";return}
+  const ids=[];KEY.forEach(p=>{if(st.part==="all"||st.part===p.part)p.sections.forEach((s,si)=>s.items.forEach((_,ii)=>ids.push(`${p.part}-${si+1}.${ii+1}`)))});
+  const y=ids.filter(i=>st.marks[i]==="y").length,n=ids.filter(i=>st.marks[i]==="n").length,g=y+n;
+  el.innerHTML=`<span>${y} / ${ids.length}</span><span class="x">✗ ${n}</span><span class="pct">${g?Math.round(y/ids.length*100):0}%</span><button class="reset${armed?" arm":""}" id="reset">${armed?"Tap again to clear":"Clear marks"}</button>`;
+}
+document.addEventListener("click",e=>{
+  const t=e.target.closest("button");if(!t)return;
+  if(t.dataset.part){st.part=t.dataset.part}
+  else if(t.id==="hideTog"){st.hide=!st.hide;st.shown={}}
+  else if(t.id==="gradeTog"){st.grade=!st.grade}
+  else if(t.dataset.show){st.shown[t.dataset.show]=true}
+  else if(t.dataset.id){st.marks[t.dataset.id]=st.marks[t.dataset.id]===t.dataset.v?undefined:t.dataset.v}
+  else if(t.id==="reset"){if(armed){st.marks={};armed=false}else{armed=true;setTimeout(()=>{armed=false;score()},3000);score();return}}
+  else return;
+  save();render();
+});
+render();
+</script>
+
+</body></html>

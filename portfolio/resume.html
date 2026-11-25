@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Résumé Links · Darren Echols</title>
+<link rel="icon" type="image/svg+xml" href="/shared/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: how-to strip, a sample résumé block with top picks, then every project as a copyable row. */
+:root{--bg:#f4f6f8;--surface:#fff;--ink:#14213a;--muted:#55627a;--line:#dde3ea;--accent:#1f5fbf;--accent-ink:#fff;--pencil:#f2b705;--ok:#0f8a5f;
+  --ela:#7a3fb0;--flu:#c2410c;--math:#1f5fbf;--sci:#0f8a5f;--rev:#b4235a;--tool:#475569;--sheet:#8a5a00;
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;--body:"Source Sans 3","Segoe UI",system-ui,sans-serif;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1524;--surface:#162036;--ink:#e8edf6;--muted:#9fb0c9;--line:#26324b;--accent:#6ea2ff;--accent-ink:#0e1524;--pencil:#f5c842;--ok:#45c79a;
+  --ela:#b48ae0;--flu:#f08a52;--math:#6ea2ff;--sci:#45c79a;--rev:#ef6f9d;--tool:#94a3b8;--sheet:#e0b44c;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.55 var(--body)}
+a{color:var(--accent)}
+:focus-visible{outline:3px solid var(--pencil);outline-offset:2px;border-radius:4px}
+.wrap{max-width:980px;margin:0 auto;padding:0 20px}
+h1,h2,h3{font-family:var(--display);margin:0;line-height:1.15;text-wrap:balance}
+header{padding:36px 0 10px}
+.kicker{font-weight:700;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;font-size:.8rem;margin:0 0 8px}
+h1{font-size:clamp(2rem,4.5vw,2.8rem);font-weight:800}
+.lede{color:var(--muted);max-width:66ch;margin:12px 0 0}
+section{padding:28px 0 8px}
+h2{font-size:1.5rem;margin-bottom:6px}
+.sub{color:var(--muted);margin:0 0 16px;max-width:68ch}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:20px}
+.step{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.step b{display:block;font-family:var(--display);font-size:1.05rem;margin-bottom:2px}
+.step p{margin:0;color:var(--muted);font-size:.95rem}
+.step code{font-size:.85rem;background:var(--bg);padding:1px 5px;border-radius:4px;word-break:break-all}
+
+/* sample résumé block, styled like a printed page */
+.paper{background:#fff;color:#1b1b1b;border:1px solid var(--line);border-radius:6px;padding:26px 30px;box-shadow:0 8px 24px rgba(20,33,58,.08);font-family:Georgia,"Times New Roman",serif;font-size:15.5px;line-height:1.45}
+.paper h3{font-family:Georgia,"Times New Roman",serif;font-size:13px;letter-spacing:.14em;text-transform:uppercase;border-bottom:1.5px solid #1b1b1b;padding-bottom:3px;margin:0 0 10px}
+.paper .role{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.paper .role b{font-size:15.5px}
+.paper .role span{font-style:italic;color:#444}
+.paper .plink{color:#1f4fa0;font-size:14px}
+.paper ul{margin:8px 0 0;padding-left:18px}
+.paper li{margin:5px 0}
+.paper li a{color:#1f4fa0;text-decoration:none;font-size:14px;overflow-wrap:anywhere}
+.paper li a:hover{text-decoration:underline}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:14px 0 0}
+.btn{font:inherit;font-weight:700;font-size:.95rem;padding:8px 14px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;min-height:40px}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.done{border-color:var(--ok);color:var(--ok)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{font:inherit;font-size:.9rem;font-weight:600;border:0;background:var(--surface);color:var(--ink);padding:7px 12px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.note{font-size:.88rem;color:var(--muted)}
+
+/* every project */
+.group{margin-top:22px}
+.group h3{font-size:1.1rem;margin-bottom:10px}
+.row{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--c);border-radius:10px;padding:12px 14px;display:grid;grid-template-columns:1fr auto;gap:4px 14px;margin-bottom:10px;align-items:center}
+.row .t{font-weight:700}
+.row .t .pick{font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--ink);background:var(--pencil);border-radius:4px;padding:1px 6px;margin-left:8px;vertical-align:2px}
+.row .bul{color:var(--muted);font-size:.95rem;grid-column:1}
+.row .lnk{font-size:.88rem;grid-column:1;word-break:break-all}
+.row .acts{grid-row:1 / span 3;grid-column:2;display:flex;flex-direction:column;gap:6px}
+.row .acts .btn{font-size:.85rem;padding:6px 10px;min-height:34px;white-space:nowrap}
+@media (max-width:620px){.row{grid-template-columns:1fr}.row .acts{grid-row:auto;grid-column:1;flex-direction:row;flex-wrap:wrap}.paper{padding:18px}}
+footer{padding:30px 0 50px;color:var(--muted);font-size:.9rem}
+@media print{.bar,.steps,#all,footer,header .lede{display:none}body{background:#fff}.paper{box-shadow:none;border:0}}
+</style>
+</head>
+<body>
+<header class="wrap">
+  <p class="kicker">For Darren · not linked from the public portfolio</p>
+  <h1>Putting your apps on your résumé</h1>
+  <p class="lede">Every app now has its own link that opens the portfolio scrolled to that app, highlighted. Use the sample block below as your résumé's Projects section, or copy single lines from the full list.</p>
+  <div class="steps">
+    <div class="step"><b>1 · One portfolio link up top</b><p>Put <code>derwood67.github.io/portfolio</code> next to your email and phone.</p></div>
+    <div class="step"><b>2 · Three to five projects</b><p>Recruiters skim. Pick your strongest few for the job, not all of them.</p></div>
+    <div class="step"><b>3 · One line each, with a link</b><p>Say what you built and what it does for students, then the app's own link.</p></div>
+    <div class="step"><b>4 · Match the job</b><p>Instructional design: lead with mastery and adaptive apps. Ed tech: add the teacher tools.</p></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section aria-labelledby="sample-h">
+    <h2 id="sample-h">Sample Projects section</h2>
+    <p class="sub">Your top picks, written as résumé bullets. Tick or untick picks in the full list below and this block updates.</p>
+    <div class="paper" id="paper"></div>
+    <div class="bar">
+      <button class="btn primary" id="copy-block">Copy this section</button>
+      <span class="seg" role="group" aria-label="Link style">
+        <button data-l="short" aria-pressed="true">Short links</button>
+        <button data-l="full" aria-pressed="false">Full https links</button>
+      </span>
+      <span class="note">Copies as formatted text with clickable links, so it pastes cleanly into Word or Google Docs.</span>
+    </div>
+  </section>
+
+  <section id="all" aria-labelledby="all-h">
+    <h2 id="all-h">Every project, ready to paste</h2>
+    <p class="sub">Copy a single résumé line or just the link. ★ marks the current top picks.</p>
+    <div id="groups"></div>
+  </section>
+</main>
+<footer class="wrap"><a href="./">← Back to the portfolio</a></footer>
+
+<script src="projects.js"></script>
+<script>
+const SITE="derwood67.github.io/portfolio";
+/* Strongest résumé bullets, written by hand. Everything else gets a bullet built from its card. */
+const BULLETS={
+  "fraction-summit":"Designed and built Fraction Summit, a mastery-based fractions app where each section unlocks only after a 10-question quiz, with a lesson after a miss, head-to-head play and a teacher score dashboard",
+  "egypt-game":"Built Read & Unlock, a chapter-by-chapter novel study that gates each quiz behind text-structure, point-of-view and summary tasks, then turned it into a reusable template for any book",
+  "word-parts":"Created Word Parts Workshop, a vocabulary app for prefixes, suffixes and Greek and Latin roots with a word builder, a read-aloud bingo host and sentence writing scored for tense and punctuation",
+  "phonics-voice":"Built Phonics Voice Sprint, a reading-intervention app that uses speech recognition to listen to students decode letter sounds, CVC words and nonsense words and scores each one",
+  "standards-pacing":"Developed a standards crosswalk and pacing-guide tool matching K–6 Common Core and state standards to each other and to the classroom apps that practice them",
+  "smart-grading":"Built Smart Grading, a standards-based gradebook (1–4 scale) with marked-up student work, class charts and per-student PDF reports, packaged as a desktop app for Mac and PC",
+  "paragraph-quest":"Created Paragraph Quest, a writing app that gives each student a unique prompt and instant, standards-based red-pen feedback on three-paragraph responses",
+  "minute-math-sprint":"Built Minute Math Sprint, a fact-fluency app with baselines, timed sprints and a teacher dashboard that graphs growth and prints student reports",
+  "fluency-sprints":"Built Fluency Sprints, a one-minute oral reading check that calculates words correct per minute and tracks each student's growth",
+  "spelling":"Created Spelling Studio, an adaptive grades 3–12 spelling app with letter tiles, a Spelling Bee, tests and sentence writing that rejects made-up words"
+};
+const DEFAULT_PICKS=["fraction-summit","egypt-game","word-parts","phonics-voice","standards-pacing"];
+let picks; try{picks=JSON.parse(localStorage.getItem("ec-resume-picks"))}catch(e){}
+if(!Array.isArray(picks))picks=DEFAULT_PICKS.slice();
+let linkStyle="short";
+
+const ALL=[...APPS.map(p=>({...p,g:"Interactive apps"})),...TOOLS.map(p=>({...p,g:"Teacher tools"})),...SHEETS.map(p=>({...p,s:"sheet",g:"Worksheets & answer keys"}))];
+const byId=Object.fromEntries(ALL.map(p=>[p.id,p]));
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function url(p,style){return (style==="full"?"https://":"")+SITE+"/#"+p.id;}
+function bullet(p){
+  if(BULLETS[p.id])return BULLETS[p.id];
+  const verb=p.g==="Interactive apps"?"Designed and built":p.g==="Teacher tools"?"Built":"Created";
+  let d=p.d.replace(/\.$/,"");d=d.charAt(0).toLowerCase()+d.slice(1);
+  return `${verb} ${p.t}: ${d}`;
+}
+function save(){try{localStorage.setItem("ec-resume-picks",JSON.stringify(picks))}catch(e){}}
+
+function drawPaper(){
+  const items=picks.map(id=>byId[id]).filter(Boolean);
+  document.getElementById("paper").innerHTML=`<h3>Projects</h3>
+    <div class="role"><b>Interactive Learning Apps · Designer &amp; Developer</b><span>Ongoing</span></div>
+    <div class="plink"><a href="https://${SITE}" style="color:inherit">${SITE}</a></div>
+    <ul>${items.map(p=>`<li>${esc(bullet(p))}. <a href="https://${url(p,"short")}">${esc(url(p,linkStyle))}</a></li>`).join("")}</ul>`;
+}
+function drawRows(){
+  const groups=["Interactive apps","Teacher tools","Worksheets & answer keys"];
+  document.getElementById("groups").innerHTML=groups.map(g=>`<div class="group"><h3>${g}</h3>`+
+    ALL.filter(p=>p.g===g).map(p=>{const on=picks.includes(p.id);
+      return `<div class="row" style="--c:var(--${p.s})">
+        <div class="t">${esc(p.t)}${on?'<span class="pick">★ Top pick</span>':""}</div>
+        <div class="bul">${esc(bullet(p))}.</div>
+        <div class="lnk"><a href="./#${p.id}" target="_blank" rel="noopener">${esc(url(p,"short"))}</a></div>
+        <div class="acts">
+          <button class="btn" data-copy="line" data-id="${p.id}">Copy résumé line</button>
+          <button class="btn" data-copy="link" data-id="${p.id}">Copy link</button>
+          <button class="btn" data-pick="${p.id}" aria-pressed="${on}">${on?"Remove from picks":"Add to picks"}</button>
+        </div></div>`}).join("")+`</div>`).join("");
+}
+async function copy(text,html,btn){
+  try{
+    if(html&&window.ClipboardItem){await navigator.clipboard.write([new ClipboardItem({"text/html":new Blob([html],{type:"text/html"}),"text/plain":new Blob([text],{type:"text/plain"})})]);}
+    else await navigator.clipboard.writeText(text);
+  }catch(e){const ta=document.createElement("textarea");ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand("copy");ta.remove();}
+  const old=btn.textContent;btn.textContent="Copied ✓";btn.classList.add("done");setTimeout(()=>{btn.textContent=old;btn.classList.remove("done")},1600);
+}
+document.getElementById("copy-block").onclick=e=>{
+  const items=picks.map(id=>byId[id]).filter(Boolean);
+  const text="PROJECTS\nInteractive Learning Apps · Designer & Developer, ongoing\n"+SITE+"\n"+items.map(p=>"• "+bullet(p)+". "+url(p,linkStyle)).join("\n");
+  copy(text,document.getElementById("paper").innerHTML,e.currentTarget);
+};
+document.querySelector(".seg").onclick=e=>{const b=e.target.closest("button");if(!b)return;linkStyle=b.dataset.l;
+  document.querySelectorAll(".seg button").forEach(x=>x.setAttribute("aria-pressed",x===b));drawPaper();};
+document.getElementById("groups").onclick=e=>{
+  const b=e.target.closest("button");if(!b)return;
+  if(b.dataset.pick){const id=b.dataset.pick;picks=picks.includes(id)?picks.filter(x=>x!==id):[...picks,id];save();drawPaper();drawRows();return;}
+  const p=byId[b.dataset.id];
+  if(b.dataset.copy==="link")copy(url(p,linkStyle),null,b);
+  else copy(bullet(p)+". "+url(p,linkStyle),`${esc(bullet(p))}. <a href="https://${url(p,"short")}">${esc(url(p,linkStyle))}</a>`,b);
+};
+drawPaper();drawRows();
+</script>
+</body>
+</html>
