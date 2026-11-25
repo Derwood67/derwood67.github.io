@@ -75,7 +75,7 @@ const SHORT_IDS={"Read & Unlock: The Egypt Game":"egypt-game","Love, Amalia: Sto
 const GROUPS=[
   {id:"apps", label:"Interactive Apps", list:()=>APPS, key:"s", cats:[["ela","Reading & Writing"],["flu","Fluency & Phonics"],["math","Math"],["sci","Science & Social Studies"],["rev","Review & Test Prep"]], extra:[["whole","Whole-Class Games"]]},
   {id:"tools", label:"Teacher Tools", list:()=>TOOLS, key:"c", cats:[["plan","Planning & Standards"],["build","Lesson & Content Builders"],["grade","Grading & Workflow"]]},
-  {id:"sheets", label:"Worksheets & Answer Keys", list:()=>SHEETS, key:"c", cats:[["digital","Digital Worksheets"],["key","Answer Keys"],["print","Printable Packets"]]}
+  {id:"sheets", label:"Curriculum Materials", list:()=>SHEETS, key:"c", cats:[["digital","Digital Worksheets"],["key","Answer Keys"],["print","Printable Packets"]]}
 ];
 function slugOf(t){return t.toLowerCase().replace(/&/g,"and").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");}
 [APPS,TOOLS,SHEETS].forEach(a=>a.forEach(p=>{p.id=p.id||SHORT_IDS[p.t]||slugOf(p.t);}));

@@ -127,7 +127,7 @@ let picks; try{picks=JSON.parse(localStorage.getItem("ec-resume-picks"))}catch(e
 if(!Array.isArray(picks))picks=DEFAULT_PICKS.slice();
 let linkStyle="short";
 
-const ALL=[...APPS.map(p=>({...p,g:"Interactive apps"})),...TOOLS.map(p=>({...p,g:"Teacher tools"})),...SHEETS.map(p=>({...p,s:"sheet",g:"Worksheets & answer keys"}))];
+const ALL=[...APPS.map(p=>({...p,g:"Interactive apps"})),...TOOLS.map(p=>({...p,g:"Teacher tools"})),...SHEETS.map(p=>({...p,s:"sheet",g:"Curriculum materials"}))];
 const byId=Object.fromEntries(ALL.map(p=>[p.id,p]));
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
 function url(p,style){return (style==="full"?"https://":"")+SITE+"/#"+p.id;}
@@ -147,7 +147,7 @@ function drawPaper(){
     <ul>${items.map(p=>`<li>${esc(bullet(p))}. <a href="https://${url(p,"short")}">${esc(url(p,linkStyle))}</a></li>`).join("")}</ul>`;
 }
 function drawRows(){
-  const groups=["Interactive apps","Teacher tools","Worksheets & answer keys"];
+  const groups=["Interactive apps","Teacher tools","Curriculum materials"];
   document.getElementById("groups").innerHTML=groups.map(g=>`<div class="group"><h3>${g}</h3>`+
     ALL.filter(p=>p.g===g).map(p=>{const on=picks.includes(p.id);
       return `<div class="row" style="--c:var(--${p.s})">
