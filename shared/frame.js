@@ -171,9 +171,12 @@
     var b=document.getElementById("cg-badge"),back=document.querySelector(".ec-back");
     if(b&&back&&b.parentNode!==back.parentNode)back.parentNode.insertBefore(b,back);
   }
+  /* voice on/off and English/Spanish voice (/shared/voice.js). data-voice="off" leaves it out; Control Center has its own Voice setting. */
+  function loadVoice(){if(window.ECVoice||document.querySelector('script[src*="/shared/voice.js"]')||a("data-voice")==="off"||/^\/control\//.test(location.pathname))return;
+    var v=document.createElement("script");v.src="/shared/voice.js";if(a("data-voice-keep"))v.setAttribute("data-voice-keep",a("data-voice-keep"));document.head.appendChild(v)}
   function loadDemo(){if(window.ECDemo||document.querySelector('script[src*="/shared/demo.js"]'))return;var d=document.createElement("script");d.src="/shared/demo.js";document.head.appendChild(d)}
   function start(){
-    loadDemo();bar();dressGate();dressAppSignin();dockBadge();swapIn(document.body);
+    loadDemo();bar();loadVoice();dressGate();dressAppSignin();dockBadge();swapIn(document.body);
     new MutationObserver(function(recs){dressGate();dressAppSignin();dockBadge();stripGone();
       recs.forEach(function(r){r.addedNodes.forEach(function(n){if(n.nodeType===1)swapIn(n);else if(n.nodeType===3&&n.parentNode)swapIn(n.parentNode)})})
     }).observe(document.body,{childList:true,subtree:true,characterData:false});

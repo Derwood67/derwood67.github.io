@@ -117,7 +117,8 @@ code{font-family:var(--ec-mono);font-size:.92em;background:#eef2f7;padding:1px 5
   }
 
   /* ---------- load ---------- */
-  function norm(j){j=j||{};var c={blocked:Array.isArray(j.blocked)?j.blocked:["james"],lockAll:!!j.lockAll,roster:Array.isArray(j.roster)?j.roster:[],apps:{}};
+  function vnorm(v){v=v||{};return {lang:v.lang==="es"?"es":"en",start:v.start==="off"?"off":"on"}}
+  function norm(j){j=j||{};var c={blocked:Array.isArray(j.blocked)?j.blocked:["james"],lockAll:!!j.lockAll,roster:Array.isArray(j.roster)?j.roster:[],apps:{},voice:vnorm(j.voice)};
     APPS.forEach(function(a){var s=(j.apps||{})[a.id]||{};c.apps[a.id]={mode:/^(open|locked|assigned)$/.test(s.mode)?s.mode:"open",students:Array.isArray(s.students)?s.students.slice():[]}});
     Object.keys(j.apps||{}).forEach(function(k){if(!c.apps[k])c.apps[k]=j.apps[k]});
     return c}
@@ -211,7 +212,7 @@ code{font-family:var(--ec-mono);font-size:.92em;background:#eef2f7;padding:1px 5
     b.innerHTML='<span class="t" id="bt">'+(d?'You have changes that are not live yet.':(liveStamp?'✓ Saved. '+liveStamp:'Everything here is live.'))+'</span>'+
       (d?'<button class="btn" id="undo" type="button">Undo changes</button><button class="btn pri" id="save" type="button">Save changes</button>':'<a class="btn" href="/my-apps/" target="_blank" rel="noopener">Open My Apps ↗</a>');
     if(d){$("undo").onclick=function(){cfg=JSON.parse(saved);liveStamp=null;draw()};$("save").onclick=save}}
-  function out(){var o={blocked:cfg.blocked.map(first).filter(Boolean),lockAll:cfg.lockAll,roster:cfg.roster,apps:{},updated:new Date().toISOString()};
+  function out(){var o={blocked:cfg.blocked.map(first).filter(Boolean),lockAll:cfg.lockAll,roster:cfg.roster,apps:{},voice:vnorm(cfg.voice),updated:new Date().toISOString()};
     Object.keys(cfg.apps).forEach(function(k){var s=cfg.apps[k];o.apps[k]=s.mode==="assigned"?{mode:"assigned",students:s.students.map(first).filter(Boolean)}:{mode:s.mode}});return o}
   function save(){var key=ls(KEY_STORE), o=out(), text=JSON.stringify(o,null,2)+"\n";
     if(!key){var q="Update classgate.json on my GitHub Pages site derwood67.github.io (Lock & Assign settings for my student apps) to exactly this, then push it live:\n\n"+text;

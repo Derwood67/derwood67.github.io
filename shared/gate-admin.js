@@ -24,7 +24,7 @@ window.GateAdmin=(function(){
     return fetch(API+"?ref="+BRANCH+"&t="+Date.now(),{headers:headers(),cache:"no-store"}).then(function(r){if(!r.ok)throw r;return r.json()})
       .then(function(j){sha=j.sha;return JSON.parse(unb64(j.content))}).catch(function(){sha=null;return fromSite()})}
   /* tidy a settings object for saving */
-  function clean(c){var o={blocked:(c.blocked||[]).map(first).filter(Boolean),lockAll:!!c.lockAll,roster:c.roster||[],apps:{},updated:new Date().toISOString()};
+  function clean(c){var o={blocked:(c.blocked||[]).map(first).filter(Boolean),lockAll:!!c.lockAll,roster:c.roster||[],apps:{},voice:{lang:(c.voice||{}).lang==="es"?"es":"en",start:(c.voice||{}).start==="off"?"off":"on"},updated:new Date().toISOString()};
     Object.keys(c.apps||{}).forEach(function(k){var s=c.apps[k]||{};o.apps[k]=s.mode==="assigned"?{mode:"assigned",students:(s.students||[]).map(first).filter(Boolean)}:{mode:s.mode==="locked"?"locked":"open"}});return o}
   /* resolves {stamp} when GitHub accepted it; rejects with "key" | "conflict" | "nokey" | "other" */
   function save(c){var o=clean(c),text=JSON.stringify(o,null,2)+"\n";

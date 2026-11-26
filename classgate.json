@@ -1,6 +1,12 @@
 {
-  "blocked": ["james"],
+  "blocked": [
+    "james"
+  ],
   "lockAll": false,
   "roster": [],
-  "apps": {}
+  "apps": {},
+  "voice": {
+    "lang": "en",
+    "start": "on"
+  }
 }

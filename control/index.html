@@ -71,6 +71,7 @@ input[type=search]{font:16px var(--ec-body);border:2px solid var(--line);border-
 .lseg{display:inline-flex;border:2px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}
 .lseg button{border:0;background:none;padding:7px 10px;font:700 13.5px/1 var(--ec-body);cursor:pointer;color:var(--ink);min-height:36px}
 .lseg button+button{border-left:2px solid var(--line)}
+.lseg button[aria-pressed="true"][data-voice]{background:#1f5fbf;color:#fff}
 .lseg button[aria-pressed="true"][data-m="open"]{background:#0f7a4f;color:#fff}
 .lseg button[aria-pressed="true"][data-m="locked"]{background:#b3261e;color:#fff}
 .lseg button[aria-pressed="true"][data-m="assigned"]{background:#a65d00;color:#fff}
@@ -137,7 +138,8 @@ input[type=search]{font:16px var(--ec-body);border:2px solid var(--line);border-
 
   /* ---------- student access (class gate) ---------- */
   var GATE=null, SAVED="", editing=GA&&GA.teacher(), live="";
-  function norm(j){j=j||{};var c={blocked:Array.isArray(j.blocked)?j.blocked:["james"],lockAll:!!j.lockAll,roster:Array.isArray(j.roster)?j.roster:[],apps:{}};
+  function vnorm(v){v=v||{};return {lang:v.lang==="es"?"es":"en",start:v.start==="off"?"off":"on"}}
+  function norm(j){j=j||{};var c={blocked:Array.isArray(j.blocked)?j.blocked:["james"],lockAll:!!j.lockAll,roster:Array.isArray(j.roster)?j.roster:[],apps:{},voice:vnorm(j.voice)};
     Object.keys(j.apps||{}).forEach(function(k){var s=j.apps[k]||{};c.apps[k]={mode:/^(open|locked|assigned)$/.test(s.mode)?s.mode:"open",students:Array.isArray(s.students)?s.students.slice():[]}});return c}
   function sOf(id){return (GATE&&GATE.apps[id])||{mode:"open",students:[]}}
   function setS(id,s){GATE.apps[id]={mode:s.mode,students:s.students||[]}}
@@ -152,10 +154,17 @@ input[type=search]{font:16px var(--ec-body);border:2px solid var(--line);border-
     p.innerHTML='<div class="mrow"><h2>'+(GATE.lockAll?'🔒 Every student app is locked':'Student access')+'</h2>'+
       '<div class="row"><span style="font-weight:700">Lock all apps</span><button class="switch" id="lockAll" role="switch" aria-checked="'+GATE.lockAll+'" aria-label="Lock all apps"'+(editing?'':' aria-disabled="true" title="Enter the teacher code to change"')+'></button></div></div>'+
       '<div class="counts" role="group" aria-label="Show apps by access">'+[["o","open","Open"],["l","locked","Locked"],["a","assigned","Assigned"],["n","none","No lock (claude.ai)"]].map(function(x){
-        return '<button class="cnt '+x[0]+'" data-lk="'+x[1]+'" aria-pressed="'+(st.lk===x[1])+'">'+c[x[1]]+' '+x[2]+'</button>'}).join("")+(st.lk?'<button class="mini" data-lk="" style="border:0;background:none;text-decoration:underline;font-weight:700;cursor:pointer">Show all</button>':'')+'</div>'+
+        return '<button class="cnt '+x[0]+'" data-lk="'+x[1]+'" aria-pressed="'+(st.lk===x[1])+'">'+c[x[1]]+' '+x[2]+'</button>'}).join("")+(st.lk?'<button class="mini" data-lk="" style="border:0;background:none;text-decoration:underline;font-weight:700;cursor:pointer">Show all</button>':'')+'</div>'+voiceRow()+
       (editing?'<p class="note" style="margin:0">Change any app below with <b>Open</b>, <b>🔒</b> or <b>Assign</b>, then press <b>Save</b>. '+(GA.hasKey()?'Saves go straight to your site.':'No GitHub key on this computer yet, so Save opens Claude to finish it. <a href="/control/assign/">Add the key</a>.')+' <button id="endEdit" style="border:0;background:none;text-decoration:underline;cursor:pointer;font:inherit;color:inherit">Stop editing</button></p>'
         :'<form class="gate-in" id="tform"><input id="tcode" type="password" inputmode="numeric" autocomplete="off" placeholder="Teacher code" aria-label="Teacher code"><button class="btn pri" type="submit">Edit locks</button><span class="note" id="tmsg" style="align-self:center"></span></form>')}
 
+  /* Voice for every app: language (English / Spanish) and whether the voice starts on or off. Students can still turn it on and off. */
+  function voiceRow(){var v=GATE.voice||{lang:"en",start:"on"},dis=editing?'':' aria-disabled="true" title="Enter the teacher code to change"';
+    function seg(k,opts){return '<span class="lseg" role="group" aria-label="'+(k==="lang"?"Voice language":"Voice starts")+'">'+opts.map(function(o){
+      return '<button data-voice="'+k+'" data-v="'+o[0]+'" aria-pressed="'+(v[k]===o[0])+'"'+dis+'>'+o[1]+'</button>'}).join("")+'</span>'}
+    return '<div class="row vrow" style="gap:10px;flex-wrap:wrap;align-items:center;margin:6px 0 10px"><b>🔊 Voice in every app</b>'+
+      seg("lang",[["en","English"],["es","Español"]])+'<span class="note" style="margin:0">Starts</span>'+seg("start",[["on","On"],["off","Off"]])+
+      '<span class="note" style="margin:0">Students can turn the voice on and off; only you can change the language.</span></div>'}
   function lockUI(a){var id=gid(a),m=modeOf(a);
     if(m==="tool")return "";
     if(m==="none")return '<span class="tag lk-none" title="Only apps on your GitHub site can be locked">No lock</span>';
@@ -235,6 +244,7 @@ input[type=search]{font:16px var(--ec-body);border:2px solid var(--line);border-
   document.getElementById("subj").onclick=function(e){var b=e.target.closest("button");if(b){st.s=b.dataset.s;render()}};
   document.getElementById("lockpanel").onclick=function(e){
     var f=e.target.closest("[data-lk]");if(f){st.lk=st.lk===f.dataset.lk?"":f.dataset.lk;render();return}
+    var vb=e.target.closest("[data-voice]");if(vb){if(editing){GATE.voice=GATE.voice||{lang:"en",start:"on"};GATE.voice[vb.dataset.voice]=vb.dataset.v;render()}else needCode();return}
     if(e.target.id==="lockAll"){if(editing){GATE.lockAll=!GATE.lockAll;render()}else needCode();return}
     if(e.target.id==="endEdit"){editing=false;GA.endTeacher();render()}};
   function needCode(){var c=document.getElementById("tcode"),m=document.getElementById("tmsg");if(c){c.focus();c.scrollIntoView({block:"center",behavior:"smooth"})}if(m)m.textContent="Type your teacher code, then press Edit locks.";toast("Enter your teacher code first.")}
